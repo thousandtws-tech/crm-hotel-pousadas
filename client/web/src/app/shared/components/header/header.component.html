@@ -1,0 +1,203 @@
+<header
+  class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out"
+  [class]="isScrolled() ? 'header-glass py-2 sm:py-2.5 shadow-sm' : 'header-glass-transparent py-3 sm:py-4 lg:py-5'"
+>
+  <div class="container-editorial flex items-center justify-between">
+    <!-- Brand / Logo -->
+    <a
+      routerLink="/"
+      (click)="closeMobileMenu()"
+      class="group flex items-center focus:outline-none focus-visible:ring-1 focus-visible:ring-[#DDA554]"
+      aria-label="Pousada Espírito do Mar - Página Inicial"
+    >
+      <img
+        src="/logo.svg"
+        alt="Pousada Espírito do Mar"
+        class="w-auto object-contain transition-all duration-300 ease-out"
+        [class]="isScrolled()
+          ? 'h-[52px] sm:h-[58px] lg:h-[64px] logo-original'
+          : 'h-14 sm:h-16 lg:h-18 xl:h-20 logo-white'"
+      />
+    </a>
+
+    <!-- Desktop Navigation Links -->
+    <nav class="hidden lg:flex items-center gap-7 xl:gap-9" aria-label="Navegação Principal">
+      <a
+        routerLink="/"
+        routerLinkActive="nav-active text-[#DDA554] font-medium"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
+        [class]="isScrolled() ? 'text-[#054054]' : 'text-white/90'"
+      >
+        Início
+      </a>
+      <a
+        routerLink="/acomodacoes"
+        routerLinkActive="nav-active text-[#DDA554] font-medium"
+        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
+        [class]="isScrolled() ? 'text-[#054054]' : 'text-white/90'"
+      >
+        Acomodações
+      </a>
+      <a
+        routerLink="/experiencias"
+        routerLinkActive="nav-active text-[#DDA554] font-medium"
+        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
+        [class]="isScrolled() ? 'text-[#054054]' : 'text-white/90'"
+      >
+        Estrutura
+      </a>
+      <a
+        routerLink="/galeria"
+        routerLinkActive="nav-active text-[#DDA554] font-medium"
+        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
+        [class]="isScrolled() ? 'text-[#054054]' : 'text-white/90'"
+      >
+        Galeria
+      </a>
+      <a
+        routerLink="/sobre"
+        routerLinkActive="nav-active text-[#DDA554] font-medium"
+        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
+        [class]="isScrolled() ? 'text-[#054054]' : 'text-white/90'"
+      >
+        A Pousada
+      </a>
+      <a
+        routerLink="/localizacao"
+        routerLinkActive="nav-active text-[#DDA554] font-medium"
+        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
+        [class]="isScrolled() ? 'text-[#054054]' : 'text-white/90'"
+      >
+        Localização
+      </a>
+      <a
+        routerLink="/contato"
+        routerLinkActive="nav-active text-[#DDA554] font-medium"
+        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
+        [class]="isScrolled() ? 'text-[#054054]' : 'text-white/90'"
+      >
+        Contato
+      </a>
+    </nav>
+
+    <!-- Header Actions (CTA + Mobile Menu Trigger) -->
+    <div class="flex items-center gap-4">
+      <a
+        routerLink="/reservar"
+        class="hidden sm:inline-flex items-center justify-center px-5 py-2 text-[10px] tracking-[0.18em] uppercase font-medium transition-all duration-300 focus:outline-none"
+        [class]="isScrolled()
+          ? 'bg-[#054054] text-white border border-[#054054] hover:bg-[#DDA554] hover:border-[#DDA554] hover:text-[#054054]'
+          : 'bg-white/10 text-white border border-white/35 backdrop-blur-sm hover:bg-[#DDA554] hover:border-[#DDA554] hover:text-[#ffff]'"
+      >
+        Reservar
+      </a>
+
+      <!-- Mobile Menu Trigger -->
+      <button
+        type="button"
+        (click)="toggleMobileMenu()"
+        class="lg:hidden p-1.5 transition-colors duration-200 focus:outline-none"
+        [class]="isScrolled() ? 'text-[#054054]' : 'text-white'"
+        [attr.aria-expanded]="isMobileMenuOpen()"
+        aria-label="Abrir menu de navegação"
+      >
+        <app-icon name="menu" [size]="22"></app-icon>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Fullscreen Brand Mobile Menu -->
+@if (isMobileMenuOpen()) {
+  <div
+    class="fixed inset-0 z-50 bg-[#032B38] text-[#F7F5F0] flex flex-col justify-between p-6 sm:p-12 overflow-y-auto animate-fadeIn"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Menu principal"
+  >
+    <!-- Top Bar inside Modal -->
+    <div class="flex items-center justify-between border-b border-white/10 pb-5">
+      <div class="flex items-center gap-3">
+        <img src="/logo.svg" alt="Pousada Espírito do Mar" class="h-12 sm:h-14 w-auto object-contain logo-white" />
+      </div>
+      <button
+        type="button"
+        (click)="closeMobileMenu()"
+        class="p-2 text-white/70 hover:text-white transition-colors focus:outline-none"
+        aria-label="Fechar menu"
+      >
+        <app-icon name="x" [size]="24"></app-icon>
+      </button>
+    </div>
+
+    <!-- Editorial Navigation Links -->
+    <nav class="my-auto py-8 flex flex-col gap-5 sm:gap-6" aria-label="Navegação Mobile">
+      <a
+        routerLink="/"
+        (click)="closeMobileMenu()"
+        class="font-serif text-3xl sm:text-4xl text-white hover:text-[#DDA554] transition-colors"
+      >
+        Início
+      </a>
+      <a
+        routerLink="/acomodacoes"
+        (click)="closeMobileMenu()"
+        class="font-serif text-3xl sm:text-4xl text-white hover:text-[#DDA554] transition-colors"
+      >
+        Acomodações
+      </a>
+      <a
+        routerLink="/experiencias"
+        (click)="closeMobileMenu()"
+        class="font-serif text-3xl sm:text-4xl text-white hover:text-[#DDA554] transition-colors"
+      >
+        Estrutura
+      </a>
+      <a
+        routerLink="/galeria"
+        (click)="closeMobileMenu()"
+        class="font-serif text-3xl sm:text-4xl text-white hover:text-[#DDA554] transition-colors"
+      >
+        Galeria
+      </a>
+      <a
+        routerLink="/sobre"
+        (click)="closeMobileMenu()"
+        class="font-serif text-3xl sm:text-4xl text-white hover:text-[#DDA554] transition-colors"
+      >
+        A Pousada
+      </a>
+      <a
+        routerLink="/localizacao"
+        (click)="closeMobileMenu()"
+        class="font-serif text-3xl sm:text-4xl text-white hover:text-[#DDA554] transition-colors"
+      >
+        Localização
+      </a>
+      <a
+        routerLink="/contato"
+        (click)="closeMobileMenu()"
+        class="font-serif text-3xl sm:text-4xl text-white hover:text-[#DDA554] transition-colors"
+      >
+        Contato
+      </a>
+    </nav>
+
+    <!-- Bottom Contacts -->
+    <div class="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+      <div class="flex flex-col gap-1 text-xs text-white/60">
+        <span class="text-[#ffff] uppercase tracking-luxury text-[12px]">Atendimento</span>
+        <a [href]="'tel:' + hotelConfig.phoneHref" class="hover:text-white transition-colors text-white">{{ hotelConfig.phone }}</a>
+      </div>
+
+      <a
+        routerLink="/reservar"
+        (click)="closeMobileMenu()"
+        class="w-full sm:w-auto btn-primary bg-[#DDA554] text-[#054054] border-[#DDA554] hover:bg-white "
+      >
+        Consultar disponibilidade
+      </a>
+    </div>
+  </div>
+}

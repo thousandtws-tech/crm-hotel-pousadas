@@ -1,0 +1,88 @@
+//! Configuração centralizada da aplicação (12-factor: tudo via ambiente).
+
+use std::env;
+use thiserror::Error;
+
+/// Fuso horário de negócio — herança do legado PHP (`America/Sao_Paulo`).
+pub const BUSINESS_TZ: &str = "America/Sao_Paulo";
+
+#[derive(Debug, Error)]
+pub enum ConfigError {
+    #[error("variável de ambiente obrigatória ausente: {0}")]
+    Missing(&'static str),
+    #[error("variável {0} com valor inválido: {1}")]
+    Invalid(&'static str, String),
+}
+
+/// Configuração imutável carregada uma vez no bootstrap.
+#[derive(Debug, Clone)]
+pub struct Settings {
+    /// Bind do servidor HTTP, ex.: `0.0.0.0:8080`.
+    pub http_addr: String,
+    /// URL de conexão PostgreSQL.
+    pub database_url: String,
+    /// Tamanho máximo do pool de conexões.
+    pub db_max_connections: u32,
+    /// Segredo HMAC para assinatura de JWT (mínimo 32 bytes).
+    pub jwt_secret: String,
+    /// TTL do access token em segundos.
+    pub jwt_ttl_secs: i64,
+    /// TTL do refresh token em segundos.
+    pub refresh_ttl_secs: i64,
+    /// Origens permitidas para CORS (vírgula-separadas ou `*`).
+    pub cors_origins: Vec<String>,
+    /// Filtro do tracing, ex.: `info,clarituz=debug,sqlx=warn`.
+    pub log_filter: String,
+    /// Diretório para comprovantes gerados.
+    pub storage_dir: String,
+}
+
+impl Settings {
+    /// Carrega `.env` (se existir) e resolve todas as variáveis com defaults seguros.
+    pub fn load() -> Result<Self, ConfigError> {
+        let _ = dotenvy::dotenv();
+
+        let jwt_secret = env_string("JWT_SECRET").unwrap_or_default();
+        if jwt_secret.len() < 32 {
+            return Err(ConfigError::Invalid(
+                "JWT_SECRET",
+                "mínimo de 32 caracteres exigido".into(),
+            ));
+        }
+
+        Ok(Self {
+            http_addr: env_string("HTTP_ADDR")
+                .or_else(|| env_string("PORT").map(|p| format!("0.0.0.0:{p}")))
+                .unwrap_or_else(|| "0.0.0.0:8080".into()),
+            database_url: env_string("DATABASE_URL").ok_or(ConfigError::Missing("DATABASE_URL"))?,
+            db_max_connections: env_u32("DB_MAX_CONNECTIONS").unwrap_or(10),
+            jwt_secret,
+            jwt_ttl_secs: env_i64("JWT_TTL_SECS").unwrap_or(3600),
+            refresh_ttl_secs: env_i64("REFRESH_TTL_SECS").unwrap_or(60 * 60 * 24 * 30),
+            cors_origins: env_string("CORS_ORIGINS")
+                .map(|v| {
+                    v.split(',')
+                        .map(str::trim)
+                        .filter(|s| !s.is_empty())
+                        .map(String::from)
+                        .collect()
+                })
+                .unwrap_or_else(|| vec!["*".into()]),
+            log_filter: env_string("RUST_LOG")
+                .unwrap_or_else(|| "info,tower_http=debug,sqlx=warn".into()),
+            storage_dir: env_string("STORAGE_DIR").unwrap_or_else(|| "./storage".into()),
+        })
+    }
+}
+
+fn env_string(key: &'static str) -> Option<String> {
+    env::var(key).ok().filter(|v| !v.trim().is_empty())
+}
+
+fn env_u32(key: &'static str) -> Option<u32> {
+    env_string(key).and_then(|v| v.parse().ok())
+}
+
+fn env_i64(key: &'static str) -> Option<i64> {
+    env_string(key).and_then(|v| v.parse().ok())
+}

@@ -1,0 +1,32 @@
+[package]
+name = "clarituz-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "clarituz-api"
+path = "src/main.rs"
+
+[dependencies]
+clarituz-domain.workspace = true
+clarituz-application.workspace = true
+clarituz-infrastructure.workspace = true
+clarituz-shared.workspace = true
+tokio.workspace = true
+tokio-stream = { version = "0.1", features = ["sync"] }
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+hyper.workspace = true
+sqlx.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+rust_decimal.workspace = true
+uuid.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+clap.workspace = true
+dotenvy.workspace = true

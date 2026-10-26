@@ -1,0 +1,26 @@
+[package]
+name = "clarituz-infrastructure"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+clarituz-domain.workspace = true
+clarituz-application.workspace = true
+clarituz-shared.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+chrono-tz.workspace = true
+rust_decimal.workspace = true
+uuid.workspace = true
+async-trait.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+argon2.workspace = true
+jsonwebtoken.workspace = true
+sha2.workspace = true
+hex.workspace = true
+subtle.workspace = true

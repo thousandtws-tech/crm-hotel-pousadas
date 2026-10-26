@@ -1,0 +1,18 @@
+[package]
+name = "clarituz-shared"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+chrono-tz.workspace = true
+rust_decimal.workspace = true
+tracing.workspace = true
+dotenvy.workspace = true
+
+[dev-dependencies]
+rust_decimal_macros = "1"

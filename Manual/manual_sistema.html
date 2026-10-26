@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Manual do Sistema — Pousada Espírito do Mar</title>
+<style>
+  :root {
+    --azul: #12304a;
+    --azul-2: #1e4a6e;
+    --dourado: #b08d57;
+    --dourado-fundo: #f5efe5;
+    --tinta: #22303f;
+    --cinza: #68798a;
+    --cinza-claro: #94a4b3;
+    --fundo-caixa: #f6f8fa;
+    --borda: #dce4ec;
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: "Segoe UI", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  @page { size: A4; margin: 16mm 16mm 20mm 16mm; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: var(--sans);
+    color: var(--tinta);
+    font-size: 10pt;
+    line-height: 1.62;
+    margin: 0;
+  }
+  strong { color: #16283a; }
+  /* ---------- capa ---------- */
+  .capa {
+    height: 297mm;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    page-break-after: always;
+    background:
+      radial-gradient(ellipse 90% 55% at 50% -5%, rgba(176,141,87,.28), transparent 60%),
+      linear-gradient(165deg, #0d2135 0%, #12304a 48%, #1e4a6e 100%);
+    color: #fff;
+    margin: -16mm -16mm -20mm;
+    padding: 26mm 22mm 20mm;
+    position: relative;
+  }
+  .capa .capa-logo img { width: 72mm; display: block; margin: 0 auto; }
+  .capa .kicker {
+    font-size: 10pt; letter-spacing: .42em; text-transform: uppercase;
+    color: #cbb083; margin-top: 10mm;
+  }
+  .capa h1 {
+    font-family: var(--serif); font-weight: 400;
+    font-size: 38pt; margin: 4mm 0 5mm; letter-spacing: .01em;
+  }
+  .capa .regua { width: 26mm; height: 2px; background: var(--dourado); margin: 0 auto 6mm; }
+  .capa h2 { font-size: 13.5pt; font-weight: 400; color: #cfdae4; margin: 0 0 0; max-width: 140mm; line-height: 1.5; }
+  .capa h2::before { display: none; }
+  .capa .capa-meio { margin: auto 0; }
+  .capa .faixa {
+    font-size: 10pt; color: #b9c8d6; letter-spacing: .04em; line-height: 1.9;
+    max-width: 150mm; border-top: 1px solid rgba(255,255,255,.18);
+    padding-top: 6mm; margin-bottom: 20mm;
+  }
+  .capa .faixa b { color: #e6dcc7; font-weight: 600; }
+  .capa .meta {
+    position: absolute; bottom: 14mm; left: 22mm; right: 22mm;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    border-top: 1px solid rgba(255,255,255,.2); padding-top: 5mm;
+    font-size: 8.8pt; color: #9fb4c6; text-align: left;
+  }
+  .capa .meta .mi { line-height: 1.5; }
+  .capa .meta .mi span { display: block; text-transform: uppercase; letter-spacing: .14em; font-size: 7pt; color: #7d93a6; margin-bottom: .6mm; }
+  .capa .meta .mi.dir { text-align: right; }
+  /* ---------- conteúdo ---------- */
+  .conteudo { padding: 0 1mm; }
+  h1.sec {
+    font-family: var(--serif); font-weight: 400;
+    font-size: 19.5pt; color: var(--azul);
+    position: relative; padding-bottom: 3mm; margin: 7mm 0 5mm;
+    border-bottom: 1px solid var(--borda);
+    page-break-after: avoid;
+  }
+  h1.sec::after {
+    content: ""; position: absolute; left: 0; bottom: -1px;
+    width: 24mm; border-bottom: 2.5px solid var(--dourado);
+  }
+  h1.sec .num { color: var(--dourado); margin-right: 3.5mm; font-size: 15pt; }
+  h2 {
+    font-size: 12pt; color: var(--azul); margin: 6mm 0 2.5mm; font-weight: 600;
+    page-break-after: avoid;
+  }
+  h2::before { content: ""; display: inline-block; width: 3mm; height: 3mm; background: var(--dourado); border-radius: 1px; margin-right: 2.5mm; }
+  h3 { font-size: 10.5pt; color: var(--azul-2); margin: 4.5mm 0 1.8mm; page-break-after: avoid; }
+  p { margin: 0 0 2.8mm; }
+  ul, ol { margin: 1.5mm 0 3.5mm; padding-left: 5.5mm; }
+  li { margin-bottom: 1.6mm; }
+  li::marker { color: var(--dourado); }
+  .pagina { height: 7mm; }
+  /* ---------- caixas ---------- */
+  .caixa {
+    border-radius: 5px; padding: 3.4mm 4.5mm; margin: 3.5mm 0;
+    page-break-inside: avoid;
+    font-size: 9.7pt; border: 1px solid transparent;
+  }
+  .caixa .tag {
+    display: inline-block; font-weight: 700; font-size: 7.6pt; letter-spacing: .1em;
+    padding: .7mm 2.6mm; border-radius: 3px; margin-bottom: 1.8mm; text-transform: uppercase;
+  }
+  .caixa ul { margin-bottom: 0; }
+  .dica { background: #f0f7f1; border-color: #cfe3d4; }
+  .dica .tag { background: #3d8b4f; color: #fff; }
+  .atencao { background: #fdf6ea; border-color: #efe0c0; }
+  .atencao .tag { background: #b57e17; color: #fff; }
+  .regra { background: #f1f5f9; border-color: #d6e0ea; }
+  .regra .tag { background: var(--azul-2); color: #fff; }
+  /* ---------- passos ---------- */
+  .passos { counter-reset: passo; margin: 3.5mm 0 4mm; position: relative; }
+  .passos::before {
+    content: ""; position: absolute; left: 3.5mm; top: 5mm; bottom: 5mm;
+    width: 1px; background: var(--borda);
+  }
+  .passo {
+    display: flex; gap: 3.5mm; margin-bottom: 2.6mm; page-break-inside: avoid;
+    position: relative;
+  }
+  .passo::before {
+    counter-increment: passo; content: counter(passo);
+    min-width: 7mm; height: 7mm; border-radius: 50%;
+    background: var(--azul); color: #fff; font-weight: 700; font-size: 9.5pt;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    box-shadow: 0 0 0 1.6mm #fff;
+  }
+  .passo > div { flex: 1; padding-top: 1.1mm; }
+  /* ---------- figuras ---------- */
+  figure { margin: 4.5mm 0; page-break-inside: avoid; text-align: center; }
+  figure img {
+    max-width: 100%; border: 1px solid var(--borda); border-radius: 7px;
+    box-shadow: 0 3px 14px rgba(18,48,74,.10);
+  }
+  figcaption { font-size: 8.6pt; color: var(--cinza); margin-top: 2mm; letter-spacing: .02em; }
+  /* ---------- tabelas ---------- */
+  table.ref {
+    width: 100%; border-collapse: collapse; margin: 3.5mm 0; font-size: 9.4pt;
+    border-top: 2px solid var(--azul);
+  }
+  table.ref th {
+    background: var(--azul); color: #fff; text-align: left; padding: 2.2mm 3mm;
+    font-size: 8.2pt; text-transform: uppercase; letter-spacing: .08em; font-weight: 600;
+  }
+  table.ref td { border: none; border-bottom: 1px solid var(--borda); padding: 2.2mm 3mm; vertical-align: top; }
+  table.ref tr:nth-child(even) td { background: #f8fafc; }
+  /* ---------- sumário ---------- */
+  .sumario { page-break-after: always; padding-top: 2mm; }
+  .sumario h1 {
+    font-family: var(--serif); font-weight: 400; font-size: 26pt; color: var(--azul);
+    margin: 0 0 2mm;
+  }
+  .sumario .legenda { font-size: 9pt; color: var(--cinza); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 5mm; }
+  .sumario ol { list-style: none; padding: 0; counter-reset: toc; }
+  .sumario li {
+    padding: 1.7mm 0; border-bottom: 1px solid #eef2f6;
+    display: flex; font-size: 10.3pt; align-items: baseline;
+  }
+  .sumario li:not(.sub) { counter-increment: toc; }
+  .sumario li::before {
+    content: counter(toc, decimal-leading-zero); color: var(--dourado);
+    font-family: var(--serif); font-size: 11.5pt; width: 10mm; flex-shrink: 0;
+  }
+  .sumario .sub { padding-left: 10mm; font-size: 9.3pt; color: #5a6b7b; border-bottom: none; padding-top: .5mm; padding-bottom: .5mm; }
+  .sumario .sub::before { content: "–"; color: var(--cinza-claro); font-family: var(--sans); font-size: 9.3pt; }
+  .sumario a { color: inherit; text-decoration: none; }
+  /* ---------- misc ---------- */
+  .kbd {
+    display: inline-block; border: 1px solid #b9c4cf; border-bottom-width: 2px;
+    border-radius: 4px; background: #f6f8fa; padding: 0 1.8mm; font-size: 8.6pt;
+    font-family: Consolas, monospace; color: #37485a;
+  }
+  .btn {
+    display: inline-block; background: var(--azul); color: #fff; border-radius: 4px;
+    padding: .5mm 2.6mm; font-size: 8.8pt; font-weight: 600; letter-spacing: .01em;
+    vertical-align: baseline;
+  }
+  .chip { display:inline-block; border-radius: 10px; padding: .2mm 2.2mm; font-size: 8.2pt; font-weight: 700; color:#fff; }
+  .chip.v { background: #1c7c3f; } .chip.a { background: #c9a227; color: #46380b; }
+  .chip.z { background: #4f8fce; } .chip.r { background: #c04545; }
+  .duas { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+  .lead { font-size: 11pt; color: #40536a; line-height: 1.6; }
+  .pequena { font-size: 8.8pt; color: var(--cinza); }
+  .faq-item {
+    page-break-inside: avoid; margin-bottom: 3.5mm;
+    background: var(--fundo-caixa); border-left: 2.5px solid var(--dourado);
+    border-radius: 0 5px 5px 0; padding: 2.8mm 4mm;
+  }
+  .faq-item p.per { font-weight: 700; color: var(--azul); margin-bottom: 1.2mm; }
+  .faq-item p:last-child { margin-bottom: 0; }
+  .rodape {
+    font-size: 8.5pt; color: var(--cinza); text-align: center; margin-top: 10mm;
+    border-top: 1px solid var(--borda); padding-top: 4mm; letter-spacing: .04em;
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== CAPA ==================== -->
+<div class="capa">
+  <div class="capa-logo"><img src="img/logo-pousada-clara.svg" alt="Pousada Espírito do Mar"></div>
+  <div class="capa-meio">
+    <div class="kicker">Manual Operacional</div>
+    <h1>Manual do Sistema</h1>
+    <div class="regua"></div>
+    <h2>Gestão completa da sua pousada — guia prático do dia a dia para toda a equipe</h2>
+  </div>
+  <div class="faixa">
+    Reservas <b>·</b> Check-in e Check-out <b>·</b> Hóspedes e FNRH <b>·</b>
+    Frigobar e Estoque <b>·</b> Financeiro <b>·</b> Impressoras <b>·</b> Tempo real
+  </div>
+  <div class="meta">
+    <div class="mi"><span>Versão</span>2.0 — outubro de 2026</div>
+    <div class="mi"><span>Público</span>Equipe da pousada</div>
+    <div class="mi dir"><span>Documento</span>Uso interno</div>
+  </div>
+</div>
+
+<!-- ==================== SUMÁRIO ==================== -->
+<div class="sumario">
+  <h1>Sumário</h1>
+  <div class="legenda">Guia de referência do sistema</div>
+  <ol>
+    <li><a href="#sec1">Conhecendo o sistema</a></li>
+    <li><a href="#sec2">Entrando e saindo (login)</a></li>
+    <li><a href="#sec3">A tela principal: menu, busca e notificações</a></li>
+    <li><a href="#sec4">Um dia de trabalho com o sistema</a></li>
+    <li><a href="#sec5">Home — o painel de visão geral</a></li>
+    <li><a href="#sec6">Clientes</a></li>
+    <li class="sub">Cadastrar, editar, foto, documentos e relatório</li>
+    <li><a href="#sec7">Acomodações</a></li>
+    <li class="sub">Tipos, acomodações, quartos físicos e tarifas</li>
+    <li><a href="#sec8">Estacionamento</a></li>
+    <li><a href="#sec9">Estoque</a></li>
+    <li class="sub">Itens, categorias, entrada, saída e movimentações</li>
+    <li><a href="#sec10">Frigobar</a></li>
+    <li><a href="#sec11">Reservas — o coração do sistema</a></li>
+    <li class="sub">Nova reserva, check-in, acompanhantes, FNRH, consumo e check-out</li>
+    <li><a href="#sec12">Pagamentos e comprovantes</a></li>
+    <li><a href="#sec13">Financeiro</a></li>
+    <li><a href="#sec14">Pousada / Hotel — dados e impressoras</a></li>
+    <li><a href="#sec15">Administrador — funcionários e histórico</a></li>
+    <li><a href="#sec16">Notificações e tempo real</a></li>
+    <li><a href="#sec17">O site da pousada</a></li>
+    <li><a href="#sec18">Perguntas frequentes do dia a dia</a></li>
+    <li><a href="#sec19">Suporte</a></li>
+  </ol>
+</div>
+
+<div class="conteudo">
+
+<!-- ==================== 1 ==================== -->
+<h1 class="sec" id="sec1"><span class="num">1</span>Conhecendo o sistema</h1>
+<p class="lead">O INNJOY é o sistema de gestão da pousada. Ele reúne em um só lugar tudo o que a
+recepção e a administração usam no dia a dia — sem papel, sem planilhas soltas e sem caderno
+de reservas.</p>
+
+<p>O sistema tem <strong>duas partes</strong>:</p>
+<table class="ref">
+  <tr><th style="width:35%">Parte</th><th>Para quem e para quê</th></tr>
+  <tr>
+    <td><strong>Painel de gestão</strong><br>(o sistema interno)</td>
+    <td>Para a equipe da pousada. É onde você cuida de reservas, hóspedes, estoque, frigobar, financeiro e funcionários. Este manual explica essa parte em detalhes.</td>
+  </tr>
+  <tr>
+    <td><strong>Site da pousada</strong><br>(a página pública)</td>
+    <td>Para os hóspedes. Mostra as acomodações, galeria de fotos, experiências e permite que o interessado envie um pedido de cotação de estadia (seção 17).</td>
+  </tr>
+</table>
+
+<p>Tudo acontece dentro do navegador de internet (Chrome, Edge etc.) — não é preciso instalar
+nada no computador da recepção.</p>
+
+<h2>O que há de novo nesta versão</h2>
+<ul>
+  <li><strong>Painel “Home”</strong> com a situação da pousada em tempo real: hóspedes na casa, check-ins e check-outs do dia e acomodações livres.</li>
+  <li><strong>Notificações ao vivo</strong>: quando alguém cria uma reserva, faz check-in ou check-out, todos os computadores conectados avisam na hora pelo sino.</li>
+  <li><strong>Busca geral</strong> (<span class="kbd">Ctrl</span> + <span class="kbd">K</span>): encontre clientes, reservas, acomodações, itens de estoque e funcionários em um único campo.</li>
+  <li><strong>Registro de hóspedes completo</strong>: acompanhantes, documentos com foto/scan e emissão da <strong>FNRH</strong> (ficha de registro de hóspedes exigida por lei).</li>
+  <li><strong>Comprovantes de pagamento</strong> para baixar e imprimir no check-out.</li>
+  <li><strong>Impressoras por setor</strong>: pedidos de consumo saem automaticamente na impressora certa (cozinha, bar, recepção).</li>
+  <li><strong>Módulo Financeiro</strong> com recebido x previsto, gráficos e itens mais vendidos.</li>
+  <li><strong>Funcionários com níveis de acesso</strong> (Recepção, Gerente, Administrador) e <strong>histórico de alterações</strong> (auditoria).</li>
+</ul>
+
+<!-- ==================== 2 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec2"><span class="num">2</span>Entrando e saindo (login)</h1>
+
+<p>Abra o navegador e acesse o endereço do sistema (fornecido pela equipe técnica). Você verá a
+tela de entrada:</p>
+
+<figure>
+  <img src="img/01-login.png" alt="Tela de login">
+  <figcaption>Figura 1 — Tela de acesso ao sistema.</figcaption>
+</figure>
+
+<div class="passos">
+  <div class="passo"><div>Digite seu <strong>Login</strong> no primeiro campo.</div></div>
+  <div class="passo"><div>Digite sua <strong>Senha</strong> no segundo campo.</div></div>
+  <div class="passo"><div>Clique em <span class="btn">Acessar</span>. Pronto — você entra na tela Home.</div></div>
+</div>
+
+<p>Para sair, clique no botão <span class="btn">Sair</span> no canto superior direito da tela.
+Sempre saia ao final do seu turno, principalmente em computador compartilhado.</p>
+
+<div class="caixa regra"><span class="tag">Níveis de acesso</span><br>
+Cada funcionário entra com login próprio, criado na tela <strong>Administrador</strong> (seção 15).
+O nível define o que a pessoa pode ver e fazer:
+<ul>
+  <li><strong>Recepção</strong> — usa o dia a dia: clientes, reservas, estoque, frigobar, estacionamento e acomodações.</li>
+  <li><strong>Gerente</strong> — recepção + liberações gerenciais (ex.: cancelamento de reserva em estadia).</li>
+  <li><strong>Administrador</strong> — acesso total: financeiro, pagamentos, dados da pousada, funcionários e histórico.</li>
+</ul>
+</div>
+
+<div class="caixa atencao"><span class="tag">Atenção</span><br>
+Login e senha são <strong>pessoais e intransferíveis</strong>. Cada ação no sistema fica
+registrada com o nome de quem fez (veja Auditoria, seção 15) — não compartilhe sua senha.
+</div>
+
+<!-- ==================== 3 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec3"><span class="num">3</span>A tela principal: menu, busca e notificações</h1>
+
+<p>Depois do login, toda a navegação acontece pela <strong>barra lateral escura</strong> à
+esquerda e pela <strong>barra superior branca</strong>.</p>
+
+<figure>
+  <img src="img/02-dashboard.png" alt="Tela Home">
+  <figcaption>Figura 2 — Visão geral da tela principal (Home).</figcaption>
+</figure>
+
+<h2>Menu lateral (esquerda)</h2>
+<table class="ref">
+  <tr><th>Item do menu</th><th>O que você faz ali</th></tr>
+  <tr><td><strong>Home</strong></td><td>Resumo do dia: hóspedes, check-ins/outs, acomodações livres e ocupadas.</td></tr>
+  <tr><td><strong>Clientes</strong></td><td>Cadastro de hóspedes, foto, documentos e relatório.</td></tr>
+  <tr><td><strong>Estacionamento</strong></td><td>Vagas e vínculo com acomodações.</td></tr>
+  <tr><td><strong>Acomodações</strong></td><td>Quartos/chalés, tipos, preços e quartos físicos.</td></tr>
+  <tr><td><strong>Estoque</strong></td><td>Produtos, entradas, saídas e movimentações.</td></tr>
+  <tr><td><strong>Frigobar</strong></td><td>Frigobares das acomodações e reposição de itens.</td></tr>
+  <tr><td><strong>Reservas</strong></td><td>Nova reserva, check-in, consumo, check-out, FNRH.</td></tr>
+  <tr><td><strong>Financeiro</strong> *</td><td>Recebido x previsto, gráficos e vendas.</td></tr>
+  <tr><td><strong>Pagamentos</strong> *</td><td>Comprovantes e formas de pagamento.</td></tr>
+  <tr><td><strong>Pousada / Hotel</strong> *</td><td>Dados da hospedagem, logo e impressoras.</td></tr>
+  <tr><td><strong>Administrador</strong> *</td><td>Funcionários, permissões e histórico.</td></tr>
+</table>
+<p class="pequena">* Itens marcados só aparecem para quem tem nível Gerente ou Administrador.</p>
+
+<h2>Barra superior</h2>
+<ul>
+  <li><strong>Busca geral</strong> — digite um nome, CPF, número de reserva ou acomodação.
+      Atalho: <span class="kbd">Ctrl</span> + <span class="kbd">K</span>. Os resultados aparecem
+      agrupados (Clientes, Reservas, Acomodações, Funcionários, Estoque); use as setas
+      <span class="kbd">↑</span> <span class="kbd">↓</span> e <span class="kbd">Enter</span> para abrir.</li>
+  <li><strong>Sino de notificações</strong> — avisa quando algo importante acontece
+      (nova reserva, check-in/out, cancelamento). O número vermelho mostra quantas não foram lidas.</li>
+  <li><strong>AO VIVO</strong> — bolinha verde = o sistema está conectado e atualiza sozinho.
+      Se algo mudar em outro computador, a sua tela já mostra a novidade sem precisar atualizar.</li>
+  <li><strong>Sair</strong> — encerra sua sessão.</li>
+</ul>
+
+<figure>
+  <img src="img/03-busca.png" alt="Busca geral">
+  <figcaption>Figura 3 — Busca geral: um campo encontra tudo.</figcaption>
+</figure>
+
+<figure>
+  <img src="img/04-notificacoes.png" alt="Painel de notificações">
+  <figcaption>Figura 4 — Sino de notificações aberto. Clique em uma notificação para ir direto à reserva.</figcaption>
+</figure>
+
+<!-- ==================== 4 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec4"><span class="num">4</span>Um dia de trabalho com o sistema</h1>
+
+<p class="lead">Antes dos detalhes de cada tela, veja como o sistema acompanha a rotina da
+recepção. Se você entender este roteiro, entendeu o sistema.</p>
+
+<table class="ref">
+  <tr><th>Momento</th><th>O que acontece na pousada</th><th>O que você faz no sistema</th></tr>
+  <tr>
+    <td><strong>Início do turno</strong></td>
+    <td>Ver quem chega e quem sai hoje.</td>
+    <td>Abra a <strong>Home</strong>: os cartões “Check-in pendentes” e “Check-out pendentes” mostram a agenda do dia.</td>
+  </tr>
+  <tr>
+    <td><strong>Hóspede chegou</strong></td>
+    <td>Recepção confere documentos e recebe o hóspede.</td>
+    <td>Abra a reserva, clique em <strong>Realizar Check-in</strong>, registre acompanhantes e emita a <strong>FNRH</strong>.</td>
+  </tr>
+  <tr>
+    <td><strong>Durante a estadia</strong></td>
+    <td>Hóspede consome frigobar, lavanderia, serviços.</td>
+    <td>Na reserva, lance em <strong>Itens consumidos</strong> (baixa automática do frigobar) ou <strong>Consumo adicional</strong>.</td>
+  </tr>
+  <tr>
+    <td><strong>Ligação/WhatsApp pedindo reserva</strong></td>
+    <td>Novo hóspede quer cotar datas.</td>
+    <td><strong>Reservas → Nova Reserva</strong>: informe o período, clique em <strong>Verificar disponibilidade</strong> e cadastre.</td>
+  </tr>
+  <tr>
+    <td><strong>Hóspede saindo</strong></td>
+    <td>Conferir consumo e receber o pagamento.</td>
+    <td>Na reserva, <strong>Realizar Check-out</strong>: confira o resumo, aplique desconto se houver, escolha a forma de pagamento e <strong>Confirme o pagamento</strong>. Entregue/imprima o comprovante.</td>
+  </tr>
+  <tr>
+    <td><strong>Final do dia/mês</strong></td>
+    <td>Fechamento de caixa e conferência.</td>
+    <td><strong>Pagamentos</strong> lista os comprovantes emitidos; <strong>Financeiro</strong> mostra o recebido do dia/mês e o previsto.</td>
+  </tr>
+</table>
+
+<div class="caixa dica"><span class="tag">Dica</span><br>
+O sistema <strong>atualiza sozinho</strong>. Se dois recepcionistas estiverem trabalhando ao
+mesmo tempo, o que um faz aparece na tela do outro automaticamente — inclusive o aviso no sino.</div>
+
+<!-- ==================== 5 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec5"><span class="num">5</span>Home — o painel de visão geral</h1>
+
+<p>A Home é a primeira tela após o login — é o “quadro de avisos” da pousada.</p>
+
+<figure>
+  <img src="img/02-dashboard.png" alt="Dashboard">
+  <figcaption>Figura 5 — Home: cartões de resumo e agenda do dia.</figcaption>
+</figure>
+
+<h2>Cartões do topo</h2>
+<ul>
+  <li><strong>Hóspedes</strong> — quantos hóspedes estão na pousada neste momento.</li>
+  <li><strong>Acomodações</strong> — quantas estão livres agora.</li>
+  <li><strong>Check-in realizados</strong> e <strong>Check-out realizados</strong> — quantos já foram feitos hoje.</li>
+</ul>
+
+<h2>Cartões de atalho (coluna esquerda)</h2>
+<ul>
+  <li><strong>Últimas reservas</strong> — reservas criadas recentemente.</li>
+  <li><strong>Check-in pendentes</strong> — quem deve chegar e ainda não fez check-in.</li>
+  <li><strong>Check-out pendentes</strong> — quem está na casa e tem saída prevista.</li>
+  <li><strong>Acomodações disponíveis / ocupadas</strong> — situação atual do mapa de quartos.</li>
+</ul>
+<p>Clique em <span class="btn">Visualizar &gt;&gt;</span> dentro de cada cartão para ir direto à
+lista correspondente.</p>
+
+<h2>Reservas nos últimos 7 dias</h2>
+<p>Tabela com as reservas recentes: acomodação, cliente, período e situação
+(<span class="chip a">Pendente</span> <span class="chip z">Iniciado</span>
+<span class="chip v">Finalizado</span> <span class="chip r">Cancelado</span>).
+O ícone de olho em <strong>Ação</strong> abre a reserva completa.</p>
+
+<!-- ==================== 6 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec6"><span class="num">6</span>Clientes</h1>
+
+<p>Aqui fica o cadastro de todos os hóspedes. É o primeiro lugar para procurar quando alguém
+liga querendo reservar — a reserva sempre se liga a um cliente cadastrado.</p>
+
+<figure>
+  <img src="img/10-clientes.png" alt="Lista de clientes">
+  <figcaption>Figura 6 — Lista de clientes com busca, status e ações.</figcaption>
+</figure>
+
+<h2>Pesquisar um cliente</h2>
+<div class="passos">
+  <div class="passo"><div>Digite o nome ou CPF no campo <strong>“Buscar por nome ou CPF”</strong> — a lista filtra sozinha.</div></div>
+  <div class="passo"><div>Marque <strong>“Somente ativos”</strong> para esconder cadastros desativados.</div></div>
+</div>
+
+<h2>Cadastrar cliente</h2>
+<div class="passos">
+  <div class="passo"><div>Clique em <span class="btn">Cadastrar Cliente</span>.</div></div>
+  <div class="passo"><div>Preencha os dados básicos: <strong>Nome completo, CPF, Data de nascimento, E-mail, Telefone, Estado e Cidade</strong>. Os campos marcados com * são obrigatórios.</div></div>
+  <div class="passo"><div>Abaixo, o bloco <strong>“Dados complementares (FNRH)”</strong> (nacionalidade, naturalidade, profissão e endereço completo) agiliza a ficha de registro — preencha quando o hóspede informar. Se não souber na hora, pode deixar para depois.</div></div>
+  <div class="passo"><div>Clique em <span class="btn">Salvar</span> (ícone de disquete).</div></div>
+</div>
+
+<figure>
+  <img src="img/11-cliente-form.png" alt="Cadastro de cliente">
+  <figcaption>Figura 7 — Ficha de cadastro do cliente.</figcaption>
+</figure>
+
+<h2>Foto do cliente</h2>
+<p>Dentro do cadastro, a área <strong>“Foto do cliente”</strong> permite:</p>
+<ul>
+  <li><strong>Tirar foto na hora</strong> (ícone de câmera) — abre a webcam do computador dentro de uma moldura; posicione o rosto/documento e confirme.</li>
+  <li><strong>Enviar um arquivo</strong> (ícone de upload) — escolha uma imagem já salva no computador.</li>
+  <li><strong>Remover</strong> a foto atual (ícone de lixeira).</li>
+</ul>
+
+<h2>Editar, ativar e desativar</h2>
+<ul>
+  <li><strong>Editar</strong> — clique no lápis amarelo na linha do cliente, altere e salve.</li>
+  <li><strong>Ativo/Inativo</strong> — clique no selo verde/vermelho da coluna <strong>Status</strong>
+      para desativar (vermelho) ou reativar (verde). <em>Desativar não apaga</em>: o histórico
+      e as reservas do cliente continuam guardados.</li>
+</ul>
+
+<h2>Documentos e fichas FNRH</h2>
+<p>Clique no ícone azul de <strong>carteira de identidade</strong> na linha do cliente para abrir
+o arquivo digital do hóspede:</p>
+<ul>
+  <li><strong>Documentos</strong> — cadastre RG, CNH, passaporte etc. (tipo, número, emissor e validade) e anexe o <strong>scan/foto do documento</strong> pela câmera ou por arquivo.</li>
+  <li><strong>Fichas de registro emitidas (FNRH)</strong> — todas as fichas já emitidas para esse cliente, com data e motivo da viagem. O ícone de impressora reimprime qualquer ficha.</li>
+</ul>
+
+<figure>
+  <img src="img/12-cliente-documentos.png" alt="Documentos do cliente">
+  <figcaption>Figura 8 — Arquivo digital do hóspede: documentos e fichas FNRH.</figcaption>
+</figure>
+
+<h2>Relatório de clientes</h2>
+<p>Clique em <span class="btn">Relatório de clientes</span> para baixar um arquivo
+<strong>CSV</strong> (abre no Excel) com a lista que estiver na tela — respeitando a busca e o
+filtro “somente ativos”. Útil para malas diretas e conferência.</p>
+
+<!-- ==================== 7 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec7"><span class="num">7</span>Acomodações</h1>
+
+<p>Acomodações são os quartos, chalés e suítes da pousada. Cada uma tem <strong>tipo</strong>
+(categoria), <strong>valor da diária</strong>, <strong>capacidade</strong> e uma
+<strong>cor no calendário</strong>.</p>
+
+<figure>
+  <img src="img/20-acomodacoes.png" alt="Lista de acomodações">
+  <figcaption>Figura 9 — Lista de acomodações.</figcaption>
+</figure>
+
+<h2>Cadastrar o tipo (categoria) — faça primeiro</h2>
+<div class="passos">
+  <div class="passo"><div>Clique em <span class="btn">Tipo de acomodação</span>.</div></div>
+  <div class="passo"><div>Na janela que abre, digite o nome do tipo (ex.: “Standard”, “Luxo”, “Suíte Master”) e clique em <span class="btn">Cadastrar</span>.</div></div>
+  <div class="passo"><div>Na mesma janela você pode editar (lápis) ou ativar/desativar tipos existentes.</div></div>
+</div>
+
+<h2>Cadastrar acomodação</h2>
+<div class="passos">
+  <div class="passo"><div>Clique em <span class="btn">Acomodação</span>.</div></div>
+  <div class="passo"><div>Preencha: <strong>Nome, Número, Tipo, Valor (diária), Capacidade, Cor (calendário)</strong> e <strong>Descrição</strong>.</div></div>
+  <div class="passo"><div>Em <strong>“Vaga no estacionamento”</strong> você pode vincular uma ou mais vagas livres à acomodação (o hóspede ganha vaga garantida).</div></div>
+  <div class="passo"><div>Clique em <span class="btn">Salvar</span>.</div></div>
+</div>
+
+<figure>
+  <img src="img/23-acomodacao-form.png" alt="Cadastro de acomodação">
+  <figcaption>Figura 10 — Cadastro de acomodação.</figcaption>
+</figure>
+
+<h2>Quartos físicos e histórico de tarifas</h2>
+<p>Clique no ícone de <strong>olho</strong> na linha da acomodação para abrir os detalhes:</p>
+<ul>
+  <li><strong>Quartos físicos</strong> — quando a “acomodação” é, na prática, um conjunto de
+      unidades iguais (ex.: “Quarto Standard” com portas 103-A, 103-B…), cadastre os números
+      reais aqui. No check-in o sistema sugere a unidade física.</li>
+  <li><strong>Histórico de tarifas</strong> — toda mudança de valor da diária fica registrada
+      com “Vigente desde” e “Até”. Assim você sabe quanto a diária custava em qualquer época.</li>
+</ul>
+
+<figure>
+  <img src="img/21-acomodacao-detalhes.png" alt="Detalhes da acomodação">
+  <figcaption>Figura 11 — Detalhes: quartos físicos e histórico de tarifas.</figcaption>
+</figure>
+
+<figure>
+  <img src="img/22-tipos-acomodacao.png" alt="Tipos de acomodação">
+  <figcaption>Figura 12 — Janela de tipos de acomodação.</figcaption>
+</figure>
+
+<div class="caixa dica"><span class="tag">Dica</span><br>
+A <strong>cor do calendário</strong> escolhida no cadastro é a cor do cartão da reserva na tela
+de Reservas — dá para diferenciar chalé de suíte de longe.</div>
+
+<!-- ==================== 8 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec8"><span class="num">8</span>Estacionamento</h1>
+
+<p>Controle simples das vagas de carro da pousada.</p>
+
+<figure>
+  <img src="img/50-estacionamento.png" alt="Estacionamento">
+  <figcaption>Figura 13 — Vagas de estacionamento e seus vínculos.</figcaption>
+</figure>
+
+<div class="passos">
+  <div class="passo"><div><strong>Cadastrar vaga</strong> — digite o número/identificação no campo do topo e confirme.</div></div>
+  <div class="passo"><div><strong>Vincular a uma acomodação</strong> — na lista, escolha a acomodação no campo da coluna “Acomodação”. Vaga vinculada sai da lista de vagas livres do cadastro de acomodação.</div></div>
+  <div class="passo"><div><strong>Status</strong> — “Livre” aparece quando a vaga não está vinculada; o selo Ativo/Inativo liga e desliga a vaga.</div></div>
+  <div class="passo"><div><strong>Excluir</strong> — o ícone de lixeira remove a vaga (se não estiver em uso).</div></div>
+</div>
+
+<!-- ==================== 9 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec9"><span class="num">9</span>Estoque</h1>
+
+<p>O estoque controla tudo o que a pousada compra e vende: bebidas, alimentos, itens de
+higiene, limpeza. É dele que saem os itens do frigobar.</p>
+
+<figure>
+  <img src="img/30-estoque.png" alt="Estoque">
+  <figcaption>Figura 14 — Estoque: lista de itens com quantidades e preços.</figcaption>
+</figure>
+
+<h2>Categorias (faça primeiro)</h2>
+<p>Antes de cadastrar itens, crie as categorias em <span class="btn">Categorias</span>
+(ex.: Bebidas, Alimentos). Na janela de categorias também se escolhe a
+<strong>impressora do setor</strong> de cada categoria — é ela que diz onde o pedido de
+consumo será impresso (ver seção 14).</p>
+
+<figure>
+  <img src="img/34-categorias.png" alt="Categorias">
+  <figcaption>Figura 15 — Categorias de estoque e suas impressoras de setor.</figcaption>
+</figure>
+
+<h2>Adicionar item novo</h2>
+<div class="passos">
+  <div class="passo"><div>Clique em <span class="btn">Adicionar Item</span>.</div></div>
+  <div class="passo"><div>Informe <strong>Nome, Categoria, Valor unitário</strong> e <strong>Quantidade inicial</strong>.</div></div>
+  <div class="passo"><div>Salve. O item entra na lista com a quantidade inicial.</div></div>
+</div>
+
+<figure>
+  <img src="img/35-item-form.png" alt="Novo item">
+  <figcaption>Figura 16 — Cadastro de novo item de estoque.</figcaption>
+</figure>
+
+<h2>Dar entrada (compra chegou)</h2>
+<div class="passos">
+  <div class="passo"><div>Abra a aba <strong>“Adicionar Entrada”</strong>.</div></div>
+  <div class="passo"><div>Na linha do item, digite a quantidade que está entrando na coluna <strong>Adicionar</strong>. A coluna “Quantidade futura” já mostra como o saldo vai ficar.</div></div>
+  <div class="passo"><div>Clique em <span class="btn">Adicionar</span> no rodapé para confirmar tudo de uma vez.</div></div>
+</div>
+
+<h2>Dar saída (avaria, uso interno, perda)</h2>
+<div class="passos">
+  <div class="passo"><div>Abra a aba <strong>“Adicionar Saída”</strong>.</div></div>
+  <div class="passo"><div>Informe a quantidade a retirar e, se quiser, o <strong>Motivo</strong> (ex.: “vencido”, “uso da cozinha”).</div></div>
+  <div class="passo"><div>Clique em <span class="btn">Retirar</span>.</div></div>
+</div>
+
+<h2>Movimentações (rastreio)</h2>
+<p>A aba <strong>“Movimentações”</strong> é o extrato do estoque: cada entrada e saída com
+data/hora, item, tipo, quantidade, <strong>qual funcionário fez</strong> e o motivo.
+Se uma conta não bater, é aqui que você descobre por quê.</p>
+
+<figure>
+  <img src="img/33-estoque-movimentacoes.png" alt="Movimentações de estoque">
+  <figcaption>Figura 17 — Extrato de movimentações do estoque.</figcaption>
+</figure>
+
+<div class="caixa regra"><span class="tag">Importante</span><br>
+O consumo lançado na reserva <strong>não sai do estoque</strong> — sai do <strong>frigobar</strong>
+da acomodação. O frigobar é abastecido a partir do estoque (seção 10), então a sequência é:
+Estoque → Frigobar → Consumo do hóspede.</div>
+
+<!-- ==================== 10 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec10"><span class="num">10</span>Frigobar</h1>
+
+<p>Cada acomodação pode ter um frigobar cadastrado, com seus itens e quantidades. É o frigobar
+que alimenta o “Item consumido” lançado na reserva.</p>
+
+<figure>
+  <img src="img/40-frigobares.png" alt="Frigobares">
+  <figcaption>Figura 18 — Lista de frigobares.</figcaption>
+</figure>
+
+<h2>Cadastrar frigobar</h2>
+<div class="passos">
+  <div class="passo"><div>Clique em <span class="btn">Novo Frigobar</span>.</div></div>
+  <div class="passo"><div>Informe <strong>Modelo</strong>, <strong>Patrimônio</strong> (número do bem, se houver) e a <strong>Acomodação</strong> a que ele pertence.</div></div>
+  <div class="passo"><div>Salve.</div></div>
+</div>
+
+<h2>Abastecer o frigobar</h2>
+<div class="passos">
+  <div class="passo"><div>Clique no ícone de <strong>olho</strong> na linha do frigobar para abrir os detalhes.</div></div>
+  <div class="passo"><div>Em “Adicionar Item”, escolha a <strong>Categoria</strong>, depois o <strong>Item</strong> e a <strong>Quantidade</strong> — o sistema tira essa quantidade do estoque automaticamente.</div></div>
+  <div class="passo"><div>Confirme. O item passa a constar na tabela do frigobar com o valor unitário.</div></div>
+</div>
+
+<figure>
+  <img src="img/41-frigobar-detalhe.png" alt="Detalhes do frigobar">
+  <figcaption>Figura 19 — Detalhes do frigobar: reposição e saldo dos itens.</figcaption>
+</figure>
+
+<ul>
+  <li>Os botões <strong>+</strong> e <strong>−</strong> na linha do item ajustam a quantidade (o sistema repõe do estoque ou devolve).</li>
+  <li>A lixeira <strong>retira o item do frigobar</strong> e o devolve ao estoque.</li>
+  <li>O selo de <strong>Status</strong> ativa/desativa itens e o frigobar inteiro.</li>
+</ul>
+
+<!-- ==================== 11 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec11"><span class="num">11</span>Reservas — o coração do sistema</h1>
+
+<p>Aqui acontece o fluxo completo: <strong>reservar → check-in → consumo → check-out</strong>.
+A tela mostra as reservas como cartões coloridos — a cor é a cor escolhida no cadastro da
+acomodação.</p>
+
+<figure>
+  <img src="img/60-reservas.png" alt="Tela de reservas">
+  <figcaption>Figura 20 — Reservas em cartões. Os botões no topo filtram por situação.</figcaption>
+</figure>
+
+<h2>Filtrar e buscar</h2>
+<ul>
+  <li>Use os botões <span class="chip z" style="background:#6c757d">Todas</span>
+      <span class="chip a">Pendente</span> <span class="chip z">Iniciado</span>
+      <span class="chip v">Finalizado</span> <span class="chip r">Cancelado</span> para ver só um tipo.</li>
+  <li>A busca aceita <strong>nome do cliente, nome da acomodação ou número da reserva</strong>.</li>
+</ul>
+
+<div class="caixa regra"><span class="tag">O que significa cada situação</span><br>
+<span class="chip a">Pendente</span> reserva feita, hóspede ainda não chegou ·
+<span class="chip z">Iniciado</span> check-in feito, hóspede está na casa ·
+<span class="chip v">Finalizado</span> check-out feito, estadia encerrada e paga ·
+<span class="chip r">Cancelado</span> reserva cancelada
+</div>
+
+<h2>Cadastrar nova reserva</h2>
+<div class="passos">
+  <div class="passo"><div>Clique em <span class="btn">Nova Reserva</span>.</div></div>
+  <div class="passo"><div>Em <strong>Cliente</strong>, digite o nome ou CPF e escolha o cliente na lista que aparece. <em>Se o hóspede ainda não tem cadastro, cadastre-o antes em “Clientes”.</em></div></div>
+  <div class="passo"><div>Informe <strong>Entrada</strong> e <strong>Saída</strong> pretendidas.</div></div>
+  <div class="passo"><div>Clique em <span class="btn">Verificar disponibilidade</span> — o sistema mostra só as acomodações <strong>livres</strong> naquele período. <strong>Não existe risco de reserva dupla</strong>: se duas pessoas tentarem ao mesmo tempo, o sistema bloqueia a segunda.</div></div>
+  <div class="passo"><div>Escolha a <strong>Acomodação</strong>, informe a quantidade de <strong>Hóspedes</strong> e, se quiser, ajuste o <strong>Valor da diária</strong> (se deixar vazio, usa o preço cadastrado).</div></div>
+  <div class="passo"><div>Escreva <strong>Observações</strong> se houver (ex.: “aniversário”, “quarto silencioso”) e salve.</div></div>
+</div>
+
+<figure>
+  <img src="img/61-nova-reserva.png" alt="Nova reserva">
+  <figcaption>Figura 21 — Janela de nova reserva com verificação de disponibilidade.</figcaption>
+</figure>
+
+<p>A reserva nasce <span class="chip a">Pendente</span>. Clique em
+<span class="btn">Visualizar</span> no cartão para abrir a ficha completa dela.</p>
+
+<div class="pagina"></div>
+<h2>A ficha da reserva</h2>
+<p>Na ficha estão todos os dados: cliente, CPF, acomodação, número, valor da diária, período,
+quantidade de hóspedes e observação. No topo, os selos mostram a situação
+(check-in/check-out realizados ou pendentes) e os botões de ação mudam conforme a fase:</p>
+
+<table class="ref">
+  <tr><th>Fase</th><th>Botões disponíveis</th></tr>
+  <tr><td><span class="chip a">Pendente</span></td><td>Realizar Check-in · Cancelar reserva</td></tr>
+  <tr><td><span class="chip z">Iniciado</span></td><td>Realizar Check-out · Cancelar reserva · Dados do Check-in</td></tr>
+  <tr><td><span class="chip v">Finalizado</span></td><td>Dados do Check-in · Dados do Check-out (com comprovante)</td></tr>
+</table>
+
+<h2>Fazer o check-in (hóspede chegou)</h2>
+<div class="passos">
+  <div class="passo"><div>Abra a reserva e clique em <span class="btn">Realizar Check-in</span>. <em>O botão só libera na data de entrada (ou depois dela) — antes disso aparece o aviso “Não é possível realizar check-in antes da data de entrada”.</em></div></div>
+  <div class="passo"><div>Escolha <strong>Check-in Automático</strong> (usa a data e hora do computador) ou <strong>Check-in Manual</strong> (você digita data e hora — permitido com no máximo 1 dia de diferença).</div></div>
+  <div class="passo"><div>Clique em <span class="btn">Concluir Check-in</span>. A reserva passa a <span class="chip z">Iniciado</span> e já conta como hóspede na Home.</div></div>
+</div>
+
+<figure>
+  <img src="img/67-checkin-modal.png" alt="Modal de check-in">
+  <figcaption>Figura 22 — Opções de check-in: automático ou manual.</figcaption>
+</figure>
+
+<p>Depois do check-in, o botão vira <span class="btn">Dados do Check-in</span> — mostra quem
+fez e quando.</p>
+
+<h2>Registrar acompanhantes</h2>
+<p>No bloco <strong>“Registro de hóspedes”</strong>, informe quem está junto do titular:
+nome completo, nascimento, parentesco e documento. Clique em
+<span class="btn">Adicionar</span>. A lista fica salva na reserva e sai na FNRH.</p>
+
+<h2>Emitir a FNRH (ficha de registro)</h2>
+<p>A FNRH é a ficha de registro de hóspedes exigida para meios de hospedagem — é a “ficha de
+entrada” que o hóspede assina.</p>
+<div class="passos">
+  <div class="passo"><div>Na ficha da reserva, clique em <span class="btn">Emitir FNRH</span>.</div></div>
+  <div class="passo"><div>Informe o <strong>Motivo da viagem</strong> e a <strong>placa do veículo</strong> (se houver).</div></div>
+  <div class="passo"><div>Clique em <span class="btn">Emitir e imprimir</span>. A ficha abre pronta para imprimir e entregar ao hóspede assinar.</div></div>
+</div>
+<p>Todas as fichas emitidas ficam listadas em <strong>“Fichas FNRH emitidas”</strong> — com data,
+motivo e botão de reimpressão. Elas também ficam arquivadas no cadastro do cliente (seção 6).</p>
+
+<figure>
+  <img src="img/64-fnrh-modal.png" alt="Emitir FNRH">
+  <figcaption>Figura 23 — Emissão da ficha FNRH.</figcaption>
+</figure>
+
+<div class="pagina"></div>
+<h2>Lançar consumo durante a estadia</h2>
+
+<figure>
+  <img src="img/62-reserva-estadia.png" alt="Reserva em estadia">
+  <figcaption>Figura 24 — Ficha de uma reserva em estadia: registro de hóspedes e consumo.</figcaption>
+</figure>
+
+<p>Com a reserva <span class="chip z">Iniciado</span>, o bloco <strong>Consumo</strong> aceita
+dois tipos de lançamento:</p>
+
+<h3>Itens consumidos (frigobar)</h3>
+<div class="passos">
+  <div class="passo"><div>Escolha o <strong>Item do frigobar</strong> (a lista mostra a quantidade disponível), informe a <strong>Quantidade</strong> e confira o valor.</div></div>
+  <div class="passo"><div>Clique em <span class="btn">Adicionar</span>. O sistema dá baixa no frigobar e soma no consumo.</div></div>
+</div>
+<p>O botão <span class="btn">Reimprimir pedidos (setores)</span> manda a conta dos itens para as
+impressoras de setor (ex.: bar/cozinha) de novo — útil quando o pedido se perde ou a impressora falha.</p>
+
+<h3>Consumo adicional</h3>
+<div class="passos">
+  <div class="passo"><div>Escreva a <strong>Descrição</strong> (ex.: “Lavanderia”, “Tour de buggy”) e o <strong>Valor</strong>.</div></div>
+  <div class="passo"><div>Clique em <span class="btn">Adicionar</span>. O valor entra no total consumido.</div></div>
+</div>
+<p>O campo <strong>“Total consumido”</strong> no topo do bloco mostra itens + adicionais somados,
+em tempo real.</p>
+
+<div class="caixa atencao"><span class="tag">Atenção</span><br>
+Só é possível lançar consumo enquanto a reserva está
+<span class="chip z">Iniciado</span>. Depois do check-out, os valores fecham e não dá mais para
+alterar.</div>
+
+<div class="pagina"></div>
+<h2>Fazer o check-out (hóspede saindo)</h2>
+<div class="passos">
+  <div class="passo"><div>Abra a reserva e clique em <span class="btn">Realizar Check-out</span>.</div></div>
+  <div class="passo"><div>O sistema abre o <strong>resumo da conta</strong>: total de itens consumidos, valor do consumo, total de diárias, valor da estadia e adicionais lançados.</div></div>
+  <div class="passo"><div>Se precisar cobrar algo extra de última hora, marque <strong>“Custos Adicionais”</strong> e informe valor + descrição (o botão + cria mais linhas).</div></div>
+  <div class="passo"><div>Se houver cortesia, preencha o <strong>Desconto</strong> em R$ — o Valor Final recalcula na hora.</div></div>
+  <div class="passo"><div>Escolha a <strong>Forma de pagamento</strong> e clique em <span class="btn">Confirmar Pagamento</span>.</div></div>
+</div>
+
+<figure>
+  <img src="img/63-checkout-modal.png" alt="Modal de check-out">
+  <figcaption>Figura 25 — Fechamento da conta no check-out.</figcaption>
+</figure>
+
+<p>Pronto: a reserva passa a <span class="chip v">Finalizado</span>, a acomodação fica livre na
+Home e o <strong>comprovante</strong> já é gerado — ele pode ser impresso na hora pela
+impressora padrão e fica salvo na tela <strong>Pagamentos</strong> (seção 12).</p>
+
+<div class="caixa regra"><span class="tag">Regra do check-out antecipado</span><br>
+Se o hóspede sair <strong>antes</strong> da data prevista, o sistema cobra somente as diárias
+até o dia atual — nada de cobrar noites não dormidas.</div>
+
+<p>Em <span class="btn">Dados do Check-out</span> você vê quem fechou a conta, quando, e o
+resumo de valores — com botão para <strong>baixar o comprovante</strong>.</p>
+
+<figure>
+  <img src="img/69-dados-checkout.png" alt="Dados do check-out">
+  <figcaption>Figura 26 — Resumo do check-out realizado, com botão de comprovante.</figcaption>
+</figure>
+
+<div class="pagina"></div>
+<h2>Cancelar uma reserva</h2>
+<div class="passos">
+  <div class="passo"><div>Abra a reserva e clique em <span class="btn" style="background:#c04545">Cancelar reserva</span>.</div></div>
+  <div class="passo"><div>Confirme em <span class="btn">SIM</span> (ou <span class="btn">NÃO</span> para desistir).</div></div>
+  <div class="passo"><div><strong>Se a reserva já estiver em estadia</strong>, o sistema pede o login e a senha de um <strong>Administrador</strong> para confirmar — proteção contra cancelamento indevido de quem já está na casa.</div></div>
+</div>
+
+<figure>
+  <img src="img/65-cancelar-modal.png" alt="Cancelar reserva">
+  <figcaption>Figura 27 — Cancelamento exige senha de administrador quando o hóspede já está na casa.</figcaption>
+</figure>
+
+<!-- ==================== 12 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec12"><span class="num">12</span>Pagamentos e comprovantes</h1>
+
+<p>Tela para conferir e reemitir todos os comprovantes de pagamento gerados nos check-outs —
+é o “caixa” do dia.</p>
+
+<figure>
+  <img src="img/70-pagamentos.png" alt="Comprovantes de pagamento">
+  <figcaption>Figura 28 — Comprovantes emitidos.</figcaption>
+</figure>
+
+<ul>
+  <li><strong>Visualizar</strong> (olho) — abre o comprovante na tela.</li>
+  <li><strong>Baixar</strong> — salva o arquivo do comprovante no computador.</li>
+  <li><strong>Imprimir</strong> — manda direto para a impressora padrão (configurada na seção 14).</li>
+</ul>
+
+<h2>Formas de pagamento</h2>
+<p>Clique em <span class="btn">Formas de pagamento</span> para gerenciar o que aparece no
+check-out: Dinheiro, Pix, Cartão de Crédito, Cartão de Débito, Transferência. Dá para
+cadastrar novas, renomear e ativar/desativar — só as ativas aparecem na hora de cobrar.</p>
+
+<figure>
+  <img src="img/71-formas-pagamento.png" alt="Formas de pagamento">
+  <figcaption>Figura 29 — Cadastro de formas de pagamento.</figcaption>
+</figure>
+
+<figure>
+  <img src="img/72-comprovante.png" alt="Comprovante">
+  <figcaption>Figura 30 — Visualização de um comprovante.</figcaption>
+</figure>
+
+<!-- ==================== 13 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec13"><span class="num">13</span>Financeiro</h1>
+
+<p>O raio-x do dinheiro da pousada — aberto só para Gerente e Administrador.</p>
+
+<figure>
+  <img src="img/80-financeiro.png" alt="Financeiro">
+  <figcaption>Figura 31 — Financeiro: recebido x previsto e lucro por acomodação.</figcaption>
+</figure>
+
+<h2>Cartões do topo</h2>
+<ul>
+  <li><strong>Recebido</strong> (mês e ano) — dinheiro que já entrou (check-outs pagos).</li>
+  <li><strong>Previsto</strong> (mês e ano) — o que ainda deve entrar das reservas em aberto e em estadia.</li>
+</ul>
+
+<h2>Abas de análise</h2>
+<ul>
+  <li><strong>Reservas</strong> — lucro por acomodação (gráfico de barras) e a lista de reservas do período com situação e valor final. Filtre pelo intervalo de datas e clique em <span class="btn">Buscar</span>.</li>
+  <li><strong>Vendas</strong> — o que foi vendido como consumo: itens mais vendidos, lucro de vendas, recebido por dia e por forma de pagamento.</li>
+</ul>
+
+<div class="caixa dica"><span class="tag">Dica</span><br>
+Compare <strong>Recebido</strong> com <strong>Previsto</strong>: se o previsto está alto mas o
+recebido baixo, há reservas encerrando sem check-out feito — confira a aba “Iniciado” na tela
+de Reservas.</div>
+
+<!-- ==================== 14 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec14"><span class="num">14</span>Pousada / Hotel — dados e impressoras</h1>
+
+<p>Identidade da hospedagem dentro do sistema (aparece em comprovantes e fichas) e o painel
+das impressoras.</p>
+
+<figure>
+  <img src="img/90-estabelecimento.png" alt="Dados do estabelecimento">
+  <figcaption>Figura 32 — Dados, endereço e impressoras da pousada.</figcaption>
+</figure>
+
+<h2>Dados e endereço da hospedagem</h2>
+<p>Preencha CNPJ, razão social, e-mail, site, telefones e o endereço completo.
+Clique em <span class="btn">Gravar</span> em cada bloco. Esses dados saem impressos na FNRH e
+nos comprovantes.</p>
+
+<h2>Logo</h2>
+<p>Clique em <span class="btn">Alterar Logo</span> e envie a imagem da marca
+(PNG, JPG, WEBP ou SVG, até 2 MB). A logo aparece na barra lateral e na tela de login.</p>
+
+<h2>Impressoras por setor</h2>
+<p>A pousada pode ter várias impressoras — uma na recepção, uma no bar, uma na cozinha. O
+sistema decide sozinho onde imprimir cada coisa:</p>
+<ul>
+  <li><strong>Comprovantes</strong> saem sempre na impressora marcada como <strong>Padrão</strong>.</li>
+  <li><strong>Pedidos de consumo</strong> saem na impressora do <strong>setor da categoria do item</strong>
+      (configurada na janela Categorias do Estoque, seção 9) — pedido de bebida vai direto pro bar, sem ninguém precisar levar papel.</li>
+</ul>
+<div class="passos">
+  <div class="passo"><div>Clique em <span class="btn">Nova Impressora</span>.</div></div>
+  <div class="passo"><div>Informe <strong>Nome</strong>, <strong>Setor</strong>, <strong>IP : Porta</strong> da impressora na rede e marque se ela é a padrão de comprovantes.</div></div>
+  <div class="passo"><div>Use o botão de <strong>impressora</strong> na linha para mandar uma página de teste e conferir se está tudo certo.</div></div>
+</div>
+
+<!-- ==================== 15 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec15"><span class="num">15</span>Administrador — funcionários e histórico</h1>
+
+<p>Tela de quem gerencia a equipe no sistema (nível Administrador).</p>
+
+<figure>
+  <img src="img/91-funcionarios.png" alt="Funcionários">
+  <figcaption>Figura 33 — Cadastro e lista de funcionários.</figcaption>
+</figure>
+
+<h2>Cadastrar funcionário</h2>
+<div class="passos">
+  <div class="passo"><div>Preencha <strong>Nome completo, Data de nascimento, CPF</strong>.</div></div>
+  <div class="passo"><div>Escolha a <strong>Função</strong>: Recepção, Gerente ou Administrador — define o nível de acesso (seção 2).</div></div>
+  <div class="passo"><div>Crie o <strong>Login</strong> e a <strong>Senha</strong> que a pessoa vai usar para entrar.</div></div>
+  <div class="passo"><div>Salve. O funcionário aparece na lista ao lado e já pode entrar.</div></div>
+</div>
+
+<ul>
+  <li><strong>Editar</strong> (lápis) — corrige dados e redefine senha.</li>
+  <li><strong>Ativo/Inativo</strong> — desligue o acesso de quem saiu da equipe sem apagar o histórico. <em>Você não consegue desativar o próprio usuário logado.</em></li>
+</ul>
+
+<h2>Histórico de alterações (auditoria)</h2>
+<p>Clique em <span class="btn">Histórico de alterações</span> no topo para abrir a auditoria:
+quem fez o quê e quando, em qualquer tabela do sistema (criou, alterou, ativou, desativou).
+Filtre por <strong>tabela</strong>, <strong>ação</strong> e <strong>período</strong> e clique em
+<span class="btn">Buscar</span>.</p>
+
+<figure>
+  <img src="img/92-auditoria.png" alt="Auditoria">
+  <figcaption>Figura 34 — Auditoria: rastreio completo das ações da equipe.</figcaption>
+</figure>
+
+<!-- ==================== 16 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec16"><span class="num">16</span>Notificações e tempo real</h1>
+
+<p>O sistema trabalha <strong>ao vivo</strong>: quando a bolinha verde “AO VIVO” está acesa,
+tudo que acontece em qualquer computador aparece na sua tela na hora.</p>
+
+<ul>
+  <li><strong>Avisos instantâneos</strong> — um cartão surge no canto informando “Nova reserva”, “Check-in realizado”, “Reserva cancelada” etc.</li>
+  <li><strong>Sino</strong> — guarda o histórico dos avisos. O número vermelho mostra não lidas; clique para abrir o painel.</li>
+  <li><strong>Clicar na notificação</strong> leva direto à reserva relacionada. “Marcar todas como lidas” zera o contador.</li>
+  <li>Administradores podem <strong>apagar</strong> itens do histórico de notificações.</li>
+  <li>Se ficar “offline”, o sistema tenta se reconectar sozinho — os dados continuam salvos.</li>
+</ul>
+
+<!-- ==================== 17 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec17"><span class="num">17</span>O site da pousada</h1>
+
+<p>Além do painel interno, existe o <strong>site público</strong> — a vitrine da pousada para os
+hóspedes: apresentação, acomodações, estrutura, galeria de fotos, experiências, localização e
+contato.</p>
+
+<figure>
+  <img src="img/w3-reservar.png" alt="Site da pousada — reservar">
+  <figcaption>Figura 35 — Página “Reservar” do site: o hóspede pede cotação em 3 passos.</figcaption>
+</figure>
+
+<h2>Como o hóspede usa</h2>
+<div class="passos">
+  <div class="passo"><div><strong>Período</strong> — escolhe datas de check-in e check-out e o número de hóspedes.</div></div>
+  <div class="passo"><div><strong>Categoria</strong> — escolhe a acomodação desejada.</div></div>
+  <div class="passo"><div><strong>Seus dados</strong> — informa nome, e-mail, telefone e preferências.</div></div>
+  <div class="passo"><div>Clica em <strong>“Solicitar cotação e disponibilidade”</strong>.</div></div>
+</div>
+
+<p>O pedido chega à recepção (por telefone/WhatsApp/e-mail de contato). Aí a recepção confirma
+a disponibilidade e <strong>registra a reserva no painel</strong> (seção 11) — o site faz a
+captação, o painel faz a gestão.</p>
+
+<div class="caixa dica"><span class="tag">Dica</span><br>
+Vale divulgar o link do site nas confirmações e redes sociais — quanto mais pedidos chegarem
+pelo site, menos tempo no telefone.</div>
+
+<!-- ==================== 18 ==================== -->
+<div class="pagina"></div>
+<h1 class="sec" id="sec18"><span class="num">18</span>Perguntas frequentes do dia a dia</h1>
+
+<div class="faq-item"><p class="per">“Chegou um hóspede sem reserva (walk-in). O que faço?”</p>
+<p>Cadastre o cliente (seção 6) e faça a reserva normalmente com entrada hoje. Se ele já vai
+ficar, faça o check-in logo em seguida — pode ser na mesma hora.</p></div>
+
+<div class="faq-item"><p class="per">“O cliente já ficou hospedado antes. Cadastro de novo?”</p>
+<p>Não. Busque pelo nome ou CPF e reaproveite o cadastro — inclusive documentos e dados FNRH já
+ficam salvos para as próximas fichas.</p></div>
+
+<div class="faq-item"><p class="per">“Erramos o lançamento de consumo. Tem como desfazer?”</p>
+<p>Antes do check-out, peça ao gerente/administrador para corrigir. Depois do check-out a conta
+está fechada — qualquer ajuste deve ser resolvido com a administração e fica registrado na
+auditoria.</p></div>
+
+<div class="faq-item"><p class="per">“A tela não mostra a reserva que meu colega acabou de criar.”</p>
+<p>Verifique a bolinha “AO VIVO” no topo. Verde = tudo certo (a reserva aparece sozinha).
+Cinza/offline = sem conexão com o servidor — chame o suporte.</p></div>
+
+<div class="faq-item"><p class="per">“Preciso saber quem alterou um cadastro.”</p>
+<p>Tela <strong>Administrador → Histórico de alterações</strong> (seção 15): filtre pela tabela
+e pelo período.</p></div>
+
+<div class="faq-item"><p class="per">“Ativo/Inativo apaga o registro?”</p>
+<p>Não. Desativar só tira o item do uso (não aparece para novas operações). O histórico fica
+inteiro guardado — e dá para reativar a qualquer momento clicando no selo de novo.</p></div>
+
+<div class="faq-item"><p class="per">“Posso usar no celular?”</p>
+<p>Sim, o sistema abre no navegador do celular e o menu lateral vira um botão hambúrguer.
+Para operações longas (fechamento, relatórios) o computador é mais confortável.</p></div>
+
+<!-- ==================== 19 ==================== -->
+<h1 class="sec" id="sec19"><span class="num">19</span>Suporte</h1>
+
+<p>Em caso de dúvida, erro ou sugestão de melhoria, fale com o suporte do sistema:</p>
+<table class="ref">
+  <tr><th>Canal</th><th>Contato</th></tr>
+  <tr><td>E-mail</td><td>contato@clarituz.com.br</td></tr>
+  <tr><td>Telefone / WhatsApp</td><td>(19) 99555-1577</td></tr>
+</table>
+
+<p>Ao relatar um problema, informe: <strong>o que você estava fazendo</strong>, em qual tela, e
+se possível uma foto da mensagem de erro. Isso acelera muito a solução.</p>
+
+<div class="rodape">Manual do Sistema INNJOY · Versão 2.0 · outubro/2026 · Desenvolvido por Clarituz</div>
+
+</div><!-- /conteudo -->
+</body>
+</html>

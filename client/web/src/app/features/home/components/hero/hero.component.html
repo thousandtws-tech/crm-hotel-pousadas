@@ -1,0 +1,51 @@
+<section class="relative w-full h-screen min-h-[580px] lg:min-h-[620px] flex items-end overflow-hidden bg-[#032B38] pb-24 sm:pb-28 lg:pb-36">
+  <!-- Dominant Editorial Background Image with Parallax Scale -->
+  <div class="absolute inset-0 z-0 overflow-hidden">
+    <img
+      src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2400&q=90"
+      alt="Vista litorânea representando a região da Praia do Peró em Cabo Frio"
+      class="hero-bg-img w-full h-full object-cover object-center filter brightness-[0.78]"
+      fetchpriority="high"
+    />
+    <!-- Brand Deep Navy Ocean Gradient Overlay -->
+    <div class="absolute inset-0 bg-gradient-to-t from-[#032B38]/95 via-[#032B38]/30 to-transparent"></div>
+  </div>
+
+  <!-- Editorial Lower-Left Content Block -->
+  <div class="relative z-10 container-editorial w-full flex flex-col items-start justify-end">
+    <div class="hero-content max-w-3xl">
+      <span class="hero-eyebrow type-eyebrow !text-white !text-xs sm:!text-sm lg:!text-[15px] block mb-3">
+        Bairro Peró · Cabo Frio, RJ
+      </span>
+
+      <!-- Monumental Editorial Heading -->
+      <h1 class="hero-title font-serif text-4xl sm:text-5xl md:text-6xl lg:text-[4.25rem] text-white font-normal leading-[1.06] tracking-[-0.02em] mb-4 sm:mb-5">
+        Pousada Espírito do Mar: sua estadia pertinho da Praia do Peró
+      </h1>
+
+      <!-- Precise, Uncluttered Human Sentence -->
+      <p class="hero-subtitle text-base sm:text-lg text-white font-light leading-relaxed max-w-xl mb-6 sm:mb-7">
+        Em Cabo Frio, aproveite dias de descanso em uma pousada acolhedora, com piscina e fácil acesso à Praia do Peró.
+      </p>
+
+      <!-- Primary & Secondary CTAs -->
+      <div class="hero-ctas flex flex-wrap items-center gap-4 sm:gap-5">
+        <a
+          routerLink="/reservar"
+          class="btn-secondary-light group"
+        >
+          <span>Consultar disponibilidade</span>
+          <app-icon name="arrow-right" [size]="14" class="transition-transform duration-300 group-hover:translate-x-1 text-[#ffff]"></app-icon>
+        </a>
+
+        <a
+          routerLink="/acomodacoes"
+          class="text-sm uppercase tracking-[0.18em] text-white/85 hover:text-[#ffff] transition-colors underline underline-offset-8 decoration-white/30 hover:decoration-[#DDA554]"
+        >
+          Conheça nossas acomodações
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+

@@ -1,0 +1,68 @@
+<div
+  class="fixed inset-0 z-50 bg-[#032B38]/95 backdrop-blur-xl flex flex-col justify-between p-4 sm:p-8 animate-fadeIn"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-label]="item().title"
+>
+  <!-- Top Bar -->
+  <div class="flex items-center justify-between z-10">
+    <div class="flex flex-col">
+      <span class="text-[10px] tracking-ultra-wide uppercase text-[#DDA554] font-medium">{{ item().categoryLabel }}</span>
+      <h3 class="font-serif text-lg sm:text-xl text-white">{{ item().title }}</h3>
+    </div>
+    
+    <button
+      type="button"
+      (click)="close()"
+      class="p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors focus:outline-none cursor-pointer"
+      aria-label="Fechar visualização"
+    >
+      <app-icon name="x" [size]="28"></app-icon>
+    </button>
+  </div>
+
+  <!-- Main Image with Navigation -->
+  <div class="relative flex-1 flex items-center justify-center p-2 sm:p-6 my-auto">
+    <!-- Prev Arrow -->
+    @if (hasPrev()) {
+      <button
+        type="button"
+        (click)="prev()"
+        class="absolute left-2 sm:left-4 z-10 p-3 bg-white/10 text-white hover:bg-[#DDA554] hover:text-[#054054] backdrop-blur-md rounded-full transition-all duration-300 focus:outline-none cursor-pointer"
+        aria-label="Imagem anterior"
+      >
+        <app-icon name="chevron-left" [size]="24"></app-icon>
+      </button>
+    }
+
+    <!-- Image -->
+    <div class="max-w-5xl max-h-[75vh] overflow-hidden flex items-center justify-center">
+      <img
+        [src]="item().imageUrl"
+        [alt]="item().title"
+        class="max-w-full max-h-[75vh] object-contain shadow-2xl transition-transform duration-500"
+      />
+    </div>
+
+    <!-- Next Arrow -->
+    @if (hasNext()) {
+      <button
+        type="button"
+        (click)="next()"
+        class="absolute right-2 sm:right-4 z-10 p-3 bg-white/10 text-white hover:bg-[#DDA554] hover:text-[#054054] backdrop-blur-md rounded-full transition-all duration-300 focus:outline-none cursor-pointer"
+        aria-label="Próxima imagem"
+      >
+        <app-icon name="chevron-right" [size]="24"></app-icon>
+      </button>
+    }
+  </div>
+
+  <!-- Bottom Caption -->
+  <div class="text-center py-2 z-10">
+    @if (item().caption) {
+      <p class="text-xs sm:text-sm text-white/75 font-light tracking-wide max-w-xl mx-auto">
+        {{ item().caption }}
+      </p>
+    }
+  </div>
+</div>

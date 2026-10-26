@@ -1,0 +1,105 @@
+<div class="booking-bar w-full max-w-6xl mx-auto px-4 sm:px-6">
+  <div class="bg-white border border-[#DCE6EA] rounded-xl p-3.5 sm:p-5 shadow-[0_12px_32px_rgba(5,64,84,0.06)]">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 sm:gap-4 items-center">
+
+      <!-- Check-in -->
+      <div
+        class="lg:col-span-3 px-3 py-2 border-b sm:border-b-0 sm:border-r border-[#DCE6EA] cursor-pointer"
+        (click)="checkInPicker.open()"
+      >
+        <label for="check-in-input" class="type-eyebrow block mb-1 text-[10px] text-[#536B73] cursor-pointer">
+          Chegada
+        </label>
+        <div class="flex items-center">
+          <input
+            id="check-in-input"
+            readonly
+            [matDatepicker]="checkInPicker"
+            [min]="minDate"
+            [ngModel]="checkIn()"
+            (ngModelChange)="onCheckInChange($event, checkOutPicker)"
+            placeholder="Selecionar"
+            aria-label="Data de chegada"
+            class="w-full bg-transparent text-sm text-[#054054] font-medium focus:outline-none cursor-pointer"
+          />
+          <mat-datepicker-toggle
+            matIconSuffix
+            [for]="checkInPicker"
+            (click)="$event.stopPropagation()"
+          ></mat-datepicker-toggle>
+          <mat-datepicker
+            #checkInPicker
+            xPosition="start"
+            yPosition="below"
+            [dateClass]="stayRangeDateClass"
+            panelClass="booking-datepicker-panel"
+          />
+        </div>
+      </div>
+
+      <!-- Check-out -->
+      <div
+        class="lg:col-span-3 px-3 py-2 border-b sm:border-b-0 lg:border-r border-[#DCE6EA] cursor-pointer"
+        (click)="checkOutPicker.open()"
+      >
+        <label for="check-out-input" class="type-eyebrow block mb-1 text-[10px] text-[#536B73] cursor-pointer">
+          Partida
+        </label>
+        <div class="flex items-center">
+          <input
+            id="check-out-input"
+            readonly
+            [matDatepicker]="checkOutPicker"
+            [min]="minCheckOutDate()"
+            [ngModel]="checkOut()"
+            (ngModelChange)="checkOut.set($event)"
+            placeholder="Selecionar"
+            aria-label="Data de partida"
+            class="w-full bg-transparent text-sm text-[#054054] font-medium focus:outline-none cursor-pointer"
+          />
+          <mat-datepicker-toggle
+            matIconSuffix
+            [for]="checkOutPicker"
+            (click)="$event.stopPropagation()"
+          ></mat-datepicker-toggle>
+          <mat-datepicker
+            #checkOutPicker
+            xPosition="start"
+            yPosition="below"
+            [startAt]="minCheckOutDate()"
+            [dateClass]="stayRangeDateClass"
+            panelClass="booking-datepicker-panel"
+          />
+        </div>
+      </div>
+
+      <!-- Guests -->
+      <div class="lg:col-span-3 px-3 py-2 border-b sm:border-b-0 sm:border-r border-[#DCE6EA]">
+        <span id="guests-label" class="type-eyebrow block mb-1 text-[10px] text-[#536B73]">
+          Hóspedes
+        </span>
+        <mat-select
+          aria-labelledby="guests-label"
+          [ngModel]="guests()"
+          (ngModelChange)="guests.set($event)"
+          class="w-full"
+        >
+          @for (option of guestOptions; track option.value) {
+            <mat-option [value]="option.value">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </div>
+
+      <!-- Submit CTA Button -->
+      <div class="lg:col-span-3">
+        <button
+          type="button"
+          (click)="onCheckAvailability()"
+          class="w-full btn-primary py-3.5"
+        >
+          <span>Consultar Disponibilidade</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

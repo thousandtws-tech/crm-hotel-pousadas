@@ -1,0 +1,9 @@
+pub mod auth;
+pub mod catalogo;
+pub mod cms;
+pub mod estoque;
+pub mod impressoras;
+pub mod notificacoes;
+pub mod pessoas;
+pub mod relatorios;
+pub mod reservas;

@@ -1,0 +1,65 @@
+//! Serviços de aplicação — um por bounded context. Cada método é um caso de
+//! uso: valida entrada, aplica regras, orquestra ports e produz auditoria.
+
+pub mod acomodacoes;
+pub mod auditoria;
+pub mod auth;
+pub mod busca;
+pub mod clientes;
+pub mod cms;
+pub mod dashboard;
+pub mod documentos;
+pub mod estabelecimento;
+pub mod estacionamento;
+pub mod estoque;
+pub mod financeiro;
+pub mod frigobar;
+pub mod funcionarios;
+pub mod impressoras;
+pub mod notificacoes;
+pub mod pagamentos;
+pub mod reservas;
+
+pub use acomodacoes::AcomodacaoService;
+pub use auditoria::AuditoriaService;
+pub use auth::AuthService;
+pub use busca::BuscaService;
+pub use clientes::ClienteService;
+pub use cms::CmsService;
+pub use dashboard::DashboardService;
+pub use documentos::DocumentoService;
+pub use estabelecimento::EstabelecimentoService;
+pub use estacionamento::EstacionamentoService;
+pub use estoque::EstoqueService;
+pub use financeiro::FinanceiroService;
+pub use frigobar::FrigobarService;
+pub use funcionarios::FuncionarioService;
+pub use impressoras::ImpressoraService;
+pub use notificacoes::NotificacaoService;
+pub use pagamentos::PagamentoService;
+pub use reservas::{ReservaDeps, ReservaService};
+
+use std::sync::Arc;
+
+/// Contêiner de DI — construído uma vez no bootstrap e compartilhado
+/// via `Arc` no estado do axum.
+pub struct Services {
+    pub auth: Arc<AuthService>,
+    pub clientes: Arc<ClienteService>,
+    pub documentos: Arc<DocumentoService>,
+    pub acomodacoes: Arc<AcomodacaoService>,
+    pub cms: Arc<CmsService>,
+    pub reservas: Arc<ReservaService>,
+    pub estoque: Arc<EstoqueService>,
+    pub frigobar: Arc<FrigobarService>,
+    pub estacionamento: Arc<EstacionamentoService>,
+    pub pagamentos: Arc<PagamentoService>,
+    pub funcionarios: Arc<FuncionarioService>,
+    pub estabelecimento: Arc<EstabelecimentoService>,
+    pub impressoras: Arc<ImpressoraService>,
+    pub financeiro: Arc<FinanceiroService>,
+    pub dashboard: Arc<DashboardService>,
+    pub auditoria: Arc<AuditoriaService>,
+    pub notificacoes: Arc<NotificacaoService>,
+    pub busca: Arc<BuscaService>,
+}

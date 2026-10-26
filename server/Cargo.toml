@@ -1,0 +1,74 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/shared",
+    "crates/domain",
+    "crates/application",
+    "crates/infrastructure",
+    "crates/api",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "Proprietary"
+authors = ["Clarituz Engineering"]
+
+[workspace.dependencies]
+# ---- internal ----
+clarituz-shared = { path = "crates/shared" }
+clarituz-domain = { path = "crates/domain" }
+clarituz-application = { path = "crates/application" }
+clarituz-infrastructure = { path = "crates/infrastructure" }
+
+# ---- async / http ----
+tokio = { version = "1", features = ["full"] }
+axum = { version = "0.8", features = ["macros"] }
+tower = { version = "0.5" }
+tower-http = { version = "0.6", features = ["cors", "trace", "timeout", "request-id", "compression-gzip", "limit"] }
+hyper = { version = "1", features = ["server", "http1"] }
+
+# ---- persistence ----
+sqlx = { version = "0.8", default-features = false, features = [
+    "runtime-tokio",
+    "tls-rustls",
+    "postgres",
+    "macros",
+    "chrono",
+    "rust_decimal",
+    "uuid",
+    "json",
+    "migrate",
+] }
+
+# ---- serialization / types ----
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
+chrono = { version = "0.4", features = ["serde"] }
+chrono-tz = { version = "0.10" }
+rust_decimal = { version = "1", features = ["serde-with-str"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+async-trait = { version = "0.1" }
+thiserror = { version = "2" }
+
+# ---- security ----
+argon2 = { version = "0.5" }
+jsonwebtoken = { version = "9" }
+sha2 = { version = "0.10" }
+hex = { version = "0.4" }
+subtle = { version = "2" }
+
+# ---- observability ----
+tracing = { version = "0.1" }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# ---- misc ----
+clap = { version = "4", features = ["derive"] }
+dotenvy = { version = "0.15" }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
