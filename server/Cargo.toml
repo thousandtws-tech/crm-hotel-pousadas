@@ -30,6 +30,9 @@ tower-http = { version = "0.6", features = ["cors", "trace", "timeout", "request
 hyper = { version = "1", features = ["server", "http1"] }
 
 # ---- persistence ----
+rust-s3 = { version = "0.37", default-features = false, features = [
+    "tokio-rustls-tls",
+] }
 sqlx = { version = "0.8", default-features = false, features = [
     "runtime-tokio",
     "tls-rustls",

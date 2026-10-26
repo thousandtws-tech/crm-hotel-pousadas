@@ -73,6 +73,12 @@ export const routes: Routes = [
           import('./features/pagamentos/pagamentos.component').then((m) => m.PagamentosComponent),
       },
       {
+        path: 'cms',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/cms/cms.component').then((m) => m.CmsComponent),
+      },
+      {
         path: 'estabelecimento',
         canActivate: [adminGuard],
         loadComponent: () =>

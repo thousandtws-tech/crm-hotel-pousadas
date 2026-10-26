@@ -34,6 +34,7 @@ const NAV: NavItem[] = [
   { rota: '/reservas', rotulo: 'Reservas', icone: 'calendar_month' },
   { rota: '/financeiro', rotulo: 'Financeiro', icone: 'payments', admin: true },
   { rota: '/pagamentos', rotulo: 'Pagamentos', icone: 'credit_card', admin: true },
+  { rota: '/cms', rotulo: 'Site / Quartos', icone: 'web', admin: true },
   { rota: '/estabelecimento', rotulo: 'Pousada / Hotel', icone: 'home', admin: true },
   { rota: '/funcionarios', rotulo: 'Administrador', icone: 'lock_open', admin: true },
 ];

@@ -279,6 +279,69 @@ export interface Quarto {
   criado_em: string;
 }
 
+// ---------------------------------------------------------------------------
+// CMS — conteúdo editorial + mídia do site público
+// ---------------------------------------------------------------------------
+
+export interface AcomodacaoCms {
+  id: number;
+  idacomodacao: number;
+  slug: string;
+  subtitulo: string | null;
+  descricao_curta: string | null;
+  descricao_longa: string | null;
+  destaque_editorial: string | null;
+  camas: string | null;
+  banheiros: number | null;
+  metragem: string | null;
+  vista: string | null;
+  andar: string | null;
+  comodidades: Comodidade[];
+  status: 'rascunho' | 'publicado';
+  destaque: boolean;
+  ordem: number;
+  publicado_em: string | null;
+  version: number;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface Comodidade {
+  name: string;
+  icon: string;
+  highlight?: boolean;
+}
+
+export interface Midia {
+  id: number;
+  tipo: 'foto' | 'video';
+  url: string;
+  capa: boolean;
+  ordem: number;
+}
+
+export interface AcomodacaoCmsView extends Acomodacao {
+  cms: AcomodacaoCms | null;
+  midias: Midia[];
+}
+
+export interface CmsInput {
+  slug?: string | null;
+  subtitulo?: string | null;
+  descricao_curta?: string | null;
+  descricao_longa?: string | null;
+  destaque_editorial?: string | null;
+  camas?: string | null;
+  banheiros?: number | null;
+  metragem?: string | number | null;
+  vista?: string | null;
+  andar?: string | null;
+  comodidades?: Comodidade[];
+  destaque?: boolean;
+  ordem?: number;
+  version?: number;
+}
+
 export interface TarifaHistorico {
   id: number;
   idacomodacao: number;

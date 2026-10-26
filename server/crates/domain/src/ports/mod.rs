@@ -12,6 +12,7 @@ pub mod eventos;
 pub mod impressao;
 pub mod pessoas;
 pub mod reserva;
+pub mod storage;
 pub mod suporte;
 
 pub use auth::*;
@@ -22,4 +23,5 @@ pub use eventos::*;
 pub use impressao::*;
 pub use pessoas::*;
 pub use reserva::*;
+pub use storage::*;
 pub use suporte::*;

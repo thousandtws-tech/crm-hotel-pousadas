@@ -35,6 +35,17 @@ pub struct Settings {
     pub log_filter: String,
     /// Diretório para comprovantes gerados.
     pub storage_dir: String,
+    /// Endpoint S3/MinIO — quando presente (com bucket+chaves) o object
+    /// store de mídias usa S3 em vez do filesystem.
+    pub s3_endpoint: Option<String>,
+    /// Bucket S3 das mídias (fotos, vídeos, scans, logo).
+    pub s3_bucket: Option<String>,
+    /// Access key do service account MinIO/S3.
+    pub s3_access_key: Option<String>,
+    /// Secret key do service account MinIO/S3.
+    pub s3_secret_key: Option<String>,
+    /// Região de assinatura SigV4 (MinIO aceita `us-east-1`).
+    pub s3_region: String,
 }
 
 impl Settings {
@@ -71,6 +82,11 @@ impl Settings {
             log_filter: env_string("RUST_LOG")
                 .unwrap_or_else(|| "info,tower_http=debug,sqlx=warn".into()),
             storage_dir: env_string("STORAGE_DIR").unwrap_or_else(|| "./storage".into()),
+            s3_endpoint: env_string("S3_ENDPOINT"),
+            s3_bucket: env_string("S3_BUCKET"),
+            s3_access_key: env_string("S3_ACCESS_KEY"),
+            s3_secret_key: env_string("S3_SECRET_KEY"),
+            s3_region: env_string("S3_REGION").unwrap_or_else(|| "us-east-1".into()),
         })
     }
 }

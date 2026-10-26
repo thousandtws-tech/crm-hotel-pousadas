@@ -103,23 +103,18 @@ pub async fn upload_midia(
         .into());
     }
 
-    let dir = std::path::Path::new(&s.storage_dir)
-        .join("cms")
-        .join(id.to_string());
-    std::fs::create_dir_all(&dir).map_err(|_| DomainError::Infra)?;
-    let nome = format!("{}.{ext}", uuid_simple());
-    let path = dir.join(&nome);
-    std::fs::write(&path, &body).map_err(|_| DomainError::Infra)?;
+    let key = format!("cms/{id}/{}.{ext}", uuid_simple());
+    s.store.put(&key, &body, &content_type).await?;
 
     let midia = s
         .services
         .cms
-        .adicionar_midia(&ator, id, tipo, &path.to_string_lossy(), &content_type)
+        .adicionar_midia(&ator, id, tipo, &key, &content_type)
         .await?;
     Ok((StatusCode::CREATED, Json(midia)))
 }
 
-/// `DELETE /cms/midia/{id}` — remove metadado + arquivo.
+/// `DELETE /cms/midia/{id}` — remove metadado + objeto.
 pub async fn remover_midia(
     State(s): State<AppState>,
     ator: Ator,
@@ -127,7 +122,7 @@ pub async fn remover_midia(
 ) -> Result<StatusCode, AppError> {
     let anterior = s.services.cms.remover_midia(&ator, id).await?;
     if let Some(c) = anterior {
-        std::fs::remove_file(c).ok();
+        s.store.delete(&c).await.ok();
     }
     Ok(StatusCode::NO_CONTENT)
 }
@@ -190,13 +185,13 @@ pub async fn servir_midia(
     State(s): State<AppState>,
     Path(id): Path<i64>,
 ) -> Result<([(HeaderName, String); 2], Vec<u8>), AppError> {
-    let Some((caminho, mime, publicado)) = s.services.cms.caminho_midia(id).await? else {
+    let Some((key, mime, publicado)) = s.services.cms.caminho_midia(id).await? else {
         return Err(DomainError::nao_encontrado("Mídia não encontrada.").into());
     };
     if !publicado {
         return Err(DomainError::nao_encontrado("Mídia não encontrada.").into());
     }
-    servir_arquivo(&caminho, &mime)
+    servir_objeto(&s, &key, &mime).await
 }
 
 /// `GET /cms/midia/{id}/arquivo` — preview autenticado (enxerga rascunho).
@@ -205,18 +200,20 @@ pub async fn servir_midia_admin(
     _ator: Ator,
     Path(id): Path<i64>,
 ) -> Result<([(HeaderName, String); 2], Vec<u8>), AppError> {
-    let Some((caminho, mime, _)) = s.services.cms.caminho_midia(id).await? else {
+    let Some((key, mime, _)) = s.services.cms.caminho_midia(id).await? else {
         return Err(DomainError::nao_encontrado("Mídia não encontrada.").into());
     };
-    servir_arquivo(&caminho, &mime)
+    servir_objeto(&s, &key, &mime).await
 }
 
-fn servir_arquivo(
-    caminho: &str,
+async fn servir_objeto(
+    s: &AppState,
+    key: &str,
     mime: &str,
 ) -> Result<([(HeaderName, String); 2], Vec<u8>), AppError> {
-    let bytes = std::fs::read(caminho)
-        .map_err(|_| DomainError::nao_encontrado("Arquivo não encontrado no storage."))?;
+    let bytes = s.store.get(key).await?.ok_or_else(|| {
+        DomainError::nao_encontrado("Arquivo não encontrado no storage.")
+    })?;
     Ok((
         [
             (header::CONTENT_TYPE, mime.to_string()),

@@ -15,6 +15,7 @@ serde_json.workspace = true
 chrono.workspace = true
 chrono-tz.workspace = true
 rust_decimal.workspace = true
+rust-s3.workspace = true
 uuid.workspace = true
 async-trait.workspace = true
 thiserror.workspace = true

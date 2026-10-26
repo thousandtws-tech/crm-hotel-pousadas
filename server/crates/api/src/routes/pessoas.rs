@@ -82,7 +82,7 @@ pub async fn status_cliente(
 }
 
 /// Foto do cliente (recepção): imagem cruda no body, `Content-Type: image/*`,
-/// ≤ 4 MB. Persiste em `storage_dir/clientes/{id}.{ext}` e registra o caminho.
+/// ≤ 4 MB. Persiste na chave `clientes/{id}.{ext}` do object store e registra o caminho.
 pub async fn upload_foto_cliente(
     State(s): State<AppState>,
     ator: Ator,
@@ -107,17 +107,15 @@ pub async fn upload_foto_cliente(
         .strip_prefix("image/")
         .map(|e| e.replace("jpeg", "jpg"))
         .unwrap_or_else(|| "bin".into());
-    let dir = std::path::Path::new(&s.storage_dir).join("clientes");
-    std::fs::create_dir_all(&dir).map_err(|_| DomainError::Infra)?;
-    let path = dir.join(format!("{id}.{ext}"));
-    std::fs::write(&path, &body).map_err(|_| DomainError::Infra)?;
+    let key = format!("clientes/{id}.{ext}");
+    s.store.put(&key, &body, content_type).await?;
 
     s.services
         .clientes
-        .definir_foto(&ator, id, &path.to_string_lossy())
+        .definir_foto(&ator, id, &key)
         .await?;
-    if let Some(antigo) = anterior.filter(|a| a != &path.to_string_lossy()) {
-        std::fs::remove_file(antigo).ok();
+    if let Some(antigo) = anterior.filter(|a| a != &key) {
+        s.store.delete(&antigo).await.ok();
     }
     Ok(StatusCode::CREATED)
 }
@@ -131,7 +129,7 @@ pub async fn foto_cliente(
     let Some(caminho) = s.services.clientes.foto_caminho(id).await? else {
         return Err(DomainError::nao_encontrado("Cliente não possui foto.").into());
     };
-    let bytes = std::fs::read(&caminho).map_err(|_| {
+    let bytes = s.store.get(&caminho).await?.ok_or_else(|| {
         DomainError::nao_encontrado("Arquivo de foto não encontrado no storage.")
     })?;
     let mime = match caminho.rsplit('.').next() {
@@ -156,7 +154,7 @@ pub async fn remover_foto_cliente(
     Path(id): Path<i64>,
 ) -> Result<StatusCode, AppError> {
     let anterior = s.services.clientes.remover_foto(&ator, id).await?;
-    std::fs::remove_file(anterior).ok();
+    s.store.delete(&anterior).await.ok();
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -198,13 +196,13 @@ pub async fn remover_documento(
     Path(id): Path<i64>,
 ) -> Result<StatusCode, AppError> {
     if let Some(scan) = s.services.documentos.remover(&ator, id).await? {
-        std::fs::remove_file(scan).ok();
+        s.store.delete(&scan).await.ok();
     }
     Ok(StatusCode::NO_CONTENT)
 }
 
 /// Scan do documento (imagem cruda no body, `Content-Type: image/*`, ≤ 4 MB).
-/// Persiste em `storage_dir/documentos/{id}.{ext}` e registra o caminho.
+/// Persiste na chave `documentos/{id}.{ext}` do object store e registra o caminho.
 pub async fn upload_scan_documento(
     State(s): State<AppState>,
     ator: Ator,
@@ -228,17 +226,15 @@ pub async fn upload_scan_documento(
         .strip_prefix("image/")
         .map(|e| e.replace("jpeg", "jpg"))
         .unwrap_or_else(|| "bin".into());
-    let dir = std::path::Path::new(&s.storage_dir).join("documentos");
-    std::fs::create_dir_all(&dir).map_err(|_| DomainError::Infra)?;
-    let path = dir.join(format!("{id}.{ext}"));
-    std::fs::write(&path, &body).map_err(|_| DomainError::Infra)?;
+    let key = format!("documentos/{id}.{ext}");
+    s.store.put(&key, &body, content_type).await?;
 
     s.services
         .documentos
-        .definir_scan(&ator, id, &path.to_string_lossy())
+        .definir_scan(&ator, id, &key)
         .await?;
-    if let Some(antigo) = anterior.filter(|a| a != &path.to_string_lossy()) {
-        std::fs::remove_file(antigo).ok();
+    if let Some(antigo) = anterior.filter(|a| a != &key) {
+        s.store.delete(&antigo).await.ok();
     }
     Ok(StatusCode::CREATED)
 }
@@ -252,7 +248,7 @@ pub async fn scan_documento(
     let Some(caminho) = s.services.documentos.scan_caminho(id).await? else {
         return Err(DomainError::nao_encontrado("Documento não possui scan.").into());
     };
-    let bytes = std::fs::read(&caminho).map_err(|_| {
+    let bytes = s.store.get(&caminho).await?.ok_or_else(|| {
         DomainError::nao_encontrado("Arquivo de scan não encontrado no storage.")
     })?;
     let mime = match caminho.rsplit('.').next() {
@@ -277,7 +273,7 @@ pub async fn remover_scan_documento(
     Path(id): Path<i64>,
 ) -> Result<StatusCode, AppError> {
     let anterior = s.services.documentos.remover_scan(&ator, id).await?;
-    std::fs::remove_file(anterior).ok();
+    s.store.delete(&anterior).await.ok();
     Ok(StatusCode::NO_CONTENT)
 }
 

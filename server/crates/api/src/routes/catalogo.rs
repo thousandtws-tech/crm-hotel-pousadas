@@ -433,7 +433,7 @@ pub async fn salvar_endereco(
 }
 
 /// Upload da logo (imagem cruda no body, `Content-Type: image/*`, ≤ 2 MB).
-/// Persiste em `storage_dir/logo/` e registra nome+caminho — `mLogo.php`.
+/// Persiste na chave `logo/logo.{ext}` do object store — `mLogo.php`.
 pub async fn upload_logo(
     State(s): State<AppState>,
     ator: Ator,
@@ -455,15 +455,13 @@ pub async fn upload_logo(
         .map(|e| e.replace("jpeg", "jpg").replace("svg+xml", "svg"))
         .unwrap_or_else(|| "bin".into());
     let nome = format!("logo.{ext}");
+    let key = format!("logo/{nome}");
 
-    let dir = std::path::Path::new(&s.storage_dir).join("logo");
-    std::fs::create_dir_all(&dir).ok();
-    let path = dir.join(&nome);
-    std::fs::write(&path, &body).map_err(|_| DomainError::Infra)?;
+    s.store.put(&key, &body, content_type).await?;
 
     s.services
         .estabelecimento
-        .definir_logo(&ator, &nome, &path.to_string_lossy())
+        .definir_logo(&ator, &nome, &key)
         .await?;
     Ok(StatusCode::CREATED)
 }
@@ -475,8 +473,8 @@ pub async fn logo(
     let Some((_nome, caminho)) = s.services.estabelecimento.logo_atual().await? else {
         return Err(DomainError::nao_encontrado("Logo não configurada.").into());
     };
-    let bytes = std::fs::read(&caminho)
-        .map_err(|_| DomainError::nao_encontrado("Arquivo de logo não encontrado no storage."))?;
+    let bytes = s.store.get(&caminho).await?
+        .ok_or_else(|| DomainError::nao_encontrado("Arquivo de logo não encontrado no storage."))?;
     let mime = match caminho.rsplit('.').next() {
         Some("png") => "image/png",
         Some("jpg") => "image/jpeg",

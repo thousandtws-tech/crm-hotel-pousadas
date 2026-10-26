@@ -1,1 +1,1 @@
-C:/Users/Vinicius Moreira/scoop/apps/postgresql/current/bin/postgres.exe "-D" ".pgdata" "-p" "5432"
+C:/Users/Vinicius Moreira/scoop/apps/postgresql/current/bin/postgres.exe "-D" "D:/clientes/projeto-clarituz-crm-hotel-pousadas/.pgdata"

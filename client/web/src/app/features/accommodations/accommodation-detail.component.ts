@@ -1,4 +1,4 @@
-import { Component, afterNextRender, ElementRef, inject, DestroyRef, OnInit, signal, computed } from '@angular/core';
+import { Component, afterNextRender, ElementRef, inject, DestroyRef, OnInit, signal, computed, effect } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AccommodationService } from '../../core/services/accommodation.service';
@@ -99,6 +99,22 @@ import { MotionService } from '../../core/services/motion.service';
                     </button>
                   }
                 </div>
+
+                <!-- Videos (publicados via CMS) -->
+                @if (acc.videos?.length) {
+                  <div class="mt-4 space-y-3">
+                    @for (vid of acc.videos; track vid) {
+                      <div class="editorial-image-container aspect-video shadow-sm">
+                        <video
+                          [src]="vid"
+                          controls
+                          playsinline
+                          class="w-full h-full object-cover"
+                        ></video>
+                      </div>
+                    }
+                  </div>
+                }
               </div>
 
               <!-- Editorial Narrative Description -->
@@ -253,6 +269,22 @@ export class AccommodationDetailComponent implements OnInit {
     afterNextRender(() => {
       this.initAnimations();
     });
+
+    // Quando o item resolve (fetch inicial ou troca de slug), prepara hero+SEO.
+    let seoSlug: string | null = null;
+    effect(() => {
+      const item = this.accommodation();
+      if (item && item.slug !== seoSlug) {
+        seoSlug = item.slug;
+        this.activeHeroImage.set(item.coverImage);
+        this.seoService.updateSeo({
+          title: `${item.name} | Pousada Espírito do Mar, Cabo Frio`,
+          description: `${item.shortDescription} Hospedagem no bairro Peró, em Cabo Frio. Consulte a disponibilidade.`,
+          image: item.coverImage,
+          url: `https://pousadaespiritodomar.com.br/acomodacoes/${item.slug}`
+        });
+      }
+    });
   }
 
   private initAnimations(): void {
@@ -271,7 +303,13 @@ export class AccommodationDetailComponent implements OnInit {
     }, this.destroyRef);
   }
 
-  public readonly accommodation = signal<Accommodation | undefined>(undefined);
+  private readonly slug = signal<string | null>(null);
+  // Derivado do estado do serviço: deltas do CMS (SSE) atualizam a página
+  // sem recarregar — getBySlug reavalia a cada refetch.
+  public readonly accommodation = computed<Accommodation | undefined>(() => {
+    const s = this.slug();
+    return s ? this.accommodationService.getBySlug(s) : undefined;
+  });
   public readonly activeHeroImage = signal<string>('');
 
   public readonly checkIn = signal<string>(this.bookingService.filter().checkIn);
@@ -287,20 +325,7 @@ export class AccommodationDetailComponent implements OnInit {
 
   public ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
-      const slug = params.get('slug');
-      if (slug) {
-        const item = this.accommodationService.getBySlug(slug);
-        this.accommodation.set(item);
-        if (item) {
-          this.activeHeroImage.set(item.coverImage);
-          this.seoService.updateSeo({
-            title: `${item.name} | Pousada Espírito do Mar, Cabo Frio`,
-            description: `${item.shortDescription} Hospedagem no bairro Peró, em Cabo Frio. Consulte a disponibilidade.`,
-            image: item.coverImage,
-            url: `https://pousadaespiritodomar.com.br/acomodacoes/${item.slug}`
-          });
-        }
-      }
+      this.slug.set(params.get('slug'));
     });
   }
 

@@ -23,6 +23,7 @@ export interface Accommodation {
   floor: string;
   coverImage: string;
   images: string[];
+  videos?: string[];
   amenities: Amenity[];
   featured: boolean;
   order: number;

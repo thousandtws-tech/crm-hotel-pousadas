@@ -239,6 +239,8 @@ fn build_services(
             issuer,
             pool: pool.clone(),
             storage_dir: settings.storage_dir.clone(),
+            store: clarituz_infrastructure::build_store(&settings)
+                .expect("object store inválido: confira as variáveis S3_*"),
             eventos,
         },
         auth,
