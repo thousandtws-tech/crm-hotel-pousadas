@@ -40,6 +40,7 @@ export class Realtime {
 
   /** Último aviso recebido — o sino (`Notificacoes`) assina via effect(). */
   readonly ultimoAviso = signal<Aviso | null>(null);
+  readonly avisoSeq = signal(0);
 
   /** tabela → contador de mudanças; páginas leem via `delta(tabela)`. */
   private readonly _deltas = signal<Record<string, number>>({});
@@ -148,13 +149,35 @@ export class Realtime {
       } else if (evento === 'aviso') {
         const a = JSON.parse(dados) as Aviso;
         this.ultimoAviso.set(a);
-        // suprime o toast do próprio autor — ação local já tem feedback
-        if (a.autor_id === this.auth.user()?.id) return;
-        if (a.tipo === 'alerta') this.notify.aviso(`${a.titulo} — ${a.mensagem}`);
-        else this.notify.ok(`${a.titulo} — ${a.mensagem}`);
+        this.avisoSeq.update((s) => s + 1);
+        this.tocarSino();
+        if (a.tipo === 'alerta') this.notify.aviso(`🔔 ${a.titulo} — ${a.mensagem}`);
+        else this.notify.ok(`🔔 ${a.titulo} — ${a.mensagem}`);
       }
     } catch {
       // payload malformado — ignora o frame, stream segue
+    }
+  }
+
+  /** Alerta sonoro curto e suave (Web Audio API) ao receber reserva/evento realtime. */
+  private tocarSino(): void {
+    try {
+      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.11);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.38);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.38);
+    } catch {
+      // navegador bloqueou autoplay antes de interação
     }
   }
 

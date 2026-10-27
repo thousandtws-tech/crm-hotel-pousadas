@@ -32,3 +32,6 @@ vendor/
 *.swo
 .DS_Store
 Thumbs.db
+server/maria/data/
+.venv/
+__pycache__/

@@ -168,6 +168,12 @@ pub trait ReservaRepository: Send + Sync {
 
     /// Comprovantes de pagamento de reservas finalizadas (tela Pagamentos).
     async fn comprovantes(&self) -> Result<Vec<ComprovanteResumo>, DomainError>;
+
+    /// Exclui em definitivo uma reserva **pendente ou cancelada** junto com
+    /// sua conta de consumo, itens, adicionais e reembolsos — uma transação.
+    /// Reservas iniciadas/finalizadas não podem ser excluídas (histórico
+    /// fiscal) — use Cancelar.
+    async fn remover(&self, id: i64, log: NovoLog) -> Result<(), DomainError>;
 }
 
 // ---------------------------------------------------------------------------

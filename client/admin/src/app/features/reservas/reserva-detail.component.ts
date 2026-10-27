@@ -103,14 +103,14 @@ interface AdicionalLinha {
                   <span
                     class="my-badge status-chip"
                     [class.bg-warn-t]="!res.checkin_em"
-                    [class.bg-success]="!!res.checkin_em"
+                    [class.bg-blue]="!!res.checkin_em"
                   >
                     Check-in {{ res.checkin_em ? 'realizado' : 'pendente' }}
                   </span>
                   <span
                     class="my-badge status-chip"
                     [class.bg-warn-t]="!res.checkout_em"
-                    [class.bg-success]="!!res.checkout_em"
+                    [class.bg-blue]="!!res.checkout_em"
                   >
                     Check-out {{ res.checkout_em ? 'realizado' : 'pendente' }}
                   </span>
@@ -300,7 +300,7 @@ interface AdicionalLinha {
                     <td>
                       @if (res.status !== 'c' && !res.checkout_em) {
                         <button
-                          class="badge-acao bg-danger"
+                          class="badge-acao bg-dark-blue"
                           type="button"
                           title="Remover acompanhante"
                           (click)="removerAcompanhante(a)"
@@ -904,9 +904,9 @@ interface AdicionalLinha {
     .head-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
     .badges { display: flex; gap: 8px; flex-wrap: wrap; }
     .my-badge { font-size: 0.8rem; }
-    .status-chip.bg-warn-t { background: #ffc107; color: #212529; }
-    .status-chip.bg-success { background: #28a745; }
-    .status-chip.bg-danger { background: #dc3545; }
+    .status-chip.bg-warn-t { background: #dda554; color: #212529; }
+    .status-chip.bg-blue { background: #1a6f8a; }
+    .status-chip.bg-danger { background: #6c757d; }
     .acoes { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .acoes .btn-green, .acoes .btn-gray, .acoes .btn-danger { font-size: 0.8rem; padding: 0.3em 0.7em; }
     .btn-gray.sq { padding: 0 8px; display: inline-flex; align-items: center; }

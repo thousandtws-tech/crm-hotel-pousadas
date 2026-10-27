@@ -1,8 +1,10 @@
 import { Component, computed, inject, signal, OnInit, effect } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { ApiService, num } from '@core/services/api.service';
 import {
   Acomodacao,
@@ -15,119 +17,431 @@ import { Confirm } from '@core/services/confirm.service';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
 import { AuthStore } from '@core/services/auth.store';
-
-// -- página (lista + detalhe, como index.php / frigobar.php do legado) ------------------
+import { TourGuiado } from '@core/services/tour.service';
 
 @Component({
   selector: 'app-frigobares',
+  host: { '(document:keydown.escape)': 'onEsc()' },
   imports: [
     DecimalPipe,
     ReactiveFormsModule,
     MatIconModule,
-    MatProgressSpinnerModule,
+    MatSelectModule,
+    MatFormFieldModule,
   ],
   template: `
     <div class="page">
-      @if (detalhe(); as f) {
-        <!-- ================= DETALHE (frigobar.php do legado) ================= -->
-        <div class="acoes-topo">
-          <button class="btn-dark-blue" type="button" (click)="voltar()">
-            <mat-icon>arrow_back</mat-icon> Voltar
+      <div class="fr-head">
+        <div class="fr-titulo-grupo">
+          <h2 class="fr-titulo">Frigobares</h2>
+          <span class="fr-contador" title="Total de frigobares cadastrados">
+            {{ frigobares().length }} {{ frigobares().length === 1 ? 'frigobar' : 'frigobares' }}
+          </span>
+          <span class="fr-ativos" title="Frigobares ativos">
+            {{ ativos() }} {{ ativos() === 1 ? 'ativo' : 'ativos' }}
+          </span>
+        </div>
+        <div class="fr-head-acoes">
+          <button class="btn-tour" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
+            <mat-icon>school</mat-icon> Tutorial
+          </button>
+          <button id="tour-novo" class="btn-dark-blue" type="button" (click)="abrirForm()">
+            <mat-icon>add_box</mat-icon> Novo frigobar
+          </button>
+        </div>
+      </div>
+
+      <div class="fr-info">
+        <div class="fr-info-card">
+          <span class="fr-info-icone inf-teal"><mat-icon>kitchen</mat-icon></span>
+          <div class="fr-info-txt">
+            <strong>Um frigobar por acomodação</strong>
+            <p>
+              Cada frigobar fica vinculado a uma acomodação e guarda os produtos
+              oferecidos ao hóspede.
+            </p>
+          </div>
+        </div>
+        <div class="fr-info-card">
+          <span class="fr-info-icone inf-gold"><mat-icon>add_shopping_cart</mat-icon></span>
+          <div class="fr-info-txt">
+            <strong>Reposição sai do estoque</strong>
+            <p>
+              No <b>olho teal</b> você repõe itens — a quantidade é descontada do
+              estoque automaticamente.
+            </p>
+          </div>
+        </div>
+        <div class="fr-info-card">
+          <span class="fr-info-icone inf-navy"><mat-icon>receipt_long</mat-icon></span>
+          <div class="fr-info-txt">
+            <strong>Consumo na conta</strong>
+            <p>
+              O que o hóspede consome é lançado na conta da reserva e cobrado no
+              check-out.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="inner-card fr-card">
+        <div class="fr-toolbar">
+          <div id="tour-busca" class="fr-busca" [class.foco]="buscaFoco()">
+            <mat-icon class="fr-busca-icone">search</mat-icon>
+            <input
+              class="fr-busca-input"
+              type="search"
+              [formControl]="busca"
+              placeholder="Buscar por modelo, patrimônio ou acomodação…"
+              aria-label="Buscar frigobar"
+              autocomplete="off"
+              (focus)="buscaFoco.set(true)"
+              (blur)="buscaFoco.set(false)"
+            />
+            @if (termo()) {
+              <button
+                type="button"
+                class="fr-limpar"
+                aria-label="Limpar busca"
+                (click)="busca.setValue('')"
+              ><mat-icon>close</mat-icon></button>
+            }
+          </div>
+          <button
+            id="tour-ativos"
+            type="button"
+            class="fr-toggle"
+            [class.on]="apenasAtivos()"
+            role="switch"
+            [attr.aria-checked]="apenasAtivos()"
+            (click)="apenasAtivos.set(!apenasAtivos())"
+          >
+            <span class="fr-trilho"><span class="fr-bolinha"></span></span>
+            Somente ativos
           </button>
         </div>
 
-        <div class="inner-card">
-          <div class="inner-card-header"><h4>Detalhes do Frigobar</h4></div>
-          <div class="inner-card-body">
-            <h5 class="tit-frig">Frigobar {{ f.modelo ?? '#' + f.id }}</h5>
-            <div class="grid-detalhe">
-              <form class="dados">
-                <div class="campo">
-                  <label class="form-label-inn">Modelo</label>
-                  <input class="input-inn" readonly [value]="f.modelo ?? ''" />
-                </div>
-                <div class="campo">
-                  <label class="form-label-inn">Patrimônio</label>
-                  <input class="input-inn" readonly [value]="f.patrimonio ?? ''" />
-                </div>
-                <div class="campo">
-                  <label class="form-label-inn">Acomodação</label>
-                  <input class="input-inn" readonly [value]="nomeAcomodacao(f.idacomodacao)" />
-                </div>
-                <div class="campo">
-                  <label class="form-label-inn">Número (Acomodação)</label>
-                  <input class="input-inn" readonly [value]="numAcomodacao(f.idacomodacao)" />
-                </div>
-                <div class="campo">
-                  <label class="form-label-inn">Total de itens</label>
-                  <input class="input-inn" readonly [value]="totalItens()" />
-                </div>
-              </form>
+        <div id="tour-tabela" class="fr-tabela-wrap">
+          <table class="fr-tabela">
+            <thead>
+              <tr>
+                <th>Frigobar</th>
+                <th>Acomodação</th>
+                <th class="tc">Status</th>
+                <th class="tc">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (carregando()) {
+                @for (s of skel; track s) {
+                  <tr class="skel-row">
+                    <td>
+                      <span class="skel skel-ic"></span>
+                      <span class="skel skel-nome"></span>
+                    </td>
+                    <td><span class="skel skel-txt"></span></td>
+                    <td class="tc"><span class="skel skel-chip"></span></td>
+                    <td class="tc"><span class="skel skel-acoes"></span></td>
+                  </tr>
+                }
+              } @else {
+                @for (f of filtrados(); track f.id) {
+                  <tr class="fr-row">
+                    <td>
+                      <div class="fr-cell">
+                        <span class="fr-ic"><mat-icon>kitchen</mat-icon></span>
+                        <span class="fr-cell-txt">
+                          <strong>{{ f.modelo || 'Frigobar #' + f.id }}</strong>
+                          <small>
+                            @if (f.patrimonio) { Patrimônio {{ f.patrimonio }} · }
+                            #{{ f.id }}
+                          </small>
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="fr-acom">
+                        {{ nomeAcomodacao(f.idacomodacao) }}
+                        <small>Nº {{ numAcomodacao(f.idacomodacao) }}</small>
+                      </span>
+                    </td>
+                    <td class="tc">
+                      @if (auth.isAdmin()) {
+                        <button
+                          type="button"
+                          class="status-chip badge-toggle"
+                          [class.bg-blue]="f.ativo"
+                          [class.bg-gray]="!f.ativo"
+                          [title]="f.ativo ? 'Clique para desativar' : 'Clique para ativar'"
+                          (click)="statusFrigobar(f, !f.ativo)"
+                        >
+                          {{ f.ativo ? 'Ativo' : 'Inativo' }}
+                        </button>
+                      } @else {
+                        <span
+                          class="status-chip"
+                          [class.bg-blue]="f.ativo"
+                          [class.bg-gray]="!f.ativo"
+                        >{{ f.ativo ? 'Ativo' : 'Inativo' }}</span>
+                      }
+                    </td>
+                    <td class="tc fr-acoes">
+                      <button
+                        type="button"
+                        class="badge-acao bg-yellow"
+                        title="Editar"
+                        aria-label="Editar frigobar"
+                        (click)="abrirForm(f)"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button
+                        type="button"
+                        class="badge-acao bg-blue fr-ver"
+                        title="Ver itens e repor"
+                        aria-label="Ver itens do frigobar"
+                        (click)="ver(f)"
+                      >
+                        <mat-icon>visibility</mat-icon>
+                      </button>
+                      @if (auth.isAdmin()) {
+                        <button
+                          type="button"
+                          class="badge-acao bg-dark-blue"
+                          title="Excluir"
+                          aria-label="Excluir frigobar"
+                          (click)="excluirFrigobar(f)"
+                        >
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="fr-vazio">
+                      <mat-icon>kitchen</mat-icon>
+                      <p>
+                        {{ termo() || apenasAtivos()
+                          ? 'Nenhum frigobar encontrado para esses filtros.'
+                          : 'Nenhum frigobar cadastrado ainda.' }}
+                      </p>
+                      @if (!termo() && !apenasAtivos()) {
+                        <button class="btn-dark-blue" type="button" (click)="abrirForm()">
+                          <mat-icon>add_box</mat-icon> Cadastrar o primeiro frigobar
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-              <div class="add-item">
-                <h5 class="sub">Adicionar Item</h5>
-                <div class="campo">
-                  <label class="form-label-inn" for="cat-add">Categoria</label>
-                  <select
-                    id="cat-add"
-                    class="input-inn sel"
-                    [value]="categoriaSel()"
-                    (change)="mudarCategoria($event)"
-                  >
-                    <option value="">Selecione uma opção</option>
-                    @for (c of categorias(); track c.id) {
-                      <option [value]="c.id">{{ c.nome }}</option>
+    <!-- ============ Drawer Frigobar (criar/editar) ============ -->
+    @if (drawerAberto()) {
+      <div class="drawer-backdrop" (click.self)="fecharDrawer()">
+        <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="titulo-drawer">
+          <header class="drawer-head">
+            <div class="drawer-head-txt">
+              <h5 id="titulo-drawer">{{ editando() ? 'Editar frigobar' : 'Novo frigobar' }}</h5>
+              <p>
+                {{ editando()
+                  ? 'Atualize os dados do frigobar'
+                  : 'Preencha os dados para cadastrar o frigobar' }}
+              </p>
+            </div>
+            <button type="button" class="drawer-fechar" (click)="fecharDrawer()" aria-label="Fechar painel">
+              <mat-icon>close</mat-icon>
+            </button>
+          </header>
+
+          <form [formGroup]="form" (ngSubmit)="salvar()" autocomplete="off" class="drawer-form">
+            <div class="drawer-body">
+              <section class="dsec">
+                <div class="dsec-tit"><mat-icon>kitchen</mat-icon> Identificação</div>
+                <div class="dgrid">
+                  <div class="campo full">
+                    <label class="lbl" for="fr-modelo">Modelo</label>
+                    <input
+                      id="fr-modelo" class="input-inn" type="text"
+                      formControlName="modelo" placeholder="Ex.: Consul 80L"
+                    />
+                  </div>
+                  <div class="campo full">
+                    <label class="lbl" for="fr-pat">Patrimônio</label>
+                    <input
+                      id="fr-pat" class="input-inn" type="text"
+                      formControlName="patrimonio" placeholder="Ex.: 000123"
+                    />
+                  </div>
+                  <div class="campo full">
+                    <label class="lbl" for="fr-ac">Acomodação <small class="req">*</small></label>
+                    <mat-form-field
+                      appearance="outline"
+                      subscriptSizing="dynamic"
+                      class="campo-mat"
+                      [class.err]="invalido('idacomodacao')"
+                    >
+                      <mat-select
+                        id="fr-ac"
+                        formControlName="idacomodacao"
+                        placeholder="Selecione…"
+                      >
+                        @for (a of acomodacoesSel(); track a.id) {
+                          <mat-option [value]="a.id">
+                            {{ a.nome }} (Nº {{ a.numero }})
+                          </mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                    @if (invalido('idacomodacao')) {
+                      <small class="erro-campo">Escolha a acomodação.</small>
                     }
-                  </select>
+                  </div>
                 </div>
-                <div class="campo">
-                  <label class="form-label-inn" for="item-add">Item</label>
-                  <select
-                    id="item-add"
-                    class="input-inn sel"
-                    [value]="itemSel()"
-                    (change)="itemSel.set(numeroDe($event))"
-                  >
-                    <option value="">
-                      {{ categoriaSel() ? 'Selecione um item' : 'Selecione uma categoria' }}
-                    </option>
-                    @for (i of itensDaCategoria(); track i.id) {
-                      <option [value]="i.id">
-                        {{ i.nome }} (saldo: {{ i.quantidade }})
-                      </option>
-                    }
-                  </select>
-                </div>
-                <div class="campo">
-                  <label class="form-label-inn" for="qtd-add">Quantidade</label>
-                  <input
-                    id="qtd-add"
-                    class="input-inn num"
-                    type="number"
-                    min="1"
-                    [value]="qtdSel()"
-                    (input)="qtdSel.set(numeroDe($event))"
-                  />
-                </div>
-                <button
-                  class="btn-green"
-                  type="button"
-                  [disabled]="!itemSel() || qtdSel() < 1"
-                  (click)="repor(f.id)"
-                >
-                  Adicionar
-                </button>
-              </div>
+              </section>
             </div>
 
-            <div class="tbl-wrap">
-              <table class="plain bordered">
+            <footer class="drawer-foot">
+              <span class="drawer-req"><small class="req">*</small> Campos obrigatórios</span>
+              <div class="drawer-foot-acoes">
+                <button class="btn-gray" type="button" (click)="fecharDrawer()">Cancelar</button>
+                <button class="btn-green" type="submit">
+                  <mat-icon>save</mat-icon> {{ editando() ? 'Salvar alterações' : 'Cadastrar frigobar' }}
+                </button>
+              </div>
+            </footer>
+          </form>
+        </aside>
+      </div>
+    }
+
+    <!-- ============ Modal detalhe do frigobar ============ -->
+    @if (detalhe(); as f) {
+      <div class="overlay" (click.self)="fecharDetalhe()">
+        <div class="modal-inn modal-fr" role="dialog" aria-modal="true" aria-labelledby="titulo-fr">
+          <div class="modal-head">
+            <h5 id="titulo-fr" class="fr-det-titulo">
+              <span class="fr-det-ic"><mat-icon>kitchen</mat-icon></span>
+              {{ f.modelo || 'Frigobar #' + f.id }}
+              <span
+                class="status-chip"
+                [class.bg-blue]="f.ativo"
+                [class.bg-gray]="!f.ativo"
+              >{{ f.ativo ? 'Ativo' : 'Inativo' }}</span>
+            </h5>
+            <button type="button" class="close" (click)="fecharDetalhe()" aria-label="Fechar">&times;</button>
+          </div>
+          <div class="modal-body">
+            <!-- Resumo do frigobar -->
+            <div class="det-faixa">
+              <span class="det-item">
+                <span class="det-item-ic inf-teal"><mat-icon>kitchen</mat-icon></span>
+                <span class="det-item-txt">
+                  <small>Modelo</small>
+                  <strong>{{ f.modelo || '—' }}</strong>
+                </span>
+              </span>
+              <span class="det-item">
+                <span class="det-item-ic inf-gold"><mat-icon>tag</mat-icon></span>
+                <span class="det-item-txt">
+                  <small>Patrimônio</small>
+                  <strong>{{ f.patrimonio || '—' }}</strong>
+                </span>
+              </span>
+              <span class="det-item">
+                <span class="det-item-ic inf-navy"><mat-icon>hotel</mat-icon></span>
+                <span class="det-item-txt">
+                  <small>Acomodação</small>
+                  <strong>
+                    {{ nomeAcomodacao(f.idacomodacao) }} · Nº {{ numAcomodacao(f.idacomodacao) }}
+                  </strong>
+                </span>
+              </span>
+              <span class="det-item">
+                <span class="det-item-ic inf-teal"><mat-icon>inventory_2</mat-icon></span>
+                <span class="det-item-txt">
+                  <small>Itens no frigobar</small>
+                  <strong>{{ totalItens() }} {{ totalItens() === 1 ? 'unidade' : 'unidades' }}</strong>
+                </span>
+              </span>
+            </div>
+
+            <h4><mat-icon>add_shopping_cart</mat-icon> Repor item</h4>
+            <p class="det-dica">
+              Escolha a categoria e o item — a quantidade sai do estoque na hora.
+            </p>
+            <div class="fr-add">
+              <mat-form-field
+                appearance="outline"
+                subscriptSizing="dynamic"
+                class="campo-mat fr-add-cat"
+              >
+                <mat-select
+                  [value]="categoriaSel()"
+                  (selectionChange)="categoriaSel.set($event.value); itemSel.set(null)"
+                  placeholder="Todas as categorias"
+                  aria-label="Categoria do item"
+                >
+                  <mat-option value="">Todas as categorias</mat-option>
+                  @for (c of categorias(); track c.id) {
+                    <mat-option [value]="c.id">{{ c.nome }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field
+                appearance="outline"
+                subscriptSizing="dynamic"
+                class="campo-mat fr-add-item"
+              >
+                <mat-select
+                  [(value)]="itemSel"
+                  placeholder="Escolha o item"
+                  aria-label="Item do estoque"
+                >
+                  @for (i of itensDaCategoria(); track i.id) {
+                    <mat-option [value]="i.id">
+                      {{ i.nome }} (saldo: {{ i.quantidade }})
+                    </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <div class="input-group-inn fr-add-qtd">
+                <span class="addon"><mat-icon>tag</mat-icon></span>
+                <input
+                  class="input-inn"
+                  type="number" min="1"
+                  [value]="qtdSel()"
+                  (input)="qtdSel.set(numeroDe($event) || 1)"
+                  aria-label="Quantidade"
+                />
+              </div>
+              <button
+                class="btn-dark-blue fr-add-btn"
+                type="button"
+                [disabled]="!itemSel() || qtdSel() < 1"
+                (click)="repor(f.id)"
+              >
+                <mat-icon>add</mat-icon> Adicionar
+              </button>
+            </div>
+
+            <h4><mat-icon>inventory_2</mat-icon> Itens do frigobar</h4>
+            <p class="det-dica">
+              Use <b>−</b> e <b>+</b> para ajustar a quantidade — consumo do
+              hóspede é lançado pela tela da reserva.
+            </p>
+            <div class="fr-itens-wrap">
+              <table class="fr-tabela fr-tabela-itens">
                 <thead>
                   <tr>
-                    <th>#</th>
                     <th>Item</th>
                     <th>Categoria</th>
-                    <th>Quantidade</th>
+                    <th class="tc">Quantidade</th>
                     <th>Valor unitário</th>
                     <th class="tc">Status</th>
                     <th class="tc">Excluir</th>
@@ -136,256 +450,419 @@ import { AuthStore } from '@core/services/auth.store';
                 <tbody>
                   @for (i of itens(); track i.id) {
                     <tr>
-                      <td>{{ i.id }}</td>
-                      <td>{{ i.item_nome }}</td>
-                      <td>{{ categoriaDeItem(i.iditem) }}</td>
-                      <td>
-                        <button class="btn-mini" type="button" (click)="ajustar(i, -1)" aria-label="Diminuir">
-                          <mat-icon>remove</mat-icon>
-                        </button>
-                        {{ i.quantidade }}
-                        <button class="btn-mini" type="button" (click)="ajustar(i, 1)" aria-label="Aumentar">
-                          <mat-icon>add</mat-icon>
-                        </button>
+                      <td><strong class="fr-item-nome">{{ i.item_nome }}</strong></td>
+                      <td><span class="fr-cat">{{ categoriaDeItem(i.iditem) }}</span></td>
+                      <td class="tc">
+                        <span class="qtd-ctl">
+                          <button
+                            class="qtd-btn" type="button"
+                            aria-label="Diminuir quantidade"
+                            (click)="ajustar(i, -1)"
+                          ><mat-icon>remove</mat-icon></button>
+                          <strong class="qtd-num">{{ i.quantidade }}</strong>
+                          <button
+                            class="qtd-btn" type="button"
+                            aria-label="Aumentar quantidade"
+                            (click)="ajustar(i, 1)"
+                          ><mat-icon>add</mat-icon></button>
+                        </span>
                       </td>
-                      <td>R$ {{ num(i.valor_unitario) | number: '1.2-2' }}</td>
+                      <td>
+                        <span class="fr-valor">R$ {{ num(i.valor_unitario) | number: '1.2-2' }}</span>
+                      </td>
                       <td class="tc">
                         <button
                           type="button"
                           class="status-chip badge-toggle"
-                          [class.bg-success]="i.ativo"
-                          [class.bg-danger]="!i.ativo"
+                          [class.bg-blue]="i.ativo"
+                          [class.bg-gray]="!i.ativo"
+                          [title]="i.ativo ? 'Clique para desativar' : 'Clique para ativar'"
                           (click)="statusItem(i, !i.ativo)"
                         >{{ i.ativo ? 'Ativo' : 'Inativo' }}</button>
                       </td>
                       <td class="tc">
-                        <button class="btn-del" type="button" (click)="removerItem(i)" aria-label="Remover" title="Excluir">
-                          <mat-icon>delete</mat-icon>
-                        </button>
-                      </td>
-                    </tr>
-                  } @empty {
-                    <tr><td colspan="7" class="muted tc">Frigobar vazio.</td></tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      } @else {
-        <!-- ================= LISTA (index.php do legado) ======================== -->
-        <div class="acoes-topo">
-          <button class="btn-dark-blue" type="button" (click)="novoFrigobar()">
-            <mat-icon>add_box</mat-icon> Novo Frigobar
-          </button>
-        </div>
-
-        <div class="inner-card">
-          <div class="inner-card-header"><h4>Gerenciar Frigobar</h4></div>
-          <div class="inner-card-body">
-            @if (carregando()) {
-              <div class="center"><mat-spinner diameter="36" /></div>
-            }
-            <div class="tbl-wrap">
-              <table class="plain bordered">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Modelo</th>
-                    <th>Patrimônio</th>
-                    <th>Acomodação</th>
-                    <th class="tc">Status</th>
-                    <th class="tc">Ação</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (f of frigobares(); track f.id) {
-                    <tr>
-                      <td>{{ f.id }}</td>
-                      <td>
-                        @if (editando() === f.id) {
-                          <input class="input-inn cel" [value]="editModelo" (input)="editModelo = valorDe($event)" />
-                        } @else {
-                          {{ f.modelo }}
-                        }
-                      </td>
-                      <td>
-                        @if (editando() === f.id) {
-                          <input class="input-inn cel" [value]="editPatrimonio" (input)="editPatrimonio = valorDe($event)" />
-                        } @else {
-                          {{ f.patrimonio }}
-                        }
-                      </td>
-                      <td>
-                        @if (editando() === f.id) {
-                          <select
-                            class="input-inn sel"
-                            [value]="editAcomodacao"
-                            (change)="editAcomodacao = numeroDe($event)"
-                          >
-                            @for (a of acomodacoes(); track a.id) {
-                              <option [value]="a.id">{{ a.nome }}</option>
-                            }
-                          </select>
-                        } @else {
-                          {{ nomeAcomodacao(f.idacomodacao) }}
-                        }
-                      </td>
-                      <td class="tc">
-                        @if (auth.isAdmin()) {
-                          <button
-                            type="button"
-                            class="status-chip badge-toggle"
-                            [class.bg-success]="f.ativo"
-                            [class.bg-danger]="!f.ativo"
-                            [title]="f.ativo ? 'Desativar' : 'Ativar'"
-                            (click)="statusFrigobar(f, !f.ativo)"
-                          >
-                            {{ f.ativo ? 'Ativo' : 'Inativo' }}
-                          </button>
-                        } @else {
-                          <span
-                            class="status-chip"
-                            [class.bg-success]="f.ativo"
-                            [class.bg-danger]="!f.ativo"
-                          >{{ f.ativo ? 'Ativo' : 'Inativo' }}</span>
-                        }
-                      </td>
-                      <td class="tc">
-                        @if (editando() === f.id) {
-                          <button
-                            type="button"
-                            class="badge-acao bg-green"
-                            title="Salvar"
-                            (click)="salvarEdicao(f)"
-                          >
-                            <mat-icon>check</mat-icon>
-                          </button>
-                        } @else {
-                          <button
-                            type="button"
-                            class="badge-acao bg-yellow text-black-50"
-                            title="Editar"
-                            (click)="editar(f)"
-                          >
-                            <mat-icon>edit</mat-icon>
-                          </button>
-                        }
                         <button
-                          type="button"
-                          class="badge-acao bg-blue1"
-                          title="Visualizar"
-                          (click)="ver(f)"
-                        >
-                          <mat-icon>visibility</mat-icon>
-                        </button>
+                          class="btn-del" type="button"
+                          title="Remover do frigobar"
+                          aria-label="Remover {{ i.item_nome }} do frigobar"
+                          (click)="removerItem(i)"
+                        ><mat-icon>delete</mat-icon></button>
                       </td>
                     </tr>
                   } @empty {
-                    @if (!carregando()) {
-                      <tr><td colspan="6" class="muted tc">Nenhum frigobar cadastrado.</td></tr>
-                    }
+                    <tr>
+                      <td colspan="6" class="fr-vazio">
+                        <mat-icon>inventory_2</mat-icon>
+                        <p>Frigobar vazio — use o painel acima para repor itens.</p>
+                      </td>
+                    </tr>
                   }
                 </tbody>
               </table>
             </div>
           </div>
-        </div>
-      }
-    </div>
-
-    <!-- ============ Modal novo frigobar ============ -->
-    @if (modalNovo()) {
-      <div class="overlay" (click.self)="fecharModal()">
-        <div class="modal-inn" role="dialog" aria-modal="true" aria-labelledby="titulo-frig">
-          <div class="modal-head">
-            <h5 id="titulo-frig">Cadastrar frigobar</h5>
-            <button type="button" class="close" (click)="fecharModal()" aria-label="Fechar">&times;</button>
-          </div>
-          <form [formGroup]="formNovo" (ngSubmit)="criarFrigobar()">
-            <div class="modal-body">
-              <div class="campo">
-                <label class="lbl" for="fr-modelo"> Modelo </label>
-                <input
-                  id="fr-modelo"
-                  class="input-inn"
-                  type="text"
-                  formControlName="modelo"
-                  placeholder="Ex.: Consul 80L"
-                  title="Modelo do frigobar"
-                />
-              </div>
-              <div class="campo">
-                <label class="lbl" for="fr-pat"> Patrimônio </label>
-                <input
-                  id="fr-pat"
-                  class="input-inn"
-                  type="text"
-                  formControlName="patrimonio"
-                  placeholder="Ex.: 000123"
-                  title="Patrimônio"
-                />
-              </div>
-              <div class="campo">
-                <label class="lbl" for="fr-ac"> Acomodação <small class="req">*</small> </label>
-                <select id="fr-ac" class="input-inn" formControlName="idacomodacao" title="Acomodação">
-                  <option [ngValue]="null">Selecione uma opção</option>
-                  @for (a of acomodacoes(); track a.id) {
-                    <option [ngValue]="a.id">{{ a.nome }} ({{ a.numero }})</option>
-                  }
-                </select>
-              </div>
-            </div>
-            <div class="modal-foot">
-              <button class="btn-green" type="submit" [disabled]="formNovo.invalid">
-                <mat-icon>save</mat-icon> Gravar
-              </button>
-            </div>
-          </form>
         </div>
       </div>
     }
   `,
   styles: `
-    .tbl-wrap { overflow-x: auto; }
-    .center { display: grid; place-items: center; padding: 24px; }
-    .badge-acao {
-      display: inline-flex; align-items: center;
-      border: none; border-radius: 0.25rem;
-      padding: 0.35em 0.55em; margin: 0 3px;
-      color: #fff; cursor: pointer;
+    /* ---------- cabeçalho da página ---------- */
+    .fr-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap; margin-bottom: 14px;
     }
-    .badge-acao mat-icon { font-size: 15px; width: 15px; height: 15px; }
-    .badge-acao:hover { filter: brightness(0.9); }
-    .cel { min-width: 110px; }
-    .sel { min-width: 160px; }
-    .num { width: 100px; }
-    .btn-mini {
-      background: none; border: 1px solid #1f618d; border-radius: 4px;
-      padding: 0 6px; margin: 0 4px; cursor: pointer; vertical-align: middle;
-      display: inline-flex; align-items: center;
+    .fr-titulo-grupo { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .fr-titulo {
+      margin: 0; font-size: 1.35rem; font-weight: 700;
+      color: #054054; letter-spacing: -0.01em;
     }
-    .btn-mini mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .btn-mini:hover { background: #1f618d; color: #fff; }
+    .fr-contador {
+      font-size: 0.78rem; font-weight: 600; color: #1a6f8a;
+      background: rgba(26, 111, 138, 0.12);
+      border-radius: 999px; padding: 3px 10px; white-space: nowrap;
+    }
+    .fr-ativos {
+      font-size: 0.78rem; font-weight: 600; color: #b8842f;
+      background: rgba(221, 165, 84, 0.16);
+      border-radius: 999px; padding: 3px 10px; white-space: nowrap;
+    }
+    .fr-head-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+    .fr-head-acoes button { display: inline-flex; align-items: center; gap: 6px; }
+    .btn-tour {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1.5px solid #4b95ab; background: #fff;
+      color: #1a6f8a; border-radius: 4px;
+      padding: 0 14px; min-height: 34px; cursor: pointer;
+      font-size: 0.85rem; font-weight: 600;
+      transition: background .15s ease, color .15s ease;
+    }
+    .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .btn-tour:hover { background: #1a6f8a; color: #fff; border-color: #1a6f8a; }
+
+    /* ---------- banners de informação ---------- */
+    .fr-info {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 14px; margin-bottom: 16px;
+    }
+    .fr-info-card {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: #fff; border: 1px solid #e3eaef; border-radius: 12px;
+      padding: 15px 16px;
+      transition: box-shadow 0.15s ease, transform 0.15s ease;
+    }
+    .fr-info-card:hover {
+      box-shadow: 0 6px 18px rgba(5, 64, 84, 0.08);
+      transform: translateY(-1px);
+    }
+    .fr-info-icone {
+      width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .fr-info-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
+    .inf-teal { background: rgba(26, 111, 138, 0.12); color: #1a6f8a; }
+    .inf-gold { background: rgba(221, 165, 84, 0.16); color: #b8842f; }
+    .inf-navy { background: rgba(5, 64, 84, 0.1); color: #054054; }
+    .fr-info-txt { min-width: 0; }
+    .fr-info-txt strong {
+      display: block; font-size: 0.9rem; font-weight: 700;
+      color: #054054; margin-bottom: 3px;
+    }
+    .fr-info-txt p { margin: 0; font-size: 0.8rem; line-height: 1.5; color: #6b7f8a; }
+    .fr-info-txt b { color: #40525d; }
+    @media (max-width: 960px) { .fr-info { grid-template-columns: 1fr; } }
+
+    /* ---------- toolbar ---------- */
+    .fr-card { padding-top: 14px; }
+    .fr-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 28px; flex-wrap: wrap; margin-bottom: 18px; padding: 4px 2px;
+    }
+    .fr-busca {
+      display: flex; align-items: center; gap: 8px;
+      flex: 1; min-width: 240px; max-width: 460px;
+      background: #fff; border: 1px solid #d7e0e6; border-radius: 8px;
+      padding: 0 10px; height: 40px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .fr-busca.foco {
+      border-color: #1a6f8a;
+      box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14);
+    }
+    .fr-busca-icone { color: #6b7f8a; font-size: 20px; width: 20px; height: 20px; }
+    .fr-busca-input {
+      flex: 1; border: none; outline: none; background: transparent;
+      font-size: 0.9rem; color: #212529; font-family: inherit; height: 100%;
+    }
+    .fr-busca-input::placeholder { color: #9aa5b1; }
+    .fr-busca-input::-webkit-search-cancel-button { display: none; }
+    .fr-limpar {
+      border: none; background: #eef2f5; border-radius: 50%;
+      width: 22px; height: 22px; cursor: pointer; color: #5d6d7e;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 0;
+    }
+    .fr-limpar mat-icon { font-size: 14px; width: 14px; height: 14px; }
+    .fr-limpar:hover { background: #dde5ea; }
+
+    .fr-toggle {
+      display: inline-flex; align-items: center; gap: 14px;
+      border: 1px solid #d7e0e6; background: #fff; border-radius: 999px;
+      padding: 8px 20px 8px 12px; font-size: 0.84rem; font-weight: 600;
+      color: #5d6d7e; cursor: pointer; font-family: inherit;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .fr-trilho {
+      width: 34px; height: 19px; border-radius: 999px;
+      background: #cbd5dc; position: relative; transition: background 0.18s;
+      flex-shrink: 0;
+    }
+    .fr-bolinha {
+      position: absolute; top: 2px; left: 2px;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+      transition: transform 0.18s;
+    }
+    .fr-toggle.on { border-color: #1a6f8a; color: #054054; }
+    .fr-toggle.on .fr-trilho { background: #1a6f8a; }
+    .fr-toggle.on .fr-bolinha { transform: translateX(16px); }
+
+    /* ---------- tabela ---------- */
+    .fr-tabela-wrap { overflow-x: auto; border-radius: 8px; min-height: 42vh; }
+    .fr-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    .fr-tabela thead th {
+      position: sticky; top: 0; z-index: 1;
+      background: #f4f8fa; color: #40525d;
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; padding: 14px 16px; text-align: left;
+      border-bottom: 2px solid #e3eaef; white-space: nowrap;
+    }
+    .fr-tabela tbody td {
+      padding: 16px; border-bottom: 1px solid #edf1f4;
+      vertical-align: middle; color: #33424c;
+    }
+    .fr-tabela tbody tr:hover { background: #f7fafb; }
+    .fr-tabela .tc { text-align: center; }
+    .fr-cell { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .fr-ic {
+      width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+      background: rgba(5, 64, 84, 0.08); color: #054054;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .fr-ic mat-icon { font-size: 22px; width: 22px; height: 22px; }
+    .fr-cell-txt { display: flex; flex-direction: column; min-width: 0; }
+    .fr-cell-txt strong { font-size: 0.95rem; color: #054054; font-weight: 700; }
+    .fr-cell-txt small { font-size: 0.76rem; color: #8a99a4; }
+    .fr-acom { display: inline-flex; flex-direction: column; }
+    .fr-acom small { font-size: 0.74rem; color: #8a99a4; }
+    .fr-tabela .badge-acao { padding: 0.5em 0.68em; }
+    .fr-tabela .badge-acao mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .fr-tabela .status-chip { padding: 6px 14px; font-size: 0.8rem; }
+
+    /* ---------- estado vazio / skeleton ---------- */
+    .fr-vazio {
+      text-align: center; padding: 40px 16px !important; color: #7b8b96;
+    }
+    .fr-vazio mat-icon {
+      font-size: 40px; width: 40px; height: 40px;
+      color: #b8c5cd; margin-bottom: 8px;
+    }
+    .fr-vazio p { margin: 0 0 14px; font-size: 0.9rem; }
+    .skel-row td { border-bottom: 1px solid #edf1f4; }
+    .skel {
+      display: inline-block; border-radius: 6px;
+      background: linear-gradient(90deg, #eef2f5 25%, #e2e9ee 50%, #eef2f5 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+    .skel-ic { width: 42px; height: 42px; border-radius: 10px; }
+    .skel-nome { width: 150px; height: 14px; margin-left: 12px; vertical-align: middle; }
+    .skel-txt { width: 110px; height: 13px; }
+    .skel-chip { width: 62px; height: 24px; border-radius: 999px; }
+    .skel-acoes { width: 110px; height: 26px; }
+
+    /* ---------- drawer lateral ---------- */
+    .drawer-backdrop {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(5, 32, 43, 0.45);
+      animation: fadeIn 0.18s ease-out;
+    }
+    @keyframes fadeIn { from { opacity: 0; } }
+    .drawer {
+      position: fixed; top: 0; right: 0; bottom: 0; z-index: 201;
+      width: min(540px, 100vw);
+      background: #f7fafb;
+      box-shadow: -12px 0 40px rgba(3, 32, 43, 0.28);
+      display: flex; flex-direction: column;
+      animation: drawerIn 0.22s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+    @keyframes drawerIn {
+      from { transform: translateX(64px); opacity: 0.4; }
+      to { transform: none; opacity: 1; }
+    }
+    .drawer-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 12px; padding: 18px 22px;
+      background: #fff; border-bottom: 1px solid #e3eaee;
+      flex-shrink: 0;
+    }
+    .drawer-head-txt h5 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #054054; }
+    .drawer-head-txt p { margin: 3px 0 0; font-size: 0.8rem; color: #7b8b96; }
+    .drawer-fechar {
+      border: none; background: #eef2f5; border-radius: 8px;
+      width: 34px; height: 34px; cursor: pointer; color: #5d6d7e;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background 0.15s;
+    }
+    .drawer-fechar:hover { background: #dde5ea; color: #054054; }
+    .drawer-fechar mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    .drawer-form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 18px 22px; }
+    .dsec {
+      background: #fff; border: 1px solid #e6edf1; border-radius: 10px;
+      padding: 16px; margin-bottom: 14px;
+    }
+    .dsec-tit {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; color: #1a6f8a; margin-bottom: 12px;
+    }
+    .dsec-tit mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+    .dgrid .full { grid-column: 1 / -1; }
+    .campo { display: flex; flex-direction: column; gap: 4px; }
+    .campo .lbl { font-size: 0.8rem; font-weight: 600; color: #40525d; }
+    .campo .req, .drawer-req .req { color: #dc3545; }
+    .erro-campo { color: #dc3545; font-size: 0.74rem; font-weight: 500; }
+    .input-inn.inval { border-color: #dc3545; box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.12); }
+    .drawer-foot {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 13px 22px;
+      background: #fff; border-top: 1px solid #e3eaee;
+      flex-shrink: 0;
+    }
+    .drawer-req { font-size: 0.76rem; color: #8a99a4; }
+    .drawer-foot-acoes { display: flex; gap: 8px; }
+    .drawer-foot-acoes .btn-green,
+    .drawer-foot-acoes .btn-gray {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 0.5rem 1rem;
+    }
+    .drawer-foot-acoes mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .input-group-inn { display: flex; align-items: stretch; }
+    .input-group-inn .addon {
+      display: inline-flex; align-items: center;
+      padding: 0 10px; font-size: 0.8rem;
+      background: #5d6d7e; color: #fff;
+      border: 1px solid #5d6d7e;
+      border-radius: 4px 0 0 4px;
+    }
+    .input-group-inn .addon mat-icon { font-size: 15px; width: 15px; height: 15px; }
+    .input-group-inn .input-inn { border-radius: 0 4px 4px 0; flex: 1; }
+
+    /* ---------- modal detalhe do frigobar ---------- */
+    .modal-fr { max-width: 860px; width: calc(100vw - 32px); }
+    .modal-fr .modal-body { max-height: 78vh; overflow-y: auto; }
+    .fr-det-titulo { display: flex; align-items: center; gap: 10px; }
+    .fr-det-ic {
+      width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+      background: rgba(5, 64, 84, 0.1); color: #054054;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .fr-det-ic mat-icon { font-size: 19px; width: 19px; height: 19px; }
+    .modal-fr h4 {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.82rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; color: #1a6f8a; margin: 18px 0 10px;
+    }
+    .modal-fr h4 mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .det-dica {
+      margin: -4px 0 10px; font-size: 0.76rem; color: #8a99a4; line-height: 1.5;
+    }
+    .det-dica b { color: #40525d; }
+
+    /* faixa-resumo — itens fluem sem truncar */
+    .det-faixa {
+      display: flex; flex-wrap: wrap; align-items: center;
+      gap: 10px 24px;
+      background: linear-gradient(135deg, #f2f8fb 0%, #f7faf6 100%);
+      border: 1px solid #dce8ee; border-radius: 12px;
+      padding: 12px 18px; margin: 0 0 4px;
+    }
+    .det-item { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
+    .det-item-ic {
+      width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .det-item-ic mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .det-item-txt { display: flex; flex-direction: column; line-height: 1.15; }
+    .det-item-txt small {
+      font-size: 0.66rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; color: #7d97a1;
+    }
+    .det-item-txt strong {
+      font-size: 0.9rem; color: #054054; font-weight: 700; white-space: nowrap;
+    }
+
+    /* faixa de reposição de item */
+    .fr-add {
+      display: flex; align-items: stretch; gap: 10px; flex-wrap: wrap;
+      background: #f4f9fb; border: 1px solid #e0ebf0; border-radius: 10px;
+      padding: 12px;
+    }
+    .fr-add-cat { width: 200px; }
+    .fr-add-item { flex: 1; min-width: 200px; }
+    .fr-add .campo-mat { margin: 0; }
+    .fr-add-qtd { width: 110px; }
+    .fr-add-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      border-radius: 4px; padding: 0 18px; font-size: 0.85rem;
+    }
+    .fr-add-btn mat-icon { font-size: 17px; width: 17px; height: 17px; }
+
+    /* itens do frigobar */
+    .fr-itens-wrap { overflow-x: auto; border-radius: 8px; }
+    .fr-tabela-itens .fr-item-nome { color: #054054; font-size: 0.9rem; }
+    .fr-cat {
+      font-size: 0.78rem; font-weight: 600; color: #1a6f8a;
+      background: rgba(26, 111, 138, 0.1);
+      border-radius: 999px; padding: 3px 10px; white-space: nowrap;
+    }
+    .fr-valor { font-variant-numeric: tabular-nums; font-weight: 600; color: #054054; }
+    .qtd-ctl {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #f2f6f8; border: 1px solid #dfe8ed; border-radius: 999px;
+      padding: 3px 6px;
+    }
+    .qtd-btn {
+      width: 26px; height: 26px; border-radius: 50%;
+      border: none; background: #fff; color: #1a6f8a; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      box-shadow: 0 1px 3px rgba(5, 64, 84, 0.15);
+      transition: background 0.15s, color 0.15s;
+    }
+    .qtd-btn mat-icon { font-size: 15px; width: 15px; height: 15px; }
+    .qtd-btn:hover { background: #1a6f8a; color: #fff; }
+    .qtd-num {
+      min-width: 22px; text-align: center; font-size: 0.92rem;
+      font-variant-numeric: tabular-nums; color: #054054;
+    }
     .btn-del {
       background: none; border: none; cursor: pointer;
-      color: #842029; padding: 2px;
+      color: #6c757d; padding: 4px; border-radius: 6px;
+      display: inline-flex; align-items: center;
+      transition: color 0.15s, background 0.15s;
     }
-    .btn-del:hover { color: #dc3545; }
+    .btn-del mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    .btn-del:hover { color: #054054; background: rgba(5, 64, 84, 0.08); }
 
-    .tit-frig { text-align: center; width: 100%; margin-bottom: 1.5rem; }
-    .grid-detalhe {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+    @media (max-width: 640px) {
+      .fr-head { flex-direction: column; align-items: stretch; }
+      .fr-head-acoes { justify-content: stretch; }
+      .fr-head-acoes button { flex: 1; justify-content: center; }
+      .fr-busca { max-width: none; }
+      .fr-add-cat, .fr-add-qtd { width: 100%; }
     }
-    .dados {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
-      border: 1px solid #c8c8c8; border-radius: 0.25rem; padding: 0.75rem;
-      align-content: start;
-    }
-    .dados .campo:first-child { grid-column: 1 / -1; }
-    .add-item { display: flex; flex-direction: column; gap: 0.75rem; max-width: 340px; }
-    .add-item .sub { margin: 0 0 0.25rem; }
-    @media (max-width: 900px) { .grid-detalhe { grid-template-columns: 1fr; } }
   `,
 })
 export class FrigobaresComponent implements OnInit {
@@ -406,10 +883,16 @@ export class FrigobaresComponent implements OnInit {
         if (d) this.carregarItens(d.id);
       }
     });
+    this.busca.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((v) => this.termo.set(v.trim().toLowerCase()));
   }
+
   private readonly api = inject(ApiService);
   private readonly notify = inject(Notify);
+  private readonly tour = inject(TourGuiado);
   private readonly confirm = inject(Confirm);
+  private readonly fb = inject(FormBuilder);
   protected readonly auth = inject(AuthStore);
 
   protected readonly frigobares = signal<Frigobar[]>([]);
@@ -419,21 +902,28 @@ export class FrigobaresComponent implements OnInit {
   protected readonly itens = signal<ItemFrigobarView[]>([]);
   protected readonly detalhe = signal<Frigobar | null>(null);
   protected readonly carregando = signal(true);
+  protected readonly busca = new FormControl('', { nonNullable: true });
+  /** Termo da busca já normalizado — alimenta o filtro instantâneo. */
+  protected readonly termo = signal('');
+  protected readonly buscaFoco = signal(false);
+  protected readonly apenasAtivos = signal(false);
+  /** Linhas fantasma exibidas enquanto a lista carrega. */
+  protected readonly skel = [1, 2, 3, 4, 5];
   protected readonly num = num;
 
-  // edição inline
-  protected readonly editando = signal<number | null>(null);
-  protected editModelo = '';
-  protected editPatrimonio = '';
-  protected editAcomodacao = 0;
+  // drawer criar/editar
+  protected readonly drawerAberto = signal(false);
+  protected readonly editando = signal<Frigobar | null>(null);
+  /** Marca a 1ª tentativa de salvar — exibe os erros inline daí em diante. */
+  protected readonly tentouSalvar = signal(false);
 
-  // adicionar item (detalhe)
-  protected readonly modalNovo = signal(false);
-  protected readonly formNovo = inject(FormBuilder).nonNullable.group({
+  protected readonly form = this.fb.nonNullable.group({
     modelo: [''],
     patrimonio: [''],
     idacomodacao: [null as number | null, Validators.required],
   });
+
+  // adicionar item (modal de detalhe)
   protected readonly categoriaSel = signal<number | ''>('');
   protected readonly itemSel = signal<number | null>(null);
   protected readonly qtdSel = signal(1);
@@ -443,6 +933,33 @@ export class FrigobaresComponent implements OnInit {
       (i) => i.ativo && (!this.categoriaSel() || i.idcategoria === this.categoriaSel()),
     ),
   );
+
+  /** Acomodações oferecidas no drawer — ativas + a já vinculada na edição. */
+  protected readonly acomodacoesSel = computed(() => {
+    const atual = this.editando()?.idacomodacao;
+    return this.acomodacoes().filter((a) => a.ativo || a.id === atual);
+  });
+
+  /** Frigobares ativos — selo dourado do cabeçalho. */
+  protected readonly ativos = computed(
+    () => this.frigobares().filter((f) => f.ativo).length,
+  );
+
+  /** Filtro instantâneo: modelo, patrimônio ou acomodação (nome/número). */
+  protected readonly filtrados = computed(() => {
+    const q = this.termo();
+    return this.frigobares().filter((f) => {
+      if (this.apenasAtivos() && !f.ativo) return false;
+      if (!q) return true;
+      return (
+        (f.modelo ?? '').toLowerCase().includes(q) ||
+        (f.patrimonio ?? '').toLowerCase().includes(q) ||
+        String(f.id).includes(q) ||
+        this.nomeAcomodacao(f.idacomodacao).toLowerCase().includes(q) ||
+        this.numAcomodacao(f.idacomodacao).includes(q)
+      );
+    });
+  });
 
   ngOnInit(): void {
     this.carregar();
@@ -491,83 +1008,104 @@ export class FrigobaresComponent implements OnInit {
     return this.itens().reduce((s, i) => s + i.quantidade, 0);
   }
 
-  valorDe(e: Event): string {
-    return (e.target as HTMLInputElement).value;
-  }
-
   numeroDe(e: Event): number {
-    return Number((e.target as HTMLSelectElement).value);
+    return Number((e.target as HTMLInputElement).value);
   }
 
-  mudarCategoria(e: Event): void {
-    const raw = (e.target as HTMLSelectElement).value;
-    this.categoriaSel.set(raw === '' ? '' : Number(raw));
-    this.itemSel.set(null);
+  onEsc(): void {
+    if (this.tour.ativo()) return;
+    if (this.detalhe()) this.fecharDetalhe();
+    else if (this.drawerAberto()) this.fecharDrawer();
   }
 
-  // ---- lista ----------------------------------------------------------------
+  // ---- lista / drawer --------------------------------------------------------
 
-  novoFrigobar(): void {
-    this.formNovo.reset({ modelo: '', patrimonio: '', idacomodacao: null });
-    this.modalNovo.set(true);
-  }
-
-  fecharModal(): void {
-    this.modalNovo.set(false);
-  }
-
-  criarFrigobar(): void {
-    if (this.formNovo.invalid) return;
-    const v = this.formNovo.getRawValue();
-    this.api
-      .criarFrigobar({
-        modelo: v.modelo || null,
-        patrimonio: v.patrimonio || null,
-        idacomodacao: v.idacomodacao!,
-      })
-      .subscribe({
-        next: () => {
-          this.notify.ok('Frigobar criado.');
-          this.fecharModal();
-          this.carregar();
-        },
-        error: (e) => this.notify.erro(e),
+  abrirForm(f?: Frigobar): void {
+    this.editando.set(f ?? null);
+    this.tentouSalvar.set(false);
+    if (f) {
+      this.form.patchValue({
+        modelo: f.modelo ?? '',
+        patrimonio: f.patrimonio ?? '',
+        idacomodacao: f.idacomodacao,
       });
+    } else {
+      this.form.reset({ modelo: '', patrimonio: '', idacomodacao: null });
+    }
+    this.drawerAberto.set(true);
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => document.getElementById('fr-modelo')?.focus(), 260);
   }
 
-  editar(f: Frigobar): void {
-    this.editando.set(f.id);
-    this.editModelo = f.modelo ?? '';
-    this.editPatrimonio = f.patrimonio ?? '';
-    this.editAcomodacao = f.idacomodacao;
+  fecharDrawer(): void {
+    this.drawerAberto.set(false);
+    this.editando.set(null);
+    document.body.style.overflow = '';
   }
 
-  salvarEdicao(f: Frigobar): void {
-    this.api
-      .atualizarFrigobar(f.id, {
-        modelo: this.editModelo || null,
-        patrimonio: this.editPatrimonio || null,
-        idacomodacao: this.editAcomodacao || f.idacomodacao,
-        version: f.version,
-      })
-      .subscribe({
-        next: () => {
-          this.editando.set(null);
-          this.notify.ok('Frigobar atualizado.');
-          this.carregar();
-        },
-        error: (e) => this.notify.erro(e),
-      });
+  invalido(ctrl: string): boolean {
+    const c = this.form.get(ctrl);
+    return !!c && c.invalid && (c.touched || this.tentouSalvar());
   }
 
-  statusFrigobar(f: Frigobar, ativo: boolean): void {
-    this.api.statusFrigobar(f.id, ativo).subscribe({
-      next: () => this.carregar(),
+  salvar(): void {
+    if (this.form.invalid) {
+      this.tentouSalvar.set(true);
+      this.notify.aviso('Revise os campos destacados.');
+      setTimeout(
+        () => document.querySelector('.drawer .campo-mat.err')?.scrollIntoView({ block: 'center' }),
+        60,
+      );
+      return;
+    }
+    const v = this.form.getRawValue();
+    const editando = this.editando();
+    const input = {
+      modelo: v.modelo || null,
+      patrimonio: v.patrimonio || null,
+      idacomodacao: v.idacomodacao!,
+      version: editando?.version,
+    };
+    const op = editando
+      ? this.api.atualizarFrigobar(editando.id, input)
+      : this.api.criarFrigobar(input);
+    op.subscribe({
+      next: () => {
+        this.notify.ok(editando ? 'Frigobar atualizado.' : 'Frigobar cadastrado.');
+        this.fecharDrawer();
+        this.carregar();
+      },
       error: (e) => this.notify.erro(e),
     });
   }
 
-  // ---- detalhe --------------------------------------------------------------
+  statusFrigobar(f: Frigobar, ativo: boolean): void {
+    this.api.statusFrigobar(f.id, ativo).subscribe({
+      next: () => {
+        this.notify.ok(ativo ? 'Frigobar ativado.' : 'Frigobar desativado.');
+        this.carregar();
+      },
+      error: (e) => this.notify.erro(e),
+    });
+  }
+
+  async excluirFrigobar(f: Frigobar): Promise<void> {
+    const ok = await this.confirm.perguntar(
+      `Excluir o frigobar Nº${f.id}${f.modelo ? ' (' + f.modelo + ')' : ''}? Todos os itens associados serão removidos.`,
+      { titulo: 'Excluir frigobar', confirmar: 'Excluir' },
+    );
+    if (!ok) return;
+    this.api.excluirFrigobar(f.id).subscribe({
+      next: (r) => {
+        this.notify.ok(r.mensagem);
+        if (this.detalhe()?.id === f.id) this.fecharDetalhe();
+        this.carregar();
+      },
+      error: (e) => this.notify.erro(e),
+    });
+  }
+
+  // ---- detalhe (modal) --------------------------------------------------------
 
   ver(f: Frigobar): void {
     this.detalhe.set(f);
@@ -577,9 +1115,8 @@ export class FrigobaresComponent implements OnInit {
     this.qtdSel.set(1);
   }
 
-  voltar(): void {
+  fecharDetalhe(): void {
     this.detalhe.set(null);
-    this.carregar();
   }
 
   carregarItens(idfrigobar: number): void {
@@ -634,5 +1171,129 @@ export class FrigobaresComponent implements OnInit {
       next: () => this.carregarItens(i.idfrigobar),
       error: (e) => this.notify.erro(e),
     });
+  }
+
+  /** Tour guiado da tela (driver.js) — abre até o drawer de cadastro. */
+  iniciarTour(): void {
+    this.tour.iniciar(
+      [
+        {
+          popover: {
+            title: 'Bem-vindo à tela de Frigobares!',
+            description:
+              'Este tour rápido mostra cada parte da tela. Avance com <b>Próximo</b> ' +
+              'e feche a qualquer momento no ✕ ou pela tecla Esc.',
+          },
+        },
+        {
+          element: '#tour-busca',
+          popover: {
+            title: 'Busca rápida',
+            description:
+              'Filtre por <b>modelo</b>, <b>patrimônio</b> ou <b>acomodação</b> — ' +
+              'a lista filtra sozinha enquanto digita.',
+            side: 'bottom',
+          },
+        },
+        {
+          element: '#tour-ativos',
+          popover: {
+            title: 'Somente ativos',
+            description:
+              'Ligado, a lista mostra apenas frigobares ativos. Desligado, ' +
+              'aparecem todos — inclusive os inativos.',
+            side: 'bottom',
+          },
+        },
+        {
+          element: '#tour-novo',
+          popover: {
+            title: 'Novo frigobar',
+            description:
+              'Clique aqui para cadastrar. Um painel abre à direita com o ' +
+              'formulário — vou abrir para você ver!',
+            side: 'bottom',
+            onNextClick: () => {
+              this.abrirForm();
+              setTimeout(() => this.tour.avancar(), 420);
+            },
+          },
+        },
+        {
+          element: '.drawer',
+          popover: {
+            title: 'Painel de cadastro',
+            description:
+              'Informe <b>modelo</b> e <b>patrimônio</b> (opcionais) e escolha a ' +
+              '<b>acomodação</b> — a única obrigatória. Conclua em ' +
+              '<b>Cadastrar</b> no rodapé.',
+            side: 'left',
+            onNextClick: () => {
+              this.fecharDrawer();
+              setTimeout(() => this.tour.avancar(), 120);
+            },
+            onPrevClick: () => {
+              this.fecharDrawer();
+              this.tour.voltar();
+            },
+          },
+        },
+        {
+          element: '#tour-tabela',
+          popover: {
+            title: 'Lista de frigobares',
+            description:
+              'Cada linha mostra o modelo, o patrimônio e a acomodação onde o ' +
+              'frigobar está instalado.',
+            side: 'top',
+          },
+        },
+        {
+          element: 'tr.fr-row .fr-ver',
+          skipMissingElement: true,
+          popover: {
+            title: 'Itens e reposição',
+            description:
+              'O <b>olho teal</b> abre o frigobar: veja os itens, ajuste ' +
+              'quantidades com <b>−</b>/<b>+</b> e reponha produtos — a baixa ' +
+              'sai do estoque na hora.',
+            side: 'left',
+          },
+        },
+        {
+          element: 'tr.fr-row .badge-toggle',
+          skipMissingElement: true,
+          popover: {
+            title: 'Ativar / desativar',
+            description:
+              'Clique no selo para mudar o status: <b>teal = Ativo</b>, ' +
+              '<b>cinza = Inativo</b>. Frigobares inativos ficam fora de uso.',
+            side: 'top',
+          },
+        },
+        {
+          element: 'tr.fr-row .fr-acoes',
+          skipMissingElement: true,
+          popover: {
+            title: 'Ações do frigobar',
+            description:
+              '<b>Dourado</b> edita os dados · <b>olho teal</b> abre os itens · ' +
+              '<b>navy</b> exclui (remove também os itens, sempre com confirmação).',
+            side: 'left',
+          },
+        },
+        {
+          popover: {
+            title: 'Pronto!',
+            description:
+              'Você já conhece a tela de Frigobares. Para rever, clique em ' +
+              '<b>Tutorial</b> no topo a qualquer momento.',
+          },
+        },
+      ],
+      () => {
+        if (this.drawerAberto()) this.fecharDrawer();
+      },
+    );
   }
 }

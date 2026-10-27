@@ -68,3 +68,14 @@ pub fn map_db_err(e: sqlx::Error) -> DomainError {
         }
     }
 }
+
+/// Variante de `map_db_err` para DELETE: violação de FK (23503) significa
+/// "registro em uso" — vira 409 com a mensagem amigável informada.
+pub fn map_del_err(e: sqlx::Error, msg_conflito: &str) -> DomainError {
+    if let sqlx::Error::Database(db) = &e {
+        if db.code().as_deref() == Some("23503") {
+            return DomainError::conflito(msg_conflito.to_string());
+        }
+    }
+    map_db_err(e)
+}

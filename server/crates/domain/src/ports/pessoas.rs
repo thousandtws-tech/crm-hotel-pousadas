@@ -61,6 +61,9 @@ pub trait FuncionarioRepository: Send + Sync {
         ativo: bool,
         log: NovoLog,
     ) -> Result<Funcionario, DomainError>;
+    /// Remove em definitivo (sessões, acessos e leituras de notificação
+    /// junto) — falha (409) se houver histórico de ações/reservas.
+    async fn remover(&self, id: i64, log: NovoLog) -> Result<(), DomainError>;
 }
 
 #[async_trait]
@@ -163,6 +166,10 @@ pub trait ClienteRepository: Send + Sync {
     async fn foto_caminho(&self, id: i64) -> Result<Option<String>, DomainError>;
     /// Histórico de reservas do cliente (relatório do legado).
     async fn total_reservas(&self, id: i64) -> Result<i64, DomainError>;
+    /// Remove o cliente e seus documentos (cascade) — falha (409) se houver
+    /// reservas, fichas FNRH ou vínculo como acompanhante. Devolve as chaves
+    /// (foto + scans) para a camada de API apagar no object store.
+    async fn remover(&self, id: i64, log: NovoLog) -> Result<Vec<String>, DomainError>;
 }
 
 // ---------------------------------------------------------------------------

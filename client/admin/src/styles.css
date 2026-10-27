@@ -1,5 +1,6 @@
 @import '@angular/material/prebuilt-themes/azure-blue.css';
 @import 'tailwindcss';
+@import 'driver.js/dist/driver.css';
 
 /*
  * Design system — paridade visual com o sistema legado INNJOY.
@@ -743,6 +744,88 @@ body {
   .f-grid { grid-template-columns: 1fr; }
 }
 
+/* ============ Tour guiado (driver.js) — tema pousada ============ */
+:root {
+  --driver-popover-font-family: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
+}
+.driver-popover {
+  border-radius: 14px;
+  padding: 30px 30px 22px;
+  min-width: 400px;
+  max-width: 470px;
+  border-top: 4px solid #dda554;
+  box-shadow: 0 20px 55px rgba(2, 20, 27, 0.45);
+  color: #44565f;
+}
+.driver-popover-title {
+  color: #054054;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+}
+.driver-popover-description {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #44565f;
+}
+.driver-popover-description b { color: #054054; }
+.driver-popover-progress-text {
+  color: #8fa3ab;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.driver-popover-footer { margin-top: 22px; }
+.driver-popover-footer-btn {
+  font-family: inherit;
+  background-color: #1a6f8a;
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  padding: 11px 22px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-shadow: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.driver-popover-footer-btn:hover { background-color: #054054; }
+.driver-popover-navigation-btns .driver-popover-footer-btn:first-child {
+  background-color: #e3eaec;
+  color: #44565f;
+}
+.driver-popover-navigation-btns .driver-popover-footer-btn:first-child:hover {
+  background-color: #cfdade;
+  color: #054054;
+}
+.driver-popover-close-btn {
+  color: #9fb0b7;
+  top: 8px;
+  right: 10px;
+  font-size: 22px;
+}
+.driver-popover-close-btn:hover,
+.driver-popover-close-btn:focus-visible { color: #054054; }
+@media (max-width: 480px) {
+  .driver-popover {
+    min-width: 0;
+    max-width: calc(100vw - 24px);
+    padding: 22px 22px 16px;
+  }
+}
+.driver-popover-arrow-side-left.driver-popover-arrow { border-left-color: #fff; }
+.driver-popover-arrow-side-right.driver-popover-arrow { border-right-color: #fff; }
+.driver-popover-arrow-side-top.driver-popover-arrow { border-top-color: #fff; }
+.driver-popover-arrow-side-bottom.driver-popover-arrow { border-bottom-color: #fff; }
+.driver-active-element {
+  outline: 2px solid #dda554;
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
 /* ================= Sino de notificações (inbox) ================= */
 .sino-wrap { position: relative; }
 .sino {
@@ -1050,3 +1133,65 @@ body {
 @media (min-width: 861px) {
   .login-image { display: block; }
 }
+
+/* ---------- mat-select nas cores da pousada ---------- */
+.mat-mdc-option .mdc-list-item__primary-text { font-size: 0.88rem; }
+.mat-mdc-option:hover:not(.mdc-list-item--disabled) {
+  background: rgba(26, 111, 138, 0.08);
+}
+.mat-mdc-option.mat-mdc-option-active:not(.mdc-list-item--disabled),
+.mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) {
+  background: rgba(26, 111, 138, 0.12);
+}
+.mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled)
+  .mdc-list-item__primary-text {
+  color: #054054; font-weight: 600;
+}
+.mat-mdc-select-arrow svg { fill: #1a6f8a; }
+
+/* ---------- mat-form-field + mat-select (componentes nativos Material) ---------- */
+/* Caixa igual ao .input-inn (~31px, radius 3px) para alinhar lado a lado. */
+.campo-mat {
+  width: 100%;
+  --mat-sys-primary: #1a6f8a;
+  --mat-sys-outline: #d7e0e6;
+  --mat-sys-on-surface-variant: #5d6d7e;
+}
+.campo-mat .mat-mdc-text-field-wrapper { height: 32px; }
+.campo-mat .mat-mdc-form-field-flex { height: 100%; align-items: center; }
+.campo-mat .mat-mdc-form-field-infix {
+  padding: 4px 0; min-height: 0; font-size: 0.875rem;
+}
+/* Date-range nos filtros — 40px para casar com a caixa de busca. */
+.campo-mat.rs-range .mat-mdc-text-field-wrapper { height: 40px; }
+.campo-mat.rs-range .mat-mdc-form-field-infix { padding: 8px 0; }
+.campo-mat.rs-range .mat-mdc-icon-button {
+  width: 32px; height: 32px; padding: 4px;
+}
+.campo-mat .mdc-notched-outline__leading { border-radius: 3px 0 0 3px; }
+.campo-mat .mdc-notched-outline__trailing { border-radius: 0 3px 3px 0; }
+.campo-mat.err {
+  --mat-sys-primary: #dc3545;
+  --mat-sys-outline: #dc3545;
+}
+/* Variante dos modais (CMS/Estabelecimento) — 36px, mesma caixa dos inputs do formulário. */
+.campo-mat.f-mat .mat-mdc-text-field-wrapper { height: 36px; }
+.campo-mat.f-mat .mat-mdc-form-field-infix { font-size: 0.8rem; }
+
+/* Select "nu" (sem form-field) usado dentro de tabelas. */
+.mat-sel {
+  border: 1px solid #d7e0e6; border-radius: 8px; background: #fff;
+  min-width: 180px; min-height: 38px; font-size: 0.88rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.mat-sel:focus-within {
+  border-color: #1a6f8a;
+  box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14);
+}
+.mat-sel .mat-mdc-select-trigger {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; width: 100%; padding: 7px 10px; box-sizing: border-box;
+}
+.mat-sel-sm { min-height: 32px; font-size: 0.84rem; }
+.mat-sel-sm .mat-mdc-select-trigger { padding: 5px 10px; }
+.mat-sel.vago .mat-mdc-select-value { color: #8a99a4; font-style: italic; }

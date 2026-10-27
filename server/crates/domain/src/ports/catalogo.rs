@@ -32,6 +32,8 @@ pub trait TipoAcomodacaoRepository: Send + Sync {
         ativo: bool,
         log: NovoLog,
     ) -> Result<TipoAcomodacao, DomainError>;
+    /// Remove em definitivo — falha (409) se houver acomodações vinculadas.
+    async fn remover(&self, id: i64, log: NovoLog) -> Result<(), DomainError>;
 }
 
 // ---------------------------------------------------------------------------
@@ -91,6 +93,11 @@ pub trait AcomodacaoRepository: Send + Sync {
     async fn historico_tarifas(&self, id: i64) -> Result<Vec<TarifaHistorico>, DomainError>;
     /// Ocupação por tipo de acomodação (gráfico do legado `cDadosGrafico`).
     async fn contar_por_tipo(&self) -> Result<Vec<(String, i64)>, DomainError>;
+    /// Remove a acomodação e seus dependentes (quartos, frigobar+itens,
+    /// tarifas, conteúdo CMS) numa transação; desvincula vagas de
+    /// estacionamento. Falha (409) se houver reservas. Devolve as chaves
+    /// de mídia (fotos/vídeos) para a camada de API apagar no object store.
+    async fn remover(&self, id: i64, log: NovoLog) -> Result<Vec<String>, DomainError>;
 }
 
 // ---------------------------------------------------------------------------
@@ -112,6 +119,8 @@ pub trait QuartoRepository: Send + Sync {
         ativo: bool,
         log: NovoLog,
     ) -> Result<Quarto, DomainError>;
+    /// Remove o quarto físico — falha (409) se houver reservas vinculadas.
+    async fn remover(&self, id: i64, log: NovoLog) -> Result<(), DomainError>;
 }
 
 // ---------------------------------------------------------------------------
@@ -194,6 +203,8 @@ pub trait FrigobarRepository: Send + Sync {
         log: NovoLog,
     ) -> Result<(), DomainError>;
     async fn remover_item(&self, id: i64, log: NovoLog) -> Result<(), DomainError>;
+    /// Remove o frigobar e todos os seus itens numa transação.
+    async fn remover(&self, id: i64, log: NovoLog) -> Result<(), DomainError>;
 }
 
 // ---------------------------------------------------------------------------
@@ -218,6 +229,8 @@ pub trait FormaPagamentoRepository: Send + Sync {
         ativo: bool,
         log: NovoLog,
     ) -> Result<FormaPagamento, DomainError>;
+    /// Remove em definitivo — falha (409) se já usada em consumos.
+    async fn remover(&self, id: i64, log: NovoLog) -> Result<(), DomainError>;
 }
 
 // ---------------------------------------------------------------------------

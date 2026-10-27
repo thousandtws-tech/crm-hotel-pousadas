@@ -237,4 +237,30 @@ impl EstoqueService {
             .await
             .map_err(Into::into)
     }
+
+    pub async fn remover_categoria(&self, ator: &Ator, id: i64) -> AppResult<()> {
+        ator.exigir_admin()?;
+        let log = ator.log(
+            "remoção",
+            format!("Removeu a categoria de estoque Nº{id}"),
+            "categoria_estoque",
+            id,
+            None,
+        );
+        Ok(self.repo.remover_categoria(id, log).await?)
+    }
+
+    /// Exclui o item junto com seus movimentos e vínculos de frigobar —
+    /// falha (409) se já consumido em reservas.
+    pub async fn remover_item(&self, ator: &Ator, id: i64) -> AppResult<()> {
+        ator.exigir_admin()?;
+        let log = ator.log(
+            "remoção",
+            format!("Removeu o item de estoque Nº{id}"),
+            "estoque",
+            id,
+            None,
+        );
+        Ok(self.repo.remover_item(id, log).await?)
+    }
 }

@@ -59,6 +59,8 @@ pub trait EstoqueRepository: Send + Sync {
         ativo: bool,
         log: NovoLog,
     ) -> Result<CategoriaEstoque, DomainError>;
+    /// Remove a categoria — falha (409) se houver itens vinculados.
+    async fn remover_categoria(&self, id: i64, log: NovoLog) -> Result<(), DomainError>;
 
     // itens
     async fn buscar_item(&self, id: i64) -> Result<Option<ItemEstoque>, DomainError>;
@@ -85,6 +87,10 @@ pub trait EstoqueRepository: Send + Sync {
         ativo: bool,
         log: NovoLog,
     ) -> Result<ItemEstoque, DomainError>;
+
+    /// Remove o item junto com seus movimentos de estoque e vínculos em
+    /// frigobares — falha (409) se já foi consumido em reservas.
+    async fn remover_item(&self, id: i64, log: NovoLog) -> Result<(), DomainError>;
 
     /// Movimentações em lote, cada uma atômica: atualiza saldo (`CHECK >= 0`
     /// impede negativo) e grava o lançamento no ledger.

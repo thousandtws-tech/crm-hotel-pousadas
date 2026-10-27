@@ -68,6 +68,15 @@ pub async fn status_categoria(
     ))
 }
 
+pub async fn remover_categoria(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<Json<Mensagem>, AppError> {
+    s.services.estoque.remover_categoria(&ator, id).await?;
+    Ok(Json(Mensagem::ok("Categoria removida.")))
+}
+
 // ---------------------------------------------------------------------------
 // itens
 // ---------------------------------------------------------------------------
@@ -125,6 +134,15 @@ pub async fn status_item(
             .status_item(&ator, id, body.ativo)
             .await?,
     ))
+}
+
+pub async fn remover_item(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<Json<Mensagem>, AppError> {
+    s.services.estoque.remover_item(&ator, id).await?;
+    Ok(Json(Mensagem::ok("Item removido do estoque.")))
 }
 
 // ---------------------------------------------------------------------------

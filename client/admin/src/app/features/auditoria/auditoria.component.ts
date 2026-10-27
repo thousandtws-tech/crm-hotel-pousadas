@@ -36,14 +36,18 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       <div class="page-header"><h1>Auditoria</h1></div>
 
       <div class="filtros">
-        <mat-form-field appearance="outline">
-          <mat-label>Tabela</mat-label>
-          <input matInput [formControl]="fTabela" placeholder="reserva, cliente…" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Ação</mat-label>
-          <input matInput [formControl]="fAcao" placeholder="checkin, edição…" />
-        </mat-form-field>
+        <label class="fdata">
+          <span>Tabela</span>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-mat">
+            <input matInput [formControl]="fTabela" placeholder="reserva, cliente…" />
+          </mat-form-field>
+        </label>
+        <label class="fdata">
+          <span>Ação</span>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-mat">
+            <input matInput [formControl]="fAcao" placeholder="checkin, edição…" />
+          </mat-form-field>
+        </label>
         <label class="fdata">
           <span>Desde</span>
           <app-date [formControl]="fDesde" />
@@ -52,7 +56,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
           <span>Até</span>
           <app-date [formControl]="fAte" />
         </label>
-        <button mat-stroked-button (click)="recarregar()">
+        <button class="btn-filtrar" mat-stroked-button (click)="recarregar()">
           <mat-icon>filter_alt</mat-icon> Filtrar
         </button>
       </div>
@@ -88,10 +92,17 @@ import { DateInputComponent } from '@shared/components/date-input.component';
     </div>
   `,
   styles: `
-    .filtros { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
-    .filtros mat-form-field { width: 170px; }
-    .fdata { display: flex; flex-direction: column; gap: 4px; width: 170px; }
+    .filtros { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 12px; flex-wrap: wrap; }
+    .fdata { display: flex; flex-direction: column; gap: 4px; width: 180px; }
     .fdata > span { font-size: 12px; color: #5d6d7e; font-weight: 600; }
+    .fdata .campo-mat { width: 100%; }
+    .btn-filtrar {
+      height: 32px; min-height: 32px; border-radius: 6px;
+      font-size: 0.85rem;
+      --mat-sys-primary: #1a6f8a;
+      --mat-sys-outline: #b9c7d0;
+    }
+    .btn-filtrar mat-icon { font-size: 17px; width: 17px; height: 17px; }
     .acao {
       background: var(--mat-sys-primary-container);
       border-radius: 6px; padding: 2px 10px;

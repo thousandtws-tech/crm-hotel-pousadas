@@ -159,6 +159,17 @@ pub async fn cancelar(
     Ok(Json(s.services.reservas.cancelar(&ator, id, body).await?))
 }
 
+/// `DELETE /reservas/{id}` — exclui reserva pendente ou cancelada junto com
+/// a conta de consumo (admin). Iniciadas/finalizadas → use Cancelar.
+pub async fn remover_reserva(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<StatusCode, AppError> {
+    s.services.reservas.remover(&ator, id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 // --- consumo -------------------------------------------------------------
 
 /// Venda de item do frigobar para a conta da reserva (`gItemConsumido.php`).

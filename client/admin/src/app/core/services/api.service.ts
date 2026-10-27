@@ -70,6 +70,9 @@ export class ApiService {
   statusFuncionario(id: number, ativo: boolean) {
     return this.patch<M.Funcionario>(`/funcionarios/${id}/status`, { ativo });
   }
+  excluirFuncionario(id: number) {
+    return this.del<void>(`/funcionarios/${id}`);
+  }
 
   // -- clientes ----------------------------------------------------------------
   listarClientes(busca: string | null, page = 1, porPagina = 20, apenasAtivos = false) {
@@ -88,6 +91,9 @@ export class ApiService {
   }
   statusCliente(id: number, ativo: boolean) {
     return this.patch<M.Cliente>(`/clientes/${id}/status`, { ativo });
+  }
+  excluirCliente(id: number) {
+    return this.del<void>(`/clientes/${id}`);
   }
   /** Foto cadastrada do cliente (blob autenticado — use URL.createObjectURL). */
   fotoCliente(id: number) {
@@ -166,6 +172,9 @@ export class ApiService {
   statusTipo(id: number, ativo: boolean) {
     return this.patch<M.TipoAcomodacao>(`/tipos-acomodacao/${id}/status`, { ativo });
   }
+  excluirTipo(id: number) {
+    return this.del<{ mensagem: string }>(`/tipos-acomodacao/${id}`);
+  }
 
   // -- acomodações --------------------------------------------------------------
   listarAcomodacoes(page = 1, porPagina = 50, apenasAtivas = false) {
@@ -185,6 +194,9 @@ export class ApiService {
   statusAcomodacao(id: number, ativo: boolean) {
     return this.patch<M.Acomodacao>(`/acomodacoes/${id}/status`, { ativo });
   }
+  excluirAcomodacao(id: number) {
+    return this.del<{ mensagem: string }>(`/acomodacoes/${id}`);
+  }
   tarifasAcomodacao(id: number) {
     return this.get<M.TarifaHistorico[]>(`/acomodacoes/${id}/tarifas`);
   }
@@ -196,6 +208,9 @@ export class ApiService {
   }
   statusQuarto(id: number, ativo: boolean) {
     return this.patch<M.Quarto>(`/quartos/${id}/status`, { ativo });
+  }
+  excluirQuarto(id: number) {
+    return this.del<{ mensagem: string }>(`/quartos/${id}`);
   }
 
   // -- CMS (conteúdo do site público) -------------------------------------------
@@ -270,6 +285,10 @@ export class ApiService {
       `/reservas/${id}/cancelar`, req,
     );
   }
+  /** Exclui reserva pendente/cancelada junto com a conta de consumo (admin). */
+  excluirReserva(id: number) {
+    return this.del<void>(`/reservas/${id}`);
+  }
   itensConsumidos(id: number) {
     return this.get<M.ItemConsumido[]>(`/reservas/${id}/itens-consumidos`);
   }
@@ -307,6 +326,9 @@ export class ApiService {
       impressora_id,
     });
   }
+  excluirCategoria(id: number) {
+    return this.del<{ mensagem: string }>(`/estoque/categorias/${id}`);
+  }
   listarItens(page = 1, porPagina = 50, apenasAtivos = false) {
     return this.get<M.Page<M.ItemEstoque>>('/estoque/itens', {
       page, por_pagina: porPagina, apenas_ativos: apenasAtivos,
@@ -320,6 +342,9 @@ export class ApiService {
   }
   statusItem(id: number, ativo: boolean) {
     return this.patch<M.ItemEstoque>(`/estoque/itens/${id}/status`, { ativo });
+  }
+  excluirItem(id: number) {
+    return this.del<{ mensagem: string }>(`/estoque/itens/${id}`);
   }
   listarMovimentos(page = 1, porPagina = 50) {
     return this.get<M.Page<M.MovimentoView>>('/estoque/movimentacoes', {
@@ -342,6 +367,9 @@ export class ApiService {
   }
   statusFrigobar(id: number, ativo: boolean) {
     return this.patch<M.Frigobar>(`/frigobares/${id}/status`, { ativo });
+  }
+  excluirFrigobar(id: number) {
+    return this.del<{ mensagem: string }>(`/frigobares/${id}`);
   }
   itensFrigobar(idfrigobar: number) {
     return this.get<M.ItemFrigobarView[]>(`/frigobares/${idfrigobar}/itens`);
@@ -390,6 +418,9 @@ export class ApiService {
   }
   statusPagamento(id: number, ativo: boolean) {
     return this.patch<M.FormaPagamento>(`/formas-pagamento/${id}/status`, { ativo });
+  }
+  excluirPagamento(id: number) {
+    return this.del<{ mensagem: string }>(`/formas-pagamento/${id}`);
   }
   comprovantes() {
     return this.get<M.ComprovanteResumo[]>('/pagamentos/comprovantes');

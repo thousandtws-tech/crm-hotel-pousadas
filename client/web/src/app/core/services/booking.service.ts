@@ -1,6 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { BookingFilter, BookingSubmission } from '../models/booking-request.model';
 import { HOTEL_CONFIG } from '../config/hotel-config';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -52,14 +53,43 @@ export class BookingService {
   }
 
   public async submitBookingRequest(
-    _submission: BookingSubmission
-  ): Promise<{ success: boolean; message: string }> {
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    return {
-      success: true,
-      message:
-        'Solicitação de disponibilidade registrada. Entre em contato também pelo telefone (22) 2644-3077 para agilizar a confirmação da sua reserva.'
-    };
+    submission: BookingSubmission
+  ): Promise<{ success: boolean; message: string; idreserva?: number | null }> {
+    try {
+      const res = await fetch(`${environment.apiUrl}/publico/reservas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: submission.accommodationSlug,
+          check_in: submission.checkIn,
+          check_out: submission.checkOut,
+          hospedes: Number(submission.guests) || 2,
+          nome: submission.guestName,
+          email: submission.guestEmail,
+          telefone: submission.guestPhone,
+          observacoes: submission.specialRequests || null
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return {
+          success: false,
+          message: data?.erro?.mensagem || 'Não foi possível registrar a reserva. Verifique os dados informados.'
+        };
+      }
+      return {
+        success: true,
+        idreserva: data?.idreserva ?? null,
+        message:
+          data?.mensagem ||
+          'Reserva registrada com sucesso! Nossa recepção já foi notificada em tempo real.'
+      };
+    } catch {
+      return {
+        success: false,
+        message: 'Falha de conexão com o servidor. Por favor, tente novamente ou fale conosco pelo telefone.'
+      };
+    }
   }
 
   private formatDate(d: Date): string {

@@ -169,6 +169,19 @@ impl FrigobarService {
         Ok(self.repo.remover_item(id, log).await?)
     }
 
+    /// Remove o frigobar inteiro junto com seus itens — uma transação.
+    pub async fn remover(&self, ator: &Ator, id: i64) -> AppResult<()> {
+        ator.exigir_admin()?;
+        let log = ator.log(
+            "remoção",
+            format!("Removeu o frigobar Nº{id}"),
+            "frigobar",
+            id,
+            None,
+        );
+        Ok(self.repo.remover(id, log).await?)
+    }
+
     pub async fn buscar(&self, id: i64) -> AppResult<Frigobar> {
         self.repo
             .buscar(id)

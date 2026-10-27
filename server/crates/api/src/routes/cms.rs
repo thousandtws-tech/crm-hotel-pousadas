@@ -11,8 +11,9 @@ use axum::Json;
 use clarituz_application::actor::Ator;
 use clarituz_application::dto::{CmsInput, OrdenarMidiaInput, StatusCmsInput};
 use clarituz_domain::entities::{AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica};
-use clarituz_domain::events::EventoApp;
+use clarituz_domain::events::{Aviso, EventoApp, TipoAviso};
 use clarituz_domain::DomainError;
+use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
 use std::time::Duration;
 use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
@@ -251,4 +252,244 @@ pub async fn publico_stream(
             .interval(Duration::from_secs(15))
             .text("ping"),
     )
+}
+
+// ---------------------------------------------------------------------------
+// público — reserva online pelo site (com notificação Realtime para o Admin)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+pub struct ReservaPublicaInput {
+    pub slug: Option<String>,
+    pub idacomodacao: Option<i64>,
+    pub check_in: chrono::NaiveDate,
+    pub check_out: chrono::NaiveDate,
+    pub hospedes: i32,
+    pub nome: String,
+    pub email: String,
+    pub telefone: String,
+    pub cpf: Option<String>,
+    pub observacoes: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ReservaPublicaOutput {
+    pub ok: bool,
+    pub status: &'static str,
+    pub idreserva: Option<i64>,
+    pub idcliente: i64,
+    pub mensagem: String,
+}
+
+/// `POST /publico/reservas` — registra o cliente + cria a reserva pendente
+/// (ou registra solicitação se o período estiver ocupado) e dispara `Aviso`
+/// imediato no `EventBus` (SSE + inbox `notificacao`) para toda a equipe.
+pub async fn publico_criar_reserva(
+    State(s): State<AppState>,
+    Json(input): Json<ReservaPublicaInput>,
+) -> Result<(StatusCode, Json<ReservaPublicaOutput>), AppError> {
+    let nome = input.nome.trim();
+    let email = input.email.trim().to_lowercase();
+    let telefone = input.telefone.trim();
+
+    if nome.is_empty() || email.is_empty() || telefone.is_empty() {
+        return Err(DomainError::validacao("Informe nome, e-mail e telefone.").into());
+    }
+    if input.check_out < input.check_in {
+        return Err(
+            DomainError::validacao("A data de check-out deve ser igual ou posterior ao check-in.")
+                .into(),
+        );
+    }
+
+    // 1. Resolve a acomodação pelo id ou pelo slug do CMS (ou fallback para a primeira ativa)
+    let acom_row: Option<(i64, String, i32, rust_decimal::Decimal, i32)> = if let Some(id) =
+        input.idacomodacao
+    {
+        sqlx::query_as(
+            "SELECT id, nome, numero, valor, capacidade FROM acomodacao WHERE id = $1 AND ativo",
+        )
+        .bind(id)
+        .fetch_optional(&s.pool)
+        .await
+        .map_err(|_| DomainError::Infra)?
+    } else if let Some(slug) = input.slug.as_deref().filter(|s| !s.trim().is_empty()) {
+        sqlx::query_as(
+            "SELECT a.id, a.nome, a.numero, a.valor, a.capacidade
+             FROM acomodacao a
+             JOIN acomodacao_cms c ON c.idacomodacao = a.id
+             WHERE c.slug = $1 AND a.ativo
+             LIMIT 1",
+        )
+        .bind(slug.trim())
+        .fetch_optional(&s.pool)
+        .await
+        .map_err(|_| DomainError::Infra)?
+    } else {
+        None
+    };
+
+    let (idacomodacao, acom_nome, acom_num, valor_diaria, acom_cap) = match acom_row {
+        Some(r) => r,
+        None => sqlx::query_as(
+            "SELECT id, nome, numero, valor, capacidade FROM acomodacao WHERE ativo ORDER BY numero LIMIT 1",
+        )
+        .fetch_optional(&s.pool)
+        .await
+        .map_err(|_| DomainError::Infra)?
+        .ok_or_else(|| DomainError::nao_encontrado("Nenhuma acomodação ativa encontrada."))?,
+    };
+
+    let hospedes = input.hospedes.clamp(1, acom_cap.max(1));
+
+    // 2. Localiza ou cria o cliente pelo e-mail/CPF
+    let cpf_limpo: Option<String> = input
+        .cpf
+        .as_deref()
+        .map(|c| c.chars().filter(|ch| ch.is_ascii_digit()).collect::<String>())
+        .filter(|c| c.len() >= 11);
+
+    let cliente_existente: Option<i64> = sqlx::query_scalar(
+        "SELECT id FROM cliente
+         WHERE LOWER(email) = $1 OR ($2::text IS NOT NULL AND cpf = $2)
+         LIMIT 1",
+    )
+    .bind(&email)
+    .bind(&cpf_limpo)
+    .fetch_optional(&s.pool)
+    .await
+    .map_err(|_| DomainError::Infra)?;
+
+    let idcliente = if let Some(cid) = cliente_existente {
+        let _ = sqlx::query(
+            "UPDATE cliente SET nome = $2, telefone = $3, atualizado_em = now() WHERE id = $1",
+        )
+        .bind(cid)
+        .bind(nome)
+        .bind(telefone)
+        .execute(&s.pool)
+        .await;
+        cid
+    } else {
+        let cpf_gerado = cpf_limpo.unwrap_or_else(|| {
+            let digitos: String = telefone.chars().filter(|c| c.is_ascii_digit()).collect();
+            let sufixo = &uuid_simple()[..6];
+            format!("SITE-{digitos}-{sufixo}")
+        });
+        sqlx::query_scalar::<_, i64>(
+            "INSERT INTO cliente (nome, cpf, data_nascimento, email, telefone, ativo)
+             VALUES ($1, $2, DATE '1990-01-01', $3, $4, TRUE)
+             RETURNING id",
+        )
+        .bind(nome)
+        .bind(&cpf_gerado)
+        .bind(&email)
+        .bind(telefone)
+        .fetch_one(&s.pool)
+        .await
+        .map_err(|_| DomainError::Infra)?
+    };
+
+    // 3. Calcula diárias e tenta gravar a reserva pendente ('p')
+    let dias = (input.check_out - input.check_in).num_days().max(1);
+    let valor_total = valor_diaria * rust_decimal::Decimal::from(dias);
+    let obs_final = match input.observacoes.as_deref().map(str::trim).filter(|o| !o.is_empty()) {
+        Some(o) => format!("[Site] Tel: {telefone} | E-mail: {email} | Obs: {o}"),
+        None => format!("[Reserva pelo Site] Tel: {telefone} | E-mail: {email}"),
+    };
+
+    let mut tx = s.pool.begin().await.map_err(|_| DomainError::Infra)?;
+    let insert_res = sqlx::query_scalar::<_, i64>(
+        "INSERT INTO reserva
+            (idacomodacao, idcliente, quantidade_hospedes, entradaprevista, saidaprevista, obs, status, valordiaria)
+         VALUES ($1, $2, $3, $4, $5, $6, 'p', $7)
+         RETURNING id",
+    )
+    .bind(idacomodacao)
+    .bind(idcliente)
+    .bind(hospedes)
+    .bind(input.check_in)
+    .bind(input.check_out)
+    .bind(&obs_final)
+    .bind(valor_diaria)
+    .fetch_one(&mut *tx)
+    .await;
+
+    match insert_res {
+        Ok(idreserva) => {
+            sqlx::query(
+                "INSERT INTO consumo (idreserva, valor_estadia, status) VALUES ($1, $2, 'pendente')",
+            )
+            .bind(idreserva)
+            .bind(valor_total)
+            .execute(&mut *tx)
+            .await
+            .map_err(|_| DomainError::Infra)?;
+
+            tx.commit().await.map_err(|_| DomainError::Infra)?;
+
+            s.eventos.publicar(EventoApp::Aviso(
+                Aviso::novo(
+                    TipoAviso::Sucesso,
+                    format!("Nova reserva pelo site — #{acom_num} {acom_nome}"),
+                    format!(
+                        "{nome} ({telefone}) reservou de {} a {} para {hospedes} hóspede(s).",
+                        input.check_in.format("%d/%m/%Y"),
+                        input.check_out.format("%d/%m/%Y")
+                    ),
+                )
+                .dados(serde_json::json!({
+                    "idreserva": idreserva,
+                    "idcliente": idcliente,
+                    "idacomodacao": idacomodacao,
+                    "origem": "site",
+                })),
+            ));
+
+            Ok((
+                StatusCode::CREATED,
+                Json(ReservaPublicaOutput {
+                    ok: true,
+                    status: "reserva_criada",
+                    idreserva: Some(idreserva),
+                    idcliente,
+                    mensagem: format!(
+                        "Reserva Nº #{idreserva} registrada com sucesso! Nossa recepção já foi notificada em tempo real."
+                    ),
+                }),
+            ))
+        }
+        Err(_) => {
+            let _ = tx.rollback().await;
+
+            // Mesmo com conflito de datas no quarto escolhido, notifica a recepção em tempo real
+            s.eventos.publicar(EventoApp::Aviso(
+                Aviso::novo(
+                    TipoAviso::Alerta,
+                    format!("Consulta pelo site (período ocupado) — #{acom_num} {acom_nome}"),
+                    format!(
+                        "{nome} ({telefone} / {email}) pediu {} a {} ({hospedes} hóspede(s)) — quarto já possui reserva no período.",
+                        input.check_in.format("%d/%m/%Y"),
+                        input.check_out.format("%d/%m/%Y")
+                    ),
+                )
+                .dados(serde_json::json!({
+                    "idcliente": idcliente,
+                    "idacomodacao": idacomodacao,
+                    "origem": "site_conflito",
+                })),
+            ));
+
+            Ok((
+                StatusCode::CREATED,
+                Json(ReservaPublicaOutput {
+                    ok: true,
+                    status: "consulta_registrada",
+                    idreserva: None,
+                    idcliente,
+                    mensagem: "Sua solicitação foi enviada em tempo real para a recepção! Como este quarto já possui bloqueio em parte das datas escolhidas, nossa equipe entrará em contato para confirmar a melhor opção.".into(),
+                }),
+            ))
+        }
+    }
 }

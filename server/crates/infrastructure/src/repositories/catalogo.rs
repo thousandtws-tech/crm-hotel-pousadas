@@ -2,7 +2,7 @@
 //! frigobar, formas de pagamento e estabelecimento.
 
 use super::audit;
-use crate::db::map_db_err;
+use crate::db::{map_db_err, map_del_err};
 use async_trait::async_trait;
 use clarituz_domain::entities::{
     Acomodacao, EnderecoEstabelecimento, Estabelecimento, FormaPagamento, Frigobar, ItemFrigobar,
@@ -111,6 +111,23 @@ impl TipoAcomodacaoRepository for PgTipoAcomodacaoRepository {
         audit::gravar(&mut *tx, &log).await?;
         tx.commit().await.map_err(map_db_err)?;
         Ok(t)
+    }
+
+    async fn remover(&self, id: i64, log: NovoLog) -> Result<(), DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        let r = sqlx::query("DELETE FROM tipo_acomodacao WHERE id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| map_del_err(e, "Tipo em uso por acomodações — exclua-as primeiro."))?;
+        if r.rows_affected() == 0 {
+            return Err(DomainError::nao_encontrado(
+                "Tipo de acomodação não encontrado.",
+            ));
+        }
+        audit::gravar(&mut *tx, &log).await?;
+        tx.commit().await.map_err(map_db_err)?;
+        Ok(())
     }
 }
 
@@ -352,6 +369,76 @@ impl AcomodacaoRepository for PgAcomodacaoRepository {
         .await
         .map_err(map_db_err)
     }
+
+    async fn remover(&self, id: i64, log: NovoLog) -> Result<Vec<String>, DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        // reservas (idacomodacao e idquarto) bloqueiam a exclusão —
+        // checar antes de tocar nos dependentes, senão o FK explode no meio do caminho
+        let em_uso: bool = sqlx::query_scalar(
+            "SELECT EXISTS(
+                 SELECT 1 FROM reserva WHERE idacomodacao = $1
+                    OR idquarto IN (SELECT id FROM quarto WHERE idacomodacao = $1)
+             )",
+        )
+        .bind(id)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(map_db_err)?;
+        if em_uso {
+            return Err(DomainError::conflito(
+                "Acomodação possui reservas — inative-a em vez de excluir.",
+            ));
+        }
+        // chaves das mídias CMS — devolvidas para a API apagar no object store
+        let midias: Vec<String> =
+            sqlx::query_scalar("SELECT caminho FROM acomodacao_midia WHERE idacomodacao = $1")
+                .bind(id)
+                .fetch_all(&mut *tx)
+                .await
+                .map_err(map_db_err)?;
+        sqlx::query("UPDATE estacionamento SET idacomodacao = NULL WHERE idacomodacao = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_db_err)?;
+        sqlx::query(
+            "DELETE FROM item_frigobar WHERE idfrigobar IN
+             (SELECT id FROM frigobar WHERE idacomodacao = $1)",
+        )
+        .bind(id)
+        .execute(&mut *tx)
+        .await
+        .map_err(map_db_err)?;
+        sqlx::query("DELETE FROM frigobar WHERE idacomodacao = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_db_err)?;
+        sqlx::query("DELETE FROM quarto WHERE idacomodacao = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_db_err)?;
+        sqlx::query("DELETE FROM tarifa_historico WHERE idacomodacao = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_db_err)?;
+        // acomodacao_cms e acomodacao_midia caem por ON DELETE CASCADE
+        let r = sqlx::query("DELETE FROM acomodacao WHERE id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| {
+                map_del_err(e, "Acomodação possui reservas — inative-a em vez de excluir.")
+            })?;
+        if r.rows_affected() == 0 {
+            return Err(DomainError::nao_encontrado("Acomodação não encontrada."));
+        }
+        audit::gravar(&mut *tx, &log).await?;
+        tx.commit().await.map_err(map_db_err)?;
+        Ok(midias)
+    }
 }
 
 // ===========================================================================
@@ -424,6 +511,21 @@ impl QuartoRepository for PgQuartoRepository {
         audit::gravar(&mut *tx, &log).await?;
         tx.commit().await.map_err(map_db_err)?;
         Ok(q)
+    }
+
+    async fn remover(&self, id: i64, log: NovoLog) -> Result<(), DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        let r = sqlx::query("DELETE FROM quarto WHERE id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| map_del_err(e, "Quarto possui reservas vinculadas — inative-o."))?;
+        if r.rows_affected() == 0 {
+            return Err(DomainError::nao_encontrado("Quarto não encontrado."));
+        }
+        audit::gravar(&mut *tx, &log).await?;
+        tx.commit().await.map_err(map_db_err)?;
+        Ok(())
     }
 }
 
@@ -785,6 +887,26 @@ impl FrigobarRepository for PgFrigobarRepository {
         tx.commit().await.map_err(map_db_err)?;
         Ok(())
     }
+
+    async fn remover(&self, id: i64, log: NovoLog) -> Result<(), DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        sqlx::query("DELETE FROM item_frigobar WHERE idfrigobar = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_db_err)?;
+        let r = sqlx::query("DELETE FROM frigobar WHERE id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_db_err)?;
+        if r.rows_affected() == 0 {
+            return Err(DomainError::nao_encontrado("Frigobar não encontrado."));
+        }
+        audit::gravar(&mut *tx, &log).await?;
+        tx.commit().await.map_err(map_db_err)?;
+        Ok(())
+    }
 }
 
 // ===========================================================================
@@ -890,6 +1012,25 @@ impl FormaPagamentoRepository for PgFormaPagamentoRepository {
         audit::gravar(&mut *tx, &log).await?;
         tx.commit().await.map_err(map_db_err)?;
         Ok(f)
+    }
+
+    async fn remover(&self, id: i64, log: NovoLog) -> Result<(), DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        let r = sqlx::query("DELETE FROM forma_pagamento WHERE id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| {
+                map_del_err(e, "Forma de pagamento já usada em consumos — inative-a.")
+            })?;
+        if r.rows_affected() == 0 {
+            return Err(DomainError::nao_encontrado(
+                "Forma de pagamento não encontrada.",
+            ));
+        }
+        audit::gravar(&mut *tx, &log).await?;
+        tx.commit().await.map_err(map_db_err)?;
+        Ok(())
     }
 }
 

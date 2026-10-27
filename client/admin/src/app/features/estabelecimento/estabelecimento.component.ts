@@ -1,177 +1,247 @@
-import { Component, inject, signal, OnInit, effect } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, effect } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '@core/services/api.service';
 import { Confirm } from '@core/services/confirm.service';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
+import { TourGuiado } from '@core/services/tour.service';
 import * as M from '@core/models/api.models';
 
-// Réplica de hospedagem/index.php: dois cards lado a lado
-// ("Dados da Hospedagem" + "Endereço da Hospedagem") com labels acima
-// dos inputs e botão "Gravar" azul; extra: card da impressora térmica.
+const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao'];
+
+// Configurações do estabelecimento: dados fiscais, endereço, logo e
+// impressoras térmicas por setor (roteamento de comprovantes e pedidos).
 @Component({
   selector: 'app-estabelecimento',
-  imports: [ReactiveFormsModule, MatIconModule],
+  host: { '(document:keydown.escape)': 'onEsc()' },
+  imports: [ReactiveFormsModule, MatIconModule, MatFormFieldModule, MatSelectModule],
   template: `
     <div class="page">
-      <button class="btn-dark-blue" type="button" (click)="abrirLogo()">
-        <mat-icon>edit</mat-icon> Alterar Logo
-      </button>
-
-      <div class="row-cards">
-        <!-- ===== Dados da Hospedagem ===== -->
-        <div class="inner-card">
-          <div class="inner-card-header">
-            <h4><mat-icon>badge</mat-icon> Dados da Hospedagem</h4>
-          </div>
-          <div class="inner-card-body">
-            <form [formGroup]="dados" class="form">
-              <label class="lbl">
-                CNPJ
-                <input class="input-inn" type="text" formControlName="cnpj" />
-              </label>
-              <label class="lbl">
-                Razão social
-                <input class="input-inn" type="text" formControlName="razao_social" />
-              </label>
-              <label class="lbl">
-                E-mail
-                <input class="input-inn" type="email" formControlName="email" />
-              </label>
-              <label class="lbl">
-                Site
-                <input class="input-inn" type="text" formControlName="site" />
-              </label>
-              <div class="duo">
-                <label class="lbl">
-                  Telefone
-                  <input class="input-inn" type="text" formControlName="telefone" />
-                </label>
-                <label class="lbl">
-                  Celular
-                  <input class="input-inn" type="text" formControlName="celular" />
-                </label>
-              </div>
-              <div class="end">
-                <button class="btn-primary" type="button" (click)="salvarDados()" [disabled]="salvando()">
-                  <mat-icon>save</mat-icon> Gravar
-                </button>
-              </div>
-            </form>
-          </div>
+      <!-- ================= Cabeçalho ================= -->
+      <div class="est-head">
+        <div>
+          <h2 class="est-titulo">Estabelecimento</h2>
+          <p class="est-sub">Dados da pousada usados em comprovantes, documentos e na impressão térmica</p>
         </div>
-
-        <!-- ===== Endereço da Hospedagem ===== -->
-        <div class="inner-card">
-          <div class="inner-card-header">
-            <h4><mat-icon>location_on</mat-icon> Endereço da Hospedagem</h4>
-          </div>
-          <div class="inner-card-body">
-            <form [formGroup]="endereco" class="form">
-              <label class="lbl">
-                CEP
-                <input class="input-inn" type="text" formControlName="cep" />
-              </label>
-              <label class="lbl">
-                Logradouro
-                <input class="input-inn" type="text" formControlName="logradouro" />
-              </label>
-              <div class="num-comp">
-                <label class="lbl num">
-                  Número
-                  <input class="input-inn" type="text" formControlName="numero" />
-                </label>
-                <label class="lbl comp">
-                  Complemento
-                  <input class="input-inn" type="text" formControlName="complemento" />
-                </label>
-              </div>
-              <label class="lbl">
-                Cidade
-                <input class="input-inn" type="text" formControlName="cidade" />
-              </label>
-              <label class="lbl">
-                Bairro
-                <input class="input-inn" type="text" formControlName="bairro" />
-              </label>
-              <div class="end">
-                <button class="btn-primary" type="button" (click)="salvarEndereco()" [disabled]="salvando()">
-                  <mat-icon>save</mat-icon> Gravar
-                </button>
-              </div>
-            </form>
-          </div>
+        <div class="est-acoes">
+          <button class="btn-tour" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
+            <mat-icon>school</mat-icon> Tutorial
+          </button>
+          <button id="tour-logo" class="btn-dark-blue" type="button" (click)="abrirLogo()">
+            <mat-icon>image</mat-icon> Alterar logo
+          </button>
         </div>
       </div>
 
-      <!-- ===== Impressoras por setor (roteamento KOT) ===== -->
-      <div class="inner-card">
-        <div class="inner-card-header imp-head">
-          <h4><mat-icon>print</mat-icon> Impressoras por setor</h4>
+      <!-- ================= Checklist de configuração ================= -->
+      <div class="est-check" id="tour-check">
+        <span class="est-check-tit"><mat-icon>task_alt</mat-icon> Configuração da pousada</span>
+        <div class="est-check-item" [class.ok]="dadosOk()">
+          <mat-icon>{{ dadosOk() ? 'check_circle' : 'error' }}</mat-icon>
+          <span>
+            <b>Dados fiscais</b>
+            <small>{{ dadosOk() ? 'razão social e CNPJ preenchidos' : 'informe razão social e CNPJ' }}</small>
+          </span>
+        </div>
+        <div class="est-check-item" [class.ok]="endOk()">
+          <mat-icon>{{ endOk() ? 'check_circle' : 'error' }}</mat-icon>
+          <span>
+            <b>Endereço</b>
+            <small>{{ endOk() ? 'logradouro, cidade e CEP' : 'complete o endereço' }}</small>
+          </span>
+        </div>
+        <div class="est-check-item" [class.ok]="logoOk()">
+          <mat-icon>{{ logoOk() ? 'check_circle' : 'error' }}</mat-icon>
+          <span>
+            <b>Logo</b>
+            <small>{{ logoOk() ? 'enviada — aparece nos comprovantes' : 'não enviada ainda' }}</small>
+          </span>
+        </div>
+        <div class="est-check-item" [class.ok]="impOk()">
+          <mat-icon>{{ impOk() ? 'check_circle' : 'error' }}</mat-icon>
+          <span>
+            <b>Impressora padrão</b>
+            <small>{{ impOk() ? 'comprovantes configurados' : 'nenhuma marcada como padrão' }}</small>
+          </span>
+        </div>
+      </div>
+
+      <!-- ================= Formulários ================= -->
+      <div class="row-cards">
+        <div class="inner-card est-card">
+          <div class="est-card-head">
+            <span class="est-card-ic tint-teal"><mat-icon>badge</mat-icon></span>
+            <div>
+              <h4>Dados da hospedagem</h4>
+              <small>Saem no cabeçalho de comprovantes e documentos</small>
+            </div>
+          </div>
+          <form [formGroup]="dados" class="form">
+            <div class="duo">
+              <label class="lbl">
+                CNPJ
+                <input class="input-inn" type="text" formControlName="cnpj" placeholder="00.000.000/0000-00" />
+              </label>
+              <label class="lbl">
+                Telefone
+                <input class="input-inn" type="text" formControlName="telefone" placeholder="(22) 0000-0000" />
+              </label>
+            </div>
+            <label class="lbl">
+              Razão social
+              <input class="input-inn" type="text" formControlName="razao_social" placeholder="Nome jurídico da pousada" />
+            </label>
+            <label class="lbl">
+              E-mail
+              <input class="input-inn" type="email" formControlName="email" placeholder="contato@pousada.com.br" />
+            </label>
+            <div class="duo">
+              <label class="lbl">
+                Site
+                <input class="input-inn" type="text" formControlName="site" placeholder="www.pousada.com.br" />
+              </label>
+              <label class="lbl">
+                Celular / WhatsApp
+                <input class="input-inn" type="text" formControlName="celular" placeholder="(22) 90000-0000" />
+              </label>
+            </div>
+            <div class="end">
+              <button class="btn-dark-blue" type="button" (click)="salvarDados()" [disabled]="salvando()">
+                <mat-icon>save</mat-icon> {{ salvando() ? 'Salvando…' : 'Gravar dados' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="inner-card est-card">
+          <div class="est-card-head">
+            <span class="est-card-ic tint-navy"><mat-icon>location_on</mat-icon></span>
+            <div>
+              <h4>Endereço da hospedagem</h4>
+              <small>Usado em documentos fiscais e na ficha do hóspede</small>
+            </div>
+          </div>
+          <form [formGroup]="endereco" class="form">
+            <div class="duo">
+              <label class="lbl">
+                CEP
+                <input class="input-inn" type="text" formControlName="cep" placeholder="00000-000" />
+              </label>
+              <label class="lbl">
+                Cidade
+                <input class="input-inn" type="text" formControlName="cidade" placeholder="Cabo Frio" />
+              </label>
+            </div>
+            <label class="lbl">
+              Logradouro
+              <input class="input-inn" type="text" formControlName="logradouro" placeholder="Rua, avenida…" />
+            </label>
+            <div class="num-comp">
+              <label class="lbl num">
+                Número
+                <input class="input-inn" type="text" formControlName="numero" placeholder="123" />
+              </label>
+              <label class="lbl comp">
+                Complemento
+                <input class="input-inn" type="text" formControlName="complemento" placeholder="Opcional" />
+              </label>
+            </div>
+            <label class="lbl">
+              Bairro
+              <input class="input-inn" type="text" formControlName="bairro" placeholder="Centro" />
+            </label>
+            <div class="end">
+              <button class="btn-dark-blue" type="button" (click)="salvarEndereco()" [disabled]="salvando()">
+                <mat-icon>save</mat-icon> {{ salvando() ? 'Salvando…' : 'Gravar endereço' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ================= Impressoras por setor ================= -->
+      <div class="inner-card est-card" id="tour-imp">
+        <div class="est-card-head com-acao">
+          <div class="est-card-head-grupo">
+            <span class="est-card-ic tint-gold"><mat-icon>print</mat-icon></span>
+            <div>
+              <h4>Impressoras por setor</h4>
+              <small>Comprovantes saem na <b>padrão</b>; pedidos de consumo saem na impressora do setor da categoria</small>
+            </div>
+          </div>
           <button class="btn-dark-blue" type="button" (click)="abrirImpressora()">
-            <mat-icon>add</mat-icon> Nova Impressora
+            <mat-icon>add</mat-icon> Nova impressora
           </button>
         </div>
-        <div class="inner-card-body">
-          <p class="muted" style="margin: 0 0 10px">
-            Comprovantes saem na impressora <strong>padrão</strong>; pedidos de
-            consumo saem na impressora do setor da categoria do item.
-          </p>
-          <div class="tbl-wrap">
-            <table class="plain bordered">
-              <thead>
+        <div class="est-tabela-wrap">
+          <table class="est-tabela">
+            <thead>
+              <tr>
+                <th>Impressora</th>
+                <th>Setor</th>
+                <th>Endereço</th>
+                <th class="tc">Padrão</th>
+                <th class="tc">Status</th>
+                <th class="tc">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of impressoras(); track p.id) {
                 <tr>
-                  <th>#</th><th>Nome</th><th>Setor</th><th>IP : Porta</th>
-                  <th class="tc">Padrão</th><th class="tc">Status</th><th class="tc">Ação</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (p of impressoras(); track p.id) {
-                  <tr>
-                    <td>{{ p.id }}</td>
-                    <td>{{ p.nome }}</td>
-                    <td>{{ p.setor }}</td>
-                    <td>{{ p.ip }}:{{ p.porta }}</td>
-                    <td class="tc">
-                      @if (p.padrao) {
-                        <span class="status-chip bg-info">Comprovantes</span>
-                      }
-                    </td>
-                    <td class="tc">
-                      <button
-                        class="status-chip clickable"
-                        [class.on]="p.ativa"
-                        [class.off]="!p.ativa"
-                        type="button"
-                        (click)="statusImpressora(p)"
-                      >{{ p.ativa ? 'Ativo' : 'Inativo' }}</button>
-                    </td>
-                    <td class="tc">
-                      <button class="acao bg-print" type="button" title="Testar impressão"
+                  <td class="td-nome"><mat-icon>print</mat-icon> {{ p.nome }}</td>
+                  <td><span class="est-chip-setor">{{ p.setor }}</span></td>
+                  <td class="td-ip">{{ p.ip }}:{{ p.porta }}</td>
+                  <td class="tc">
+                    @if (p.padrao) {
+                      <span class="est-chip-padrao" title="Recebe os comprovantes de check-out">
+                        <mat-icon>star</mat-icon> Comprovantes
+                      </span>
+                    }
+                  </td>
+                  <td class="tc">
+                    <button
+                      class="status-chip clickable"
+                      [class.on]="p.ativa"
+                      [class.off]="!p.ativa"
+                      type="button"
+                      title="Clique para alternar"
+                      (click)="statusImpressora(p)"
+                    >{{ p.ativa ? 'Ativa' : 'Inativa' }}</button>
+                  </td>
+                  <td class="tc">
+                    <div class="est-acoes-linha">
+                      <button class="acao navy" type="button" title="Imprimir página de teste"
                               (click)="testar(p)"><mat-icon>print</mat-icon></button>
-                      <button class="acao bg-warn" type="button" title="Editar"
+                      <button class="acao gold" type="button" title="Editar"
                               (click)="abrirImpressora(p)"><mat-icon>edit</mat-icon></button>
-                      <button class="acao bg-danger" type="button" title="Excluir"
+                      <button class="acao navy" type="button" title="Excluir"
                               (click)="removerImpressora(p)"><mat-icon>delete</mat-icon></button>
-                    </td>
-                  </tr>
-                } @empty {
-                  <tr><td colspan="7" class="muted tc">Nenhuma impressora cadastrada.</td></tr>
-                }
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="est-vazio">
+                    <mat-icon>print_disabled</mat-icon>
+                    Nenhuma impressora cadastrada — adicione a primeira para imprimir comprovantes e pedidos.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <!-- ===== modal Nova/Editar Impressora ===== -->
+    <!-- ================= Modal: Nova/Editar impressora ================= -->
     @if (modalImp()) {
       <div class="overlay" (click.self)="modalImp.set(false)">
         <div class="modal-inn" role="dialog" aria-modal="true" aria-label="Impressora">
           <div class="modal-head">
-            <h5>{{ impEditando() ? 'Editar' : 'Nova' }} Impressora</h5>
+            <h5><mat-icon>print</mat-icon> {{ impEditando() ? 'Editar impressora' : 'Nova impressora' }}</h5>
             <button class="close" type="button" (click)="modalImp.set(false)" aria-label="Fechar">
               <mat-icon>close</mat-icon>
             </button>
@@ -179,20 +249,23 @@ import * as M from '@core/models/api.models';
           <div class="modal-body">
             <form [formGroup]="impForm" class="form">
               <label class="lbl">
-                Nome
-                <input class="input-inn" type="text" formControlName="nome" placeholder="Cozinha" />
+                Nome <small class="req">*</small>
+                <input class="input-inn" type="text" formControlName="nome" placeholder="Ex.: Impressora da cozinha" />
               </label>
-              <label class="lbl">
-                Setor
-                <input class="input-inn" type="text" formControlName="setor" list="setores" placeholder="cozinha" />
-                <datalist id="setores">
-                  <option value="cozinha"></option><option value="churrasqueira"></option>
-                  <option value="bar"></option><option value="balcao"></option><option value="caixa"></option>
-                </datalist>
-              </label>
+              <div class="f-field">
+                <span class="f-lbl">Setor <small class="req">*</small></span>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-mat f-mat">
+                  <mat-select formControlName="setor" placeholder="Escolha o setor…">
+                    @for (s of setoresOpcoes(); track s) {
+                      <mat-option [value]="s">{{ s }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <small class="est-dica">Pedidos de itens desse setor saem nesta impressora.</small>
+              </div>
               <div class="duo">
                 <label class="lbl">
-                  IP
+                  IP <small class="req">*</small>
                   <input class="input-inn" type="text" formControlName="ip" placeholder="192.168.0.50" />
                 </label>
                 <label class="lbl">
@@ -202,158 +275,279 @@ import * as M from '@core/models/api.models';
               </div>
               <label class="lbl check">
                 <input type="checkbox" formControlName="padrao" />
-                Impressora padrão de comprovantes
+                <span><b>Impressora padrão</b> — recebe os comprovantes de check-out</span>
               </label>
               <label class="lbl check">
                 <input type="checkbox" formControlName="ativa" />
-                Ativa
+                <span>Impressora <b>ativa</b> (disponível para uso)</span>
               </label>
-              <div class="end" style="margin-top: 4px">
-                <button class="btn-green" type="button" [disabled]="salvando()" (click)="salvarImpressora()">
-                  Salvar
-                </button>
-              </div>
             </form>
+          </div>
+          <div class="modal-foot">
+            <button class="btn-gray" type="button" (click)="modalImp.set(false)">Cancelar</button>
+            <button class="btn-green" type="button" [disabled]="salvando() || impForm.invalid" (click)="salvarImpressora()">
+              <mat-icon>save</mat-icon> {{ impEditando() ? 'Salvar alterações' : 'Cadastrar' }}
+            </button>
           </div>
         </div>
       </div>
     }
 
-    <!-- ===== modal Alterar Logo (mLogo.php) ===== -->
+    <!-- ================= Modal: Alterar logo ================= -->
     @if (modalLogo()) {
       <div class="overlay" (click.self)="modalLogo.set(false)">
         <div class="modal-inn" role="dialog" aria-modal="true" aria-label="Alterar logo">
           <div class="modal-head">
-            <h5>Alterar Logo</h5>
+            <h5><mat-icon>image</mat-icon> Logo do estabelecimento</h5>
             <button class="close" type="button" (click)="modalLogo.set(false)" aria-label="Fechar">
               <mat-icon>close</mat-icon>
             </button>
           </div>
           <div class="modal-body">
-            <div class="logo-box">
+            <div class="logo-box" [class.vazia]="!logoPreview()">
               @if (logoPreview()) {
                 <img class="logo-img" [src]="logoPreview()" alt="Logo do estabelecimento" />
               } @else {
-                <mat-icon class="logo-ph">image</mat-icon>
+                <div class="logo-vazia">
+                  <mat-icon>add_photo_alternate</mat-icon>
+                  <span>Nenhuma logo enviada</span>
+                </div>
               }
             </div>
-            <input
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/svg+xml"
-              (change)="selecionarLogo($event)"
-              aria-label="Arquivo da logo"
-            />
-            <small class="muted">PNG, JPG, WEBP ou SVG — máx. 2 MB.</small>
-            <div class="end" style="margin-top: 12px">
-              <button
-                class="btn-green"
-                type="button"
-                [disabled]="!logoArquivo() || enviando()"
-                (click)="enviarLogo()"
-              >Salvar</button>
-            </div>
+            <label class="est-upload">
+              <mat-icon>cloud_upload</mat-icon>
+              {{ logoArquivo() ? logoArquivo()!.name : 'Escolher arquivo de imagem' }}
+              <input
+                type="file" hidden
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                (change)="selecionarLogo($event)"
+                aria-label="Arquivo da logo"
+              />
+            </label>
+            <small class="est-dica">PNG, JPG, WEBP ou SVG — máximo 2 MB. Fundo transparente fica melhor no comprovante.</small>
+          </div>
+          <div class="modal-foot">
+            <button class="btn-gray" type="button" (click)="modalLogo.set(false)">Cancelar</button>
+            <button
+              class="btn-green" type="button"
+              [disabled]="!logoArquivo() || enviando()"
+              (click)="enviarLogo()"
+            >
+              <mat-icon>{{ enviando() ? 'hourglass_top' : 'save' }}</mat-icon>
+              {{ enviando() ? 'Enviando…' : 'Salvar logo' }}
+            </button>
           </div>
         </div>
       </div>
     }
   `,
   styles: `
+    /* ---------- cabeçalho ---------- */
+    .est-head {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 14px; margin-bottom: 16px;
+      border-bottom: 1px solid #e3eaef;
+    }
+    .est-titulo { margin: 0; font-size: 1.5rem; font-weight: 800; color: #054054; letter-spacing: -0.02em; }
+    .est-sub { margin: 2px 0 0; font-size: 0.82rem; color: #7d97a1; }
+    .est-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+    .est-acoes button { display: inline-flex; align-items: center; gap: 6px; }
+    .btn-tour {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1.5px solid #d7e0e6; background: #fff;
+      color: #5d6d7e; border-radius: 4px;
+      padding: 0 14px; min-height: 34px; cursor: pointer;
+      font-size: 0.85rem; font-weight: 600; font-family: inherit;
+      transition: border-color .15s ease, color .15s ease;
+    }
+    .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .btn-tour:hover { border-color: #1a6f8a; color: #1a6f8a; }
+
+    /* ---------- checklist ---------- */
+    .est-check {
+      display: flex; align-items: center; gap: 8px 26px; flex-wrap: wrap;
+      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
+      padding: 14px 20px; margin-bottom: 16px;
+    }
+    .est-check-tit {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 0.74rem; font-weight: 700; color: #054054;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      padding-right: 18px; border-right: 1px solid #eef2f5;
+    }
+    .est-check-tit mat-icon { font-size: 17px; width: 17px; height: 17px; color: #1a6f8a; }
+    .est-check-item {
+      display: inline-flex; align-items: center; gap: 9px;
+    }
+    .est-check-item > mat-icon { font-size: 20px; width: 20px; height: 20px; color: #dda554; }
+    .est-check-item.ok > mat-icon { color: #1a6f8a; }
+    .est-check-item span { display: flex; flex-direction: column; }
+    .est-check-item b { font-size: 0.82rem; color: #054054; }
+    .est-check-item small { font-size: 0.7rem; color: #8a99a4; }
+
+    /* ---------- cards de formulário ---------- */
     .row-cards {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
       gap: 1rem;
-      margin: 1rem 0;
+      margin-bottom: 1rem;
     }
-    .inner-card-header h4 { display: flex; align-items: center; gap: 6px; }
-    .form { display: flex; flex-direction: column; gap: 10px; }
-    .form .lbl {
-      display: flex; flex-direction: column; gap: 4px;
-      font-size: 0.85rem; font-weight: 600; color: #374151;
+    .est-card { padding: 0; }
+    .est-card-head {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 18px; border-bottom: 1px solid #eef2f5;
     }
-    .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .num-comp { display: grid; grid-template-columns: 130px 1fr; gap: 10px; }
-    .end { display: flex; justify-content: flex-end; }
-    .check { flex-direction: row !important; align-items: center; gap: 8px; font-weight: 500 !important; }
-
-    /* impressoras por setor */
-    .imp-head { display: flex; align-items: center; justify-content: space-between; }
-    .imp-head h4 { display: flex; align-items: center; gap: 6px; }
-    .tbl-wrap { overflow-x: auto; }
-    .acao {
-      border: none; border-radius: 0.2rem; color: #fff; cursor: pointer;
+    .est-card-head.com-acao { justify-content: space-between; flex-wrap: wrap; }
+    .est-card-head-grupo { display: flex; align-items: center; gap: 12px; }
+    .est-card-ic {
+      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
-      padding: 0.3em 0.55em; margin-right: 4px; transition: 0.15s;
     }
-    .acao mat-icon { font-size: 15px; width: 15px; height: 15px; }
-    .acao:hover { filter: brightness(0.9); }
-    .bg-print { background: #274259; }
-    .bg-warn { background: #ffc107; }
-    .bg-danger { background: #dc3545; }
-    .status-chip.bg-info { background: #17a2b8; }
-    .status-chip.clickable { cursor: pointer; border: none; font-family: inherit; }
-    .status-chip.on { background: #28a745; }
-    .status-chip.off { background: #dc3545; }
+    .est-card-ic mat-icon { font-size: 21px; width: 21px; height: 21px; }
+    .tint-teal { background: rgba(26, 111, 138, 0.1); color: #1a6f8a; }
+    .tint-gold { background: rgba(221, 165, 84, 0.14); color: #8a5a00; }
+    .tint-navy { background: rgba(5, 64, 84, 0.08); color: #054054; }
+    .est-card-head h4 { margin: 0; font-size: 0.95rem; font-weight: 700; color: #054054; }
+    .est-card-head small { font-size: 0.74rem; color: #8a99a4; }
+    .est-card form { padding: 16px 18px 18px; }
+    .form { display: flex; flex-direction: column; gap: 12px; }
+    .lbl {
+      display: flex; flex-direction: column; gap: 4px;
+      font-size: 0.82rem; font-weight: 600; color: #40525d;
+    }
+    .lbl .req, .f-lbl .req { color: #dc3545; }
+    .f-field { display: flex; flex-direction: column; gap: 4px; }
+    .f-lbl { font-size: 0.82rem; font-weight: 600; color: #40525d; }
+    .f-mat { width: 100%; }
+    .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .num-comp { display: grid; grid-template-columns: 120px 1fr; gap: 10px; }
+    .end { display: flex; justify-content: flex-end; }
+    .end button { display: inline-flex; align-items: center; gap: 6px; }
+    .check { flex-direction: row !important; align-items: center; gap: 9px; font-weight: 400 !important; cursor: pointer; }
+    .est-dica { font-size: 0.73rem; color: #8a99a4; font-weight: 400; }
 
+    /* ---------- tabela impressoras ---------- */
+    .est-tabela-wrap { overflow-x: auto; padding: 0 18px 18px; }
+    .est-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    .est-tabela thead th {
+      background: #f4f8fa; color: #40525d;
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; padding: 12px 14px; text-align: left;
+      border-bottom: 2px solid #e3eaef; white-space: nowrap;
+    }
+    .est-tabela tbody td {
+      padding: 12px 14px; border-bottom: 1px solid #edf1f4;
+      vertical-align: middle; color: #33424c;
+    }
+    .est-tabela tbody tr:hover { background: #f7fafb; }
+    .est-tabela .tc { text-align: center; }
+    .td-nome { font-weight: 700; color: #054054; white-space: nowrap; }
+    .td-nome mat-icon { font-size: 16px; width: 16px; height: 16px; vertical-align: -3px; color: #1a6f8a; margin-right: 7px; }
+    .td-ip { font-family: monospace; font-size: 0.82rem; color: #5d6d7e; white-space: nowrap; }
+    .est-chip-setor {
+      display: inline-flex; background: #eef4f7; color: #1a6f8a;
+      border-radius: 999px; padding: 3px 12px;
+      font-size: 0.78rem; font-weight: 700; text-transform: capitalize;
+    }
+    .est-chip-padrao {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(221, 165, 84, 0.15); color: #8a5a00;
+      border-radius: 999px; padding: 3px 12px;
+      font-size: 0.75rem; font-weight: 700; white-space: nowrap;
+    }
+    .est-chip-padrao mat-icon { font-size: 14px; width: 14px; height: 14px; }
+    .est-acoes-linha { display: inline-flex; gap: 5px; }
+    .acao {
+      display: inline-flex; align-items: center; justify-content: center;
+      border: none; border-radius: 6px; width: 30px; height: 30px;
+      cursor: pointer; transition: filter .14s;
+    }
+    .acao mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .acao:hover { filter: brightness(1.12); }
+    .acao.navy { background: #054054; color: #fff; }
+    .acao.gold { background: #dda554; color: #054054; }
+    .status-chip.clickable { cursor: pointer; border: none; font-family: inherit; }
+    .status-chip.on { background: #1a6f8a; color: #fff; }
+    .status-chip.off { background: #6c757d; color: #fff; }
+    .est-vazio {
+      text-align: center; color: #8a99a4; padding: 34px !important; font-size: 0.86rem;
+    }
+    .est-vazio mat-icon { display: block; margin: 0 auto 8px; font-size: 30px; width: 30px; height: 30px; color: #c3d2da; }
+
+    /* ---------- modais ---------- */
     .overlay {
       position: fixed; inset: 0; z-index: 100;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(5, 64, 84, 0.45);
       display: flex; align-items: flex-start; justify-content: center;
-      padding: 2rem 1rem;
+      padding: 2rem 1rem; backdrop-filter: blur(2px);
     }
     .modal-inn {
-      background: #fff; border-radius: 0.3rem; width: 100%; max-width: 460px;
-      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-      animation: in 0.15s ease-out;
+      background: #fff; border-radius: 12px; width: 100%; max-width: 480px;
+      box-shadow: 0 18px 50px rgba(5, 64, 84, 0.25);
+      animation: in 0.16s ease-out;
+      max-height: 90vh; display: flex; flex-direction: column;
     }
     @keyframes in { from { transform: translateY(-12px); opacity: 0; } }
     .modal-head {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 0.75rem 1rem; border-bottom: 1px solid #dee2e6;
+      padding: 0.85rem 1.15rem; border-bottom: 1px solid #e3eaef;
     }
-    .modal-head h5 { margin: 0; font-size: 1rem; font-weight: 600; }
+    .modal-head h5 {
+      margin: 0; font-size: 1rem; font-weight: 700; color: #054054;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .modal-head h5 mat-icon { font-size: 19px; width: 19px; height: 19px; color: #1a6f8a; }
     .modal-head .close {
-      border: none; background: none; cursor: pointer; color: #555;
-      display: inline-flex; padding: 2px;
+      border: none; background: #eef2f5; border-radius: 50%;
+      width: 28px; height: 28px; cursor: pointer; color: #5d6d7e;
+      display: inline-flex; align-items: center; justify-content: center; padding: 0;
     }
-    .modal-body {
-      padding: 1rem; display: flex; flex-direction: column; gap: 8px;
+    .modal-head .close:hover { background: #dde5ea; }
+    .modal-head .close mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .modal-body { padding: 1.1rem 1.15rem; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+    .modal-body .form input:not([type='checkbox']) { height: 36px; padding: 0 9px; box-sizing: border-box; }
+    .modal-foot {
+      display: flex; justify-content: flex-end; gap: 8px;
+      padding: 0.8rem 1.15rem; border-top: 1px solid #e3eaef;
+      background: #f8fafb; border-radius: 0 0 12px 12px;
     }
+    .modal-foot button { display: inline-flex; align-items: center; gap: 6px; }
+    .modal-foot mat-icon { font-size: 16px; width: 16px; height: 16px; }
     .logo-box {
-      border: 1px dashed #cbd5e1; border-radius: 6px;
-      min-height: 120px; display: flex; align-items: center; justify-content: center;
-      background: #f8fafc; padding: 12px;
+      border: 1px dashed #c5d6de; border-radius: 10px;
+      min-height: 140px; display: flex; align-items: center; justify-content: center;
+      background: #f8fafb; padding: 14px;
     }
-    .logo-img { max-height: 140px; max-width: 100%; }
-    .logo-ph { font-size: 48px; width: 48px; height: 48px; color: #94a3b8; }
+    .logo-img { max-height: 150px; max-width: 100%; }
+    .logo-vazia { display: flex; flex-direction: column; align-items: center; gap: 6px; color: #a5b6bf; font-size: 0.82rem; }
+    .logo-vazia mat-icon { font-size: 38px; width: 38px; height: 38px; }
+    .est-upload {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      border: 1.5px dashed #1a6f8a; border-radius: 10px;
+      padding: 13px 16px; cursor: pointer;
+      font-size: 0.85rem; font-weight: 600; color: #1a6f8a;
+      transition: background .14s;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .est-upload:hover { background: rgba(26, 111, 138, 0.06); }
+    .est-upload mat-icon { font-size: 19px; width: 19px; height: 19px; flex-shrink: 0; }
   `,
 })
 export class EstabelecimentoComponent implements OnInit {
-  private readonly rt = inject(Realtime);
-
-  constructor() {
-    let ultimo = -1;
-    effect(() => {
-      const v = this.rt.mudanca('impressora', 'categoria_estoque');
-      if (ultimo < 0) {
-        ultimo = v;
-        return;
-      }
-      if (v !== ultimo) {
-        ultimo = v;
-        this.carregarImpressoras();
-      }
-    });
-  }
   private readonly api = inject(ApiService);
   private readonly notify = inject(Notify);
   private readonly confirm = inject(Confirm);
+  private readonly rt = inject(Realtime);
   private readonly fb = inject(FormBuilder);
+  private readonly tour = inject(TourGuiado);
 
   protected readonly salvando = signal(false);
   protected readonly enviando = signal(false);
   protected readonly modalLogo = signal(false);
   protected readonly logoPreview = signal<string | null>(null);
   protected readonly logoArquivo = signal<File | null>(null);
+  protected readonly logoOk = signal(false);
   protected readonly impressoras = signal<M.Impressora[]>([]);
   protected readonly modalImp = signal(false);
   protected readonly impEditando = signal<M.Impressora | null>(null);
@@ -389,6 +583,37 @@ export class EstabelecimentoComponent implements OnInit {
     cep: [''],
   });
 
+  protected readonly dadosOk = computed(() => {
+    const v = this.dados.value;
+    return !!(v.razao_social?.trim() && v.cnpj?.trim());
+  });
+  protected readonly endOk = computed(() => {
+    const v = this.endereco.value;
+    return !!(v.logradouro?.trim() && v.cidade?.trim() && v.cep?.trim());
+  });
+  protected readonly impOk = computed(() =>
+    this.impressoras().some((p) => p.padrao && p.ativa),
+  );
+  protected readonly setoresOpcoes = computed(() => {
+    const atual = this.impForm.value.setor?.trim();
+    return atual && !SETORES.includes(atual) ? [...SETORES, atual] : SETORES;
+  });
+
+  constructor() {
+    let ultimo = -1;
+    effect(() => {
+      const v = this.rt.mudanca('impressora', 'categoria_estoque');
+      if (ultimo < 0) {
+        ultimo = v;
+        return;
+      }
+      if (v !== ultimo) {
+        ultimo = v;
+        this.carregarImpressoras();
+      }
+    });
+  }
+
   ngOnInit(): void {
     this.api.obterEstabelecimento().subscribe({
       next: (e) => {
@@ -408,6 +633,10 @@ export class EstabelecimentoComponent implements OnInit {
       error: () => undefined,
     });
     this.carregarImpressoras();
+    this.api.logoAtual().subscribe({
+      next: () => this.logoOk.set(true),
+      error: () => this.logoOk.set(false),
+    });
     this.api.obterEndereco().subscribe({
       next: (e) => {
         this.endVersion.set(e.version);
@@ -422,6 +651,11 @@ export class EstabelecimentoComponent implements OnInit {
       },
       error: () => undefined,
     });
+  }
+
+  onEsc(): void {
+    if (this.modalImp()) this.modalImp.set(false);
+    else if (this.modalLogo()) this.modalLogo.set(false);
   }
 
   salvarDados(): void {
@@ -509,6 +743,7 @@ export class EstabelecimentoComponent implements OnInit {
       next: () => {
         this.enviando.set(false);
         this.modalLogo.set(false);
+        this.logoOk.set(true);
         this.notify.ok('Logo atualizada.');
       },
       error: (err) => {
@@ -551,8 +786,8 @@ export class EstabelecimentoComponent implements OnInit {
       next: () => {
         this.salvando.set(false);
         this.modalImp.set(false);
+        this.notify.ok(edit ? 'Impressora atualizada.' : 'Impressora cadastrada.');
         this.carregarImpressoras();
-        this.notify.ok('Impressora salva.');
       },
       error: (e) => {
         this.salvando.set(false);
@@ -570,24 +805,88 @@ export class EstabelecimentoComponent implements OnInit {
 
   testar(p: M.Impressora): void {
     this.api.testarImpressora(p.id).subscribe({
-      next: () => this.notify.ok(`Ticket de teste enviado para '${p.nome}'.`),
+      next: () => this.notify.ok('Teste de impressão enviado.'),
       error: (e) => this.notify.erro(e),
     });
   }
 
   async removerImpressora(p: M.Impressora): Promise<void> {
-    const ok = await this.confirm.perguntar(`Remover a impressora '${p.nome}'?`, {
-      titulo: 'Remover impressora',
-      confirmar: 'Remover',
-      detalhe: 'Categorias roteadas para ela deixarão de imprimir pedidos.',
-    });
+    const ok = await this.confirm.perguntar(
+      `Excluir a impressora "${p.nome}" (${p.setor})?`,
+      { titulo: 'Excluir impressora', confirmar: 'Excluir' },
+    );
     if (!ok) return;
     this.api.removerImpressora(p.id).subscribe({
       next: () => {
+        this.notify.ok('Impressora excluída.');
         this.carregarImpressoras();
-        this.notify.ok('Impressora removida.');
       },
       error: (e) => this.notify.erro(e),
     });
+  }
+
+  /** Tour guiado da tela (driver.js). */
+  iniciarTour(): void {
+    this.tour.iniciar([
+      {
+        popover: {
+          title: 'Bem-vindo às configurações da pousada!',
+          description:
+            'Aqui ficam os dados que aparecem em <b>comprovantes, documentos ' +
+            'e na impressão térmica</b>. Avance com <b>Próximo</b>.',
+        },
+      },
+      {
+        element: '#tour-check',
+        popover: {
+          title: 'Checklist de configuração',
+          description:
+            'Os 4 itens essenciais: <b>dados fiscais</b>, <b>endereço</b>, ' +
+            '<b>logo</b> e <b>impressora padrão</b>. Verde = pronto; ' +
+            'dourado = pendente.',
+          side: 'bottom',
+        },
+      },
+      {
+        element: '.row-cards',
+        popover: {
+          title: 'Dados da pousada',
+          description:
+            'Razão social, CNPJ, contatos e endereço — tudo isso sai no ' +
+            '<b>cabeçalho dos comprovantes</b> e na ficha do hóspede. ' +
+            'Cada card grava separado.',
+          side: 'top',
+        },
+      },
+      {
+        element: '#tour-imp',
+        popover: {
+          title: 'Impressoras por setor',
+          description:
+            'A impressora marcada como <b>padrão</b> recebe os comprovantes ' +
+            'de check-out. Pedidos de consumo saem na impressora do ' +
+            '<b>setor da categoria</b> (cozinha, bar…). O botão print testa na hora.',
+          side: 'top',
+        },
+      },
+      {
+        element: '#tour-logo',
+        popover: {
+          title: 'Logo da pousada',
+          description:
+            'Envie a logo aqui — ela aparece nos <b>comprovantes ' +
+            'impressos</b> e documentos do sistema.',
+          side: 'bottom',
+        },
+      },
+      {
+        popover: {
+          title: 'Pronto!',
+          description:
+            'Deixe os 4 itens do checklist verdes e a operação de ' +
+            'impressão/documentos estará redonda.',
+        },
+      },
+    ]);
   }
 }

@@ -31,6 +31,16 @@
             ],
             "polyfills": [
               "@angular/localize/init"
+            ],
+            "allowedCommonJsDependencies": [
+              "exceljs",
+              "jspdf",
+              "jspdf-autotable",
+              "canvg",
+              "html2canvas",
+              "core-js",
+              "raf",
+              "rgbcolor"
             ]
           },
           "configurations": {
@@ -43,8 +53,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "14kB",
+                  "maximumError": "18kB"
                 }
               ],
               "outputHashing": "all",

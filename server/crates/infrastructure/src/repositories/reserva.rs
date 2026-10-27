@@ -666,6 +666,59 @@ impl ReservaRepository for PgReservaRepository {
         .await
         .map_err(map_db_err)
     }
+
+    async fn remover(&self, id: i64, log: NovoLog) -> Result<(), DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        let status = sqlx::query_scalar::<_, String>(
+            "SELECT status::text FROM reserva WHERE id = $1 FOR UPDATE",
+        )
+        .bind(id)
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(map_db_err)?
+        .ok_or_else(|| DomainError::nao_encontrado("Reserva não encontrada."))?;
+        if status != "p" && status != "c" {
+            return Err(DomainError::conflito(
+                "Só é possível excluir reservas pendentes ou canceladas — use Cancelar.",
+            ));
+        }
+        // conta de consumo e filhos (acompanhantes e fnrh caem por cascade)
+        sqlx::query(
+            "DELETE FROM item_consumido WHERE idconsumo IN
+             (SELECT id FROM consumo WHERE idreserva = $1)",
+        )
+        .bind(id)
+        .execute(&mut *tx)
+        .await
+        .map_err(map_db_err)?;
+        sqlx::query(
+            "DELETE FROM adicional_consumo WHERE idconsumo IN
+             (SELECT id FROM consumo WHERE idreserva = $1)",
+        )
+        .bind(id)
+        .execute(&mut *tx)
+        .await
+        .map_err(map_db_err)?;
+        sqlx::query("DELETE FROM reembolso WHERE idreserva = $1 OR idconsumo IN
+             (SELECT id FROM consumo WHERE idreserva = $1)")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_db_err)?;
+        sqlx::query("DELETE FROM consumo WHERE idreserva = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_db_err)?;
+        sqlx::query("DELETE FROM reserva WHERE id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_db_err)?;
+        audit::gravar(&mut *tx, &log).await?;
+        tx.commit().await.map_err(map_db_err)?;
+        Ok(())
+    }
 }
 
 // ---------------------------------------------------------------------------

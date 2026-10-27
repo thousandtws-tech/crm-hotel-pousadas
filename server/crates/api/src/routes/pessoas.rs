@@ -81,6 +81,20 @@ pub async fn status_cliente(
     ))
 }
 
+/// `DELETE /clientes/{id}` — exclui o cliente (admin) e apaga foto/scans do
+/// object store. Falha (409) quando há reservas ou fichas FNRH.
+pub async fn remover_cliente(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<StatusCode, AppError> {
+    let chaves = s.services.clientes.remover(&ator, id).await?;
+    for k in chaves {
+        s.store.delete(&k).await.ok();
+    }
+    Ok(StatusCode::NO_CONTENT)
+}
+
 /// Foto do cliente (recepção): imagem cruda no body, `Content-Type: image/*`,
 /// ≤ 4 MB. Persiste na chave `clientes/{id}.{ext}` do object store e registra o caminho.
 pub async fn upload_foto_cliente(
@@ -353,4 +367,15 @@ pub async fn status_funcionario(
             .definir_ativo(&ator, id, body.ativo)
             .await?,
     ))
+}
+
+/// `DELETE /funcionarios/{id}` — exclui o funcionário (admin). Vedado excluir
+/// a si mesmo; falha (409) quando há histórico de ações/reservas.
+pub async fn remover_funcionario(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<StatusCode, AppError> {
+    s.services.funcionarios.remover(&ator, id).await?;
+    Ok(StatusCode::NO_CONTENT)
 }

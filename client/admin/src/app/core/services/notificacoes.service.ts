@@ -31,14 +31,17 @@ export class Notificacoes {
   private timerRing: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
-    // aviso de OUTRO usuário → badge++ + animação do sino
+    // Qualquer aviso recebido pelo SSE → badge++ + animação do sino + atualiza inbox
+    let ultimoSeq = 0;
     effect(() => {
-      const a = this.rt.ultimoAviso();
-      if (!a || a.autor_id === this.auth.user()?.id) return;
+      const seq = this.rt.avisoSeq();
+      if (seq === 0 || seq === ultimoSeq) return;
+      ultimoSeq = seq;
       this.naoLidas.update((n) => n + 1);
       this.tocando.set(true);
       if (this.timerRing) clearTimeout(this.timerRing);
-      this.timerRing = setTimeout(() => this.tocando.set(false), 900);
+      this.timerRing = setTimeout(() => this.tocando.set(false), 1200);
+      if (this.aberto()) this.carregarInbox();
     });
 
     // deltas nas tabelas do inbox → contagem autoritativa do servidor.

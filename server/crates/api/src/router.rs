@@ -42,7 +42,9 @@ pub fn build(state: AppState) -> Router {
         )
         .route(
             "/clientes/{id}",
-            get(routes::pessoas::buscar_cliente).put(routes::pessoas::atualizar_cliente),
+            get(routes::pessoas::buscar_cliente)
+                .put(routes::pessoas::atualizar_cliente)
+                .delete(routes::pessoas::remover_cliente),
         )
         .route(
             "/clientes/{id}/status",
@@ -80,7 +82,9 @@ pub fn build(state: AppState) -> Router {
         )
         .route(
             "/funcionarios/{id}",
-            get(routes::pessoas::buscar_funcionario).put(routes::pessoas::atualizar_funcionario),
+            get(routes::pessoas::buscar_funcionario)
+                .put(routes::pessoas::atualizar_funcionario)
+                .delete(routes::pessoas::remover_funcionario),
         )
         .route(
             "/funcionarios/{id}/status",
@@ -93,7 +97,7 @@ pub fn build(state: AppState) -> Router {
         )
         .route(
             "/tipos-acomodacao/{id}",
-            put(routes::catalogo::atualizar_tipo),
+            put(routes::catalogo::atualizar_tipo).delete(routes::catalogo::remover_tipo),
         )
         .route(
             "/tipos-acomodacao/{id}/status",
@@ -106,7 +110,9 @@ pub fn build(state: AppState) -> Router {
         )
         .route(
             "/acomodacoes/{id}",
-            get(routes::catalogo::buscar_acomodacao).put(routes::catalogo::atualizar_acomodacao),
+            get(routes::catalogo::buscar_acomodacao)
+                .put(routes::catalogo::atualizar_acomodacao)
+                .delete(routes::catalogo::remover_acomodacao),
         )
         .route(
             "/acomodacoes/{id}/status",
@@ -119,6 +125,10 @@ pub fn build(state: AppState) -> Router {
         .route(
             "/acomodacoes/{id}/quartos",
             get(routes::catalogo::listar_quartos).post(routes::catalogo::criar_quarto),
+        )
+        .route(
+            "/quartos/{id}",
+            delete(routes::catalogo::remover_quarto),
         )
         .route(
             "/quartos/{id}/status",
@@ -134,7 +144,10 @@ pub fn build(state: AppState) -> Router {
             get(routes::reservas::disponibilidade),
         )
         .route("/reservas/eventos", get(routes::reservas::eventos))
-        .route("/reservas/{id}", get(routes::reservas::buscar_reserva))
+        .route(
+            "/reservas/{id}",
+            get(routes::reservas::buscar_reserva).delete(routes::reservas::remover_reserva),
+        )
         .route("/reservas/{id}/check-in", post(routes::reservas::checkin))
         .route("/reservas/{id}/check-out", post(routes::reservas::checkout))
         .route("/reservas/{id}/cancelar", post(routes::reservas::cancelar))
@@ -169,6 +182,10 @@ pub fn build(state: AppState) -> Router {
             get(routes::estoque::listar_categorias).post(routes::estoque::criar_categoria),
         )
         .route(
+            "/estoque/categorias/{id}",
+            delete(routes::estoque::remover_categoria),
+        )
+        .route(
             "/estoque/categorias/{id}/status",
             patch(routes::estoque::status_categoria),
         )
@@ -182,7 +199,9 @@ pub fn build(state: AppState) -> Router {
         )
         .route(
             "/estoque/itens/{id}",
-            get(routes::estoque::buscar_item).put(routes::estoque::atualizar_item),
+            get(routes::estoque::buscar_item)
+                .put(routes::estoque::atualizar_item)
+                .delete(routes::estoque::remover_item),
         )
         .route(
             "/estoque/itens/{id}/status",
@@ -199,7 +218,9 @@ pub fn build(state: AppState) -> Router {
         )
         .route(
             "/frigobares/{id}",
-            get(routes::catalogo::buscar_frigobar).put(routes::catalogo::atualizar_frigobar),
+            get(routes::catalogo::buscar_frigobar)
+                .put(routes::catalogo::atualizar_frigobar)
+                .delete(routes::catalogo::remover_frigobar),
         )
         .route(
             "/frigobares/{id}/status",
@@ -254,7 +275,8 @@ pub fn build(state: AppState) -> Router {
         )
         .route(
             "/formas-pagamento/{id}",
-            put(routes::catalogo::atualizar_pagamento),
+            put(routes::catalogo::atualizar_pagamento)
+                .delete(routes::catalogo::remover_pagamento),
         )
         .route(
             "/formas-pagamento/{id}/status",
@@ -385,6 +407,10 @@ pub fn build(state: AppState) -> Router {
         .route(
             "/api/v1/publico/acomodacoes/{slug}",
             get(routes::cms::publico_detalhe),
+        )
+        .route(
+            "/api/v1/publico/reservas",
+            post(routes::cms::publico_criar_reserva),
         )
         .route("/api/v1/midia/{id}", get(routes::cms::servir_midia))
         .nest("/api/v1", api)

@@ -134,6 +134,20 @@ impl ClienteService {
         Ok(self.repo.foto_caminho(id).await?)
     }
 
+    /// Exclui o cliente e devolve as chaves (foto + scans) para a API apagar
+    /// no object store. Bloqueado (409) quando há reservas ou fichas FNRH.
+    pub async fn remover(&self, ator: &Ator, id: i64) -> AppResult<Vec<String>> {
+        ator.exigir_admin()?;
+        let log = ator.log(
+            "remoção",
+            format!("Removeu o cliente Nº{id}"),
+            "cliente",
+            id,
+            None,
+        );
+        Ok(self.repo.remover(id, log).await?)
+    }
+
     async fn validar(&self, input: ClienteInput) -> AppResult<NovoCliente> {
         if input.nome.trim().is_empty() {
             return Err(DomainError::validacao("Nome é obrigatório.").into());

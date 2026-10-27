@@ -191,6 +191,12 @@ import { MotionService } from '../../core/services/motion.service';
                     ></textarea>
                   </div>
 
+                  @if (errorMessage()) {
+                    <div class="p-3 bg-red-50 border border-red-200 text-red-700 text-xs">
+                      {{ errorMessage() }}
+                    </div>
+                  }
+
                   <button
                     type="submit"
                     [disabled]="isLoading()"
@@ -262,10 +268,10 @@ import { MotionService } from '../../core/services/motion.service';
             <span class="w-12 h-12 rounded-full bg-[#054054] text-[#F7F5F0] flex items-center justify-center mx-auto mb-6">
               <app-icon name="check" [size]="22"></app-icon>
             </span>
-            <span class="type-eyebrow text-[#DDA554] block mb-2">Consulta Registrada</span>
+            <span class="type-eyebrow text-[#DDA554] block mb-2">Reserva &amp; Consulta Registrada</span>
             <h2 class="font-serif text-3xl text-[#054054] mb-4">Agradecemos o seu contato</h2>
             <p class="type-body text-sm max-w-md mx-auto mb-8">
-              Registramos seu interesse na categoria <strong>{{ selectedAccommodation()?.name }}</strong>. Para confirmar tarifas e disponibilidade com rapidez, você também pode falar diretamente pelo telefone <strong>{{ hotelConfig.phone }}</strong>.
+              {{ serverMessage() || ('Registramos seu interesse na categoria ' + (selectedAccommodation()?.name || '') + '.') }}
             </p>
 
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -310,6 +316,8 @@ export class BookingComponent implements OnInit {
   public readonly specialRequests = signal<string>('');
   public readonly isLoading = signal<boolean>(false);
   public readonly isSuccess = signal<boolean>(false);
+  public readonly serverMessage = signal<string>('');
+  public readonly errorMessage = signal<string>('');
 
   constructor() {
     afterNextRender(() => {
@@ -352,9 +360,10 @@ export class BookingComponent implements OnInit {
     if (!this.guestName() || !this.guestEmail() || !this.guestPhone()) return;
 
     this.isLoading.set(true);
+    this.errorMessage.set('');
     const acc = this.selectedAccommodation();
 
-    await this.bookingService.submitBookingRequest({
+    const resp = await this.bookingService.submitBookingRequest({
       checkIn: this.checkIn(),
       checkOut: this.checkOut(),
       guests: this.guests(),
@@ -369,7 +378,12 @@ export class BookingComponent implements OnInit {
     });
 
     this.isLoading.set(false);
-    this.isSuccess.set(true);
+    if (resp.success) {
+      this.serverMessage.set(resp.message);
+      this.isSuccess.set(true);
+    } else {
+      this.errorMessage.set(resp.message);
+    }
   }
 
   private initAnimations(): void {

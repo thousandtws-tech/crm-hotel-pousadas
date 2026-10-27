@@ -1,7 +1,7 @@
 //! Estoque: categorias, itens e ledger de movimentações.
 
 use super::audit;
-use crate::db::map_db_err;
+use crate::db::{map_db_err, map_del_err};
 use async_trait::async_trait;
 use clarituz_domain::entities::{CategoriaEstoque, ItemEstoque, NovoLog};
 use clarituz_domain::enums::TipoMovimento;
@@ -103,6 +103,23 @@ impl EstoqueRepository for PgEstoqueRepository {
         audit::gravar(&mut *tx, &log).await?;
         tx.commit().await.map_err(map_db_err)?;
         Ok(c)
+    }
+
+    async fn remover_categoria(&self, id: i64, log: NovoLog) -> Result<(), DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        let r = sqlx::query("DELETE FROM categoria_estoque WHERE id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| {
+                map_del_err(e, "Categoria possui itens vinculados — exclua-os primeiro.")
+            })?;
+        if r.rows_affected() == 0 {
+            return Err(DomainError::nao_encontrado("Categoria não encontrada."));
+        }
+        audit::gravar(&mut *tx, &log).await?;
+        tx.commit().await.map_err(map_db_err)?;
+        Ok(())
     }
 
     async fn buscar_item(&self, id: i64) -> Result<Option<ItemEstoque>, DomainError> {
@@ -330,5 +347,33 @@ impl EstoqueRepository for PgEstoqueRepository {
         .map_err(map_db_err)?;
 
         Ok(Page::new(items, page, total))
+    }
+
+    async fn remover_item(&self, id: i64, log: NovoLog) -> Result<(), DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        // dependentes sem cascade: ledger do item e vínculos em frigobares
+        sqlx::query("DELETE FROM movimento_estoque WHERE iditem = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_db_err)?;
+        sqlx::query("DELETE FROM item_frigobar WHERE iditem = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_db_err)?;
+        let r = sqlx::query("DELETE FROM estoque WHERE id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| {
+                map_del_err(e, "Item já consumido em reservas — inative-o em vez de excluir.")
+            })?;
+        if r.rows_affected() == 0 {
+            return Err(DomainError::nao_encontrado("Item não encontrado."));
+        }
+        audit::gravar(&mut *tx, &log).await?;
+        tx.commit().await.map_err(map_db_err)?;
+        Ok(())
     }
 }

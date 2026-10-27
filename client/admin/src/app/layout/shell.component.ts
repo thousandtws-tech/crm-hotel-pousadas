@@ -5,6 +5,7 @@ import { AuthStore } from '@core/services/auth.store';
 import { Realtime } from '@core/services/realtime.service';
 import { Notificacoes } from '@core/services/notificacoes.service';
 import { ApiService } from '@core/services/api.service';
+import { MariaWidgetComponent } from '@features/maria/maria-widget.component';
 import { ItemBusca, Notificacao } from '@core/models/api.models';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
@@ -42,7 +43,7 @@ const NAV: NavItem[] = [
 @Component({
   selector: 'app-shell',
   host: { '(document:keydown.control.k)': 'focarBusca($event)' },
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule, MariaWidgetComponent],
   template: `
     <header class="header" [class.header-open]="aberta()">
       <button
@@ -211,6 +212,10 @@ const NAV: NavItem[] = [
     <main class="content" [class.content-open]="aberta()">
       <router-outlet />
     </main>
+
+    @if (auth.autenticado()) {
+      <app-maria />
+    }
   `,
   styles: `
     /* ===== header fixo verde (AdminLTE skin-green .main-header) ===== */

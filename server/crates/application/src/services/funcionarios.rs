@@ -204,4 +204,21 @@ impl FuncionarioService {
         );
         Ok(self.repo.definir_ativo(id, ativo, log).await?)
     }
+
+    /// Exclui o funcionário em definitivo — vedado excluir a si mesmo e
+    /// vedado quando há histórico de ações/reservas (o repo devolve 409).
+    pub async fn remover(&self, ator: &Ator, id: i64) -> AppResult<()> {
+        ator.exigir_admin()?;
+        if id == ator.id {
+            return Err(DomainError::regra("Não é possível excluir o próprio usuário.").into());
+        }
+        let log = ator.log(
+            "remoção",
+            format!("Removeu o funcionário Nº{id}"),
+            "funcionario",
+            id,
+            None,
+        );
+        Ok(self.repo.remover(id, log).await?)
+    }
 }

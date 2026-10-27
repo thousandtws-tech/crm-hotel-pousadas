@@ -72,4 +72,17 @@ impl PagamentoService {
         );
         Ok(self.repo.definir_ativo(id, ativo, log).await?)
     }
+
+    /// Remove em definitivo — falha (409) se já usada em consumos.
+    pub async fn remover(&self, ator: &Ator, id: i64) -> AppResult<()> {
+        ator.exigir_admin()?;
+        let log = ator.log(
+            "remoção",
+            format!("Removeu a forma de pagamento Nº{id}"),
+            "formapagamento",
+            id,
+            None,
+        );
+        Ok(self.repo.remover(id, log).await?)
+    }
 }

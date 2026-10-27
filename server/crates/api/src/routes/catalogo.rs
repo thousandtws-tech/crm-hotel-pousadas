@@ -78,6 +78,15 @@ pub async fn status_tipo(
     ))
 }
 
+pub async fn remover_tipo(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<Json<Mensagem>, AppError> {
+    s.services.acomodacoes.remover_tipo(&ator, id).await?;
+    Ok(Json(Mensagem::ok("Tipo de acomodação removido.")))
+}
+
 // ---------------------------------------------------------------------------
 // acomodações
 // ---------------------------------------------------------------------------
@@ -153,6 +162,20 @@ pub async fn tarifas_acomodacao(
     Ok(Json(s.services.acomodacoes.historico_tarifas(id).await?))
 }
 
+/// `DELETE /acomodacoes/{id}` — exclui acomodação + dependentes e apaga as
+/// mídias dela no object store (falha 409 quando há reservas).
+pub async fn remover_acomodacao(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<Json<Mensagem>, AppError> {
+    let chaves = s.services.acomodacoes.remover(&ator, id).await?;
+    for k in chaves {
+        s.store.delete(&k).await.ok();
+    }
+    Ok(Json(Mensagem::ok("Acomodação removida.")))
+}
+
 // ---------------------------------------------------------------------------
 // quartos
 // ---------------------------------------------------------------------------
@@ -187,6 +210,15 @@ pub async fn status_quarto(
             .status_quarto(&ator, id, body.ativo)
             .await?,
     ))
+}
+
+pub async fn remover_quarto(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<Json<Mensagem>, AppError> {
+    s.services.acomodacoes.remover_quarto(&ator, id).await?;
+    Ok(Json(Mensagem::ok("Quarto removido.")))
 }
 
 // ---------------------------------------------------------------------------
@@ -345,6 +377,15 @@ pub async fn remover_item_frigobar(
     Ok(Json(Mensagem::ok("Item removido do frigobar.")))
 }
 
+pub async fn remover_frigobar(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<Json<Mensagem>, AppError> {
+    s.services.frigobar.remover(&ator, id).await?;
+    Ok(Json(Mensagem::ok("Frigobar removido.")))
+}
+
 // ---------------------------------------------------------------------------
 // formas de pagamento
 // ---------------------------------------------------------------------------
@@ -389,6 +430,15 @@ pub async fn status_pagamento(
             .definir_ativo(&ator, id, body.ativo)
             .await?,
     ))
+}
+
+pub async fn remover_pagamento(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<Json<Mensagem>, AppError> {
+    s.services.pagamentos.remover(&ator, id).await?;
+    Ok(Json(Mensagem::ok("Forma de pagamento removida.")))
 }
 
 // ---------------------------------------------------------------------------

@@ -1077,6 +1077,20 @@ impl ReservaService {
         );
         Ok(self.fnrh.emitir(&nova, log).await?)
     }
+
+    /// Exclui em definitivo uma reserva pendente ou cancelada junto com a
+    /// conta de consumo — iniciadas/finalizadas devem ser canceladas antes.
+    pub async fn remover(&self, ator: &Ator, id: i64) -> AppResult<()> {
+        ator.exigir_admin()?;
+        let log = ator.log(
+            "remoção",
+            format!("Excluiu a reserva Nº{id}"),
+            "reserva",
+            id,
+            None,
+        );
+        Ok(self.reservas.remover(id, log).await?)
+    }
 }
 
 /// `Some(t)` → `None` quando vazio após trim.

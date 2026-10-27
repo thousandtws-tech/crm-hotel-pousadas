@@ -1,7 +1,7 @@
 //! Funcionários, sessões de refresh, log de acesso e clientes.
 
 use super::audit;
-use crate::db::map_db_err;
+use crate::db::{map_db_err, map_del_err};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use clarituz_domain::entities::{Cliente, ClienteDocumento, Funcionario, NovoLog, SessaoRefresh};
@@ -184,6 +184,32 @@ impl FuncionarioRepository for PgFuncionarioRepository {
         audit::gravar(&mut *tx, &log).await?;
         tx.commit().await.map_err(map_db_err)?;
         Ok(f)
+    }
+
+    async fn remover(&self, id: i64, log: NovoLog) -> Result<(), DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        // logacesso não tem cascade — remove junto; sessões e leituras caem sozinhas
+        sqlx::query("DELETE FROM logacesso WHERE idfuncionario = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_db_err)?;
+        let r = sqlx::query("DELETE FROM funcionario WHERE id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| {
+                map_del_err(
+                    e,
+                    "Funcionário possui histórico no sistema — inative-o em vez de excluir.",
+                )
+            })?;
+        if r.rows_affected() == 0 {
+            return Err(DomainError::nao_encontrado("Funcionário não encontrado."));
+        }
+        audit::gravar(&mut *tx, &log).await?;
+        tx.commit().await.map_err(map_db_err)?;
+        Ok(())
     }
 }
 
@@ -535,6 +561,45 @@ impl ClienteRepository for PgClienteRepository {
             .fetch_one(&self.pool)
             .await
             .map_err(map_db_err)
+    }
+
+    async fn remover(&self, id: i64, log: NovoLog) -> Result<Vec<String>, DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        // chaves no object store (scans dos documentos + foto) — apagadas pela API
+        let mut chaves: Vec<String> = sqlx::query_scalar(
+            "SELECT scan FROM cliente_documento WHERE idcliente = $1 AND scan IS NOT NULL",
+        )
+        .bind(id)
+        .fetch_all(&mut *tx)
+        .await
+        .map_err(map_db_err)?;
+        if let Some(foto) =
+            sqlx::query_scalar::<_, Option<String>>("SELECT foto FROM cliente WHERE id = $1")
+                .bind(id)
+                .fetch_optional(&mut *tx)
+                .await
+                .map_err(map_db_err)?
+                .flatten()
+        {
+            chaves.push(foto);
+        }
+        // cliente_documento cai por ON DELETE CASCADE
+        let r = sqlx::query("DELETE FROM cliente WHERE id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| {
+                map_del_err(
+                    e,
+                    "Cliente possui reservas ou fichas FNRH — inative-o em vez de excluir.",
+                )
+            })?;
+        if r.rows_affected() == 0 {
+            return Err(DomainError::nao_encontrado("Cliente não encontrado."));
+        }
+        audit::gravar(&mut *tx, &log).await?;
+        tx.commit().await.map_err(map_db_err)?;
+        Ok(chaves)
     }
 }
 

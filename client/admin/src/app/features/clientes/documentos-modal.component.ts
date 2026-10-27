@@ -167,16 +167,16 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
                       ><mat-icon>upload</mat-icon></button>
                       @if (d.tem_scan) {
                         <button
-                          type="button" class="badge-acao bg-yellow text-black-50" title="Remover scan"
+                          type="button" class="badge-acao bg-yellow" title="Remover scan"
                           (click)="removerScan(d)"
                         ><mat-icon>hide_image</mat-icon></button>
                       }
                       <button
-                        type="button" class="badge-acao bg-yellow text-black-50" title="Editar dados"
+                        type="button" class="badge-acao bg-yellow" title="Editar dados"
                         (click)="editar(d)"
                       ><mat-icon>edit</mat-icon></button>
                       <button
-                        type="button" class="badge-acao bg-danger" title="Excluir documento"
+                        type="button" class="badge-acao bg-dark-blue" title="Excluir documento"
                         (click)="excluir(d)"
                       ><mat-icon>delete</mat-icon></button>
                     </td>

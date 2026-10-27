@@ -228,6 +228,45 @@ impl AcomodacaoService {
         Ok(self.quartos.definir_ativo(id, ativo, log).await?)
     }
 
+    // -- remoções (somente admin) ------------------------------------------------
+
+    pub async fn remover_tipo(&self, ator: &Ator, id: i64) -> AppResult<()> {
+        ator.exigir_admin()?;
+        let log = ator.log(
+            "remoção",
+            format!("Removeu o tipo de acomodação Nº{id}"),
+            "tipo_acomodacao",
+            id,
+            None,
+        );
+        Ok(self.tipos.remover(id, log).await?)
+    }
+
+    /// Exclui a acomodação e devolve as chaves de mídia para a API apagar.
+    pub async fn remover(&self, ator: &Ator, id: i64) -> AppResult<Vec<String>> {
+        ator.exigir_admin()?;
+        let log = ator.log(
+            "remoção",
+            format!("Removeu a acomodação Nº{id}"),
+            "acomodacao",
+            id,
+            None,
+        );
+        Ok(self.acomodacoes.remover(id, log).await?)
+    }
+
+    pub async fn remover_quarto(&self, ator: &Ator, id: i64) -> AppResult<()> {
+        ator.exigir_admin()?;
+        let log = ator.log(
+            "remoção",
+            format!("Removeu o quarto físico Nº{id}"),
+            "quarto",
+            id,
+            None,
+        );
+        Ok(self.quartos.remover(id, log).await?)
+    }
+
     // -- internos --------------------------------------------------------------
 
     fn validar(&self, input: AcomodacaoInput) -> AppResult<NovaAcomodacao> {

@@ -52,6 +52,7 @@ function mapItem(a: AcomodacaoPublica): Accommodation {
   const fotos = a.midias.filter((m) => m.tipo === 'foto').sort((x, y) => x.ordem - y.ordem);
   const capa = fotos.find((m) => m.capa) ?? fotos[0];
   const valor = Number(a.valor);
+  const temPreco = Number.isFinite(valor) && valor > 0;
   return {
     id: String(a.id),
     slug: a.slug,
@@ -60,8 +61,8 @@ function mapItem(a: AcomodacaoPublica): Accommodation {
     shortDescription: a.descricao_curta ?? a.subtitulo ?? '',
     description: a.descricao_longa ?? a.descricao_curta ?? '',
     editorialQuote: a.destaque_editorial ?? undefined,
-    price: Number.isFinite(valor) ? valor : null,
-    priceLabel: Number.isFinite(valor) ? `${brl.format(valor)} / noite` : 'Sob consulta',
+    price: temPreco ? valor : null,
+    priceLabel: temPreco ? `${brl.format(valor)} / noite` : 'Sob consulta',
     guests: a.capacidade,
     beds: a.camas ?? 'Consulte a recepção',
     bathrooms: a.banheiros ?? 1,
@@ -243,41 +244,42 @@ export class AccommodationService {
     if (isPlatformBrowser(this.platformId)) {
       void this.carregar();
       this.conectarStream();
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') void this.carregar();
+      });
     }
   }
 
-  /** Refetch completo do catálogo público. Falha → mantém o conteúdo atual. */
+  /** Refetch completo do catálogo público. Sempre reflete o estado publicado no CMS. */
   private async carregar(): Promise<void> {
     try {
       const res = await fetch(`${API}/publico/acomodacoes`, { cache: 'no-store' });
       if (!res.ok) return;
       const dados = (await res.json()) as AcomodacaoPublica[];
-      if (dados.length > 0) {
-        this.accommodationsState.set(dados.map(mapItem));
-      }
+      this.accommodationsState.set(dados.map(mapItem));
     } catch {
-      // API indisponível → o conteúdo atual (ou FALLBACK) permanece.
+      // API indisponível → mantém o estado atual (ou FALLBACK inicial).
     }
   }
 
-  /** SSE público: qualquer delta de acomodacao/cms/mídia refaz o fetch. */
+  /** SSE público: qualquer delta de acomodacao/cms/mídia refaz o fetch na hora. */
   private conectarStream(): void {
     try {
       this.eventSource = new EventSource(`${API}/publico/stream`);
       this.eventSource.addEventListener('delta', () => this.agendarRefetch());
+      this.eventSource.onopen = () => void this.carregar();
       this.eventSource.onerror = () => {
-        // EventSource reconecta sozinho; se a API cair de vez, o fetch no
-        // reconnect renova os dados assim que o serviço voltar.
+        // EventSource reconecta sozinho; onopen dispara carregar() ao reconectar.
       };
     } catch {
-      // Sem EventSource (browser antigo) → conteúdo estático da última carga.
+      // Sem EventSource → conteúdo estático da última carga.
     }
   }
 
-  /** Debounce: rajadas de deltas (upload + salvar + publicar) viram 1 fetch. */
+  /** Debounce curto: rajadas de deltas (upload + salvar + publicar) viram 1 fetch rápido. */
   private agendarRefetch(): void {
     if (this.refetchTimer) clearTimeout(this.refetchTimer);
-    this.refetchTimer = setTimeout(() => void this.carregar(), 800);
+    this.refetchTimer = setTimeout(() => void this.carregar(), 250);
   }
 
   public getBySlug(slug: string): Accommodation | undefined {
