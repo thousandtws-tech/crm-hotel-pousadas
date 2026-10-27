@@ -270,7 +270,7 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                 </label>
                 <label class="lbl">
                   Porta
-                  <input class="input-inn" type="number" formControlName="porta" />
+                  <input class="input-inn porta-inn" type="number" formControlName="porta" />
                 </label>
               </div>
               <label class="lbl check">
@@ -421,6 +421,7 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
     .f-lbl { font-size: 0.82rem; font-weight: 600; color: #40525d; }
     .f-mat { width: 100%; }
     .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .porta-inn { margin-top: 20px; }
     .num-comp { display: grid; grid-template-columns: 120px 1fr; gap: 10px; }
     .end { display: flex; justify-content: flex-end; }
     .end button { display: inline-flex; align-items: center; gap: 6px; }

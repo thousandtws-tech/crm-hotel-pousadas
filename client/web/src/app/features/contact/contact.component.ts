@@ -39,9 +39,6 @@ interface SelectOption {
       </div>
 
       <div class="relative z-10 container-editorial text-center flex flex-col items-center">
-        <span class="type-eyebrow !text-white !text-xs sm:!text-sm block mb-3">
-          Atendimento Direto · Bairro Peró, Cabo Frio
-        </span>
         <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl text-white font-normal mb-4 leading-[1.08] max-w-3xl">
           Estamos à disposição para planejar sua estadia
         </h1>

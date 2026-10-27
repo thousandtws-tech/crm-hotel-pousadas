@@ -10,22 +10,11 @@ import { MotionService } from '../../../../core/services/motion.service';
     <section class="pt-10 sm:pt-14 lg:pt-16 pb-16 sm:pb-20 lg:pb-24 bg-[#F7F5F0]" aria-labelledby="essence-heading">
       <div class="container-editorial">
         
-        <!-- Top Editorial Headline Bar -->
-        <div class="essence-header grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 mb-8 sm:mb-10 lg:mb-12">
-          <div class="lg:col-span-4">
-            <span class="type-eyebrow text-[#DDA554] text-[15px] block mb-2 sm:mb-3">
-              Sobre a Pousada
-            </span>
-            <span class="type-caption text-[#536B73] text-[17px] block">
-              Bairro Peró · Cabo Frio, RJ
-            </span>
-          </div>
-
-          <div class="lg:col-span-8">
-            <h2 id="essence-heading" class="type-title text-[#054054]">
-              Hospitalidade acolhedora pertinho da Praia do Peró.
-            </h2>
-          </div>
+        <!-- Top Editorial Headline -->
+        <div class="essence-header text-center mb-8 sm:mb-10 lg:mb-12">
+          <h2 id="essence-heading" class="type-title text-[#054054] max-w-3xl mx-auto">
+            Hospitalidade acolhedora pertinho da Praia do Peró.
+          </h2>
         </div>
 
         <!-- Asymmetric Photography & Editorial Columns -->

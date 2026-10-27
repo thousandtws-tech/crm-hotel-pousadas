@@ -12,19 +12,14 @@ import { MotionService } from '../../../../core/services/motion.service';
       <div class="container-editorial">
         
         <!-- Section Header -->
-        <div class="suites-header flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-10 lg:mb-12 gap-6">
-          <div class="max-w-xl">
-            <span class="type-eyebrow text-[#DDA554] block mb-2 sm:mb-3">
-              Acomodações no Peró
-            </span>
-            <h2 id="accommodations-heading" class="type-title text-[#054054]">
-              Quartos pensados para o seu descanso em Cabo Frio.
-            </h2>
-          </div>
+        <div class="suites-header flex flex-col items-center text-center mb-8 sm:mb-10 lg:mb-12 gap-4">
+          <h2 id="accommodations-heading" class="type-title text-[#054054] max-w-2xl">
+            Quartos pensados para o seu descanso em Cabo Frio.
+          </h2>
 
           <a
             routerLink="/acomodacoes"
-            class="btn-text self-start md:self-end"
+            class="btn-text"
           >
             <span>Conheça nossas acomodações</span>
             <app-icon name="arrow-right" [size]="13"></app-icon>

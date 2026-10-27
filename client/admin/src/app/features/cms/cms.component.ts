@@ -1,8 +1,4 @@
-// CMS de quartos — central unificada (Room Inventory + Content Studio).
-// Permite criar novos quartos, alterar preço/capacidade/nome, editar conteúdo
-// editorial, comodidades, fotos/vídeos (MinIO S3) e publicar em tempo real.
-
-import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, effect, viewChild, ElementRef } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -57,7 +53,11 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
 
 @Component({
   selector: 'app-cms',
-  host: { '(document:keydown.escape)': 'onEsc()' },
+  host: {
+    '(document:keydown.escape)': 'onEsc()',
+    '(document:keydown.arrowleft)': 'onSeta(-1)',
+    '(document:keydown.arrowright)': 'onSeta(1)',
+  },
   imports: [
     DecimalPipe,
     ReactiveFormsModule,
@@ -101,8 +101,8 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
         <div class="cms-banner">
           <span class="cms-banner-ic tint-gold"><mat-icon>photo_library</mat-icon></span>
           <div>
-            <strong>Fotos e vídeos (S3)</strong>
-            <p>No editor de cada quarto você envia a galeria, escolhe a <b>foto de capa</b> e ordena com as setas. Tudo guardado no MinIO S3.</p>
+            <strong>Fotos e vídeos</strong>
+            <p>No editor de cada quarto você envia a galeria, escolhe a <b>foto de capa</b> e ordena com as setas.</p>
           </div>
         </div>
         <div class="cms-banner">
@@ -363,7 +363,7 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
                     <input formControlName="subtitulo"
                            placeholder="Ex.: Conforto e praticidade a poucos passos da Praia do Peró" />
                   </label>
-                  <label>
+                  <label class="f-field">
                     Slug da URL (automático se vazio)
                     <input formControlName="slug" placeholder="suite-master-varanda" />
                   </label>
@@ -511,9 +511,9 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
                     @for (m of editandoMidias(); track m.id; let i = $index) {
                       <div class="midia-card" [class.capa]="m.capa">
                         @if (m.tipo === 'foto') {
-                          <img [src]="midiaUrl(m.id)" alt="" />
+                          <img [src]="midiaUrl(m.id)" alt="" title="Clique para ampliar" (click)="abrirPreview(i)" />
                         } @else {
-                          <video [src]="midiaUrl(m.id)" muted preload="metadata"></video>
+                          <video [src]="midiaUrl(m.id)" muted preload="metadata" title="Clique para ampliar" (click)="abrirPreview(i)"></video>
                           <span class="video-tag">VÍDEO</span>
                         }
                         @if (m.capa) {
@@ -553,6 +553,37 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
               <button class="btn-gray" type="button" (click)="fecharEditor()">Fechar</button>
             </div>
           </div>
+        </div>
+      }
+
+      <!-- ================= Lightbox de mídia ================= -->
+      @if (preview(); as p) {
+        <div class="lightbox" role="dialog" aria-modal="true" aria-label="Pré-visualização de mídia"
+             tabindex="-1" #lightbox (click)="fecharPreview()">
+          <button type="button" class="lb-btn lb-close" aria-label="Fechar visualização" (click)="fecharPreview()">
+            <mat-icon>close</mat-icon>
+          </button>
+          @if (editandoMidias().length > 1) {
+            <button type="button" class="lb-btn lb-nav prev" aria-label="Mídia anterior"
+                    (click)="navPreview(-1); $event.stopPropagation()">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+            <button type="button" class="lb-btn lb-nav next" aria-label="Próxima mídia"
+                    (click)="navPreview(1); $event.stopPropagation()">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          }
+          <figure class="lb-midia" (click)="$event.stopPropagation()">
+            @if (p.tipo === 'foto') {
+              <img [src]="midiaUrl(p.id)" [alt]="p.capa ? 'Foto de capa do quarto' : 'Foto da galeria'" />
+            } @else {
+              <video [src]="midiaUrl(p.id)" controls autoplay></video>
+            }
+            <figcaption>
+              @if (p.capa) { <span class="lb-capa">★ Capa ·</span> }
+              {{ (previewIdx() ?? 0) + 1 }} de {{ editandoMidias().length }}
+            </figcaption>
+          </figure>
         </div>
       }
     </div>
@@ -818,7 +849,7 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
     .f-full { grid-column: 1 / -1; }
     label { font-size: 12px; color: #334; font-weight: 600; display: flex; flex-direction: column; gap: 3px; }
     label.check { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; cursor: pointer; }
-    .f-field { display: flex; flex-direction: column; gap: 3px; }
+    .f-field { display: flex; flex-direction: column; gap: 3px; margin-top: 1.3rem; }
     .f-lbl { font-size: 12px; color: #334; font-weight: 600; }
     .f-mat { width: 100%; }
     .req { color: #b00; }
@@ -850,7 +881,7 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
       display: inline-flex; flex-direction: row; align-items: center; gap: 6px;
       background: #054054; color: #fff; border-radius: 5px; padding: 9px 14px;
       font-size: 0.82rem; font-weight: 600; cursor: pointer; white-space: nowrap;
-      transition: background 0.15s;
+      transition: background 0.15s; margin-top: 14px;
     }
     .upload-btn:hover { background: #1a6f8a; }
     .upload-btn mat-icon { font-size: 18px; width: 18px; height: 18px; }
@@ -864,7 +895,31 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
     .midia-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
     .midia-card { position: relative; border: 2px solid #dde5e9; border-radius: 8px; padding: 4px; background: #fff; }
     .midia-card.capa { border-color: #dda554; }
-    .midia-card img, .midia-card video { width: 100%; height: 92px; object-fit: cover; border-radius: 5px; display: block; background: #f2f6f8; }
+    .midia-card img, .midia-card video { width: 100%; height: 92px; object-fit: cover; border-radius: 5px; display: block; background: #f2f6f8; cursor: zoom-in; }
+    /* ---------- lightbox ---------- */
+    .lightbox {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(3, 20, 28, 0.88);
+      display: flex; align-items: center; justify-content: center;
+      outline: none; animation: lb-fade 0.15s ease-out;
+    }
+    @keyframes lb-fade { from { opacity: 0; } }
+    .lb-midia { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: min(1100px, 92vw); }
+    .lb-midia img, .lb-midia video { max-width: 100%; max-height: 78vh; object-fit: contain; border-radius: 8px; box-shadow: 0 12px 48px rgba(0, 0, 0, 0.55); background: #062d3d; }
+    .lb-midia figcaption { color: #9fc4d3; font-size: 0.82rem; font-weight: 600; }
+    .lb-capa { color: #dda554; }
+    .lb-btn {
+      position: fixed; z-index: 301;
+      width: 42px; height: 42px; border-radius: 50%; border: none;
+      background: rgba(26, 111, 138, 0.9); color: #fff; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .lb-btn:hover, .lb-btn:focus-visible { background: #dda554; color: #054054; }
+    .lb-close { top: 18px; right: 20px; }
+    .lb-nav { top: 50%; transform: translateY(-50%); }
+    .lb-nav.prev { left: 16px; }
+    .lb-nav.next { right: 16px; }
     .capa-tag { position: absolute; top: 9px; left: 9px; background: #dda554; color: #054054; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
     .video-tag { position: absolute; top: 9px; right: 9px; background: #054054; color: #fff; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
     .midia-ops { display: flex; justify-content: center; gap: 4px; margin-top: 4px; }
@@ -902,6 +957,12 @@ export class CmsComponent implements OnInit {
   protected readonly termo = signal('');
   protected readonly filtro = signal<FiltroPub>('todos');
   protected readonly buscaFoco = signal(false);
+  protected readonly previewIdx = signal<number | null>(null);
+  protected readonly preview = computed<M.Midia | null>(() => {
+    const i = this.previewIdx();
+    return i === null ? null : (this.editandoMidias()[i] ?? null);
+  });
+  private readonly lightboxEl = viewChild<ElementRef<HTMLElement>>('lightbox');
   protected readonly skel = [0, 1, 2, 3];
 
   protected readonly num = num;
@@ -966,6 +1027,9 @@ export class CmsComponent implements OnInit {
       if (ultimo < 0) { ultimo = v; return; }
       if (v !== ultimo && !this.modalAberto()) { ultimo = v; this.carregar(); }
     });
+    effect(() => {
+      if (this.previewIdx() !== null) this.lightboxEl()?.nativeElement.focus();
+    });
   }
 
   ngOnInit(): void {
@@ -977,7 +1041,26 @@ export class CmsComponent implements OnInit {
   }
 
   onEsc(): void {
+    if (this.previewIdx() !== null) { this.fecharPreview(); return; }
     if (this.modalAberto()) this.fecharEditor();
+  }
+
+  onSeta(dir: 1 | -1): void {
+    if (this.previewIdx() !== null) this.navPreview(dir);
+  }
+
+  abrirPreview(i: number): void {
+    this.previewIdx.set(i);
+  }
+
+  fecharPreview(): void {
+    this.previewIdx.set(null);
+  }
+
+  navPreview(dir: 1 | -1): void {
+    const n = this.editandoMidias().length;
+    if (n < 2) return;
+    this.previewIdx.update((i) => (i === null ? null : (i + dir + n) % n));
   }
 
   carregar(): void {
@@ -1101,6 +1184,7 @@ export class CmsComponent implements OnInit {
   }
 
   fecharEditor(): void {
+    this.previewIdx.set(null);
     this.modalAberto.set(false);
     this.editando.set(null);
   }
@@ -1317,6 +1401,7 @@ export class CmsComponent implements OnInit {
 
   removerMidia(m: M.Midia): void {
     if (!confirm('Remover esta mídia do quarto e do MinIO S3?')) return;
+    this.fecharPreview();
     this.api.removerMidia(m.id).subscribe({
       next: () => {
         this.editandoMidias.update((l) => l.filter((x) => x.id !== m.id));
@@ -1341,6 +1426,7 @@ export class CmsComponent implements OnInit {
     const l = [...this.editandoMidias()];
     const j = i + dir;
     if (!a || j < 0 || j >= l.length) return;
+    this.fecharPreview();
     [l[i], l[j]] = [l[j], l[i]];
     this.editandoMidias.set(l);
     this.api.ordenarMidias(a.id, l.map((m) => m.id)).subscribe({

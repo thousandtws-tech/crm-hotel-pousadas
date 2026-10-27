@@ -6,12 +6,14 @@ import { Accommodation } from '../../core/models/accommodation.model';
 import { BookingService } from '../../core/services/booking.service';
 import { SeoService } from '../../core/services/seo.service';
 import { IconComponent } from '../../shared/components/icons/icon.component';
+import { LightboxComponent } from '../../shared/components/lightbox/lightbox.component';
+import { GalleryItem } from '../../core/models/gallery-item.model';
 import { HOTEL_CONFIG } from '../../core/config/hotel-config';
 import { MotionService } from '../../core/services/motion.service';
 
 @Component({
   selector: 'app-accommodation-detail',
-  imports: [RouterLink, FormsModule, IconComponent],
+  imports: [RouterLink, FormsModule, IconComponent, LightboxComponent],
   template: `
     @if (accommodation(); as acc) {
       <!-- Room Hero Section -->
@@ -33,10 +35,6 @@ import { MotionService } from '../../core/services/motion.service';
             <app-icon name="chevron-left" [size]="14"></app-icon>
             <span>Todas as acomodações</span>
           </a>
-
-          <span class="type-eyebrow text-[#DDA554] block mb-2">
-            {{ acc.view }}
-          </span>
 
           <h1 class="type-title text-4xl sm:text-5xl lg:text-6xl text-white font-normal mb-3">
             {{ acc.name }}
@@ -78,11 +76,19 @@ import { MotionService } from '../../core/services/motion.service';
                 
                 <!-- Main Featured Photo -->
                 <div class="editorial-image-container aspect-[16/10] mb-3 shadow-sm">
-                  <img
-                    [src]="activeHeroImage()"
-                    [alt]="acc.name + ' (imagem ilustrativa)'"
-                    class="w-full h-full object-cover"
-                  />
+                  <button
+                    type="button"
+                    class="block w-full h-full cursor-zoom-in group"
+                    title="Clique para ampliar"
+                    [attr.aria-label]="'Ampliar foto de ' + acc.name"
+                    (click)="openLightbox(acc.images.indexOf(activeHeroImage()))"
+                  >
+                    <img
+                      [src]="activeHeroImage()"
+                      [alt]="acc.name + ' (imagem ilustrativa)'"
+                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                    />
+                  </button>
                 </div>
 
                 <!-- Thumbnails -->
@@ -252,6 +258,18 @@ import { MotionService } from '../../core/services/motion.service';
         </div>
       </section>
     }
+
+    <!-- Lightbox: preview em tela cheia das fotos do quarto -->
+    @if (lightboxItem(); as item) {
+      <app-lightbox
+        [item]="item"
+        [hasPrev]="lightboxIdx() > 0"
+        [hasNext]="lightboxIdx() < ((accommodation()?.images.length ?? 1) - 1)"
+        (onClose)="closeLightbox()"
+        (onPrev)="prevImage()"
+        (onNext)="nextImage()"
+      ></app-lightbox>
+    }
   `
 })
 export class AccommodationDetailComponent implements OnInit {
@@ -312,6 +330,22 @@ export class AccommodationDetailComponent implements OnInit {
   });
   public readonly activeHeroImage = signal<string>('');
 
+  public readonly lightboxIdx = signal<number>(-1);
+  public readonly lightboxItem = computed<GalleryItem | null>(() => {
+    const acc = this.accommodation();
+    const i = this.lightboxIdx();
+    if (!acc || i < 0 || i >= acc.images.length) return null;
+    return {
+      id: `${acc.slug}-${i}`,
+      title: acc.name,
+      category: 'suites',
+      categoryLabel: 'Galeria da acomodação',
+      imageUrl: acc.images[i],
+      caption: acc.subtitle,
+      aspectRatio: 'landscape'
+    };
+  });
+
   public readonly checkIn = signal<string>(this.bookingService.filter().checkIn);
   public readonly checkOut = signal<string>(this.bookingService.filter().checkOut);
   public readonly guests = signal<number>(this.bookingService.filter().guests);
@@ -327,6 +361,25 @@ export class AccommodationDetailComponent implements OnInit {
     this.route.paramMap.subscribe((params) => {
       this.slug.set(params.get('slug'));
     });
+  }
+
+  public openLightbox(index: number): void {
+    const acc = this.accommodation();
+    if (!acc || index < 0 || index >= acc.images.length) return;
+    this.lightboxIdx.set(index);
+  }
+
+  public closeLightbox(): void {
+    this.lightboxIdx.set(-1);
+  }
+
+  public prevImage(): void {
+    this.lightboxIdx.update((i) => (i > 0 ? i - 1 : i));
+  }
+
+  public nextImage(): void {
+    const n = this.accommodation()?.images.length ?? 0;
+    this.lightboxIdx.update((i) => (i >= 0 && i < n - 1 ? i + 1 : i));
   }
 
   public onBookSuite(): void {

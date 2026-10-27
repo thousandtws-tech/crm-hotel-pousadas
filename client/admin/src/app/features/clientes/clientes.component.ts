@@ -617,6 +617,7 @@ const LADO_FOTO = 640;
       background: #fff; border: 1px solid #d7e0e6; border-radius: 8px;
       padding: 0 10px; height: 40px;
       transition: border-color 0.15s, box-shadow 0.15s;
+      margin-left: 1.3rem;
     }
     .cli-busca.foco {
       border-color: #1a6f8a;
@@ -698,6 +699,7 @@ const LADO_FOTO = 640;
       padding: 8px 20px 8px 12px; font-size: 0.84rem; font-weight: 600;
       color: #5d6d7e; cursor: pointer; font-family: inherit;
       transition: border-color 0.15s, background 0.15s;
+      margin-right: 1.3rem;
     }
     .cli-trilho {
       width: 34px; height: 19px; border-radius: 999px;

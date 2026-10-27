@@ -20,9 +20,6 @@ import { MotionService } from '../../core/services/motion.service';
       </div>
 
       <div class="relative z-10 container-editorial text-center flex flex-col items-center">
-        <span class="type-eyebrow text-[#DDA554] block mb-2 sm:mb-3">
-          Bairro Peró · Cabo Frio, RJ
-        </span>
         <h1 class="font-serif text-4xl sm:text-6xl text-white font-normal mb-3 sm:mb-4 leading-tight">
           Explore Cabo Frio a partir do Peró
         </h1>
@@ -39,7 +36,6 @@ import { MotionService } from '../../core/services/motion.service';
           
           <!-- Directions and Access (Col 1-6) -->
           <div class="loc-info-col lg:col-span-6 flex flex-col items-start">
-            <span class="type-eyebrow text-[#DDA554] block mb-2 sm:mb-3">Localização & Arredores</span>
             <h2 class="type-title text-[#054054] mb-4">Próxima à Praia do Peró</h2>
             
             <p class="type-body mb-6">

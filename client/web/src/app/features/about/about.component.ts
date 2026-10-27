@@ -21,9 +21,6 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
       </div>
 
       <div class="relative z-10 container-editorial text-center flex flex-col items-center">
-        <span class="type-eyebrow text-[#DDA554] block mb-2 sm:mb-3">
-          Bairro Peró · Cabo Frio, RJ
-        </span>
         <h1 class="font-serif text-4xl sm:text-6xl text-white font-normal mb-3 sm:mb-4 leading-tight">
           Sobre a Pousada Espírito do Mar
         </h1>
@@ -39,7 +36,6 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
         <div class="max-w-3xl mx-auto space-y-8 sm:space-y-10">
           
           <div>
-            <span class="type-eyebrow text-[#DDA554] block mb-2 sm:mb-3">Hospitalidade em Cabo Frio</span>
             <h2 class="type-title text-[#054054]">
               Sua estadia pertinho da Praia do Peró.
             </h2>

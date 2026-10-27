@@ -57,23 +57,6 @@ const NAV: NavItem[] = [
 
       <!-- ===== busca global (padrão Salesforce/HubSpot: Ctrl+K) ===== -->
       <div class="busca-wrap">
-        <mat-icon class="busca-icone">search</mat-icon>
-        <input
-          class="busca-input"
-          type="search"
-          placeholder="Buscar reservas, clientes, acomodações…"
-          aria-label="Busca global"
-          role="combobox"
-          [attr.aria-expanded]="buscaAberta()"
-          [attr.aria-activedescendant]="buscaAtiva() >= 0 ? 'busca-item-' + buscaAtiva() : null"
-          [value]="termo()"
-          #buscaInput
-          (input)="digitar($event)"
-          (focus)="buscaAberta.set(termo().length >= 2)"
-          (keydown)="buscaTecla($event)"
-        />
-        <kbd class="busca-kbd">Ctrl K</kbd>
-
         @if (buscaAberta()) {
           <div class="busca-fechar" (click)="fecharBusca()"></div>
           <div class="busca-painel" role="listbox" aria-label="Resultados da busca">
@@ -148,7 +131,7 @@ const NAV: NavItem[] = [
                       >
                         <span class="sino-dot" [class.sino-dot-alerta]="n.tipo === 'alerta'"></span>
                         <span class="sino-txt">
-                          <b>{{ n.titulo }}</b>
+                          <span>{{ n.titulo }}</span>
                           <span>{{ n.mensagem }}</span>
                         </span>
                         <span class="sino-tempo">{{ notifs.tempoAtras(n.criado_em) }}</span>
@@ -173,15 +156,6 @@ const NAV: NavItem[] = [
             </div>
           }
         </div>
-        <span
-          class="rt"
-          [class.rt-on]="rt.online()"
-          [title]="rt.online() ? 'Tempo real conectado' : 'Reconectando…'"
-          role="status"
-          [aria-label]="rt.online() ? 'Atualizações em tempo real ativas' : 'Tempo real desconectado'"
-        >
-          <span class="rt-dot"></span>{{ rt.online() ? 'ao vivo' : 'offline' }}
-        </span>
         <button class="btn-dark-blue" type="button" (click)="auth.logout()">
           <mat-icon style="font-size:16px;height:16px;width:16px">logout</mat-icon> Sair
         </button>
@@ -282,7 +256,7 @@ const NAV: NavItem[] = [
       transition: 0.5s;
     }
     .nav_logo img {
-      width: 190px; height: auto; object-fit: contain;
+      width: 130px; height: auto; object-fit: contain;
       filter: brightness(0) invert(1);
     }
     .l-navbar:not(.expanded) .nav_logo img { width: 46px; }

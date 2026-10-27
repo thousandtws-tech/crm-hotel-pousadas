@@ -24,9 +24,6 @@ import { MotionService } from '../../core/services/motion.service';
       </div>
 
       <div class="relative z-10 container-editorial text-center flex flex-col items-center">
-        <span class="type-eyebrow text-[#DDA554] block mb-2 sm:mb-3">
-          Pousada no Peró · Cabo Frio
-        </span>
         <h1 class="font-serif text-4xl sm:text-6xl text-white font-normal mb-3 sm:mb-4 leading-tight">
           Consultar Disponibilidade
         </h1>
@@ -51,9 +48,9 @@ import { MotionService } from '../../core/services/motion.service';
                 <span class="type-eyebrow text-[#DDA554] block mb-2">01 · Período</span>
                 <h2 class="font-serif text-2xl text-[#054054] mb-4 sm:mb-5">Datas da viagem</h2>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 items-end">
                   <div>
-                    <label for="booking-checkin" class="type-eyebrow block mb-1 text-[10px]">Check-in (a partir das 13h)</label>
+                    <label for="booking-checkin" class="type-eyebrow block mb-1 text-[10px] whitespace-nowrap">Check-in · 13h</label>
                     <input
                       id="booking-checkin"
                       type="date"
@@ -65,7 +62,7 @@ import { MotionService } from '../../core/services/motion.service';
                   </div>
 
                   <div>
-                    <label for="booking-checkout" class="type-eyebrow block mb-1 text-[10px]">Check-out (até as 11h)</label>
+                    <label for="booking-checkout" class="type-eyebrow block mb-1 text-[10px] whitespace-nowrap">Check-out · 11h</label>
                     <input
                       id="booking-checkout"
                       type="date"
@@ -77,7 +74,7 @@ import { MotionService } from '../../core/services/motion.service';
                   </div>
 
                   <div>
-                    <label for="booking-guests" class="type-eyebrow block mb-1 text-[10px]">Hóspedes</label>
+                    <label for="booking-guests" class="type-eyebrow block mb-1 text-[10px] whitespace-nowrap">Hóspedes</label>
                     <select
                       id="booking-guests"
                       [ngModel]="guests()"

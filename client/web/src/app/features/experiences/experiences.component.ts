@@ -22,9 +22,6 @@ import { MotionService } from '../../core/services/motion.service';
       </div>
 
       <div class="relative z-10 container-editorial text-center flex flex-col items-center">
-        <span class="type-eyebrow text-[#DDA554] block mb-2 sm:mb-3">
-          Pousada no Peró · Cabo Frio
-        </span>
         <h1 class="font-serif text-4xl sm:text-6xl text-white font-normal mb-3 sm:mb-4 leading-tight">
           Estrutura & Comodidades
         </h1>
