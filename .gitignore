@@ -35,3 +35,6 @@ Thumbs.db
 server/maria/data/
 .venv/
 __pycache__/
+
+# PostgreSQL local data
+.pgdata/
