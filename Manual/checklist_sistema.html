@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>O que o sistema já faz — Pousada Espírito do Mar</title>
+<style>
+  :root {
+    --navy: #054054; --teal: #1A6F8A; --teal-l: #4B95AB; --gold: #DDA554;
+    --bg: #F7F5F0; --line: #DCE6EA; --txt: #33424c; --mut: #7d97a1;
+    --ok: #1e7d4f; --ok-bg: #e8f4ee; --warn-bg: #fdf3e3; --warn: #9a6a1f;
+    --todo-bg: #eef2f5; --todo: #5d6d7e;
+  }
+  * { margin: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--txt); line-height: 1.55; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 32px 20px 64px; }
+  header { background: var(--navy); color: #fff; border-radius: 10px; padding: 30px 32px; margin-bottom: 24px; }
+  header h1 { font-size: 1.6rem; font-weight: 700; }
+  header p { color: #b8d4de; font-size: 0.92rem; margin-top: 8px; max-width: 620px; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 16px; font-size: 0.8rem; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.08); padding: 5px 12px; border-radius: 20px; }
+  .sec { background: #fff; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
+  .sec-h { background: var(--navy); color: #fff; padding: 12px 18px; font-size: 1rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .sec-h .tag { font-size: 0.72rem; font-weight: 600; background: rgba(221,165,84,.25); color: var(--gold); padding: 3px 12px; border-radius: 20px; white-space: nowrap; }
+  ul { list-style: none; }
+  li { display: flex; align-items: flex-start; gap: 10px; padding: 10px 18px; border-bottom: 1px solid #eef2f4; font-size: 0.92rem; }
+  li:last-child { border-bottom: none; }
+  .st { flex-shrink: 0; font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-top: 2px; min-width: 76px; text-align: center; }
+  .ok { background: var(--ok-bg); color: var(--ok); }
+  .warn { background: var(--warn-bg); color: var(--warn); }
+  .todo { background: var(--todo-bg); color: var(--todo); }
+  .sub { font-size: 0.78rem; color: var(--mut); display: block; }
+  h2.grp { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--teal); margin: 28px 4px 10px; font-weight: 800; }
+  footer { margin-top: 30px; text-align: center; font-size: 0.78rem; color: var(--mut); }
+  @media print { body { background: #fff; } .sec { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>O que o sistema já faz — Pousada Espírito do Mar</h1>
+    <p>Resumo simples para apresentação: o que está funcionando hoje e o que ainda está no caminho. O sistema já cobre a rotina completa da pousada — reservas, quartos, hóspedes, dinheiro, site e uma assistente de voz que trabalha junto com a equipe.</p>
+    <div class="legend">
+      <span><b style="color:#7dcea0">●</b> Funcionando</span>
+      <span><b style="color:var(--gold)">●</b> Funciona, com ponto de atenção</span>
+      <span><b style="color:#9fb4be">●</b> Planejado, ainda não existe</span>
+    </div>
+  </header>
+
+  <!-- ============ DIA A DIA ============ -->
+  <h2 class="grp">Dia a dia da recepção</h2>
+
+  <div class="sec">
+    <div class="sec-h">Painel inicial <span class="tag">Funcionando</span></div>
+    <ul>
+      <li><span class="st ok">Pronto</span><div>Ao abrir, já mostra quem chega hoje, quem sai hoje e como está cada quarto</div></li>
+      <li><span class="st ok">Pronto</span><div>Avisos na hora: reserva nova, produto acabando no estoque, algo que outra pessoa da equipe alterou</div></li>
+      <li><span class="st ok">Pronto</span><div>Busca rápida: acha reserva, hóspede ou quarto digitando em qualquer tela</div></li>
+    </ul>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">Reservas <span class="tag">Funcionando</span></div>
+    <ul>
+      <li><span class="st ok">Pronto</span><div>Criar, alterar, cancelar e excluir reservas — o sistema avisa se o quarto já estiver ocupado</div></li>
+      <li><span class="st ok">Pronto</span><div>Check-in e check-out com data, hora e forma de pagamento</div></li>
+      <li><span class="st ok">Pronto</span><div>Acompanhantes, taxas extras e consumo do frigobar lançados direto na conta do hóspede</div></li>
+      <li><span class="st ok">Pronto</span><div>Ficha completa de cada reserva com tudo que aconteceu nela</div></li>
+      <li><span class="st todo">Futuro</span><div>E-mail automático de confirmação para o hóspede <span class="sub">hoje a confirmação é feita pela própria recepção</span></div></li>
+      <li><span class="st todo">Futuro</span><div>Cobrança de sinal ou pagamento online pelo site</div></li>
+    </ul>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">Hóspedes <span class="tag">Funcionando</span></div>
+    <ul>
+      <li><span class="st ok">Pronto</span><div>Cadastro completo: dados pessoais, telefone e documento</div></li>
+      <li><span class="st ok">Pronto</span><div>Guardar foto e documento de identidade anexados na ficha do hóspede</div></li>
+      <li><span class="st ok">Pronto</span><div>Editar e remover cadastros, com histórico preservado</div></li>
+    </ul>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">Quartos <span class="tag">Funcionando</span></div>
+    <ul>
+      <li><span class="st ok">Pronto</span><div>Categorias de quarto, acomodações e cada quarto individualmente</div></li>
+      <li><span class="st ok">Pronto</span><div>Marcar quarto como em manutenção ou bloqueado — sai das reservas automaticamente</div></li>
+      <li><span class="st ok">Pronto</span><div>Preço da diária por acomodação</div></li>
+    </ul>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">Estoque, Frigobar e Vagas <span class="tag">Funcionando</span></div>
+    <ul>
+      <li><span class="st ok">Pronto</span><div>Estoque organizado por categoria, com registro de tudo que entra e sai (e por quê)</div></li>
+      <li><span class="st ok">Pronto</span><div>Aviso automático quando um produto está acabando</div></li>
+      <li><span class="st ok">Pronto</span><div>Frigobares por unidade — consumo cai direto na conta da reserva</div></li>
+      <li><span class="st ok">Pronto</span><div>Mapa das vagas de estacionamento: livre ou ocupada</div></li>
+    </ul>
+  </div>
+
+  <!-- ============ DINHEIRO ============ -->
+  <h2 class="grp">Dinheiro e gestão</h2>
+
+  <div class="sec">
+    <div class="sec-h">Financeiro <span class="tag">Funcionando</span></div>
+    <ul>
+      <li><span class="st ok">Pronto</span><div>Resumo do dinheiro que entrou, vendas e recebimentos por período</div></li>
+      <li><span class="st ok">Pronto</span><div>Gráficos: faturamento ao longo do tempo, por tipo de quarto, por forma de pagamento e os itens mais vendidos</div></li>
+      <li><span class="st ok">Pronto</span><div>Comprovantes que não podem ser apagados nem alterados — segurança no fechamento</div></li>
+      <li><span class="st ok">Pronto</span><div>Relatórios exportados em Excel e PDF</div></li>
+    </ul>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">Formas de Pagamento <span class="tag">Funcionando</span></div>
+    <ul>
+      <li><span class="st ok">Pronto</span><div>Cadastrar e desligar formas de pagamento (cartão, PIX, dinheiro…)</div></li>
+      <li><span class="st ok">Pronto</span><div>Check-out só fecha com a forma de pagamento escolhida — gera comprovante na hora</div></li>
+    </ul>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">Equipe e permissões <span class="tag">Funcionando</span></div>
+    <ul>
+      <li><span class="st ok">Pronto</span><div>Três níveis: Administrador, Gerente e Recepção — cada um só acessa o que deve</div></li>
+      <li><span class="st ok">Pronto</span><div>O administrador cria os acessos dos funcionários dentro do sistema</div></li>
+      <li><span class="st ok">Pronto</span><div>Registro de ações importantes: dá para saber quem fez o quê e quando</div></li>
+      <li><span class="st warn">Atenção</span><div>Existe uma página aberta de cadastro de administrador — vamos trancá-la antes da entrega final</div></li>
+    </ul>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">Dados da pousada e impressoras <span class="tag">Funcionando</span></div>
+    <ul>
+      <li><span class="st ok">Pronto</span><div>Dados do estabelecimento (CNPJ, telefone, site) e endereço completo</div></li>
+      <li><span class="st ok">Pronto</span><div>Logo da pousada sai nos comprovantes</div></li>
+      <li><span class="st ok">Pronto</span><div>Impressoras por setor: comprovante na recepção, pedido de consumo na impressora do bar/cozinha</div></li>
+    </ul>
+  </div>
+
+  <!-- ============ SITE ============ -->
+  <h2 class="grp">Site e conteúdo</h2>
+
+  <div class="sec">
+    <div class="sec-h">Painel do site (você mesmo edita) <span class="tag">Funcionando</span></div>
+    <ul>
+      <li><span class="st ok">Pronto</span><div>Editar cada quarto do site sem depender de programador: textos, preço, capacidade, comodidades e destaques</div></li>
+      <li><span class="st ok">Pronto</span><div>Galeria de fotos e vídeos: escolher a capa, mudar a ordem, remover e ampliar em tela cheia</div></li>
+      <li><span class="st ok">Pronto</span><div>Publicar ou voltar para rascunho — e o sistema impede que uma pessoa apague a alteração da outra sem querer</div></li>
+      <li><span class="st ok">Pronto</span><div>O site atualiza sozinho assim que você salva — ninguém precisa atualizar a página</div></li>
+    </ul>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">Site dos hóspedes <span class="tag">Funcionando</span></div>
+    <ul>
+      <li><span class="st ok">Pronto</span><div>Páginas: Início, Acomodações, Detalhe do quarto, Galeria, Experiências, Sobre, Localização, Contato, Privacidade e Termos</div></li>
+      <li><span class="st ok">Pronto</span><div>O hóspede consulta datas disponíveis e envia pedido de reserva direto pelo site</div></li>
+      <li><span class="st ok">Pronto</span><div>Fotos do quarto ampliam em tela cheia</div></li>
+      <li><span class="st ok">Pronto</span><div>Aparência caprichada ao compartilhar o link no WhatsApp e nas buscas do Google</div></li>
+      <li><span class="st todo">Futuro</span><div>Endereço próprio do site (ex.: pousadaespiritodomar.com.br)</div></li>
+    </ul>
+  </div>
+
+  <!-- ============ MAR IA ============ -->
+  <h2 class="grp">MAR IA — a assistente de voz</h2>
+
+  <div class="sec">
+    <div class="sec-h">Conversando com o sistema <span class="tag">Funcionando</span></div>
+    <ul>
+      <li><span class="st ok">Pronto</span><div>Conversa por voz e por texto, em português natural — como falar com uma pessoa</div></li>
+      <li><span class="st ok">Pronto</span><div>Responde perguntas sobre tudo: "quantos check-ins hoje?", "o que está acabando no estoque?", "quanto faturamos essa semana?"</div></li>
+      <li><span class="st ok">Pronto</span><div>Faz ações de verdade — criar reserva, lançar consumo, fazer check-in — sempre mostrando um resumo para você confirmar antes</div></li>
+      <li><span class="st ok">Pronto</span><div>Abre telas por comando de voz: "abre as reservas" e a tela troca na hora</div></li>
+      <li><span class="st ok">Pronto</span><div>Aprende com o uso: lembra suas preferências e informações da pousada (e você pode mandar ela esquecer)</div></li>
+      <li><span class="st ok">Pronto</span><div>Funciona bem mesmo com barulho de fundo na recepção</div></li>
+      <li><span class="st ok">Pronto</span><div>Respeita permissões — um recepcionista não consegue pedir ações de gerente por voz</div></li>
+      <li><span class="st warn">Atenção</span><div>Ajuste técnico nas chaves do serviço de voz antes da entrega</div></li>
+      <li><span class="st todo">Futuro</span><div>Teste final de voz em produção, no ambiente real da pousada</div></li>
+    </ul>
+  </div>
+
+  <!-- ============ BASE ============ -->
+  <h2 class="grp">Base e segurança</h2>
+
+  <div class="sec">
+    <div class="sec-h">Hospedagem e segurança <span class="tag">Funcionando</span></div>
+    <ul>
+      <li><span class="st ok">Pronto</span><div>Tudo na nuvem: acessa de qualquer computador, sempre disponível</div></li>
+      <li><span class="st ok">Pronto</span><div>Fotos, vídeos e documentos guardados com segurança</div></li>
+      <li><span class="st ok">Pronto</span><div>Manual do sistema em página e em PDF para consulta</div></li>
+      <li><span class="st ok">Pronto</span><div>Tour guiado nas telas principais — treinar a equipe fica fácil</div></li>
+      <li><span class="st warn">Atenção</span><div>Cópia do código-fonte ainda não está no repositório online — está guardada localmente com segurança</div></li>
+      <li><span class="st todo">Futuro</span><div>Cópia de segurança automática dos dados (backup diário)</div></li>
+    </ul>
+  </div>
+
+  <footer>
+    Pousada Espírito do Mar · Cabo Frio, RJ<br/>
+    Itens marcados como "Atenção" já funcionam hoje — são melhorias que recomendamos antes da entrega final.
+  </footer>
+
+</div>
+</body>
+</html>
