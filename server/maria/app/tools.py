@@ -827,6 +827,55 @@ TOOLS: list[dict[str, Any]] = [
             "required": ["idacao"],
         },
     },
+    {
+        "type": "function",
+        "name": "get_fornecedores",
+        "description": "Lista fornecedores cadastrados (nome, lead time, contato).",
+        "parameters": {"type": "object", "properties": _props(
+            apenas_ativos={"type": "boolean"})},
+    },
+    {
+        "type": "function",
+        "name": "get_pedidos_compra",
+        "description": "Lista pedidos de compra (status, fornecedor, previsao, progresso).",
+        "parameters": {"type": "object", "properties": _props(
+            status={"type": "string", "enum": ["pendente", "parcial", "recebido", "cancelado"]})},
+    },
+    {
+        "type": "function",
+        "name": "sugerir_compras",
+        "description": (
+            "Itens com estoque no minimo ou abaixo — base para sugerir "
+            "pedidos de compra ao usuario."
+        ),
+        "parameters": {"type": "object", "properties": {}},
+    },
+    {
+        "type": "function",
+        "name": "preparar_pedido_compra",
+        "description": (
+            "Cria pedido de compra para um fornecedor — aprovado, gera "
+            "tambem a conta a pagar (data prevista = hoje + lead time). "
+            "Exige confirmar_acao."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": _props(
+                idfornecedor={"type": "integer"},
+                itens={"type": "array", "items": {
+                    "type": "object",
+                    "properties": _props(
+                        iditem={"type": "integer"},
+                        quantidade={"type": "integer"},
+                        valor_unit={"type": "number"}),
+                    "required": ["iditem", "quantidade"],
+                }},
+                vencimento={"type": "string"},
+                observacao={"type": "string"},
+                gerar_pagamento={"type": "boolean"}),
+            "required": ["idfornecedor", "itens"],
+        },
+    },
 ]
 
 # Gerente/admin: operações destrutivas ou de alteração de cadastro.
@@ -843,6 +892,7 @@ _ACOES_RESTRITAS = {
     "preparar_item_frigobar",
     "preparar_vaga",
     "preparar_forma_pagamento",
+    "preparar_pedido_compra",
 }
 # Somente administrador.
 _ACOES_ADMIN = {
@@ -1153,6 +1203,25 @@ class ToolExecutor:
                         for x in itens
                     ]
                 }
+
+            case "get_fornecedores":
+                r = await self.api.get("/compras/fornecedores", {
+                    "apenas_ativos": a.get("apenas_ativos", True)})
+                return {"fornecedores": r}
+
+            case "get_pedidos_compra":
+                r = await self.api.get("/compras/pedidos", {
+                    "status": a.get("status"), "por_pagina": 50})
+                return {"total": r.get("total", 0),
+                        "pedidos": r.get("items", [])}
+
+            case "sugerir_compras":
+                r = await self.api.get("/estoque/alertas")
+                return {"itens_em_falta": r,
+                        "dica": "Sugira pedido de compra com preparar_pedido_compra."}
+
+            case "preparar_pedido_compra":
+                return await self._preparar_pedido_compra(a)
 
             case "get_estoque":
                 p = await self.api.get("/estoque/itens", {
@@ -1522,6 +1591,36 @@ class ToolExecutor:
         }
 
     # ------------------------------------------------------ CRUD genérico --
+
+    async def _preparar_pedido_compra(self, a: dict[str, Any]) -> dict[str, Any]:
+        forn = None
+        try:
+            forn = await self.api.get(
+                f"/compras/fornecedores/{int(a['idfornecedor'])}")
+        except ApiError:
+            pass
+        corpo = {
+            "idfornecedor": int(a["idfornecedor"]),
+            "origem": "maria",
+            "itens": [
+                {"iditem": int(i["iditem"]),
+                 "quantidade": int(i["quantidade"]),
+                 **({"valor_unit": i["valor_unit"]} if i.get("valor_unit") is not None else {})}
+                for i in a["itens"]
+            ],
+            "gerar_pagamento": a.get("gerar_pagamento", True),
+        }
+        if a.get("vencimento"):
+            corpo["vencimento"] = a["vencimento"]
+        if a.get("observacao"):
+            corpo["observacao"] = a["observacao"]
+        return self._exec(
+            "criar_pedido_compra", "post", "/compras/pedidos", corpo,
+            {"fornecedor": (forn or {}).get("nome") or a["idfornecedor"],
+             "itens": len(corpo["itens"]),
+             "gerar_pagamento": corpo["gerar_pagamento"]},
+            "Pedido de compra criado com conta a pagar.",
+        )
 
     def _exec(
         self,

@@ -176,6 +176,31 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
             <mat-icon>add</mat-icon> Nova impressora
           </button>
         </div>
+        @if (descobertas().length) {
+          <div class="desc-box">
+            <div class="desc-head">
+              <mat-icon>travel_explore</mat-icon>
+              <b>{{ descobertas().length }} dispositivo(s) detectado(s) na rede</b>
+              <span>— confirme para registrar ou ignore</span>
+            </div>
+            @for (d of descobertas(); track d.id) {
+              <div class="desc-linha">
+                <mat-icon [class]="d.tipo === 'usb' ? 'desc-ic usb' : 'desc-ic'">
+                  {{ d.tipo === 'usb' ? 'usb' : 'print' }}
+                </mat-icon>
+                <div class="desc-info">
+                  <b>{{ d.modelo || d.endereco }}</b>
+                  <span>
+                    {{ d.tipo === 'usb' ? 'USB · ' + d.endereco : d.endereco + ':' + (d.porta ?? 9100) }}
+                    · detectada por {{ d.origem }}
+                  </span>
+                </div>
+                <button class="btn-green mini" type="button" (click)="abrirRegistro(d)">Registrar</button>
+                <button class="btn-gray mini" type="button" (click)="ignorar(d)">Ignorar</button>
+              </div>
+            }
+          </div>
+        }
         <div class="est-tabela-wrap">
           <table class="est-tabela">
             <thead>
@@ -195,6 +220,11 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                   <td><span class="est-chip-setor">{{ p.setor }}</span></td>
                   <td class="td-ip">{{ p.ip }}:{{ p.porta }}</td>
                   <td class="tc">
+                    @if (p.etiqueta) {
+                      <span class="est-chip-padrao" title="Recebe as etiquetas ao cadastrar produtos">
+                        <mat-icon>sell</mat-icon> etiquetas
+                      </span>
+                    }
                     @if (p.padrao) {
                       <span class="est-chip-padrao" title="Recebe os comprovantes de check-out">
                         <mat-icon>star</mat-icon> Comprovantes
@@ -278,6 +308,10 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                 <span><b>Impressora padrão</b> — recebe os comprovantes de check-out</span>
               </label>
               <label class="lbl check">
+                <input type="checkbox" formControlName="etiqueta" />
+                <span><b>Impressora de etiquetas</b> — recebe a etiqueta ao cadastrar produtos</span>
+              </label>
+              <label class="lbl check">
                 <input type="checkbox" formControlName="ativa" />
                 <span>Impressora <b>ativa</b> (disponível para uso)</span>
               </label>
@@ -287,6 +321,56 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
             <button class="btn-gray" type="button" (click)="modalImp.set(false)">Cancelar</button>
             <button class="btn-green" type="button" [disabled]="salvando() || impForm.invalid" (click)="salvarImpressora()">
               <mat-icon>save</mat-icon> {{ impEditando() ? 'Salvar alterações' : 'Cadastrar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ================= Modal: Registrar descoberta ================= -->
+    @if (modalReg(); as d) {
+      <div class="overlay" (click.self)="modalReg.set(null)">
+        <div class="modal-inn" role="dialog" aria-modal="true" aria-label="Registrar impressora">
+          <div class="modal-head">
+            <h5><mat-icon>travel_explore</mat-icon> Registrar impressora detectada</h5>
+            <button class="close" type="button" (click)="modalReg.set(null)" aria-label="Fechar">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p class="est-dica" style="margin-top:0">
+              {{ d.tipo === 'usb' ? 'USB · ' + d.endereco : d.endereco + ':' + (d.porta ?? 9100) }}
+              @if (d.modelo) { — {{ d.modelo }} }
+            </p>
+            <form [formGroup]="regForm" class="form">
+              <label class="lbl">
+                Nome <small class="req">*</small>
+                <input class="input-inn" type="text" formControlName="nome" placeholder="Ex.: Impressora da recepção" />
+              </label>
+              <div class="f-field">
+                <span class="f-lbl">Setor <small class="req">*</small></span>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-mat f-mat">
+                  <mat-select formControlName="setor" placeholder="Escolha o setor…">
+                    @for (s of setoresOpcoes(); track s) {
+                      <mat-option [value]="s">{{ s }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <label class="lbl check">
+                <input type="checkbox" formControlName="padrao" />
+                <span><b>Impressora padrão</b> — recebe os comprovantes de check-out</span>
+              </label>
+              <label class="lbl check">
+                <input type="checkbox" formControlName="etiqueta" />
+                <span><b>Impressora de etiquetas</b> — recebe a etiqueta ao cadastrar produtos</span>
+              </label>
+            </form>
+          </div>
+          <div class="modal-foot">
+            <button class="btn-gray" type="button" (click)="modalReg.set(null)">Cancelar</button>
+            <button class="btn-green" type="button" [disabled]="salvando() || regForm.invalid" (click)="registrar()">
+              <mat-icon>save</mat-icon> Registrar
             </button>
           </div>
         </div>
@@ -428,6 +512,28 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
     .check { flex-direction: row !important; align-items: center; gap: 9px; font-weight: 400 !important; cursor: pointer; }
     .est-dica { font-size: 0.73rem; color: #8a99a4; font-weight: 400; }
 
+    /* ---------- auto-descoberta ---------- */
+    .desc-box {
+      margin: 0 0 14px; border: 1.5px dashed #b5851f; border-radius: 10px;
+      background: #fdf8ec; padding: 10px 12px;
+    }
+    .desc-head {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.84rem; color: #7a5b13; margin-bottom: 8px;
+    }
+    .desc-head span { color: #a08a55; font-weight: 400; }
+    .desc-head mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    .desc-linha {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 4px; border-top: 1px solid #f0e6cc;
+    }
+    .desc-ic { color: #1a6f8a; font-size: 20px; width: 20px; height: 20px; }
+    .desc-ic.usb { color: #b5811f; }
+    .desc-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .desc-info b { font-size: 0.86rem; color: #23404e; }
+    .desc-info span { font-size: 0.75rem; color: #8a99a4; }
+    .btn-green.mini, .btn-gray.mini { padding: 6px 12px; font-size: 0.78rem; border-radius: 7px; }
+
     /* ---------- tabela impressoras ---------- */
     .est-tabela-wrap { overflow-x: auto; padding: 0 18px 18px; }
     .est-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
@@ -552,6 +658,14 @@ export class EstabelecimentoComponent implements OnInit {
   protected readonly impressoras = signal<M.Impressora[]>([]);
   protected readonly modalImp = signal(false);
   protected readonly impEditando = signal<M.Impressora | null>(null);
+  protected readonly descobertas = signal<M.ImpressoraDescoberta[]>([]);
+  protected readonly modalReg = signal<M.ImpressoraDescoberta | null>(null);
+  protected readonly regForm = this.fb.nonNullable.group({
+    nome: [''],
+    setor: [''],
+    padrao: [false],
+    etiqueta: [false],
+  });
 
   protected readonly impForm = this.fb.nonNullable.group({
     nome: [''],
@@ -559,6 +673,7 @@ export class EstabelecimentoComponent implements OnInit {
     ip: [''],
     porta: [9100],
     padrao: [false],
+    etiqueta: [false],
     ativa: [true],
   });
 
@@ -603,7 +718,7 @@ export class EstabelecimentoComponent implements OnInit {
   constructor() {
     let ultimo = -1;
     effect(() => {
-      const v = this.rt.mudanca('impressora', 'categoria_estoque');
+      const v = this.rt.mudanca('impressora', 'categoria_estoque', 'impressora_descoberta');
       if (ultimo < 0) {
         ultimo = v;
         return;
@@ -611,6 +726,7 @@ export class EstabelecimentoComponent implements OnInit {
       if (v !== ultimo) {
         ultimo = v;
         this.carregarImpressoras();
+        this.carregarDescobertas();
       }
     });
   }
@@ -634,6 +750,7 @@ export class EstabelecimentoComponent implements OnInit {
       error: () => undefined,
     });
     this.carregarImpressoras();
+    this.carregarDescobertas();
     this.api.logoAtual().subscribe({
       next: () => this.logoOk.set(true),
       error: () => this.logoOk.set(false),
@@ -771,6 +888,7 @@ export class EstabelecimentoComponent implements OnInit {
       ip: p?.ip ?? '',
       porta: p?.porta ?? 9100,
       padrao: p?.padrao ?? false,
+      etiqueta: p?.etiqueta ?? false,
       ativa: p?.ativa ?? true,
     });
     this.modalImp.set(true);
@@ -822,6 +940,52 @@ export class EstabelecimentoComponent implements OnInit {
         this.notify.ok('Impressora excluída.');
         this.carregarImpressoras();
       },
+      error: (e) => this.notify.erro(e),
+    });
+  }
+
+  // -- auto-descoberta (agente local) ----------------------------------------
+
+  private carregarDescobertas(): void {
+    this.api.listarDescobertasImpressoras().subscribe({
+      next: (l) => this.descobertas.set(l),
+      error: () => undefined,
+    });
+  }
+
+  abrirRegistro(d: M.ImpressoraDescoberta): void {
+    this.modalReg.set(d);
+    this.regForm.reset({ nome: d.modelo ?? '', setor: '', padrao: false, etiqueta: false });
+  }
+
+  registrar(): void {
+    const d = this.modalReg();
+    if (!d) return;
+    const v = this.regForm.getRawValue();
+    this.salvando.set(true);
+    this.api.registrarDescoberta(d.id, v).subscribe({
+      next: () => {
+        this.salvando.set(false);
+        this.modalReg.set(null);
+        this.notify.ok('Impressora registrada.');
+        this.carregarImpressoras();
+        this.carregarDescobertas();
+      },
+      error: (e) => {
+        this.salvando.set(false);
+        this.notify.erro(e);
+      },
+    });
+  }
+
+  async ignorar(d: M.ImpressoraDescoberta): Promise<void> {
+    const ok = await this.confirm.perguntar(
+      `Ignorar "${d.modelo ?? d.endereco}"? Novas varreduras podem reabri-la.`,
+      { titulo: 'Ignorar dispositivo', confirmar: 'Ignorar' },
+    );
+    if (!ok) return;
+    this.api.ignorarDescoberta(d.id).subscribe({
+      next: () => this.carregarDescobertas(),
       error: (e) => this.notify.erro(e),
     });
   }

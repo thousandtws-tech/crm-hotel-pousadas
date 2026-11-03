@@ -25,3 +25,6 @@ jsonwebtoken.workspace = true
 sha2.workspace = true
 hex.workspace = true
 subtle.workspace = true
+
+[dev-dependencies]
+rust_decimal_macros = "1"

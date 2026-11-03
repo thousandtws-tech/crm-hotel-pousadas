@@ -5,8 +5,8 @@
 use crate::actor::Ator;
 use crate::error::AppResult;
 use clarituz_domain::entities::Notificacao;
-use clarituz_domain::DomainError;
 use clarituz_domain::ports::NotificacaoRepository;
+use clarituz_domain::DomainError;
 use clarituz_shared::{Page, PageParams};
 use std::sync::Arc;
 

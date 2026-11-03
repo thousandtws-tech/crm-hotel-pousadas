@@ -1,17 +1,19 @@
-// Motor realtime — cliente SSE do backend.
+// Motor realtime — cliente Phoenix Channels do hub Elixir.
 //
-// Duas lanes (padrão Supabase/Linear):
+// Duas lanes (mesmo contrato do SSE antigo):
 //   delta — mudança de dados vinda dos triggers PG ({tabela,acao,id}).
 //           Cada tabela tem um contador em `delta()`; páginas assinam via
 //           effect() e recarregam (debounce de 300ms por tabela).
 //   aviso — evento semântico dos services ({tipo,titulo,mensagem,…}).
 //           Vira toast, exceto para o próprio autor (ele já tem feedback local).
 //
-// Transporte: fetch + ReadableStream (EventSource não envia Authorization).
-// Reconexão com backoff exponencial 1s→15s; em 401 tenta refresh do token.
+// Transporte: WebSocket via `phoenix` no hub `environment.realtimeUrl`.
+// O socket reconecta sozinho com backoff; o token é reavaliado a cada
+// tentativa (params é função) — refresh de token entra no próximo retry.
 
 import { Service, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { Socket, Channel } from 'phoenix';
 import { environment } from '../../../environments/environment';
 import { AuthStore } from './auth.store';
 import { Notify } from './notify.service';
@@ -35,7 +37,7 @@ export class Realtime {
   private readonly auth = inject(AuthStore);
   private readonly notify = inject(Notify);
 
-  /** true enquanto o stream está aberto — indicador "ao vivo" no shell. */
+  /** true enquanto o socket está aberto — indicador "ao vivo" no shell. */
   readonly online = signal(false);
 
   /** Último aviso recebido — o sino (`Notificacoes`) assina via effect(). */
@@ -46,8 +48,12 @@ export class Realtime {
   private readonly _deltas = signal<Record<string, number>>({});
   private readonly pendentes = new Map<string, ReturnType<typeof setTimeout>>();
 
-  private abort: AbortController | null = null;
+  private socket: Socket | null = null;
+  private canalDeltas: Channel | null = null;
+  private canalAvisos: Channel | null = null;
   private rodando = false;
+  /** AudioContext reutilizado — criar um por aviso vazava contextos. */
+  private audioCtx: AudioContext | null = null;
 
   delta(tabela: string): number {
     return this._deltas()[tabela] ?? 0;
@@ -71,100 +77,80 @@ export class Realtime {
 
   iniciar(): void {
     if (this.rodando) return;
+    if (!this.auth.accessToken()) return;
     this.rodando = true;
-    void this.loop();
+    this.conectar();
   }
 
   parar(): void {
     this.rodando = false;
-    this.abort?.abort();
+    this.canalDeltas?.leave();
+    this.canalAvisos?.leave();
+    this.canalDeltas = null;
+    this.canalAvisos = null;
+    this.socket?.disconnect();
+    this.socket = null;
     this.online.set(false);
   }
 
-  private async loop(): Promise<void> {
-    let tentativas = 0;
-    while (this.rodando) {
-      const token = this.auth.accessToken();
-      if (!token) break;
-      this.abort = new AbortController();
-      try {
-        const resp = await fetch(`${environment.apiUrl}/notificacoes/stream`, {
-          headers: { Authorization: `Bearer ${token}`, Accept: 'text/event-stream' },
-          signal: this.abort.signal,
-        });
-        if (resp.status === 401) {
-          // token expirou — tenta uma rotação antes de desistir
-          const ok = await firstValueFrom(this.auth.tentarRefresh());
-          if (!ok) break;
-          continue;
-        }
-        if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
-        tentativas = 0;
-        this.online.set(true);
-        await this.ler(resp.body);
-      } catch {
-        // abortado (logout) ou rede caiu — o loop decide
-      } finally {
-        this.online.set(false);
-      }
-      if (!this.rodando || !this.auth.accessToken()) break;
-      const espera = Math.min(1000 * 2 ** tentativas++, 15000);
-      await new Promise((r) => setTimeout(r, espera));
-    }
-    this.rodando = false;
-    this.online.set(false);
+  private conectar(): void {
+    const socket = new Socket(environment.realtimeUrl, {
+      // função → reavaliada a cada (re)conexão; pega o token renovado
+      params: () => ({ token: this.auth.accessToken() }),
+      reconnectAfterMs: (tentativa) => Math.min(1000 * 2 ** tentativa, 15000),
+      heartbeatIntervalMs: 15000,
+    });
+    this.socket = socket;
+
+    socket.onOpen(() => this.online.set(true));
+    socket.onClose(() => this.online.set(false));
+    socket.onError(() => this.online.set(false));
+
+    // Lane deltas — todas as tabelas (mesmo contrato do SSE antigo).
+    this.canalDeltas = socket.channel('deltas');
+    this.canalDeltas.on('delta', (d) => this.bump((d as Delta).tabela));
+    this.canalDeltas.join().receive('error', () => void this.tentarRefreshEReconectar());
+
+    // Lane avisos — o hub filtra por nivel; aqui só vira toast/badge.
+    this.canalAvisos = socket.channel('avisos');
+    this.canalAvisos.on('aviso', (a) => this.onAviso(a as Aviso));
+    this.canalAvisos.join().receive('error', () => void this.tentarRefreshEReconectar());
+
+    socket.connect();
   }
 
-  private async ler(body: ReadableStream<Uint8Array>): Promise<void> {
-    const reader = body.getReader();
-    const dec = new TextDecoder();
-    let buf = '';
-    let evento = '';
-    let dados = '';
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) return;
-      buf += dec.decode(value, { stream: true });
-      let idx: number;
-      while ((idx = buf.indexOf('\n\n')) >= 0) {
-        const frame = buf.slice(0, idx);
-        buf = buf.slice(idx + 2);
-        for (const linha of frame.split('\n')) {
-          if (linha.startsWith('event:')) evento = linha.slice(6).trim();
-          else if (linha.startsWith('data:')) dados = dados ? `${dados}\n${linha.slice(5).trim()}` : linha.slice(5).trim();
-        }
-        this.despachar(evento, dados);
-        evento = '';
-        dados = '';
-      }
+  /** Join recusado (token expirado/inválido) → refresh + reconexão limpa. */
+  private async tentarRefreshEReconectar(): Promise<void> {
+    if (!this.rodando) return;
+    const ok = await firstValueFrom(this.auth.tentarRefresh());
+    if (!ok || !this.rodando) {
+      this.parar();
+      return;
     }
+    // o socket segue seu retry com o token novo (params é função);
+    // os channels rejoinam sozinhos — o rejoin usa o socket vivo
+    this.canalDeltas?.rejoin();
+    this.canalAvisos?.rejoin();
   }
 
-  private despachar(evento: string, dados: string): void {
-    if (!dados) return;
-    try {
-      if (evento === 'delta') {
-        const d = JSON.parse(dados) as Delta;
-        this.bump(d.tabela);
-      } else if (evento === 'aviso') {
-        const a = JSON.parse(dados) as Aviso;
-        this.ultimoAviso.set(a);
-        this.avisoSeq.update((s) => s + 1);
-        this.tocarSino();
-        if (a.tipo === 'alerta') this.notify.aviso(`🔔 ${a.titulo} — ${a.mensagem}`);
-        else this.notify.ok(`🔔 ${a.titulo} — ${a.mensagem}`);
-      }
-    } catch {
-      // payload malformado — ignora o frame, stream segue
-    }
+  private onAviso(a: Aviso): void {
+    this.ultimoAviso.set(a);
+    this.avisoSeq.update((s) => s + 1);
+    this.tocarSino();
+    if (a.tipo === 'alerta') this.notify.aviso(`🔔 ${a.titulo} — ${a.mensagem}`);
+    else this.notify.ok(`🔔 ${a.titulo} — ${a.mensagem}`);
   }
 
   /** Alerta sonoro curto e suave (Web Audio API) ao receber reserva/evento realtime. */
   private tocarSino(): void {
     try {
-      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const Ctx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!Ctx) return;
-      const ctx = new Ctx();
+      this.audioCtx ??= new Ctx();
+      const ctx = this.audioCtx;
+      if (ctx.state === 'suspended') void ctx.resume();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';

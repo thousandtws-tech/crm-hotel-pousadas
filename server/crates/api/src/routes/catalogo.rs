@@ -523,8 +523,10 @@ pub async fn logo(
     let Some((_nome, caminho)) = s.services.estabelecimento.logo_atual().await? else {
         return Err(DomainError::nao_encontrado("Logo não configurada.").into());
     };
-    let bytes = s.store.get(&caminho).await?
-        .ok_or_else(|| DomainError::nao_encontrado("Arquivo de logo não encontrado no storage."))?;
+    let bytes =
+        s.store.get(&caminho).await?.ok_or_else(|| {
+            DomainError::nao_encontrado("Arquivo de logo não encontrado no storage.")
+        })?;
     let mime = match caminho.rsplit('.').next() {
         Some("png") => "image/png",
         Some("jpg") => "image/jpeg",

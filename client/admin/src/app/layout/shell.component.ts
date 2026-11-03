@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal, viewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthStore } from '@core/services/auth.store';
 import { Realtime } from '@core/services/realtime.service';
@@ -7,13 +7,15 @@ import { Notificacoes } from '@core/services/notificacoes.service';
 import { ApiService } from '@core/services/api.service';
 import { MariaWidgetComponent } from '@features/maria/maria-widget.component';
 import { ItemBusca, Notificacao } from '@core/models/api.models';
-import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, filter } from 'rxjs';
 
 interface NavItem {
   rota: string;
   rotulo: string;
   icone: string;
   admin?: boolean;
+  /** Subitens — o item vira um grupo expansível (o `rota` serve só de chave). */
+  filhos?: NavItem[];
 }
 
 /** Rótulo de cada grupo do dropdown de busca. */
@@ -31,8 +33,19 @@ const NAV: NavItem[] = [
   { rota: '/estacionamento', rotulo: 'Estacionamento', icone: 'directions_car' },
   { rota: '/acomodacoes', rotulo: 'Acomodações', icone: 'hotel' },
   { rota: '/estoque', rotulo: 'Estoque', icone: 'inventory_2' },
+  { rota: '/compras', rotulo: 'Compras', icone: 'shopping_cart' },
   { rota: '/frigobares', rotulo: 'Frigobar', icone: 'kitchen' },
   { rota: '/reservas', rotulo: 'Reservas', icone: 'calendar_month' },
+  {
+    rota: '/pdv',
+    rotulo: 'Restaurante',
+    icone: 'restaurant',
+    filhos: [
+      { rota: '/pdv', rotulo: 'PDV & Comandas', icone: 'point_of_sale' },
+      { rota: '/cozinha', rotulo: 'Cozinha (KDS)', icone: 'soup_kitchen' },
+      { rota: '/cafe', rotulo: 'Café da Manhã', icone: 'free_breakfast' },
+    ],
+  },
   { rota: '/financeiro', rotulo: 'Financeiro', icone: 'payments', admin: true },
   { rota: '/pagamentos', rotulo: 'Pagamentos', icone: 'credit_card', admin: true },
   { rota: '/cms', rotulo: 'Site / Quartos', icone: 'web', admin: true },
@@ -168,16 +181,48 @@ const NAV: NavItem[] = [
           <a class="nav_logo" routerLink="/dashboard" aria-label="INNJOY">
             <img src="logo.svg" alt="INNJOY" />
           </a>
-          @for (item of nav(); track item.rota) {
-            <a
-              class="nav_link"
-              [routerLink]="item.rota"
-              routerLinkActive="active"
-              [title]="item.rotulo"
-            >
-              <mat-icon class="nav_icon">{{ item.icone }}</mat-icon>
-              <span class="nav_name">{{ item.rotulo }}</span>
-            </a>
+          @for (item of nav(); track item.rotulo) {
+            @if (item.filhos) {
+              <div class="nav_group" [class.aberto]="grupoAberto() === item.rotulo">
+                <button
+                  type="button"
+                  class="nav_link nav_group-btn"
+                  [class.active]="grupoAtivo(item)"
+                  [title]="item.rotulo"
+                  [attr.aria-expanded]="grupoAberto() === item.rotulo"
+                  (click)="alternarGrupo(item)"
+                >
+                  <mat-icon class="nav_icon">{{ item.icone }}</mat-icon>
+                  <span class="nav_name">{{ item.rotulo }}</span>
+                  <mat-icon class="nav_arrow">expand_more</mat-icon>
+                </button>
+                <div class="nav_filhos">
+                  <div class="nav_filhos-in">
+                    @for (f of item.filhos; track f.rota) {
+                      <a
+                        class="nav_link nav_sub"
+                        [routerLink]="f.rota"
+                        routerLinkActive="active"
+                        [title]="f.rotulo"
+                      >
+                        <mat-icon class="nav_icon">{{ f.icone }}</mat-icon>
+                        <span class="nav_name">{{ f.rotulo }}</span>
+                      </a>
+                    }
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <a
+                class="nav_link"
+                [routerLink]="item.rota"
+                routerLinkActive="active"
+                [title]="item.rotulo"
+              >
+                <mat-icon class="nav_icon">{{ item.icone }}</mat-icon>
+                <span class="nav_name">{{ item.rotulo }}</span>
+              </a>
+            }
           }
         </div>
       </nav>
@@ -205,7 +250,7 @@ const NAV: NavItem[] = [
       padding: 0 1rem 0 calc(var(--nav-width) + 1rem);
       background-color: var(--inn-navbar);
       z-index: 100;
-      transition: 0.5s;
+      transition: 0.25s ease;
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
     }
     .header-open { padding-left: calc(var(--nav-width-open) + 1rem); }
@@ -237,7 +282,7 @@ const NAV: NavItem[] = [
       min-height: 100vh;
       background-color: var(--inn-first);
       padding: 1rem 1rem 0 0;
-      transition: 0.5s;
+      transition: 0.25s ease;
       z-index: 100;
       overflow: hidden;
     }
@@ -286,6 +331,37 @@ const NAV: NavItem[] = [
     }
     .nav_icon { font-size: 1.1rem; width: 20px; height: 20px; }
     .nav_name { white-space: nowrap; }
+
+    /* ===== grupo expansível (dropdown) ===== */
+    .nav_group-btn {
+      width: 100%;
+      border: 0;
+      background: none;
+      font: inherit;
+      cursor: pointer;
+      text-align: left;
+      grid-template-columns: max-content 1fr max-content;
+    }
+    .nav_arrow {
+      font-size: 1.15rem; width: 18px; height: 18px;
+      margin-right: 0.75rem;
+      transition: transform 0.25s;
+      color: var(--inn-link);
+    }
+    .nav_group.aberto .nav_arrow { transform: rotate(180deg); }
+    /* colapsada: sem texto, a seta some (o grupo abre ao clicar e expandir) */
+    .l-navbar:not(.expanded) .nav_arrow { display: none; }
+    .nav_filhos {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.25s ease;
+    }
+    .nav_filhos-in { overflow: hidden; }
+    .nav_group.aberto .nav_filhos { grid-template-rows: 1fr; }
+    /* colapsada: filhos sempre visíveis como ícones (mesmo padrão dos demais) */
+    .l-navbar:not(.expanded) .nav_filhos { grid-template-rows: 1fr; }
+    .nav_sub { padding-left: 2.6rem; font-size: 84%; }
+    .l-navbar:not(.expanded) .nav_sub { padding-left: 1.5rem; }
     .l-navbar:not(.expanded) .nav_name { display: none; }
     .l-navbar:not(.expanded) .nav_link { padding-left: 1.35rem; }
 
@@ -334,7 +410,7 @@ const NAV: NavItem[] = [
       margin-left: calc(var(--nav-width) + 1rem);
       padding: 0 1rem 2rem 0;
       min-height: calc(100vh - var(--header-height) - 3rem);
-      transition: 0.5s;
+      transition: 0.25s ease;
     }
     .content-open { margin-left: calc(var(--nav-width-open) + 1rem); }
 
@@ -353,10 +429,13 @@ export class ShellComponent implements OnInit, OnDestroy {
   protected readonly notifs = inject(Notificacoes);
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
-  protected readonly aberta = signal(true);
+  protected readonly aberta = signal(window.innerWidth > 768);
   protected readonly nav = computed(() =>
     NAV.filter((i) => !i.admin || this.auth.isAdmin()),
   );
+
+  /** Rótulo do grupo aberto no dropdown — null = todos fechados. */
+  protected readonly grupoAberto = signal<string | null>(null);
 
   // -- busca global ------------------------------------------------------------
   protected readonly termo = signal('');
@@ -389,6 +468,28 @@ export class ShellComponent implements OnInit, OnDestroy {
     this.termo$
       .pipe(debounceTime(250), distinctUntilChanged())
       .subscribe((t) => this.executarBusca(t));
+
+    // abre o grupo da rota atual ao carregar e a cada navegação
+    this.sincronizarGrupoComRota();
+    this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe(() => this.sincronizarGrupoComRota());
+  }
+
+  /** Rota atual dentro de um grupo → mantém ele aberto. */
+  private sincronizarGrupoComRota(): void {
+    const grupo = NAV.find((i) => this.grupoAtivo(i));
+    if (grupo) this.grupoAberto.set(grupo.rotulo);
+  }
+
+  protected grupoAtivo(item: NavItem): boolean {
+    return !!item.filhos?.some((f) => this.router.url.startsWith(f.rota));
+  }
+
+  protected alternarGrupo(item: NavItem): void {
+    // sidebar recolhida: expande e já abre o grupo (ícones sem texto não servem)
+    if (!this.aberta()) this.aberta.set(true);
+    this.grupoAberto.update((g) => (g === item.rotulo ? null : item.rotulo));
   }
 
   ngOnInit(): void {

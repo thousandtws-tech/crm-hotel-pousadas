@@ -93,7 +93,10 @@ async fn main() {
 
     match bucket.get_object(key).await {
         Ok(r) if r.status_code() == 404 => println!("pós-delete get → 404 (esperado)"),
-        Ok(r) => println!("ERRO: status {} — objeto deveria ter sumido", r.status_code()),
+        Ok(r) => println!(
+            "ERRO: status {} — objeto deveria ter sumido",
+            r.status_code()
+        ),
         Err(e) => println!("pós-delete get → {e} (esperado)"),
     }
 

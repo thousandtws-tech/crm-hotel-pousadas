@@ -344,8 +344,7 @@ impl PgClienteRepository {
     }
 }
 
-const CLIENTE_COLS: &str =
-    "id, nome, cpf, data_nascimento, email, telefone, estado, cidade, \
+const CLIENTE_COLS: &str = "id, nome, cpf, data_nascimento, email, telefone, estado, cidade, \
      nacionalidade, naturalidade, profissao, logradouro, numero, complemento, \
      bairro, cep, pais, ativo, (foto IS NOT NULL) AS tem_foto, \
      version, criado_em, atualizado_em";
@@ -752,13 +751,11 @@ impl DocumentoRepository for PgDocumentoRepository {
     }
 
     async fn scan_caminho(&self, id: i64) -> Result<Option<String>, DomainError> {
-        sqlx::query_scalar::<_, Option<String>>(
-            "SELECT scan FROM cliente_documento WHERE id = $1",
-        )
-        .bind(id)
-        .fetch_optional(&self.pool)
-        .await
-        .map(|row| row.flatten())
-        .map_err(map_db_err)
+        sqlx::query_scalar::<_, Option<String>>("SELECT scan FROM cliente_documento WHERE id = $1")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .map(|row| row.flatten())
+            .map_err(map_db_err)
     }
 }

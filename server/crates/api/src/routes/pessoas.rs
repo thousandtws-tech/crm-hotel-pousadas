@@ -124,10 +124,7 @@ pub async fn upload_foto_cliente(
     let key = format!("clientes/{id}.{ext}");
     s.store.put(&key, &body, content_type).await?;
 
-    s.services
-        .clientes
-        .definir_foto(&ator, id, &key)
-        .await?;
+    s.services.clientes.definir_foto(&ator, id, &key).await?;
     if let Some(antigo) = anterior.filter(|a| a != &key) {
         s.store.delete(&antigo).await.ok();
     }
@@ -143,9 +140,10 @@ pub async fn foto_cliente(
     let Some(caminho) = s.services.clientes.foto_caminho(id).await? else {
         return Err(DomainError::nao_encontrado("Cliente não possui foto.").into());
     };
-    let bytes = s.store.get(&caminho).await?.ok_or_else(|| {
-        DomainError::nao_encontrado("Arquivo de foto não encontrado no storage.")
-    })?;
+    let bytes =
+        s.store.get(&caminho).await?.ok_or_else(|| {
+            DomainError::nao_encontrado("Arquivo de foto não encontrado no storage.")
+        })?;
     let mime = match caminho.rsplit('.').next() {
         Some("png") => "image/png",
         Some("jpg") | Some("jpeg") => "image/jpeg",
@@ -200,7 +198,9 @@ pub async fn atualizar_documento(
     Path(id): Path<i64>,
     Json(body): Json<DocumentoInput>,
 ) -> Result<Json<ClienteDocumento>, AppError> {
-    Ok(Json(s.services.documentos.atualizar(&ator, id, body).await?))
+    Ok(Json(
+        s.services.documentos.atualizar(&ator, id, body).await?,
+    ))
 }
 
 /// Exclui o documento e apaga o arquivo de scan, se houver.
@@ -243,10 +243,7 @@ pub async fn upload_scan_documento(
     let key = format!("documentos/{id}.{ext}");
     s.store.put(&key, &body, content_type).await?;
 
-    s.services
-        .documentos
-        .definir_scan(&ator, id, &key)
-        .await?;
+    s.services.documentos.definir_scan(&ator, id, &key).await?;
     if let Some(antigo) = anterior.filter(|a| a != &key) {
         s.store.delete(&antigo).await.ok();
     }
@@ -262,9 +259,10 @@ pub async fn scan_documento(
     let Some(caminho) = s.services.documentos.scan_caminho(id).await? else {
         return Err(DomainError::nao_encontrado("Documento não possui scan.").into());
     };
-    let bytes = s.store.get(&caminho).await?.ok_or_else(|| {
-        DomainError::nao_encontrado("Arquivo de scan não encontrado no storage.")
-    })?;
+    let bytes =
+        s.store.get(&caminho).await?.ok_or_else(|| {
+            DomainError::nao_encontrado("Arquivo de scan não encontrado no storage.")
+        })?;
     let mime = match caminho.rsplit('.').next() {
         Some("png") => "image/png",
         Some("jpg") | Some("jpeg") => "image/jpeg",

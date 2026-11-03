@@ -1,10 +1,13 @@
 //! Ports do contexto de estoque.
 
-use crate::entities::{CategoriaEstoque, ItemEstoque, NovoLog};
+use crate::entities::{
+    CategoriaEstoque, ConversaoUnidade, FichaTecnica, ItemEstoque, NfeImport, NovoLog,
+};
 use crate::enums::TipoMovimento;
 use crate::error::DomainError;
-use crate::queries::MovimentoView;
+use crate::queries::{EstoqueBaixoView, FichaItemView, MovimentoView};
 use async_trait::async_trait;
+use chrono::NaiveDate;
 use clarituz_shared::{Page, PageParams};
 use rust_decimal::Decimal;
 
@@ -14,6 +17,9 @@ pub struct NovoItem {
     pub idcategoria: Option<i64>,
     pub quantidade_inicial: i32,
     pub valor_unitario: Decimal,
+    pub unidade: Option<String>,
+    pub estoque_minimo: Option<i32>,
+    pub eh_insumo: bool,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -21,6 +27,9 @@ pub struct AtualizaItem {
     pub nome: Option<String>,
     pub idcategoria: Option<i64>,
     pub valor_unitario: Option<Decimal>,
+    pub unidade: Option<String>,
+    pub estoque_minimo: Option<i32>,
+    pub eh_insumo: Option<bool>,
     /// Concorrência otimista — divergência → 409.
     pub version: Option<i64>,
 }
@@ -106,4 +115,71 @@ pub trait EstoqueRepository: Send + Sync {
         iditem: Option<i64>,
         page: PageParams,
     ) -> Result<Page<MovimentoView>, DomainError>;
+
+    // -- ficha tecnica -------------------------------------------------------
+    async fn listar_ficha(&self, idproduto: i64) -> Result<Vec<FichaItemView>, DomainError>;
+    async fn salvar_ficha_item(
+        &self,
+        idproduto: i64,
+        idinsumo: i64,
+        quantidade: i32,
+        log: NovoLog,
+    ) -> Result<FichaTecnica, DomainError>;
+    async fn remover_ficha_item(&self, idficha: i64, log: NovoLog) -> Result<(), DomainError>;
+
+    // -- conversoes de unidade ----------------------------------------------
+    async fn listar_conversoes(&self, iditem: i64) -> Result<Vec<ConversaoUnidade>, DomainError>;
+    async fn salvar_conversao(
+        &self,
+        iditem: i64,
+        unidade_compra: &str,
+        fator: i32,
+        log: NovoLog,
+    ) -> Result<ConversaoUnidade, DomainError>;
+    async fn remover_conversao(&self, id: i64, log: NovoLog) -> Result<(), DomainError>;
+
+    // -- alertas -------------------------------------------------------------
+    async fn alertas_minimo(&self) -> Result<Vec<EstoqueBaixoView>, DomainError>;
+
+    // -- NF-e ------------------------------------------------------------------
+    async fn nfe_ja_importada(&self, chave: &str) -> Result<bool, DomainError>;
+    async fn registrar_nfe(
+        &self,
+        nfe: &NfeRegistro,
+        itens: &[NfeItemConfirmado],
+        idfuncionario: i64,
+        log: NovoLog,
+    ) -> Result<NfeImport, DomainError>;
+}
+
+/// Item confirmado de uma NF-e ja mapeado para o estoque.
+#[derive(Debug, Clone)]
+pub struct NfeItemConfirmado {
+    /// `Some` quando mapeado para item existente; `None` cria um novo.
+    pub iditem: Option<i64>,
+    pub nome: String,
+    /// Unidade da NF (ex.: "CX", "KG").
+    pub unidade_compra: String,
+    /// Fator de conversao -> unidade base (1 unidade_compra = fator base).
+    pub fator: i32,
+    /// Quantidade na unidade da nota.
+    pub quantidade: Decimal,
+    /// Valor total da linha na nota.
+    pub valor_total: Decimal,
+    /// Quantidade ja convertida para a unidade base.
+    pub quantidade_base: i32,
+}
+
+/// Cabecalho da NF-e confirmada para registro.
+#[derive(Debug, Clone)]
+pub struct NfeRegistro {
+    pub chave: String,
+    pub numero: Option<String>,
+    pub emitente: Option<String>,
+    pub cnpj: Option<String>,
+    pub emissao: Option<NaiveDate>,
+    pub total: Decimal,
+    pub vencimento: NaiveDate,
+    /// Se falso, nao gera lancamento a pagar.
+    pub gerar_pagamento: bool,
 }

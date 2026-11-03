@@ -17,5 +17,21 @@ services:
       timeout: 3s
       retries: 10
 
+  realtime:
+    build: ./realtime
+    container_name: clarituz-realtime
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-clarituz-0123456789abcdef}
+      DATABASE_URL: postgres://clarituz:clarituz@postgres:5432/clarituz
+      INGEST_TOKEN: ${INGEST_TOKEN:-dev-ingest-token}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-dev-secret-key-base-clarituz-0123456789abcdef0123456789abcdef0123456789abcd}
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   clarituz_pgdata:

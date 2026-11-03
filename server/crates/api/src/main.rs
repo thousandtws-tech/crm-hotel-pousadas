@@ -168,8 +168,9 @@ fn build_services(
     let pag_repo = Arc::new(PgFormaPagamentoRepository::new(pool.clone()));
     let reserva_repo = Arc::new(PgReservaRepository::new(pool.clone()));
     let impressora_repo = Arc::new(PgImpressoraRepository::new(pool.clone()));
-    let impressora_gw: Arc<dyn clarituz_domain::ports::ImpressoraGateway> =
-        Arc::new(clarituz_infrastructure::escpos::TcpImpressora);
+    let impressora_gw: Arc<dyn clarituz_domain::ports::ImpressoraGateway> = Arc::new(
+        clarituz_infrastructure::escpos::SpoolImpressora::new(pool.clone()),
+    );
     let publisher: Arc<dyn EventoPublisher> = Arc::new(eventos.clone());
     // consumer do bus → histórico persistido (inbox/badges)
     let notif_repo = Arc::new(repositories::PgNotificacaoRepository::new(pool.clone()));
@@ -204,9 +205,10 @@ fn build_services(
             acompanhantes: reserva_repo.clone(),
             fnrh: reserva_repo,
         })),
-        estoque: Arc::new(EstoqueService::new(Arc::new(PgEstoqueRepository::new(
-            pool.clone(),
-        )))),
+        estoque: Arc::new(
+            EstoqueService::new(Arc::new(PgEstoqueRepository::new(pool.clone())))
+                .com_etiquetas(impressora_repo.clone(), impressora_gw.clone()),
+        ),
         frigobar: Arc::new(FrigobarService::new(
             Arc::new(PgFrigobarRepository::new(pool.clone())),
             acom_repo,
@@ -231,6 +233,22 @@ fn build_services(
         busca: Arc::new(BuscaService::new(Arc::new(PgBuscaRepository::new(
             pool.clone(),
         )))),
+        tesouraria: Arc::new(TesourariaService::new(Arc::new(
+            PgTesourariaRepository::new(pool.clone()),
+        ))),
+        caixa: Arc::new(CaixaService::new(Arc::new(PgCaixaRepository::new(
+            pool.clone(),
+        )))),
+        pdv: Arc::new(PdvService::new(Arc::new(PgPdvRepository::new(
+            pool.clone(),
+        )))),
+        cafe: Arc::new(CafeService::new(Arc::new(PgCafeRepository::new(
+            pool.clone(),
+        )))),
+        compras: Arc::new(ComprasService::new(
+            Arc::new(PgComprasRepository::new(pool.clone())),
+            Arc::new(PgEstoqueRepository::new(pool.clone())),
+        )),
     };
 
     (

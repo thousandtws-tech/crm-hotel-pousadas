@@ -82,10 +82,9 @@ impl CmsService {
             return Err(DomainError::validacao("Slug inválido.").into());
         }
         if self.cms.slug_em_uso(&slug, idacomodacao).await? {
-            return Err(DomainError::conflito(
-                "Este slug já está em uso por outra acomodação.",
-            )
-            .into());
+            return Err(
+                DomainError::conflito("Este slug já está em uso por outra acomodação.").into(),
+            );
         }
         if let Some(b) = input.banheiros {
             if b < 0 || b > 20 {
@@ -107,9 +106,7 @@ impl CmsService {
             metragem: input.metragem,
             vista: vazio(&input.vista),
             andar: vazio(&input.andar),
-            comodidades: input
-                .comodidades
-                .unwrap_or_else(|| serde_json::json!([])),
+            comodidades: input.comodidades.unwrap_or_else(|| serde_json::json!([])),
             destaque: input.destaque.unwrap_or(false),
             ordem: input.ordem.unwrap_or(0),
             version: input.version,
@@ -140,9 +137,7 @@ impl CmsService {
                 .cms
                 .buscar_cms(idacomodacao)
                 .await?
-                .ok_or_else(|| {
-                    DomainError::validacao("Salve o conteúdo antes de publicar.")
-                })?;
+                .ok_or_else(|| DomainError::validacao("Salve o conteúdo antes de publicar."))?;
             if cms.subtitulo.is_none() && cms.descricao_curta.is_none() {
                 return Err(DomainError::validacao(
                     "Preencha ao menos o subtítulo ou a descrição curta antes de publicar.",

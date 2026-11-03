@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; }
+  .login-split { display: flex; min-height: 100vh; background: #f4f6f8; }
+  .login-image {
+    flex: 1.15; position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #eef3f5;
+    padding: 3rem;
+    gap: 2rem;
+  }
+  .login-image .illus {
+    max-width: min(80%, 460px); width: 100%; height: auto;
+  }
+  .login-image-content {
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center; color: #054054;
+  }
+  .login-image-content .brand {
+    width: 170px; height: auto;
+    margin-bottom: 1.25rem;
+  }
+  .login-image-content h2 { font-size: 1.9rem; font-weight: 300; line-height: 1.25; }
+  .login-image-content h2 b { font-weight: 700; }
+  .login-image-content p {
+    color: rgba(5,64,84,0.72); margin: 0.6rem 0 0;
+    max-width: 26rem; font-size: 0.95rem;
+  }
+  .login-form-panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
+  .login-card {
+    width: 100%; max-width: 380px; background: #fff;
+    padding: 2rem 2rem 1.5rem; border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  }
+  .login-logo { text-align: center; margin-bottom: 0.75rem; }
+  .login-logo img { height: 84px; width: auto; }
+  .login-box-msg { text-align: center; color: #777; margin: 0 0 1.25rem; font-size: 0.95rem; }
+  .form-group { position: relative; margin-bottom: 1rem; }
+  .login-input {
+    width: 100%; height: 42px; padding: 6px 36px 6px 12px;
+    border: 1px solid #d2d6de; border-radius: 2px; font-size: 0.95rem;
+    background: #e9eef5; color: #333;
+  }
+  .btn-entrar {
+    width: 100%; height: 42px; border: none; border-radius: 2px;
+    background: #054054; color: #fff; font-size: 1rem;
+  }
+  .login-links { text-align: center; margin: 1.25rem 0 0; font-size: 0.88rem; color: #666; }
+  .login-links a { color: #1a6f8a; font-weight: 600; }
+  .login-contato { text-align: center; font-size: 0.78rem; color: #9aa5b1; margin: 1.5rem 0 0; }
+</style>
+</head>
+<body>
+<div class="login-split">
+  <div class="login-image">
+    <img class="illus" src="/login-bg.svg" alt="" />
+    <div class="login-image-content">
+      <img class="brand" src="/logo.svg" alt="" />
+      <h2>Gestão completa para sua <b>pousada</b></h2>
+      <p>Reservas, check-in, frigobar, financeiro e muito mais — tudo em um só lugar, em tempo real.</p>
+    </div>
+  </div>
+  <div class="login-form-panel">
+    <div class="login-card">
+      <div class="login-logo"><img src="/logo.svg" alt="Pousada Espírito do Mar" /></div>
+      <p class="login-box-msg">Acesse sua conta</p>
+      <div class="form-group"><input class="login-input" value="devops.clarituz@gmail.com"></div>
+      <div class="form-group"><input class="login-input" type="password" value="••••••••••"></div>
+      <button class="btn-entrar">Acessar</button>
+      <p class="login-links">Não tem conta? <a>Criar conta</a></p>
+      <p class="login-contato">contato&#64;clarituz.com.br | (19) 99555-1577</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

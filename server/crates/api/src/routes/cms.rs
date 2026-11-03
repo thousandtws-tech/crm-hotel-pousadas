@@ -10,7 +10,9 @@ use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::Json;
 use clarituz_application::actor::Ator;
 use clarituz_application::dto::{CmsInput, OrdenarMidiaInput, StatusCmsInput};
-use clarituz_domain::entities::{AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica};
+use clarituz_domain::entities::{
+    AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica,
+};
 use clarituz_domain::events::{Aviso, EventoApp, TipoAviso};
 use clarituz_domain::DomainError;
 use serde::{Deserialize, Serialize};
@@ -49,7 +51,9 @@ pub async fn status(
     Path(id): Path<i64>,
     Json(input): Json<StatusCmsInput>,
 ) -> Result<Json<AcomodacaoCms>, AppError> {
-    Ok(Json(s.services.cms.publicar(&ator, id, input.publicar).await?))
+    Ok(Json(
+        s.services.cms.publicar(&ator, id, input.publicar).await?,
+    ))
 }
 
 // ---------------------------------------------------------------------------
@@ -212,9 +216,11 @@ async fn servir_objeto(
     key: &str,
     mime: &str,
 ) -> Result<([(HeaderName, String); 2], Vec<u8>), AppError> {
-    let bytes = s.store.get(key).await?.ok_or_else(|| {
-        DomainError::nao_encontrado("Arquivo não encontrado no storage.")
-    })?;
+    let bytes = s
+        .store
+        .get(key)
+        .await?
+        .ok_or_else(|| DomainError::nao_encontrado("Arquivo não encontrado no storage."))?;
     Ok((
         [
             (header::CONTENT_TYPE, mime.to_string()),
@@ -242,9 +248,7 @@ pub async fn publico_stream(
                 .data(serde_json::to_string(&d).unwrap_or_default())))
         }
         Ok(_) => None,
-        Err(BroadcastStreamRecvError::Lagged(_)) => {
-            Some(Ok(Event::default().comment("lagged")))
-        }
+        Err(BroadcastStreamRecvError::Lagged(_)) => Some(Ok(Event::default().comment("lagged"))),
     });
 
     Sse::new(eventos).keep_alive(
@@ -296,38 +300,37 @@ pub async fn publico_criar_reserva(
         return Err(DomainError::validacao("Informe nome, e-mail e telefone.").into());
     }
     if input.check_out < input.check_in {
-        return Err(
-            DomainError::validacao("A data de check-out deve ser igual ou posterior ao check-in.")
-                .into(),
-        );
+        return Err(DomainError::validacao(
+            "A data de check-out deve ser igual ou posterior ao check-in.",
+        )
+        .into());
     }
 
     // 1. Resolve a acomodação pelo id ou pelo slug do CMS (ou fallback para a primeira ativa)
-    let acom_row: Option<(i64, String, i32, rust_decimal::Decimal, i32)> = if let Some(id) =
-        input.idacomodacao
-    {
-        sqlx::query_as(
+    let acom_row: Option<(i64, String, i32, rust_decimal::Decimal, i32)> =
+        if let Some(id) = input.idacomodacao {
+            sqlx::query_as(
             "SELECT id, nome, numero, valor, capacidade FROM acomodacao WHERE id = $1 AND ativo",
         )
         .bind(id)
         .fetch_optional(&s.pool)
         .await
         .map_err(|_| DomainError::Infra)?
-    } else if let Some(slug) = input.slug.as_deref().filter(|s| !s.trim().is_empty()) {
-        sqlx::query_as(
-            "SELECT a.id, a.nome, a.numero, a.valor, a.capacidade
+        } else if let Some(slug) = input.slug.as_deref().filter(|s| !s.trim().is_empty()) {
+            sqlx::query_as(
+                "SELECT a.id, a.nome, a.numero, a.valor, a.capacidade
              FROM acomodacao a
              JOIN acomodacao_cms c ON c.idacomodacao = a.id
              WHERE c.slug = $1 AND a.ativo
              LIMIT 1",
-        )
-        .bind(slug.trim())
-        .fetch_optional(&s.pool)
-        .await
-        .map_err(|_| DomainError::Infra)?
-    } else {
-        None
-    };
+            )
+            .bind(slug.trim())
+            .fetch_optional(&s.pool)
+            .await
+            .map_err(|_| DomainError::Infra)?
+        } else {
+            None
+        };
 
     let (idacomodacao, acom_nome, acom_num, valor_diaria, acom_cap) = match acom_row {
         Some(r) => r,
@@ -346,7 +349,11 @@ pub async fn publico_criar_reserva(
     let cpf_limpo: Option<String> = input
         .cpf
         .as_deref()
-        .map(|c| c.chars().filter(|ch| ch.is_ascii_digit()).collect::<String>())
+        .map(|c| {
+            c.chars()
+                .filter(|ch| ch.is_ascii_digit())
+                .collect::<String>()
+        })
         .filter(|c| c.len() >= 11);
 
     let cliente_existente: Option<i64> = sqlx::query_scalar(
@@ -393,7 +400,12 @@ pub async fn publico_criar_reserva(
     // 3. Calcula diárias e tenta gravar a reserva pendente ('p')
     let dias = (input.check_out - input.check_in).num_days().max(1);
     let valor_total = valor_diaria * rust_decimal::Decimal::from(dias);
-    let obs_final = match input.observacoes.as_deref().map(str::trim).filter(|o| !o.is_empty()) {
+    let obs_final = match input
+        .observacoes
+        .as_deref()
+        .map(str::trim)
+        .filter(|o| !o.is_empty())
+    {
         Some(o) => format!("[Site] Tel: {telefone} | E-mail: {email} | Obs: {o}"),
         None => format!("[Reserva pelo Site] Tel: {telefone} | E-mail: {email}"),
     };

@@ -1,5 +1,6 @@
 import { Injectable, signal, computed, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { Socket, Channel } from 'phoenix';
 import { Accommodation, Amenity } from '../models/accommodation.model';
 import { environment } from '../../../environments/environment';
 
@@ -232,7 +233,8 @@ const FALLBACK: Accommodation[] = [
 export class AccommodationService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly accommodationsState = signal<Accommodation[]>(FALLBACK);
-  private eventSource: EventSource | null = null;
+  private socket: Socket | null = null;
+  private canal: Channel | null = null;
   private refetchTimer: ReturnType<typeof setTimeout> | null = null;
 
   public readonly accommodations = this.accommodationsState.asReadonly();
@@ -262,17 +264,24 @@ export class AccommodationService {
     }
   }
 
-  /** SSE público: qualquer delta de acomodacao/cms/mídia refaz o fetch na hora. */
+  /**
+   * Realtime público (hub Phoenix, tópico `site:deltas`): qualquer delta de
+   * acomodacao/cms/mídia refaz o fetch na hora. Sem auth — o hub só publica
+   * nesse tópico tabelas da whitelist pública.
+   */
   private conectarStream(): void {
     try {
-      this.eventSource = new EventSource(`${API}/publico/stream`);
-      this.eventSource.addEventListener('delta', () => this.agendarRefetch());
-      this.eventSource.onopen = () => void this.carregar();
-      this.eventSource.onerror = () => {
-        // EventSource reconecta sozinho; onopen dispara carregar() ao reconectar.
-      };
+      const socket = new Socket(environment.realtimeUrl, {
+        reconnectAfterMs: (t) => Math.min(1000 * 2 ** t, 15000),
+      });
+      this.socket = socket;
+      socket.onOpen(() => void this.carregar());
+      this.canal = socket.channel('site:deltas');
+      this.canal.on('delta', () => this.agendarRefetch());
+      this.canal.join();
+      socket.connect();
     } catch {
-      // Sem EventSource → conteúdo estático da última carga.
+      // Sem realtime → conteúdo estático da última carga.
     }
   }
 

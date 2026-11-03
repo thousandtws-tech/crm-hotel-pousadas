@@ -430,7 +430,10 @@ impl AcomodacaoRepository for PgAcomodacaoRepository {
             .execute(&mut *tx)
             .await
             .map_err(|e| {
-                map_del_err(e, "Acomodação possui reservas — inative-a em vez de excluir.")
+                map_del_err(
+                    e,
+                    "Acomodação possui reservas — inative-a em vez de excluir.",
+                )
             })?;
         if r.rows_affected() == 0 {
             return Err(DomainError::nao_encontrado("Acomodação não encontrada."));
@@ -1020,9 +1023,7 @@ impl FormaPagamentoRepository for PgFormaPagamentoRepository {
             .bind(id)
             .execute(&mut *tx)
             .await
-            .map_err(|e| {
-                map_del_err(e, "Forma de pagamento já usada em consumos — inative-a.")
-            })?;
+            .map_err(|e| map_del_err(e, "Forma de pagamento já usada em consumos — inative-a."))?;
         if r.rows_affected() == 0 {
             return Err(DomainError::nao_encontrado(
                 "Forma de pagamento não encontrada.",

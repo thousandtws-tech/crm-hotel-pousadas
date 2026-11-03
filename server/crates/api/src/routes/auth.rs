@@ -50,7 +50,9 @@ pub async fn register(
     s.services.funcionarios.registrar(body).await?;
     Ok((
         axum::http::StatusCode::CREATED,
-        Json(Mensagem::ok("Administrador cadastrado! Faça login para continuar.")),
+        Json(Mensagem::ok(
+            "Administrador cadastrado! Faça login para continuar.",
+        )),
     ))
 }
 

@@ -59,10 +59,7 @@ pub trait CmsRepository: Send + Sync {
     async fn listar_midias(&self, idacomodacao: i64) -> Result<Vec<AcomodacaoMidia>, DomainError>;
     /// `(caminho, mime, publicado)` da mídia — `publicado` reflete o status
     /// do CMS da acomodação dona (rascunho não vaza para o site).
-    async fn caminho_midia(
-        &self,
-        id: i64,
-    ) -> Result<Option<(String, String, bool)>, DomainError>;
+    async fn caminho_midia(&self, id: i64) -> Result<Option<(String, String, bool)>, DomainError>;
     /// Registra mídia; a primeira foto vira capa automaticamente.
     async fn adicionar_midia(
         &self,
@@ -82,5 +79,8 @@ pub trait CmsRepository: Send + Sync {
 
     /// Cards `publicado` + acomodacao ativa — consumo do site público.
     async fn listar_publicadas(&self) -> Result<Vec<AcomodacaoPublica>, DomainError>;
-    async fn publicada_por_slug(&self, slug: &str) -> Result<Option<AcomodacaoPublica>, DomainError>;
+    async fn publicada_por_slug(
+        &self,
+        slug: &str,
+    ) -> Result<Option<AcomodacaoPublica>, DomainError>;
 }

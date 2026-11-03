@@ -13,9 +13,7 @@ use clarituz_application::dto::{
     CheckinRequest, CheckoutRequest, DisponibilidadeQuery, DisponibilidadeResponse,
     FnrhEmitRequest, ItemConsumidoRequest, ReservaFiltroQuery, ReservaInput,
 };
-use clarituz_domain::entities::{
-    Acompanhante, AdicionalConsumo, Fnrh, ItemConsumido, Reserva,
-};
+use clarituz_domain::entities::{Acompanhante, AdicionalConsumo, Fnrh, ItemConsumido, Reserva};
 use clarituz_domain::enums::StatusReserva;
 use clarituz_domain::ports::FiltroReserva;
 use clarituz_domain::queries::{ComprovanteResumo, ReservaDetalhe, ReservaResumo};

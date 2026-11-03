@@ -26,6 +26,9 @@ impl BuscaService {
         if t.len() < 2 {
             return Ok(vec![]);
         }
-        Ok(self.repo.buscar(t, ator.is_admin(), LIMITE_POR_TIPO).await?)
+        Ok(self
+            .repo
+            .buscar(t, ator.is_admin(), LIMITE_POR_TIPO)
+            .await?)
     }
 }

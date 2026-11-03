@@ -1,9 +1,14 @@
 pub mod auth;
+pub mod cafe;
+pub mod caixa;
 pub mod catalogo;
 pub mod cms;
+pub mod compras;
 pub mod estoque;
 pub mod impressoras;
 pub mod notificacoes;
+pub mod pdv;
 pub mod pessoas;
 pub mod relatorios;
 pub mod reservas;
+pub mod tesouraria;

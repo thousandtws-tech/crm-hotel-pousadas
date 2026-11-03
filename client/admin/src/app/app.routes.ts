@@ -9,12 +9,7 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/auth/login.component').then((m) => m.LoginComponent),
   },
-  {
-    path: 'cadastro',
-    canActivate: [guestGuard],
-    loadComponent: () =>
-      import('./features/auth/cadastro.component').then((m) => m.CadastroComponent),
-  },
+  
   {
     path: '',
     component: ShellComponent,
@@ -56,6 +51,16 @@ export const routes: Routes = [
           import('./features/estoque/estoque.component').then((m) => m.EstoqueComponent),
       },
       {
+        path: 'insumos',
+        loadComponent: () =>
+          import('./features/estoque/insumos.component').then((m) => m.InsumosComponent),
+      },
+      {
+        path: 'compras',
+        loadComponent: () =>
+          import('./features/compras/compras.component').then((m) => m.ComprasComponent),
+      },
+      {
         path: 'frigobares',
         loadComponent: () =>
           import('./features/frigobares/frigobares.component').then((m) => m.FrigobaresComponent),
@@ -71,6 +76,21 @@ export const routes: Routes = [
         path: 'pagamentos',
         loadComponent: () =>
           import('./features/pagamentos/pagamentos.component').then((m) => m.PagamentosComponent),
+      },
+      {
+        path: 'pdv',
+        loadComponent: () =>
+          import('./features/pdv/pdv.component').then((m) => m.PdvComponent),
+      },
+      {
+        path: 'cozinha',
+        loadComponent: () =>
+          import('./features/pdv/kds.component').then((m) => m.KdsComponent),
+      },
+      {
+        path: 'cafe',
+        loadComponent: () =>
+          import('./features/cafe/cafe.component').then((m) => m.CafeComponent),
       },
       {
         path: 'cms',
@@ -98,6 +118,40 @@ export const routes: Routes = [
         path: 'financeiro',
         loadComponent: () =>
           import('./features/financeiro/financeiro.component').then((m) => m.FinanceiroComponent),
+      },
+      {
+        path: 'financeiro/contas',
+        loadComponent: () =>
+          import('./features/financeiro/contas.component').then((m) => m.FinContasComponent),
+      },
+      {
+        path: 'financeiro/fluxo-caixa',
+        loadComponent: () =>
+          import('./features/financeiro/fluxo-caixa.component').then(
+            (m) => m.FinFluxoCaixaComponent,
+          ),
+      },
+      {
+        path: 'financeiro/dre',
+        loadComponent: () =>
+          import('./features/financeiro/dre.component').then((m) => m.FinDreComponent),
+      },
+      {
+        path: 'financeiro/conciliacao',
+        loadComponent: () =>
+          import('./features/financeiro/conciliacao.component').then(
+            (m) => m.FinConciliacaoComponent,
+          ),
+      },
+      {
+        path: 'financeiro/split',
+        loadComponent: () =>
+          import('./features/financeiro/split.component').then((m) => m.FinSplitComponent),
+      },
+      {
+        path: 'financeiro/caixa',
+        loadComponent: () =>
+          import('./features/financeiro/caixa.component').then((m) => m.FinCaixaComponent),
       },
       {
         path: 'auditoria',

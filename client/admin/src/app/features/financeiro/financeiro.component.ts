@@ -28,6 +28,7 @@ import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
 import { TourGuiado } from '@core/services/tour.service';
 import { EChartComponent, EChartOption } from '@shared/components/echart.component';
+import { FinNavComponent } from './fin-nav.component';
 
 type Preset = 'mes' | 'mesAnt' | 'd30' | 'ano' | 'custom';
 
@@ -92,9 +93,11 @@ function ttItem(fmtExtra: (p: { name: string; value: number; dataIndex: number }
     MatDatepickerModule,
     MatTabsModule,
     EChartComponent,
+    FinNavComponent,
   ],
   template: `
     <div class="page">
+      <app-fin-nav />
       <!-- ================= Cabeçalho editorial ================= -->
       <div class="fin-head">
         <div>

@@ -16,6 +16,7 @@ recepção opera o dia inteiro sem tocar em nada complicado.
 | Parte | Stack | Pasta |
 |---|---|---|
 | API | Rust · Axum · SQLx · PostgreSQL | `server/` |
+| Hub realtime (WebSocket) | Elixir · Phoenix Channels | `server/realtime/` |
 | Painel interno (recepção/admin) | Angular | `client/admin/` |
 | Site público | Angular | `client/web/` |
 | MAR IA (voz + texto) | Python · FastAPI · OpenAI · ElevenLabs | `server/maria/` |
@@ -34,6 +35,9 @@ recepção opera o dia inteiro sem tocar em nada complicado.
 ```bash
 # API
 cd server && cargo run        # precisa de DATABASE_URL no ambiente
+
+# Hub realtime (porta 4000) — precisa do Postgres do docker-compose
+cd server/realtime && mix deps.get && mix phx.server
 
 # Painel (porta 4200)
 cd client/admin && npm i && ng serve

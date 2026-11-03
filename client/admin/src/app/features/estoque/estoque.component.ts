@@ -4,6 +4,7 @@ import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angu
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
+import { RouterLink } from '@angular/router';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { ApiService, num } from '@core/services/api.service';
@@ -33,6 +34,7 @@ import { TourGuiado } from '@core/services/tour.service';
     MatSelectModule,
     MatFormFieldModule,
     ReactiveFormsModule,
+    RouterLink,
   ],
   template: `
     <div class="page">
@@ -52,6 +54,9 @@ import { TourGuiado } from '@core/services/tour.service';
           <button class="btn-tour" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
             <mat-icon>school</mat-icon> Tutorial
           </button>
+          <a class="btn-gray" routerLink="/insumos" aria-label="Insumos, fichas técnicas e NF-e">
+            <mat-icon>restaurant_menu</mat-icon> Insumos
+          </a>
           <button id="tour-categorias" class="btn-gray" type="button" (click)="abrirCategorias()">
             <mat-icon>category</mat-icon> Categorias
           </button>
@@ -202,6 +207,15 @@ import { TourGuiado } from '@core/services/tour.service';
                             </button>
                           </td>
                           <td class="tc est-acoes">
+                            <button
+                              type="button"
+                              class="badge-acao bg-teal"
+                              title="Imprimir etiqueta"
+                              aria-label="Imprimir etiqueta"
+                              (click)="imprimirEtiqueta(i)"
+                            >
+                              <mat-icon>sell</mat-icon>
+                            </button>
                             <button
                               type="button"
                               class="badge-acao bg-yellow"
@@ -537,6 +551,33 @@ import { TourGuiado } from '@core/services/tour.service';
                       />
                     </div>
                   }
+                  <div class="campo">
+                    <label class="lbl" for="it-un">Unidade</label>
+                    <mat-form-field
+                      appearance="outline"
+                      subscriptSizing="dynamic"
+                      class="campo-mat"
+                    >
+                      <mat-select id="it-un" formControlName="unidade">
+                        @for (u of UNIDADES; track u) {
+                          <mat-option [value]="u">{{ u }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                  <div class="campo">
+                    <label class="lbl" for="it-min">Estoque mínimo</label>
+                    <input
+                      id="it-min" class="input-inn" type="number" min="0"
+                      formControlName="estoque_minimo" placeholder="0 = sem alerta"
+                    />
+                  </div>
+                  <div class="campo full">
+                    <label class="chk-insumo">
+                      <input type="checkbox" formControlName="eh_insumo" />
+                      É insumo (não aparece para venda direta no PDV — usado em ficha técnica)
+                    </label>
+                  </div>
                 </div>
                 @if (editandoItem()) {
                   <p class="dsec-dica" style="margin-top: 10px">
@@ -1018,6 +1059,9 @@ export class EstoqueComponent implements OnInit {
     idcategoria: [null as number | null],
     valor_unitario: [null as number | null],
     quantidade_inicial: [0],
+    unidade: ['un'],
+    estoque_minimo: [0],
+    eh_insumo: [false],
   });
 
   protected readonly itens = signal<ItemEstoque[]>([]);
@@ -1035,6 +1079,7 @@ export class EstoqueComponent implements OnInit {
   protected readonly apenasAtivos = signal(false);
   /** Linhas fantasma exibidas enquanto a lista carrega. */
   protected readonly skel = [1, 2, 3, 4, 5];
+  protected readonly UNIDADES = ['un', 'kg', 'g', 'L', 'ml', 'cx', 'pct', 'lata', 'fardo'];
   protected readonly num = num;
 
   /** Itens ativos sem saldo — selo dourado de alerta no cabeçalho. */
@@ -1201,9 +1246,20 @@ export class EstoqueComponent implements OnInit {
         idcategoria: item.idcategoria,
         valor_unitario: item.valor_unitario !== null ? Number(item.valor_unitario) : null,
         quantidade_inicial: 0,
+        unidade: item.unidade || 'un',
+        estoque_minimo: item.estoque_minimo || 0,
+        eh_insumo: item.eh_insumo,
       });
     } else {
-      this.formItem.reset({ nome: '', idcategoria: null, valor_unitario: null, quantidade_inicial: 0 });
+      this.formItem.reset({
+        nome: '',
+        idcategoria: null,
+        valor_unitario: null,
+        quantidade_inicial: 0,
+        unidade: 'un',
+        estoque_minimo: 0,
+        eh_insumo: false,
+      });
     }
     this.drawerAberto.set(true);
     document.body.style.overflow = 'hidden';
@@ -1226,6 +1282,9 @@ export class EstoqueComponent implements OnInit {
       idcategoria: v.idcategoria,
       valor_unitario: v.valor_unitario,
       quantidade_inicial: v.quantidade_inicial || undefined,
+      unidade: v.unidade || 'un',
+      estoque_minimo: v.estoque_minimo || 0,
+      eh_insumo: v.eh_insumo,
       version: this.editandoItem()?.version,
     };
     const item = this.editandoItem();
@@ -1270,6 +1329,13 @@ export class EstoqueComponent implements OnInit {
   statusItem(i: ItemEstoque, ativo: boolean): void {
     this.api.statusItem(i.id, ativo).subscribe({
       next: () => this.carregar(),
+      error: (e) => this.notify.erro(e),
+    });
+  }
+
+  imprimirEtiqueta(i: ItemEstoque): void {
+    this.api.etiquetaItem(i.id).subscribe({
+      next: () => this.notify.ok(`Etiqueta de "${i.nome}" enviada.`),
       error: (e) => this.notify.erro(e),
     });
   }

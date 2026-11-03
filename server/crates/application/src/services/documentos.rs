@@ -141,10 +141,9 @@ impl DocumentoService {
     fn validar(&self, input: DocumentoInput, idcliente: i64) -> AppResult<NovoDocumento> {
         let tipo = input.tipo.trim().to_lowercase();
         if !TIPOS_DOCUMENTO.contains(&tipo.as_str()) {
-            return Err(DomainError::validacao(format!(
-                "Tipo de documento inválido: '{tipo}'."
-            ))
-            .into());
+            return Err(
+                DomainError::validacao(format!("Tipo de documento inválido: '{tipo}'.")).into(),
+            );
         }
         if input.numero.trim().is_empty() {
             return Err(DomainError::validacao("Número do documento é obrigatório.").into());

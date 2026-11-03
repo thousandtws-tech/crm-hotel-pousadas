@@ -1,5 +1,6 @@
 import {
   ApplicationConfig,
+  ErrorHandler,
   LOCALE_ID,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
@@ -12,6 +13,7 @@ import localePt from '@angular/common/locales/pt';
 import { routes } from './app.routes';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { PaginatorIntlPtBr } from '@core/services/paginator-intl';
+import { ChunkReloadErrorHandler } from '@core/chunk-reload.error-handler';
 
 registerLocaleData(localePt);
 
@@ -23,5 +25,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor])),
     { provide: LOCALE_ID, useValue: 'pt-BR' },
     { provide: MatPaginatorIntl, useClass: PaginatorIntlPtBr },
+    { provide: ErrorHandler, useClass: ChunkReloadErrorHandler },
   ],
 };

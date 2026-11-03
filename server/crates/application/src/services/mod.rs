@@ -5,8 +5,11 @@ pub mod acomodacoes;
 pub mod auditoria;
 pub mod auth;
 pub mod busca;
+pub mod cafe;
+pub mod caixa;
 pub mod clientes;
 pub mod cms;
+pub mod compras;
 pub mod dashboard;
 pub mod documentos;
 pub mod estabelecimento;
@@ -18,14 +21,19 @@ pub mod funcionarios;
 pub mod impressoras;
 pub mod notificacoes;
 pub mod pagamentos;
+pub mod pdv;
 pub mod reservas;
+pub mod tesouraria;
 
 pub use acomodacoes::AcomodacaoService;
 pub use auditoria::AuditoriaService;
 pub use auth::AuthService;
 pub use busca::BuscaService;
+pub use cafe::CafeService;
+pub use caixa::CaixaService;
 pub use clientes::ClienteService;
 pub use cms::CmsService;
+pub use compras::ComprasService;
 pub use dashboard::DashboardService;
 pub use documentos::DocumentoService;
 pub use estabelecimento::EstabelecimentoService;
@@ -37,7 +45,9 @@ pub use funcionarios::FuncionarioService;
 pub use impressoras::ImpressoraService;
 pub use notificacoes::NotificacaoService;
 pub use pagamentos::PagamentoService;
+pub use pdv::PdvService;
 pub use reservas::{ReservaDeps, ReservaService};
+pub use tesouraria::TesourariaService;
 
 use std::sync::Arc;
 
@@ -62,4 +72,9 @@ pub struct Services {
     pub auditoria: Arc<AuditoriaService>,
     pub notificacoes: Arc<NotificacaoService>,
     pub busca: Arc<BuscaService>,
+    pub tesouraria: Arc<TesourariaService>,
+    pub caixa: Arc<CaixaService>,
+    pub pdv: Arc<PdvService>,
+    pub cafe: Arc<CafeService>,
+    pub compras: Arc<ComprasService>,
 }

@@ -75,6 +75,119 @@ pub enum TipoMovimento {
     Saida,
 }
 
+/// Natureza do lançamento financeiro.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "lancamento_tipo", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum TipoLancamento {
+    /// Conta a pagar (saída).
+    Pagar,
+    /// Conta a receber (entrada).
+    Receber,
+}
+
+/// Ciclo de vida do título (contas a pagar/receber).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "lancamento_status", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum StatusLancamento {
+    /// Em aberto — nenhuma baixa registrada.
+    Aberto,
+    /// Baixa parcial — ainda resta saldo.
+    Parcial,
+    /// Totalmente liquidado.
+    Liquidado,
+    /// Cancelado — não afeta caixa nem DRE.
+    Cancelado,
+}
+
+impl StatusLancamento {
+    /// Se ainda admite baixas (não está encerrado).
+    pub fn liquido_aberto(&self) -> bool {
+        matches!(self, Self::Aberto | Self::Parcial)
+    }
+}
+
+/// Natureza da conta financeira (onde o dinheiro vive).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "conta_financeira_tipo", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum TipoContaFinanceira {
+    /// Caixa físico (dinheiro na recepção).
+    Caixa,
+    /// Conta bancária — alvo da conciliação.
+    Banco,
+    /// Aplicação/reserva.
+    Aplicacao,
+}
+
+/// Estado da linha de extrato no processo de conciliação.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "extrato_status", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum StatusExtrato {
+    /// Importado, aguardando match.
+    Pendente,
+    /// Vinculado a uma baixa.
+    Conciliado,
+    /// Descartado da conciliação (ex.: lançamento sem contrapartida).
+    Ignorado,
+}
+
+/// Ciclo do tributo segregado (split payment IBS/CBS).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "split_status", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum StatusSplit {
+    /// Calculado, aguardando apuração.
+    Provisionado,
+    /// Segregado na conta de tributos.
+    Segregado,
+    /// Recolhido ao fisco (apuração do mês fechada).
+    Recolhido,
+}
+
+/// Agrupador do DRE — determina o sinal da conta no resultado.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "dre_grupo", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+pub enum GrupoDre {
+    /// Soma na receita bruta.
+    ReceitaBruta,
+    /// Subtrai da receita (descontos, tributos, devoluções).
+    Deducoes,
+    /// Subtrai após a receita líquida (CMV, comissões).
+    Custos,
+    /// Despesas operacionais (pessoal, utilidades, manutenção…).
+    DespesasOperacionais,
+    /// Juros, tarifas, rendimentos.
+    ResultadoFinanceiro,
+    /// Receitas/despesas não operacionais.
+    Outras,
+}
+
+/// Estado do turno de caixa (gaveta física por operador).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "caixa_turno_status", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum StatusTurno {
+    /// Turno em operação — admite movimentos.
+    Aberto,
+    /// Conferido e encerrado — quebra já calculada.
+    Fechado,
+}
+
+/// Movimento avulso de dinheiro vivo dentro do turno.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "caixa_mov_tipo", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum TipoMovimentoCaixa {
+    /// Retirada de dinheiro da gaveta (ex.: depósito, pagamento urgente).
+    Sangria,
+    /// Entrada de dinheiro para troco/reforço.
+    Suprimento,
+}
+
 /// Nível de acesso do funcionário (legado: `nivel == 1` ⇒ administrador).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -106,4 +219,64 @@ impl NivelAcesso {
     pub fn is_gerencial(self) -> bool {
         self <= Self::Gerente
     }
+}
+
+// ---------------------------------------------------------------------------
+// PDV & comandas
+// ---------------------------------------------------------------------------
+
+/// Origem da comanda — mesa do salão, quarto de hóspede ou balcão avulso.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "pdv_comanda_tipo", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum PdvComandaTipo {
+    /// Mesa do salão — exige `idmesa`, uma comanda aberta por mesa.
+    Mesa,
+    /// Quarto de hóspede — exige `idquarto` (e reserva em estadia).
+    Quarto,
+    /// Venda avulsa de balcão — rótulo livre, sem mesa nem quarto.
+    Balcao,
+}
+
+/// Estado da comanda.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "pdv_comanda_status", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum PdvComandaStatus {
+    /// Em operação — admite itens e movimentos.
+    Aberta,
+    /// Encerrada — total e espelho financeiro já gerados.
+    Fechada,
+    /// Cancelada — itens estornados ao estoque.
+    Cancelada,
+}
+
+/// Estado de um item lançado na comanda.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "pdv_item_status", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum PdvItemStatus {
+    /// Lançado, na fila da cozinha.
+    Pendente,
+    /// Em preparo na cozinha.
+    #[sqlx(rename = "em_preparo")]
+    #[serde(rename = "em_preparo")]
+    EmPreparo,
+    /// Produzido — aguardando entrega pelo garçom/caixa.
+    Pronto,
+    /// Entregue ao cliente.
+    Entregue,
+    /// Cancelado — quantidade devolvida ao estoque.
+    Cancelado,
+}
+
+/// Estado de pagamento da comissão do garçom.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "pdv_comissao_status", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum PdvComissaoStatus {
+    /// Provisionada no fechamento, aguardando pagamento.
+    Pendente,
+    /// Paga — lançamento a pagar quitado.
+    Paga,
 }

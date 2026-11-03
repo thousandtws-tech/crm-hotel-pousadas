@@ -8,6 +8,14 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
+    # index.html nunca pode ser cacheado: ele referencia os chunks com hash.
+    # Se o browser servir um index velho, os chunks antigos ja nao existem no
+    # servidor apos um redeploy -> rota lazy falha -> tela em branco.
+    location = /index.html {
+        add_header Cache-Control "no-cache" always;
+        try_files $uri =404;
+    }
+
     location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?)$ {
         expires 7d;
         add_header Cache-Control "public, max-age=604800, immutable";

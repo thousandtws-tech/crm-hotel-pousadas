@@ -76,7 +76,13 @@ export class EChartComponent {
         this.ro.observe(el);
       }
       const opt = this.option();
-      this.chart.setOption(opt, true);
+      // notMerge:true reconstruía o gráfico inteiro a cada atualização.
+      // replaceMerge troca só os componentes mudados e lazyUpdate agrupa
+      // updates na mesma frame — updates de dados não dão reflow no canvas.
+      this.chart.setOption(opt, {
+        replaceMerge: ['xAxis', 'yAxis', 'series', 'grid', 'title', 'tooltip', 'legend'],
+        lazyUpdate: true,
+      });
     });
   }
 }

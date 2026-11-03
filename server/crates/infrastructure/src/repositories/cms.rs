@@ -15,8 +15,7 @@ const CMS_COLS: &str = "id, idacomodacao, slug, subtitulo, descricao_curta, desc
     destaque_editorial, camas, banheiros, metragem, vista, andar, comodidades,
     status, destaque, ordem, publicado_em, version, criado_em, atualizado_em";
 
-const MIDIA_COLS: &str =
-    "id, idacomodacao, tipo, caminho, mime, capa, ordem, version, criado_em";
+const MIDIA_COLS: &str = "id, idacomodacao, tipo, caminho, mime, capa, ordem, version, criado_em";
 
 const ACOM_COLS: &str = "id, idtipo_acomodacao, nome, numero, valor, capacidade,
     descricao, cor, ativo, version, criado_em, atualizado_em";
@@ -31,10 +30,7 @@ fn midia_view(m: AcomodacaoMidia) -> MidiaView {
     }
 }
 
-async fn midias_view(
-    pool: &PgPool,
-    idacomodacao: i64,
-) -> Result<Vec<MidiaView>, DomainError> {
+async fn midias_view(pool: &PgPool, idacomodacao: i64) -> Result<Vec<MidiaView>, DomainError> {
     let rows = sqlx::query_as::<_, AcomodacaoMidia>(&format!(
         "SELECT {MIDIA_COLS} FROM acomodacao_midia
          WHERE idacomodacao = $1 ORDER BY ordem, id"
@@ -200,10 +196,7 @@ impl CmsRepository for PgCmsRepository {
         .map_err(map_db_err)
     }
 
-    async fn caminho_midia(
-        &self,
-        id: i64,
-    ) -> Result<Option<(String, String, bool)>, DomainError> {
+    async fn caminho_midia(&self, id: i64) -> Result<Option<(String, String, bool)>, DomainError> {
         sqlx::query_as::<_, (String, String, bool)>(
             "SELECT m.caminho, m.mime,
                     COALESCE(c.status = 'publicado', FALSE) AS publicado

@@ -5,6 +5,7 @@
 use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
 use chrono_tz::America::Sao_Paulo;
 use clarituz_domain::enums::{NivelAcesso, TipoMovimento};
+use clarituz_shared::PageParams;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Deserializer, Serialize};
 
@@ -379,6 +380,10 @@ pub struct ItemEstoqueInput {
     pub quantidade_inicial: Option<i32>,
     #[serde(default, deserialize_with = "de_decimal_opt")]
     pub valor_unitario: Option<Decimal>,
+    pub unidade: Option<String>,
+    pub estoque_minimo: Option<i32>,
+    #[serde(default)]
+    pub eh_insumo: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -387,6 +392,9 @@ pub struct ItemEstoqueUpdate {
     pub idcategoria: Option<i64>,
     #[serde(default, deserialize_with = "de_decimal_opt")]
     pub valor_unitario: Option<Decimal>,
+    pub unidade: Option<String>,
+    pub estoque_minimo: Option<i32>,
+    pub eh_insumo: Option<bool>,
     /// Concorrência otimista.
     pub version: Option<i64>,
 }
@@ -511,6 +519,8 @@ pub struct ImpressoraInput {
     pub ativa: Option<bool>,
     /// Marca como impressora padrão de comprovantes.
     pub padrao: Option<bool>,
+    /// Marca como impressora dedicada a etiquetas de produto.
+    pub etiqueta: Option<bool>,
     /// Concorrência otimista — só em PUT.
     pub version: Option<i64>,
 }
@@ -558,4 +568,375 @@ impl Mensagem {
     pub fn ok(m: impl Into<String>) -> Self {
         Self { mensagem: m.into() }
     }
+}
+
+// ---------------------------------------------------------------------------
+// tesouraria (contas a pagar/receber, conciliação, split IBS/CBS)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+pub struct PlanoContaInput {
+    pub codigo: String,
+    pub nome: String,
+    pub tipo: clarituz_domain::enums::TipoLancamento,
+    pub grupo_dre: clarituz_domain::enums::GrupoDre,
+    /// Concorrência otimista — só em PUT.
+    pub version: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ContaFinanceiraInput {
+    pub nome: String,
+    pub tipo: clarituz_domain::enums::TipoContaFinanceira,
+    pub banco: Option<String>,
+    pub agencia: Option<String>,
+    pub conta: Option<String>,
+    #[serde(default, deserialize_with = "de_decimal_opt")]
+    pub saldo_inicial: Option<Decimal>,
+    pub saldo_inicial_em: Option<NaiveDate>,
+    /// Concorrência otimista — só em PUT.
+    pub version: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LancamentoInput {
+    pub tipo: clarituz_domain::enums::TipoLancamento,
+    pub descricao: String,
+    pub idplano_conta: Option<i64>,
+    pub idconta_financeira: Option<i64>,
+    pub favorecido: Option<String>,
+    pub documento: Option<String>,
+    pub idcliente: Option<i64>,
+    pub idreserva: Option<i64>,
+    #[serde(deserialize_with = "de_decimal")]
+    pub valor: Decimal,
+    /// Parcelas mensais iguais a partir do vencimento (default 1).
+    pub parcelas: Option<i32>,
+    pub emissao: Option<NaiveDate>,
+    pub vencimento: NaiveDate,
+    pub competencia: Option<NaiveDate>,
+    pub observacao: Option<String>,
+    /// Concorrência otimista — só em PUT.
+    pub version: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BaixaInput {
+    pub idconta_financeira: i64,
+    #[serde(deserialize_with = "de_decimal")]
+    pub valor: Decimal,
+    pub data: Option<NaiveDate>,
+    pub idforma_pagamento: Option<i64>,
+    pub observacao: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ImportarExtratoInput {
+    pub idconta_financeira: i64,
+    /// Conteúdo bruto do arquivo (OFX ou CSV).
+    pub conteudo: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ImportacaoExtratoResponse {
+    pub importados: i64,
+    pub duplicados: i64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ConciliarInput {
+    pub idbaixa: i64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ClassificarExtratoInput {
+    pub idplano_conta: i64,
+    /// Sobrescreve a descrição do extrato (default: a do extrato).
+    pub descricao: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TributoConfigInput {
+    /// Alíquota do IBS em % — ex.: 0.1 = 0,1%.
+    #[serde(deserialize_with = "de_decimal")]
+    pub aliq_ibs: Decimal,
+    /// Alíquota da CBS em % — ex.: 0.9 = 0,9%.
+    #[serde(deserialize_with = "de_decimal")]
+    pub aliq_cbs: Decimal,
+    pub regime: Option<String>,
+    pub vigente_desde: Option<NaiveDate>,
+}
+
+// ---------------------------------------------------------------------------
+// controle de caixa (turnos de gaveta)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+pub struct AbrirCaixaInput {
+    pub idconta_financeira: i64,
+    #[serde(deserialize_with = "de_decimal")]
+    pub saldo_inicial: Decimal,
+    pub observacao: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MovCaixaInput {
+    pub tipo: clarituz_domain::enums::TipoMovimentoCaixa,
+    #[serde(deserialize_with = "de_decimal")]
+    pub valor: Decimal,
+    pub motivo: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct FecharCaixaInput {
+    /// Dinheiro contado fisicamente na gaveta.
+    #[serde(deserialize_with = "de_decimal")]
+    pub valor_contado: Decimal,
+    pub observacao: Option<String>,
+}
+
+// ---------------------------------------------------------------------------
+// PDV & comandas
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+pub struct NovaMesaInput {
+    pub numero: String,
+    pub lugares: Option<i32>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GarcomInput {
+    pub idfuncionario: i64,
+    #[serde(deserialize_with = "de_decimal")]
+    pub percentual: Decimal,
+    pub ativo: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AbrirComandaInput {
+    pub tipo: clarituz_domain::enums::PdvComandaTipo,
+    pub idmesa: Option<i64>,
+    pub idquarto: Option<i64>,
+    pub idcliente: Option<i64>,
+    pub idgarcom: Option<i64>,
+    /// Rótulo livre — obrigatório no tipo `balcao`.
+    pub rotulo: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ItemComandaInput {
+    pub iditem: i64,
+    pub quantidade: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CancelarItemInput {
+    pub motivo: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct FecharComandaInput {
+    /// 'pagar' = à vista (baixa imediata) · 'faturar' = fica em aberto no quarto.
+    pub modo: String,
+    #[serde(default, deserialize_with = "de_decimal_opt")]
+    pub desconto: Option<Decimal>,
+    pub idconta_financeira: Option<i64>,
+    pub idforma_pagamento: Option<i64>,
+    pub observacao: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PagarComissaoInput {
+    pub idconta_financeira: i64,
+    pub idforma_pagamento: Option<i64>,
+}
+
+// ---------------------------------------------------------------------------
+// Café da manhã — presença por reserva/dia
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+pub struct RegistrarPresencaInput {
+    pub idreserva: i64,
+    /// Opcional — padrão hoje (retroativo dentro da estadia).
+    pub data: Option<NaiveDate>,
+    pub quantidade: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct QuadroCafeQuery {
+    /// Dia do quadro — padrão hoje.
+    pub data: Option<NaiveDate>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct HistoricoCafeQuery {
+    pub inicio: Option<NaiveDate>,
+    pub fim: Option<NaiveDate>,
+    #[serde(flatten)]
+    pub page: PageParams,
+}
+
+// ---------------------------------------------------------------------------
+// estoque & insumos — ficha tecnica, conversoes, NF-e
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+pub struct FichaItemInput {
+    pub idinsumo: i64,
+    /// Quantidade do insumo (na unidade base dele) por unidade do produto.
+    pub quantidade: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ConversaoInput {
+    /// Unidade de compra (ex.: "CX", "FARDO", "KG").
+    pub unidade_compra: String,
+    /// Quantas unidades base equivalem 1 unidade de compra.
+    pub fator: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct NfePreviewRequest {
+    /// XML completo da NF-e.
+    pub xml: String,
+}
+
+/// Item da NF-e confirmado pelo usuario.
+#[derive(Debug, Deserialize)]
+pub struct NfeItemInput {
+    /// Mapeado para item existente; `None` cria insumo novo.
+    pub iditem: Option<i64>,
+    pub nome: String,
+    pub unidade_compra: String,
+    #[serde(default)]
+    pub fator: Option<i32>,
+    #[serde(deserialize_with = "de_decimal")]
+    pub quantidade: Decimal,
+    #[serde(deserialize_with = "de_decimal")]
+    pub valor_total: Decimal,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct NfeImportRequest {
+    pub chave: String,
+    pub numero: Option<String>,
+    pub emitente: Option<String>,
+    pub cnpj: Option<String>,
+    pub emissao: Option<String>,
+    #[serde(deserialize_with = "de_decimal")]
+    pub total: Decimal,
+    /// Vencimento da fatura a pagar (obrigatorio quando gerar_pagamento).
+    pub vencimento: Option<String>,
+    #[serde(default = "default_true")]
+    pub gerar_pagamento: bool,
+    pub itens: Vec<NfeItemInput>,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+/// Retorno do preview: cabecalho + itens lidos do XML.
+#[derive(Debug, Serialize)]
+pub struct NfePreview {
+    pub chave: String,
+    pub numero: Option<String>,
+    pub emitente: Option<String>,
+    pub cnpj: Option<String>,
+    pub emissao: Option<String>,
+    pub total: Decimal,
+    /// `true` quando a chave ja foi importada.
+    pub ja_importada: bool,
+    pub itens: Vec<NfeItemPreview>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct NfeItemPreview {
+    pub nome: String,
+    pub unidade_compra: String,
+    pub quantidade: Decimal,
+    pub valor_unit: Decimal,
+    pub valor_total: Decimal,
+    /// Item de estoque com o mesmo nome, quando encontrado (sugestao de mapeamento).
+    pub iditem_sugerido: Option<i64>,
+    /// Fator conhecido da unidade, quando ja ha conversao cadastrada.
+    pub fator_sugerido: Option<i32>,
+}
+
+// ---------------------------------------------------------------------------
+// compras — fornecedores e pedidos
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+pub struct FornecedorInput {
+    pub nome: String,
+    pub cnpj: Option<String>,
+    pub contato: Option<String>,
+    pub telefone: Option<String>,
+    pub lead_time_dias: Option<i32>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PedidoItemInput {
+    pub iditem: i64,
+    pub quantidade: i32,
+    #[serde(default, deserialize_with = "de_decimal_opt")]
+    pub valor_unit: Option<Decimal>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PedidoCompraInput {
+    pub idfornecedor: i64,
+    /// "manual" | "maria" — aprovacao da sugestao da IA vem como 'maria'.
+    pub origem: Option<String>,
+    pub observacao: Option<String>,
+    /// Vencimento da fatura; padrao = data_prevista (hoje + lead time).
+    pub vencimento: Option<String>,
+    #[serde(default)]
+    pub gerar_pagamento: Option<bool>,
+    pub itens: Vec<PedidoItemInput>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RecebimentoItemInput {
+    pub iditem: i64,
+    pub quantidade: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RecebimentoRequest {
+    pub itens: Vec<RecebimentoItemInput>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DescobertaItemInput {
+    /// "rede" ou "usb".
+    pub tipo: String,
+    pub endereco: String,
+    pub porta: Option<i32>,
+    pub modelo: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DescobertasInput {
+    /// Hostname do agente que fez a varredura.
+    pub origem: Option<String>,
+    pub descobertas: Vec<DescobertaItemInput>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RegistraDescobertaInput {
+    pub nome: String,
+    pub setor: String,
+    pub padrao: Option<bool>,
+    /// Marca como impressora dedicada a etiquetas de produto.
+    pub etiqueta: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ResultadoJobInput {
+    pub sucesso: bool,
+    pub erro: Option<String>,
 }

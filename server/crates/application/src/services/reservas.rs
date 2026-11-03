@@ -8,8 +8,7 @@
 use crate::actor::Ator;
 use crate::dto::{
     AcompanhanteInput, AdicionalInput, CancelamentoResponse, CancelarReservaRequest,
-    CheckoutRequest, DisponibilidadeResponse, FnrhEmitRequest, ItemConsumidoRequest,
-    ReservaInput,
+    CheckoutRequest, DisponibilidadeResponse, FnrhEmitRequest, ItemConsumidoRequest, ReservaInput,
 };
 use crate::error::AppResult;
 use crate::services::AuthService;
@@ -21,9 +20,8 @@ use clarituz_domain::events::{Aviso, TipoAviso};
 use clarituz_domain::ports::{
     AcomodacaoRepository, AcompanhanteRepository, ClienteRepository, ComandoCheckout,
     EstabelecimentoRepository, EventoPublisher, FiltroReserva, FnrhRepository,
-    FormaPagamentoRepository, ImpressoraGateway, ImpressoraRepository, LinhaRecibo,
-    NovaFnrh, NovaReserva, NovoAcompanhante, NovoAdicional, NovoItemConsumido,
-    ReservaRepository,
+    FormaPagamentoRepository, ImpressoraGateway, ImpressoraRepository, LinhaRecibo, NovaFnrh,
+    NovaReserva, NovoAcompanhante, NovoAdicional, NovoItemConsumido, ReservaRepository,
 };
 use clarituz_domain::queries::{ComprovanteResumo, ReservaDetalhe, ReservaResumo};
 use clarituz_domain::value_objects::PeriodoEstadia;
@@ -1005,10 +1003,9 @@ impl ReservaService {
             .await?
             .ok_or_else(|| DomainError::nao_encontrado("Reserva não encontrada."))?;
         if reserva.status == StatusReserva::Cancelada {
-            return Err(DomainError::regra(
-                "Não é possível emitir FNRH de reserva cancelada.",
-            )
-            .into());
+            return Err(
+                DomainError::regra("Não é possível emitir FNRH de reserva cancelada.").into(),
+            );
         }
         let cliente = self
             .clientes

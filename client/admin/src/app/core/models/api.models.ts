@@ -457,6 +457,8 @@ export interface ReservaResumo {
   saidaprevista: string;
   status: StatusReserva;
   valordiaria: string;
+  idquarto: number | null;
+  quarto_numero: string | null;
   valor_estadia: string | null;
 }
 
@@ -568,6 +570,8 @@ export interface Impressora {
   ativa: boolean;
   /** Impressora padrão de comprovantes. */
   padrao: boolean;
+  /** Impressora dedicada a etiquetas de produto. */
+  etiqueta: boolean;
   version: number;
   criado_em: string;
 }
@@ -578,6 +582,9 @@ export interface ItemEstoque {
   idcategoria: number | null;
   quantidade: number;
   valor_unitario: string;
+  unidade: string;
+  estoque_minimo: number;
+  eh_insumo: boolean;
   ativo: boolean;
   version: number;
   criado_em: string;
@@ -589,6 +596,9 @@ export interface ItemEstoqueInput {
   idcategoria?: number | null;
   quantidade_inicial?: number | null;
   valor_unitario?: number | string | null;
+  unidade?: string | null;
+  estoque_minimo?: number | null;
+  eh_insumo?: boolean;
   /** Concorrência otimista — só no PUT. */
   version?: number;
 }
@@ -596,6 +606,9 @@ export interface ItemEstoqueInput {
 export interface ItemEstoqueUpdate {
   nome?: string;
   idcategoria?: number | null;
+  unidade?: string | null;
+  estoque_minimo?: number | null;
+  eh_insumo?: boolean;
   valor_unitario?: number | string | null;
   version?: number;
 }
@@ -717,4 +730,770 @@ export interface ItemBusca {
   titulo: string;
   sub: string | null;
   rota: string;
+}
+
+// -- tesouraria: contas a pagar/receber, conciliação, split IBS/CBS ------------
+
+export type TipoLancamento = 'pagar' | 'receber';
+export type StatusLancamento = 'aberto' | 'parcial' | 'liquidado' | 'cancelado';
+export type TipoContaFinanceira = 'caixa' | 'banco' | 'aplicacao';
+export type StatusExtrato = 'pendente' | 'conciliado' | 'ignorado';
+export type StatusSplit = 'provisionado' | 'segregado' | 'recolhido';
+export type GrupoDre =
+  | 'receita_bruta'
+  | 'deducoes'
+  | 'custos'
+  | 'despesas_operacionais'
+  | 'resultado_financeiro'
+  | 'outras';
+
+export interface PlanoConta {
+  id: number;
+  codigo: string;
+  nome: string;
+  tipo: TipoLancamento;
+  grupo_dre: GrupoDre;
+  ativo: boolean;
+  sistema: boolean;
+  version: number;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface ContaFinanceira {
+  id: number;
+  nome: string;
+  tipo: TipoContaFinanceira;
+  banco: string | null;
+  agencia: string | null;
+  conta: string | null;
+  saldo_inicial: string;
+  saldo_inicial_em: string;
+  ativo: boolean;
+  version: number;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface Lancamento {
+  id: number;
+  tipo: TipoLancamento;
+  descricao: string;
+  idplano_conta: number | null;
+  idconta_financeira: number | null;
+  favorecido: string | null;
+  documento: string | null;
+  idcliente: number | null;
+  idreserva: number | null;
+  valor: string;
+  valor_liquidado: string;
+  emissao: string;
+  vencimento: string;
+  competencia: string | null;
+  status: StatusLancamento;
+  observacao: string | null;
+  idfuncionario: number | null;
+  version: number;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface LancamentoView {
+  id: number;
+  tipo: TipoLancamento;
+  descricao: string;
+  idplano_conta: number | null;
+  plano_conta: string | null;
+  grupo_dre: GrupoDre | null;
+  idconta_financeira: number | null;
+  conta_financeira: string | null;
+  favorecido: string | null;
+  documento: string | null;
+  idcliente: number | null;
+  cliente_nome: string | null;
+  idreserva: number | null;
+  valor: string;
+  valor_liquidado: string;
+  saldo: string;
+  emissao: string;
+  vencimento: string;
+  competencia: string | null;
+  status: StatusLancamento;
+  vencido: boolean;
+  observacao: string | null;
+  version: number;
+  criado_em: string;
+}
+
+export interface BaixaLancamento {
+  id: number;
+  idlancamento: number;
+  idconta_financeira: number;
+  valor: string;
+  data: string;
+  idforma_pagamento: number | null;
+  observacao: string | null;
+  idfuncionario: number | null;
+  criado_em: string;
+}
+
+export interface BaixaView {
+  id: number;
+  idlancamento: number;
+  idconta_financeira: number;
+  conta_financeira: string | null;
+  valor: string;
+  data: string;
+  idforma_pagamento: number | null;
+  forma_pagamento: string | null;
+  observacao: string | null;
+  funcionario: string | null;
+  criado_em: string;
+}
+
+export interface FluxoCaixaDia {
+  data: string;
+  entradas: string;
+  saidas: string;
+  saldo: string;
+  acumulado: string;
+  prev_entradas: string;
+  prev_saidas: string;
+}
+
+export interface FluxoCaixa {
+  inicio: string;
+  fim: string;
+  saldo_abertura: string;
+  total_entradas: string;
+  total_saidas: string;
+  saldo_final_previsto: string;
+  dias: FluxoCaixaDia[];
+}
+
+export interface DreLinha {
+  origem: string;
+  codigo: string | null;
+  rotulo: string;
+  grupo: GrupoDre;
+  valor: string;
+}
+
+export interface Dre {
+  inicio: string;
+  fim: string;
+  receita_bruta: string;
+  deducoes: string;
+  receita_liquida: string;
+  custos: string;
+  despesas_operacionais: string;
+  lucro_operacional: string;
+  resultado_financeiro: string;
+  outras: string;
+  resultado_liquido: string;
+  ibs: string;
+  cbs: string;
+  linhas: DreLinha[];
+}
+
+export interface ExtratoView {
+  id: number;
+  idconta_financeira: number;
+  conta_financeira: string | null;
+  data: string;
+  descricao: string;
+  documento: string | null;
+  valor: string;
+  fit_id: string | null;
+  origem: string;
+  status: StatusExtrato;
+  idbaixa: number | null;
+  melhor_score: string | null;
+  importado_em: string;
+}
+
+export interface ConciliacaoResumo {
+  pendentes: number;
+  conciliados: number;
+  ignorados: number;
+  coberto_ate: string | null;
+}
+
+export interface Conciliacao {
+  id: number;
+  idextrato_item: number;
+  idbaixa: number;
+  score: string;
+  tipo: string;
+  idfuncionario: number | null;
+  criado_em: string;
+}
+
+export interface SugestaoConciliacao {
+  baixa: BaixaView;
+  score: string;
+  dias_diferenca: number;
+  lancamento_descricao: string;
+  lancamento_tipo: TipoLancamento;
+}
+
+export interface SplitResumo {
+  inicio: string;
+  fim: string;
+  base: string;
+  valor_ibs: string;
+  valor_cbs: string;
+  valor_liquido: string;
+  qtd_eventos: number;
+  provisionado_ibs: string;
+  provisionado_cbs: string;
+}
+
+export interface SplitEventoView {
+  id: number;
+  origem: string;
+  idorigem: number;
+  descricao: string | null;
+  base: string;
+  aliq_ibs: string;
+  aliq_cbs: string;
+  valor_ibs: string;
+  valor_cbs: string;
+  valor_liquido: string;
+  competencia: string;
+  status: StatusSplit;
+  criado_em: string;
+}
+
+export interface TributoConfig {
+  id: number;
+  aliq_ibs: string;
+  aliq_cbs: string;
+  regime: string;
+  vigente_desde: string;
+  idfuncionario: number | null;
+  criado_em: string;
+}
+
+export interface TributoApuracao {
+  id: number;
+  competencia: string;
+  valor_ibs: string;
+  valor_cbs: string;
+  status: string;
+  recolhido_em: string | null;
+  idfuncionario: number | null;
+  criado_em: string;
+}
+
+// inputs
+
+export interface LancamentoInput {
+  tipo: TipoLancamento;
+  descricao: string;
+  idplano_conta?: number | null;
+  idconta_financeira?: number | null;
+  favorecido?: string | null;
+  documento?: string | null;
+  idcliente?: number | null;
+  idreserva?: number | null;
+  valor: number;
+  parcelas?: number | null;
+  emissao?: string | null;
+  vencimento: string;
+  competencia?: string | null;
+  observacao?: string | null;
+  version?: number;
+}
+
+export interface BaixaInput {
+  idconta_financeira: number;
+  valor: number;
+  data?: string | null;
+  idforma_pagamento?: number | null;
+  observacao?: string | null;
+}
+
+export interface ContaFinanceiraInput {
+  nome: string;
+  tipo: TipoContaFinanceira;
+  banco?: string | null;
+  agencia?: string | null;
+  conta?: string | null;
+  saldo_inicial?: number | null;
+  saldo_inicial_em?: string | null;
+  version?: number;
+}
+
+export interface BaixaResponse {
+  baixa: BaixaLancamento;
+  lancamento: Lancamento;
+}
+
+// ---------------------------------------------------------------------------
+// controle de caixa (turnos de gaveta)
+// ---------------------------------------------------------------------------
+
+export type StatusTurno = 'aberto' | 'fechado';
+export type TipoMovimentoCaixa = 'sangria' | 'suprimento';
+
+export interface CaixaTurno {
+  id: number;
+  idconta_financeira: number;
+  idoperador: number;
+  saldo_inicial: string;
+  aberto_em: string;
+  fechado_em: string | null;
+  valor_contado: string | null;
+  valor_esperado: string | null;
+  /** contado − esperado (negativo = quebra/falta, positivo = sobra). */
+  quebra: string | null;
+  status: StatusTurno;
+  observacao: string | null;
+  fechado_por: number | null;
+  version: number;
+  criado_em: string;
+}
+
+export interface TurnoView {
+  id: number;
+  idconta_financeira: number;
+  conta_financeira: string;
+  idoperador: number;
+  operador: string;
+  saldo_inicial: string;
+  aberto_em: string;
+  fechado_em: string | null;
+  valor_contado: string | null;
+  valor_esperado: string | null;
+  quebra: string | null;
+  status: StatusTurno;
+  observacao: string | null;
+  total_suprimentos: string;
+  total_sangrias: string;
+  version: number;
+  criado_em: string;
+}
+
+export interface CaixaMovimento {
+  id: number;
+  idturno: number;
+  tipo: TipoMovimentoCaixa;
+  valor: string;
+  motivo: string;
+  idfuncionario: number;
+  criado_em: string;
+}
+
+export interface MovimentoCaixaView {
+  id: number;
+  idturno: number;
+  tipo: TipoMovimentoCaixa;
+  valor: string;
+  motivo: string;
+  funcionario: string;
+  criado_em: string;
+}
+
+export interface ConferenciaLinha {
+  origem: string;
+  descricao: string;
+  valor: string;
+  sinal: number;
+  criado_em: string;
+}
+
+/** Conferência automática: esperado derivado do ledger. */
+export interface ConferenciaCaixa {
+  turno: TurnoView;
+  fundo: string;
+  suprimentos: string;
+  sangrias: string;
+  recebimentos: string;
+  pagamentos: string;
+  especie: string;
+  esperado: string;
+  movimentos: MovimentoCaixaView[];
+  linhas: ConferenciaLinha[];
+}
+
+export interface AbrirCaixaInput {
+  idconta_financeira: number;
+  saldo_inicial: number;
+  observacao?: string | null;
+}
+
+export interface MovCaixaInput {
+  tipo: TipoMovimentoCaixa;
+  valor: number;
+  motivo: string;
+}
+
+export interface FecharCaixaInput {
+  valor_contado: number;
+  observacao?: string | null;
+}
+
+
+
+// ---------------------------------------------------------------------------
+// PDV & comandas
+// ---------------------------------------------------------------------------
+
+export type PdvComandaTipo = 'mesa' | 'quarto' | 'balcao';
+export type PdvComandaStatus = 'aberta' | 'fechada' | 'cancelada';
+export type PdvItemStatus = 'pendente' | 'em_preparo' | 'pronto' | 'entregue' | 'cancelado';
+export type PdvComissaoStatus = 'pendente' | 'paga';
+
+export interface MesaView {
+  id: number;
+  numero: string;
+  lugares: number;
+  ativo: boolean;
+  idcomanda: number | null;
+  total_aberto: string | null;
+  garcom_nome: string | null;
+}
+
+export interface GarcomView {
+  id: number;
+  idfuncionario: number;
+  funcionario_nome: string;
+  percentual: string;
+  ativo: boolean;
+}
+
+export interface ComandaView {
+  id: number;
+  tipo: PdvComandaTipo;
+  idmesa: number | null;
+  mesa_numero: string | null;
+  idquarto: number | null;
+  quarto_numero: string | null;
+  idreserva: number | null;
+  idcliente: number | null;
+  cliente_nome: string | null;
+  idgarcom: number | null;
+  garcom_nome: string | null;
+  rotulo: string | null;
+  status: PdvComandaStatus;
+  total_itens: string;
+  itens_pendentes: number;
+  desconto: string;
+  total: string;
+  idlancamento: number | null;
+  aberto_em: string;
+  fechado_em: string | null;
+  version: number;
+}
+
+export interface ComandaItemView {
+  id: number;
+  idcomanda: number;
+  iditem: number;
+  item_nome: string;
+  categoria_nome: string | null;
+  quantidade: number;
+  valor_unit: string;
+  valor_total: string;
+  status: PdvItemStatus;
+  lancado_por: number | null;
+  lancado_por_nome: string | null;
+  cancelado_por_nome: string | null;
+  motivo_cancelamento: string | null;
+  criado_em: string;
+}
+
+export interface ItemVendaView {
+  id: number;
+  nome: string;
+  categoria_nome: string | null;
+  quantidade: number;
+  valor_unitario: string;
+}
+
+export interface ComissaoView {
+  id: number;
+  idgarcom: number;
+  garcom_nome: string;
+  idcomanda: number;
+  comanda_descricao: string;
+  percentual: string;
+  base: string;
+  valor: string;
+  status: PdvComissaoStatus;
+  pago_em: string | null;
+  criado_em: string;
+}
+
+export interface ComissaoResumo {
+  idgarcom: number;
+  garcom_nome: string;
+  comissoes_pendentes: number;
+  valor_pendente: string;
+  valor_pago: string;
+}
+
+export interface AbrirComandaInput {
+  tipo: PdvComandaTipo;
+  idmesa?: number | null;
+  idquarto?: number | null;
+  idcliente?: number | null;
+  idgarcom?: number | null;
+  rotulo?: string | null;
+}
+
+export interface FecharComandaInput {
+  modo: 'pagar' | 'faturar';
+  desconto?: number | null;
+  idconta_financeira?: number | null;
+  idforma_pagamento?: number | null;
+  observacao?: string | null;
+}
+
+export interface PdvMesa {
+  id: number;
+  numero: string;
+  lugares: number;
+  ativo: boolean;
+  version: number;
+}
+
+export interface PdvGarcom {
+  id: number;
+  idfuncionario: number;
+  percentual: string;
+  ativo: boolean;
+}
+
+export interface PdvComanda {
+  id: number;
+  tipo: PdvComandaTipo;
+  idmesa: number | null;
+  idquarto: number | null;
+  idreserva: number | null;
+  idcliente: number | null;
+  idgarcom: number | null;
+  rotulo: string | null;
+  status: PdvComandaStatus;
+  subtotal: string;
+  desconto: string;
+  total: string;
+  idforma_pagamento: number | null;
+  idlancamento: number | null;
+  aberto_em: string;
+  fechado_em: string | null;
+  observacao: string | null;
+  version: number;
+}
+
+export interface PdvComandaItem {
+  id: number;
+  idcomanda: number;
+  iditem: number;
+  quantidade: number;
+  valor_unit: string;
+  valor_total: string;
+  status: PdvItemStatus;
+}
+
+export interface PdvComissao {
+  id: number;
+  idgarcom: number;
+  idcomanda: number;
+  percentual: string;
+  base: string;
+  valor: string;
+  status: PdvComissaoStatus;
+  pago_em: string | null;
+}
+
+/** Item na fila da cozinha (KDS) — comanda aberta + contexto de destino. */
+export interface FilaItemView {
+  id: number;
+  idcomanda: number;
+  comanda_tipo: PdvComandaTipo;
+  mesa_numero: string | null;
+  quarto_numero: string | null;
+  rotulo: string | null;
+  cliente_nome: string | null;
+  garcom_nome: string | null;
+  iditem: number;
+  item_nome: string;
+  categoria_nome: string | null;
+  quantidade: number;
+  status: PdvItemStatus;
+  criado_em: string;
+  comanda_aberto_em: string;
+}
+
+// ---------------------------------------------------------------------------
+// Café da manhã — presença por reserva/dia
+// ---------------------------------------------------------------------------
+
+export interface CafeQuadroItem {
+  idreserva: number;
+  cliente_nome: string;
+  quantidade_hospedes: number;
+  quarto_numero: string | null;
+  acomodacao_nome: string;
+  entradaprevista: string;
+  saidaprevista: string;
+  presenca_id: number | null;
+  presenca_quantidade: number | null;
+  presenca_em: string | null;
+  registrado_por_nome: string | null;
+}
+
+export interface CafePresenca {
+  id: number;
+  idreserva: number;
+  data: string;
+  quantidade: number;
+  registrado_por: number | null;
+  criado_em: string;
+}
+
+export interface PresencaView {
+  id: number;
+  idreserva: number;
+  data: string;
+  quantidade: number;
+  cliente_nome: string;
+  quarto_numero: string | null;
+  registrado_por_nome: string | null;
+  criado_em: string;
+}
+
+// ---------------------------------------------------------------------------
+// estoque & insumos — ficha tecnica, conversoes, alertas, NF-e
+// ---------------------------------------------------------------------------
+
+export interface FichaItemView {
+  id: number;
+  idinsumo: number;
+  insumo: string;
+  unidade: string;
+  quantidade: number;
+  custo_unit: string;
+}
+
+export interface FichaItemInput {
+  idinsumo: number;
+  quantidade: number;
+}
+
+export interface ConversaoUnidade {
+  id: number;
+  iditem: number;
+  unidade_compra: string;
+  fator: number;
+  criado_em: string;
+}
+
+export interface ConversaoInput {
+  unidade_compra: string;
+  fator: number;
+}
+
+export interface EstoqueBaixoView {
+  id: number;
+  nome: string;
+  unidade: string;
+  quantidade: number;
+  estoque_minimo: number;
+}
+
+export interface NfeItemPreview {
+  nome: string;
+  unidade_compra: string;
+  quantidade: string;
+  valor_unit: string;
+  valor_total: string;
+  iditem_sugerido: number | null;
+  fator_sugerido: number | null;
+}
+
+export interface NfePreview {
+  chave: string;
+  numero: string | null;
+  emitente: string | null;
+  cnpj: string | null;
+  emissao: string | null;
+  total: string;
+  ja_importada: boolean;
+  itens: NfeItemPreview[];
+}
+
+export interface NfeItemInput {
+  iditem: number | null;
+  nome: string;
+  unidade_compra: string;
+  fator?: number | null;
+  quantidade: number | string;
+  valor_total: number | string;
+}
+
+export interface NfeImportRequest {
+  chave: string;
+  numero?: string | null;
+  emitente?: string | null;
+  cnpj?: string | null;
+  emissao?: string | null;
+  total: number | string;
+  vencimento?: string | null;
+  gerar_pagamento?: boolean;
+  itens: NfeItemInput[];
+}
+
+export interface NfeImport {
+  id: number;
+  chave: string;
+  numero: string | null;
+  emitente: string | null;
+  total: string;
+  idlancamento: number | null;
+  criado_em: string;
+}
+
+export interface Fornecedor {
+  id: number; nome: string; cnpj: string | null; telefone: string | null;
+  email: string | null; lead_time_dias: number; ativo: boolean; version: number;
+}
+export interface FornecedorInput {
+  id?: number; nome: string; cnpj?: string; telefone?: string;
+  email?: string; lead_time_dias?: number; version?: number;
+}
+export interface PedidoCompraView {
+  id: number; idfornecedor: number; fornecedor_nome: string;
+  status: "pendente" | "parcial" | "recebido" | "cancelado";
+  data_pedido: string; data_prevista: string | null; data_recebimento: string | null;
+  valor_total: number; observacao: string | null; origem: string | null;
+  idlancamento: number | null; lancamento_status: string | null; lancamento_valor: number | null;
+  funcionario_nome: string | null; criado_em: string;
+  itens: PedidoItemView[];
+}
+export interface PedidoItemView {
+  id: number; iditem: number; item_nome: string; unidade: string;
+  quantidade: number; recebido: number; valor_unit: number | null;
+  pendente: number; total: number | null;
+}
+export interface PedidoCompraInput {
+  idfornecedor: number; itens: { iditem: number; quantidade: number; valor_unit?: number }[];
+  data_prevista?: string; vencimento?: string; observacao?: string;
+  gerar_pagamento?: boolean; origem?: string;
+}
+export interface RecebimentoItem { iditem: number; quantidade: number; }
+
+/** Dispositivo de impressão detectado pelo agente local, aguardando registro. */
+export interface ImpressoraDescoberta {
+  id: number;
+  tipo: 'rede' | 'usb';
+  endereco: string;
+  porta: number | null;
+  modelo: string | null;
+  origem: string;
+  status: 'pendente' | 'registrada' | 'ignorada';
+  impressora_id: number | null;
+  visto_em: string;
 }

@@ -7,9 +7,8 @@ use clarituz_domain::entities::{
 };
 use clarituz_domain::enums::StatusConsumo;
 use clarituz_domain::ports::{
-    AcompanhanteRepository, ComandoCheckout, FiltroReserva, FnrhRepository, NovaReserva,
-    NovaFnrh, NovoAcompanhante, NovoAdicional, NovoItemConsumido, ReservaRepository,
-    ResultadoCancelamento,
+    AcompanhanteRepository, ComandoCheckout, FiltroReserva, FnrhRepository, NovaFnrh, NovaReserva,
+    NovoAcompanhante, NovoAdicional, NovoItemConsumido, ReservaRepository, ResultadoCancelamento,
 };
 use clarituz_domain::queries::{
     AcomodacaoDisponivel, ComprovanteResumo, ConsumoResumo, ReservaDetalhe, ReservaResumo,
@@ -43,12 +42,13 @@ const RESUMO_SEL: &str = "
     r.id, r.idacomodacao, a.nome AS acomodacao_nome, a.numero AS acomodacao_numero,
     a.cor AS acomodacao_cor, r.idcliente, c.nome AS cliente_nome,
     r.quantidade_hospedes, r.entradaprevista, r.saidaprevista, r.status,
-    r.valordiaria, con.valor_estadia";
+    r.valordiaria, r.idquarto, q.numero AS quarto_numero, con.valor_estadia";
 
 const RESUMO_FROM: &str = "
     FROM reserva r
     JOIN acomodacao a ON a.id = r.idacomodacao
     JOIN cliente c ON c.id = r.idcliente
+    LEFT JOIN quarto q ON q.id = r.idquarto
     LEFT JOIN consumo con ON con.idreserva = r.id";
 
 #[async_trait]
@@ -699,12 +699,14 @@ impl ReservaRepository for PgReservaRepository {
         .execute(&mut *tx)
         .await
         .map_err(map_db_err)?;
-        sqlx::query("DELETE FROM reembolso WHERE idreserva = $1 OR idconsumo IN
-             (SELECT id FROM consumo WHERE idreserva = $1)")
-            .bind(id)
-            .execute(&mut *tx)
-            .await
-            .map_err(map_db_err)?;
+        sqlx::query(
+            "DELETE FROM reembolso WHERE idreserva = $1 OR idconsumo IN
+             (SELECT id FROM consumo WHERE idreserva = $1)",
+        )
+        .bind(id)
+        .execute(&mut *tx)
+        .await
+        .map_err(map_db_err)?;
         sqlx::query("DELETE FROM consumo WHERE idreserva = $1")
             .bind(id)
             .execute(&mut *tx)

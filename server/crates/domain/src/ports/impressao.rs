@@ -3,7 +3,7 @@
 //! O domínio descreve o recibo como uma sequência de [`LinhaRecibo`];
 //! o adapter da infraestrutura converte para ESC/POS e envia.
 
-use crate::entities::{Impressora, NovoLog};
+use crate::entities::{ImpressaoJob, Impressora, ImpressoraDescoberta, NovoLog};
 use crate::error::DomainError;
 use async_trait::async_trait;
 
@@ -34,6 +34,10 @@ pub trait ImpressoraGateway: Send + Sync {
         porta: u16,
         linhas: &[LinhaRecibo],
     ) -> Result<(), DomainError>;
+
+    /// Etiqueta de produto — texto puro entregue pelo agente via driver do
+    /// SO (funciona em qualquer modelo: Brother, Zebra, laser...).
+    async fn etiqueta(&self, host: &str, porta: u16, texto: &str) -> Result<(), DomainError>;
 }
 
 /// Dados de cadastro/edição de uma impressora de setor.
@@ -45,6 +49,8 @@ pub struct DadosImpressora {
     pub porta: i32,
     pub ativa: bool,
     pub padrao: bool,
+    /// Impressora dedicada a etiquetas de produto.
+    pub etiqueta: bool,
     /// Concorrência otimista — usada só no update.
     pub version: Option<i64>,
 }
@@ -59,8 +65,42 @@ pub struct ItemProducao {
     pub impressora: Option<Impressora>,
 }
 
+/// Dispositivo de impressão reportado pelo agente local.
+#[derive(Debug, Clone)]
+pub struct NovaDescoberta {
+    /// "rede" ou "usb".
+    pub tipo: String,
+    pub endereco: String,
+    pub porta: Option<i32>,
+    pub modelo: Option<String>,
+    pub origem: String,
+}
+
 #[async_trait]
 pub trait ImpressoraRepository: Send + Sync {
+    /// Upsert em lote das descobertas de um agente — re-reportar o mesmo
+    /// dispositivo só atualiza `visto_em`/`modelo` (anti-duplicação).
+    async fn registrar_descobertas(&self, itens: &[NovaDescoberta]) -> Result<usize, DomainError>;
+    async fn listar_descobertas(&self) -> Result<Vec<ImpressoraDescoberta>, DomainError>;
+    /// Promove a descoberta a impressora registrada (cria linha em
+    /// `impressora` na mesma transação e vincula `impressora_id`).
+    async fn registrar_impressora_da_descoberta(
+        &self,
+        descoberta_id: i64,
+        dados: &DadosImpressora,
+        log: NovoLog,
+    ) -> Result<Impressora, DomainError>;
+    async fn ignorar_descoberta(&self, id: i64) -> Result<(), DomainError>;
+    /// Fila de impressão consumida pelo agente local.
+    async fn jobs_pendentes(&self) -> Result<Vec<ImpressaoJob>, DomainError>;
+    /// Resultado reportado pelo agente — falha retenta até 3 tentativas.
+    async fn resultado_job(
+        &self,
+        id: i64,
+        sucesso: bool,
+        erro: Option<&str>,
+    ) -> Result<(), DomainError>;
+
     async fn listar(&self) -> Result<Vec<Impressora>, DomainError>;
     async fn por_id(&self, id: i64) -> Result<Option<Impressora>, DomainError>;
     /// Impressora padrão (comprovantes) — a única com `padrao = true`.

@@ -355,6 +355,60 @@ export class ApiService {
     return this.post<{ mensagem: string }>('/estoque/movimentacoes', { movimentos });
   }
 
+  listarFicha(idproduto: number) {
+    return this.get<M.FichaItemView[]>(`/estoque/itens/${idproduto}/ficha`);
+  }
+  salvarFichaItem(idproduto: number, input: M.FichaItemInput) {
+    return this.post<M.FichaItemView>(`/estoque/itens/${idproduto}/ficha`, input);
+  }
+  removerFichaItem(idficha: number) {
+    return this.del<{ mensagem: string }>(`/estoque/ficha/${idficha}`);
+  }
+  listarConversoes(iditem: number) {
+    return this.get<M.ConversaoUnidade[]>(`/estoque/itens/${iditem}/conversoes`);
+  }
+  salvarConversao(iditem: number, input: M.ConversaoInput) {
+    return this.post<M.ConversaoUnidade>(`/estoque/itens/${iditem}/conversoes`, input);
+  }
+  removerConversao(id: number) {
+    return this.del<{ mensagem: string }>(`/estoque/conversoes/${id}`);
+  }
+  alertasEstoque() {
+    return this.get<M.EstoqueBaixoView[]>('/estoque/alertas');
+  }
+  // Compras
+  listarFornecedores(apenasAtivos = true) {
+    return this.get<M.Fornecedor[]>('/compras/fornecedores', { apenas_ativos: apenasAtivos });
+  }
+  salvarFornecedor(b: M.FornecedorInput) {
+    return this.post<{ id: number }>('/compras/fornecedores', b);
+  }
+  statusFornecedor(id: number, ativo: boolean) {
+    return this.patch<{ ok: boolean }>(`/compras/fornecedores/${id}/status`, { ativo });
+  }
+  listarPedidos(f: { status?: string; pagina?: number } = {}) {
+    return this.get<M.Page<M.PedidoCompraView>>('/compras/pedidos', { ...f, por_pagina: 15 });
+  }
+  buscarPedido(id: number) {
+    return this.get<M.PedidoCompraView>(`/compras/pedidos/${id}`);
+  }
+  criarPedido(b: M.PedidoCompraInput) {
+    return this.post<{ id: number; total: number }>('/compras/pedidos', b);
+  }
+  receberPedido(id: number, b: { itens: M.RecebimentoItem[]; observacao?: string }) {
+    return this.post<{ recebido: number; status: string }>(`/compras/pedidos/${id}/receber`, b);
+  }
+  cancelarPedido(id: number, b: { motivo: string }) {
+    return this.post<{ cancelado: boolean }>(`/compras/pedidos/${id}/cancelar`, b);
+  }
+
+  previewNfe(xml: string) {
+    return this.post<M.NfePreview>('/estoque/nfe/preview', { xml });
+  }
+  importarNfe(req: M.NfeImportRequest) {
+    return this.post<M.NfeImport>('/estoque/nfe/importar', req);
+  }
+
   // -- frigobares ----------------------------------------------------------------
   listarFrigobares() {
     return this.get<M.Frigobar[]>('/frigobares');
@@ -446,8 +500,22 @@ export class ApiService {
   removerImpressora(id: number) {
     return this.del(`/impressoras/${id}`);
   }
+  /** Reimprime a etiqueta do item na impressora dedicada. */
+  etiquetaItem(id: number) {
+    return this.post(`/estoque/itens/${id}/etiqueta`, {});
+  }
+
   testarImpressora(id: number) {
     return this.post(`/impressoras/${id}/testar`, {});
+  }
+  listarDescobertasImpressoras() {
+    return this.get<M.ImpressoraDescoberta[]>('/impressoras/descobertas');
+  }
+  registrarDescoberta(id: number, body: { nome: string; setor: string; padrao?: boolean; etiqueta?: boolean }) {
+    return this.post<M.Impressora>(`/impressoras/descobertas/${id}/registrar`, body);
+  }
+  ignorarDescoberta(id: number) {
+    return this.del(`/impressoras/descobertas/${id}`);
   }
   /** Reimprime tickets de produção (KOT) do consumo da reserva. */
   imprimirProducao(idreserva: number) {
@@ -547,6 +615,307 @@ export class ApiService {
   // -- busca global (header) ----------------------------------------------------
   buscaGlobal(q: string) {
     return this.get<M.ItemBusca[]>('/busca', { q });
+  }
+
+  // -- tesouraria: plano de contas ------------------------------------------------
+  listarPlanoContas(todas = false, tipo?: M.TipoLancamento | null) {
+    return this.get<M.PlanoConta[]>('/financeiro/plano-contas', { todas, tipo });
+  }
+  criarPlanoConta(input: {
+    codigo: string; nome: string; tipo: M.TipoLancamento; grupo_dre: M.GrupoDre;
+  }) {
+    return this.post<M.PlanoConta>('/financeiro/plano-contas', input);
+  }
+  atualizarPlanoConta(id: number, input: {
+    codigo: string; nome: string; tipo: M.TipoLancamento;
+    grupo_dre: M.GrupoDre; version?: number;
+  }) {
+    return this.put<M.PlanoConta>(`/financeiro/plano-contas/${id}`, input);
+  }
+  statusPlanoConta(id: number, ativo: boolean) {
+    return this.patch<M.PlanoConta>(`/financeiro/plano-contas/${id}/status`, { ativo });
+  }
+  excluirPlanoConta(id: number) {
+    return this.del<{ mensagem: string }>(`/financeiro/plano-contas/${id}`);
+  }
+
+  // -- tesouraria: contas financeiras ----------------------------------------------
+  listarContasFinanceiras(todas = false) {
+    return this.get<M.ContaFinanceira[]>('/financeiro/contas', { todas });
+  }
+  criarContaFinanceira(input: M.ContaFinanceiraInput) {
+    return this.post<M.ContaFinanceira>('/financeiro/contas', input);
+  }
+  atualizarContaFinanceira(id: number, input: M.ContaFinanceiraInput) {
+    return this.put<M.ContaFinanceira>(`/financeiro/contas/${id}`, input);
+  }
+  statusContaFinanceira(id: number, ativo: boolean) {
+    return this.patch<M.ContaFinanceira>(`/financeiro/contas/${id}/status`, { ativo });
+  }
+  saldoConta(id: number) {
+    return this.get<{ saldo: string }>(`/financeiro/contas/${id}/saldo`);
+  }
+
+  // -- tesouraria: lançamentos (contas a pagar/receber) ------------------------------
+  listarLancamentos(f: {
+    tipo?: M.TipoLancamento | null; status?: M.StatusLancamento | null;
+    vencidos?: boolean; inicio?: string | null; fim?: string | null;
+    idplano_conta?: number | null; busca?: string | null;
+    page?: number; porPagina?: number;
+  }) {
+    return this.get<M.Page<M.LancamentoView>>('/financeiro/lancamentos', {
+      tipo: f.tipo, status: f.status, vencidos: f.vencidos,
+      inicio: f.inicio, fim: f.fim, idplano_conta: f.idplano_conta,
+      busca: f.busca, page: f.page ?? 1, por_pagina: f.porPagina ?? 20,
+    });
+  }
+  criarLancamento(input: M.LancamentoInput) {
+    return this.post<M.Lancamento[]>('/financeiro/lancamentos', input);
+  }
+  buscarLancamento(id: number) {
+    return this.get<M.Lancamento>(`/financeiro/lancamentos/${id}`);
+  }
+  atualizarLancamento(id: number, input: M.LancamentoInput) {
+    return this.put<M.Lancamento>(`/financeiro/lancamentos/${id}`, input);
+  }
+  cancelarLancamento(id: number) {
+    return this.post<M.Lancamento>(`/financeiro/lancamentos/${id}/cancelar`, {});
+  }
+  excluirLancamento(id: number) {
+    return this.del<{ mensagem: string }>(`/financeiro/lancamentos/${id}`);
+  }
+  baixarLancamento(id: number, input: M.BaixaInput) {
+    return this.post<M.BaixaResponse>(`/financeiro/lancamentos/${id}/baixar`, input);
+  }
+  listarBaixas(idlancamento: number) {
+    return this.get<M.BaixaView[]>(`/financeiro/lancamentos/${idlancamento}/baixas`);
+  }
+
+  // -- tesouraria: fluxo de caixa / DRE -----------------------------------------------
+  fluxoCaixa(inicio?: string | null, fim?: string | null) {
+    return this.get<M.FluxoCaixa>('/financeiro/fluxo-caixa', { inicio, fim });
+  }
+  dre(inicio?: string | null, fim?: string | null) {
+    return this.get<M.Dre>('/financeiro/dre', { inicio, fim });
+  }
+
+  // -- tesouraria: extrato / conciliação -----------------------------------------------
+  listarExtrato(f: {
+    idconta_financeira?: number | null; status?: M.StatusExtrato | null;
+    inicio?: string | null; fim?: string | null;
+    page?: number; porPagina?: number;
+  }) {
+    return this.get<M.Page<M.ExtratoView>>('/financeiro/extrato', {
+      idconta_financeira: f.idconta_financeira, status: f.status,
+      inicio: f.inicio, fim: f.fim,
+      page: f.page ?? 1, por_pagina: f.porPagina ?? 30,
+    });
+  }
+  resumoExtrato(idconta_financeira?: number | null) {
+    return this.get<M.ConciliacaoResumo>('/financeiro/extrato/resumo', {
+      idconta_financeira,
+    });
+  }
+  importarExtrato(idconta_financeira: number, conteudo: string) {
+    return this.post<{ importados: number; duplicados: number }>(
+      '/financeiro/extrato', { idconta_financeira, conteudo },
+    );
+  }
+  ignorarExtrato(id: number) {
+    return this.post<{ mensagem: string }>(`/financeiro/extrato/${id}/ignorar`, {});
+  }
+  sugestoesExtrato(id: number) {
+    return this.get<M.SugestaoConciliacao[]>(`/financeiro/extrato/${id}/sugestoes`);
+  }
+  conciliarExtrato(id: number, idbaixa: number) {
+    return this.post<M.Conciliacao>(`/financeiro/extrato/${id}/conciliar`, { idbaixa });
+  }
+  classificarExtrato(id: number, idplano_conta: number, descricao?: string | null) {
+    return this.post<M.Lancamento>(`/financeiro/extrato/${id}/classificar`, {
+      idplano_conta, descricao,
+    });
+  }
+  desconciliar(idconciliacao: number) {
+    return this.del<{ mensagem: string }>(`/financeiro/conciliacoes/${idconciliacao}`);
+  }
+  autoConciliar(idconta: number) {
+    return this.post<{ conciliados: number }>(
+      `/financeiro/conciliar-auto/${idconta}`, {},
+    );
+  }
+
+  // -- tesouraria: tributos / split IBS-CBS ---------------------------------------------
+  tributoConfig() {
+    return this.get<M.TributoConfig | null>('/financeiro/tributos');
+  }
+  listarTributoConfigs() {
+    return this.get<M.TributoConfig[]>('/financeiro/tributos/historico');
+  }
+  criarTributoConfig(input: {
+    aliq_ibs: number; aliq_cbs: number; regime?: string; vigente_desde?: string | null;
+  }) {
+    return this.post<M.TributoConfig>('/financeiro/tributos', input);
+  }
+  splitResumo(inicio?: string | null, fim?: string | null) {
+    return this.get<M.SplitResumo>('/financeiro/split/resumo', { inicio, fim });
+  }
+  splitEventos(inicio?: string | null, fim?: string | null, page = 1, porPagina = 20) {
+    return this.get<M.Page<M.SplitEventoView>>('/financeiro/split/eventos', {
+      inicio, fim, page, por_pagina: porPagina,
+    });
+  }
+  listarApuracoes() {
+    return this.get<M.TributoApuracao[]>('/financeiro/apuracoes');
+  }
+  recolherApuracao(competencia: string) {
+    return this.post<M.TributoApuracao>('/financeiro/apuracoes/recolher', { competencia });
+  }
+
+  // -- controle de caixa (turnos de gaveta) ------------------------------------
+
+  turnoAberto(idconta_financeira: number) {
+    return this.get<M.CaixaTurno | null>('/financeiro/caixa/aberto', {
+      idconta_financeira,
+    });
+  }
+  listarTurnos(f: {
+    idconta_financeira?: number;
+    status?: M.StatusTurno;
+    idoperador?: number;
+    inicio?: string;
+    fim?: string;
+    page?: number;
+    porPagina?: number;
+  }) {
+    return this.get<M.Page<M.TurnoView>>('/financeiro/caixa/turnos', {
+      idconta_financeira: f.idconta_financeira,
+      status: f.status,
+      idoperador: f.idoperador,
+      inicio: f.inicio,
+      fim: f.fim,
+      page: f.page ?? 1,
+      por_pagina: f.porPagina ?? 20,
+    });
+  }
+  abrirTurno(input: M.AbrirCaixaInput) {
+    return this.post<M.CaixaTurno>('/financeiro/caixa/turnos', input);
+  }
+  buscarTurno(id: number) {
+    return this.get<M.TurnoView>(`/financeiro/caixa/turnos/${id}`);
+  }
+  conferirTurno(id: number) {
+    return this.get<M.ConferenciaCaixa>(`/financeiro/caixa/turnos/${id}/conferencia`);
+  }
+  listarMovimentosTurno(id: number) {
+    return this.get<M.MovimentoCaixaView[]>(`/financeiro/caixa/turnos/${id}/movimentos`);
+  }
+  movimentarTurno(id: number, input: M.MovCaixaInput) {
+    return this.post<M.CaixaMovimento>(`/financeiro/caixa/turnos/${id}/movimentos`, input);
+  }
+  fecharTurno(id: number, input: M.FecharCaixaInput) {
+    return this.post<M.CaixaTurno>(`/financeiro/caixa/turnos/${id}/fechar`, input);
+  }
+
+  // -- PDV & comandas ----------------------------------------------------------
+
+  listarMesas() {
+    return this.get<M.MesaView[]>('/pdv/mesas');
+  }
+  criarMesa(numero: string, lugares: number) {
+    return this.post<M.PdvMesa>('/pdv/mesas', { numero, lugares });
+  }
+  statusMesa(id: number, ativo: boolean) {
+    return this.put<M.PdvMesa>(`/pdv/mesas/${id}/status`, { ativo });
+  }
+  listarGarcons() {
+    return this.get<M.GarcomView[]>('/pdv/garcons');
+  }
+  salvarGarcom(idfuncionario: number, percentual: number, ativo = true) {
+    return this.post<M.PdvGarcom>('/pdv/garcons', { idfuncionario, percentual, ativo });
+  }
+  listarComandas(f: {
+    tipo?: string | null; status?: string | null; idgarcom?: number | null;
+    inicio?: string | null; fim?: string | null; page?: number; porPagina?: number;
+  }) {
+    return this.get<M.Page<M.ComandaView>>('/pdv/comandas', {
+      tipo: f.tipo, status: f.status, idgarcom: f.idgarcom,
+      inicio: f.inicio, fim: f.fim,
+      page: f.page ?? 1, por_pagina: f.porPagina ?? 50,
+    });
+  }
+  abrirComanda(input: M.AbrirComandaInput) {
+    return this.post<M.PdvComanda>('/pdv/comandas', input);
+  }
+  buscarComanda(id: number) {
+    return this.get<M.ComandaView>(`/pdv/comandas/${id}`);
+  }
+  itensComanda(id: number) {
+    return this.get<M.ComandaItemView[]>(`/pdv/comandas/${id}/itens`);
+  }
+  adicionarItem(id: number, iditem: number, quantidade: number) {
+    return this.post<M.PdvComandaItem>(`/pdv/comandas/${id}/itens`, { iditem, quantidade });
+  }
+  entregarItem(id: number, iditemComanda: number) {
+    return this.post<M.PdvComandaItem>(`/pdv/comandas/${id}/itens/${iditemComanda}/entregar`, {});
+  }
+  cancelarItem(id: number, iditemComanda: number, motivo?: string) {
+    return this.post<M.PdvComandaItem>(`/pdv/comandas/${id}/itens/${iditemComanda}/cancelar`, { motivo });
+  }
+  cancelarComanda(id: number, motivo?: string) {
+    return this.post<M.PdvComanda>(`/pdv/comandas/${id}/cancelar`, { motivo });
+  }
+  fecharComanda(id: number, input: M.FecharComandaInput) {
+    return this.post<M.PdvComanda>(`/pdv/comandas/${id}/fechar`, input);
+  }
+  itensVenda(busca?: string) {
+    return this.get<M.ItemVendaView[]>('/pdv/itens-venda', { busca });
+  }
+  // ------------------------------------------------------------------ KDS
+  filaCozinha() {
+    return this.get<M.FilaItemView[]>('/pdv/cozinha/fila');
+  }
+  prepararItem(id: number, iditemComanda: number) {
+    return this.post<M.PdvComandaItem>(`/pdv/comandas/${id}/itens/${iditemComanda}/preparar`, {});
+  }
+  prontoItem(id: number, iditemComanda: number) {
+    return this.post<M.PdvComandaItem>(`/pdv/comandas/${id}/itens/${iditemComanda}/pronto`, {});
+  }
+  retornarItem(id: number, iditemComanda: number) {
+    return this.post<M.PdvComandaItem>(`/pdv/comandas/${id}/itens/${iditemComanda}/retornar`, {});
+  }
+  // ------------------------------------------------------------------ Café
+  quadroCafe(data?: string) {
+    return this.get<M.CafeQuadroItem[]>('/cafe/quadro', { data });
+  }
+  registrarPresenca(idreserva: number, quantidade: number, data?: string) {
+    return this.post<M.CafePresenca>('/cafe/presencas', { idreserva, quantidade, data });
+  }
+  removerPresenca(id: number) {
+    return this.del<void>(`/cafe/presencas/${id}`);
+  }
+  historicoCafe(f: { inicio?: string; fim?: string; page?: number; porPagina?: number }) {
+    return this.get<M.Page<M.PresencaView>>('/cafe/historico', {
+      inicio: f.inicio, fim: f.fim, page: f.page, por_pagina: f.porPagina,
+    });
+  }
+  listarComissoes(f: {
+    idgarcom?: number | null; apenasPendentes?: boolean;
+    inicio?: string | null; fim?: string | null; page?: number; porPagina?: number;
+  }) {
+    return this.get<M.Page<M.ComissaoView>>('/pdv/comissoes', {
+      idgarcom: f.idgarcom, apenas_pendentes: f.apenasPendentes,
+      inicio: f.inicio, fim: f.fim,
+      page: f.page ?? 1, por_pagina: f.porPagina ?? 50,
+    });
+  }
+  resumoComissoes(inicio?: string | null, fim?: string | null) {
+    return this.get<M.ComissaoResumo[]>('/pdv/comissoes/resumo', { inicio, fim });
+  }
+  pagarComissao(id: number, idcontaFinanceira: number, idformaPagamento?: number | null) {
+    return this.post<M.PdvComissao>(`/pdv/comissoes/${id}/pagar`, {
+      idconta_financeira: idcontaFinanceira,
+      idforma_pagamento: idformaPagamento,
+    });
   }
 }
 

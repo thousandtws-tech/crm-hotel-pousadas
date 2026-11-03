@@ -981,13 +981,8 @@ body {
   display: none;
   flex: 1.15;
   position: relative;
-  background: url('/login-bg.jpg') center / cover no-repeat;
-}
-.login-image::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(160deg, rgba(5, 64, 84, 0.82), rgba(0, 20, 30, 0.62));
+  background: url('/login-bg.svg') center / cover no-repeat,
+    linear-gradient(160deg, #0b5064, #032630);
 }
 .login-image-content {
   position: relative;
@@ -1004,6 +999,7 @@ body {
   height: auto;
   filter: brightness(0) invert(1);
   margin-bottom: 1.5rem;
+  align-self: center;
 }
 .login-image-content h2 {
   font-size: 2rem;

@@ -24,7 +24,11 @@ impl FsStore {
 
     fn resolve(&self, key: &str) -> PathBuf {
         let p = Path::new(key);
-        if p.is_absolute() { p.to_path_buf() } else { self.root.join(p) }
+        if p.is_absolute() {
+            p.to_path_buf()
+        } else {
+            self.root.join(p)
+        }
     }
 }
 
@@ -83,7 +87,11 @@ impl ObjectStore for S3Store {
     }
 
     async fn put(&self, key: &str, bytes: &[u8], mime: &str) -> Result<(), DomainError> {
-        match self.bucket.put_object_with_content_type(key, bytes, mime).await {
+        match self
+            .bucket
+            .put_object_with_content_type(key, bytes, mime)
+            .await
+        {
             Ok(r) if (200..300).contains(&r.status_code()) => Ok(()),
             Ok(r) => {
                 tracing::error!(%key, status = r.status_code(), "S3 put: status inesperado");
@@ -116,7 +124,12 @@ impl ObjectStore for S3Store {
 
 /// Monta o store conforme `S3_*` configurado; sem config completo → filesystem.
 pub fn build_store(settings: &Settings) -> Result<Arc<dyn ObjectStore>, DomainError> {
-    match (&settings.s3_endpoint, &settings.s3_bucket, &settings.s3_access_key, &settings.s3_secret_key) {
+    match (
+        &settings.s3_endpoint,
+        &settings.s3_bucket,
+        &settings.s3_access_key,
+        &settings.s3_secret_key,
+    ) {
         (Some(endpoint), Some(bucket_name), Some(access), Some(secret)) => {
             let region = Region::Custom {
                 region: settings.s3_region.clone(),

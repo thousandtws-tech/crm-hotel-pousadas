@@ -129,10 +129,11 @@ impl DashboardRepository for PgDashboardRepository {
             "SELECT r.id, r.idacomodacao, a.nome AS acomodacao_nome, a.numero AS acomodacao_numero,
                     a.cor AS acomodacao_cor, r.idcliente, c.nome AS cliente_nome,
                     r.quantidade_hospedes, r.entradaprevista, r.saidaprevista, r.status,
-                    r.valordiaria, con.valor_estadia
+                    r.valordiaria, r.idquarto, q.numero AS quarto_numero, con.valor_estadia
              FROM reserva r
              JOIN acomodacao a ON a.id = r.idacomodacao
              JOIN cliente c ON c.id = r.idcliente
+             LEFT JOIN quarto q ON q.id = r.idquarto
              LEFT JOIN consumo con ON con.idreserva = r.id
              ORDER BY r.id DESC LIMIT $1",
         )

@@ -28,6 +28,7 @@
     "exceljs": "^4.4.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.9",
+    "phoenix": "^1.8.16",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

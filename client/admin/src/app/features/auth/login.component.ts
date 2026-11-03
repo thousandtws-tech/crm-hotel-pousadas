@@ -7,25 +7,16 @@ import { AuthStore } from '@core/services/auth.store';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, MatIconModule, MatProgressSpinnerModule],
+  imports: [ReactiveFormsModule, MatIconModule, MatProgressSpinnerModule],
   template: `
     <div class="login-split">
       <div class="login-image">
-        <div class="login-image-content">
-          <img class="brand" src="logo.svg" alt="" />
-          <h2>Gestão completa para sua <b>pousada</b></h2>
-          <p>
-            Reservas, check-in, frigobar, financeiro e muito mais — tudo em um
-            só lugar, em tempo real.
-          </p>
-        </div>
+
       </div>
 
       <div class="login-form-panel">
         <div class="login-card">
-          <div class="login-logo">
-            <img src="logo.svg" alt="Pousada Espírito do Mar" />
-          </div>
+          
           <p class="login-box-msg">Acesse sua conta</p>
 
           @if (erro()) {
@@ -65,11 +56,6 @@ import { AuthStore } from '@core/services/auth.store';
               }
             </button>
           </form>
-
-          <p class="login-links">
-            Não tem conta? <a routerLink="/cadastro">Criar conta</a>
-          </p>
-          <p class="login-contato">contato&#64;clarituz.com.br | (19) 99555-1577</p>
         </div>
       </div>
     </div>

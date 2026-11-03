@@ -61,10 +61,7 @@ pub fn build(state: AppState) -> Router {
             "/clientes/{id}/documentos",
             get(routes::pessoas::listar_documentos).post(routes::pessoas::criar_documento),
         )
-        .route(
-            "/clientes/{id}/fnrh",
-            get(routes::pessoas::fnrh_cliente),
-        )
+        .route("/clientes/{id}/fnrh", get(routes::pessoas::fnrh_cliente))
         .route(
             "/documentos/{id}",
             put(routes::pessoas::atualizar_documento).delete(routes::pessoas::remover_documento),
@@ -126,10 +123,7 @@ pub fn build(state: AppState) -> Router {
             "/acomodacoes/{id}/quartos",
             get(routes::catalogo::listar_quartos).post(routes::catalogo::criar_quarto),
         )
-        .route(
-            "/quartos/{id}",
-            delete(routes::catalogo::remover_quarto),
-        )
+        .route("/quartos/{id}", delete(routes::catalogo::remover_quarto))
         .route(
             "/quartos/{id}/status",
             patch(routes::catalogo::status_quarto),
@@ -208,8 +202,52 @@ pub fn build(state: AppState) -> Router {
             patch(routes::estoque::status_item),
         )
         .route(
+            "/estoque/itens/{id}/etiqueta",
+            post(routes::estoque::imprimir_etiqueta),
+        )
+        .route(
             "/estoque/movimentacoes",
             get(routes::estoque::listar_movimentos).post(routes::estoque::movimentar),
+        )
+        .route("/estoque/alertas", get(routes::estoque::alertas_minimo))
+        .route(
+            "/estoque/itens/{id}/ficha",
+            get(routes::estoque::listar_ficha).post(routes::estoque::salvar_ficha_item),
+        )
+        .route(
+            "/estoque/ficha/{id}",
+            delete(routes::estoque::remover_ficha_item),
+        )
+        .route(
+            "/estoque/itens/{id}/conversoes",
+            get(routes::estoque::listar_conversoes).post(routes::estoque::salvar_conversao),
+        )
+        .route(
+            "/estoque/conversoes/{id}",
+            delete(routes::estoque::remover_conversao),
+        )
+        .route("/estoque/nfe/preview", post(routes::estoque::preview_nfe))
+        .route("/estoque/nfe/importar", post(routes::estoque::importar_nfe))
+        .route(
+            "/compras/fornecedores",
+            get(routes::compras::listar_fornecedores).post(routes::compras::salvar_fornecedor),
+        )
+        .route(
+            "/compras/fornecedores/{id}/status",
+            patch(routes::compras::status_fornecedor),
+        )
+        .route(
+            "/compras/pedidos",
+            get(routes::compras::listar_pedidos).post(routes::compras::criar_pedido),
+        )
+        .route("/compras/pedidos/{id}", get(routes::compras::buscar_pedido))
+        .route(
+            "/compras/pedidos/{id}/receber",
+            post(routes::compras::receber_pedido),
+        )
+        .route(
+            "/compras/pedidos/{id}/cancelar",
+            post(routes::compras::cancelar_pedido),
         )
         // frigobares
         .route(
@@ -275,8 +313,7 @@ pub fn build(state: AppState) -> Router {
         )
         .route(
             "/formas-pagamento/{id}",
-            put(routes::catalogo::atualizar_pagamento)
-                .delete(routes::catalogo::remover_pagamento),
+            put(routes::catalogo::atualizar_pagamento).delete(routes::catalogo::remover_pagamento),
         )
         .route(
             "/formas-pagamento/{id}/status",
@@ -300,6 +337,27 @@ pub fn build(state: AppState) -> Router {
         .route(
             "/impressoras",
             get(routes::impressoras::listar).post(routes::impressoras::criar),
+        )
+        .route(
+            "/impressoras/descobertas",
+            get(routes::impressoras::listar_descobertas)
+                .post(routes::impressoras::push_descobertas),
+        )
+        .route(
+            "/impressoras/descobertas/{id}/registrar",
+            post(routes::impressoras::registrar_descoberta),
+        )
+        .route(
+            "/impressoras/descobertas/{id}",
+            axum::routing::delete(routes::impressoras::ignorar_descoberta),
+        )
+        .route(
+            "/impressoras/jobs/pendentes",
+            get(routes::impressoras::jobs_pendentes),
+        )
+        .route(
+            "/impressoras/jobs/{id}/resultado",
+            post(routes::impressoras::resultado_job),
         )
         .route(
             "/impressoras/{id}",
@@ -343,6 +401,211 @@ pub fn build(state: AppState) -> Router {
             get(routes::relatorios::itens_mais_vendidos),
         )
         .route("/financeiro/vendas", get(routes::relatorios::vendas))
+        // tesouraria — plano de contas
+        .route(
+            "/financeiro/plano-contas",
+            get(routes::tesouraria::listar_plano_contas)
+                .post(routes::tesouraria::criar_plano_conta),
+        )
+        .route(
+            "/financeiro/plano-contas/{id}",
+            put(routes::tesouraria::atualizar_plano_conta)
+                .delete(routes::tesouraria::remover_plano_conta),
+        )
+        .route(
+            "/financeiro/plano-contas/{id}/status",
+            patch(routes::tesouraria::status_plano_conta),
+        )
+        // tesouraria — contas financeiras
+        .route(
+            "/financeiro/contas",
+            get(routes::tesouraria::listar_contas).post(routes::tesouraria::criar_conta),
+        )
+        .route(
+            "/financeiro/contas/{id}",
+            put(routes::tesouraria::atualizar_conta),
+        )
+        .route(
+            "/financeiro/contas/{id}/status",
+            patch(routes::tesouraria::status_conta),
+        )
+        .route(
+            "/financeiro/contas/{id}/saldo",
+            get(routes::tesouraria::saldo_conta),
+        )
+        // tesouraria — lançamentos (contas a pagar/receber)
+        .route(
+            "/financeiro/lancamentos",
+            get(routes::tesouraria::listar_lancamentos).post(routes::tesouraria::criar_lancamento),
+        )
+        .route(
+            "/financeiro/lancamentos/{id}",
+            get(routes::tesouraria::buscar_lancamento)
+                .put(routes::tesouraria::atualizar_lancamento)
+                .delete(routes::tesouraria::remover_lancamento),
+        )
+        .route(
+            "/financeiro/lancamentos/{id}/cancelar",
+            post(routes::tesouraria::cancelar_lancamento),
+        )
+        .route(
+            "/financeiro/lancamentos/{id}/baixar",
+            post(routes::tesouraria::baixar),
+        )
+        .route(
+            "/financeiro/lancamentos/{id}/baixas",
+            get(routes::tesouraria::listar_baixas),
+        )
+        // tesouraria — fluxo de caixa e DRE
+        .route(
+            "/financeiro/fluxo-caixa",
+            get(routes::tesouraria::fluxo_caixa),
+        )
+        .route("/financeiro/dre", get(routes::tesouraria::dre))
+        // tesouraria — extrato e conciliação
+        .route(
+            "/financeiro/extrato",
+            get(routes::tesouraria::listar_extrato).post(routes::tesouraria::importar_extrato),
+        )
+        .route(
+            "/financeiro/extrato/resumo",
+            get(routes::tesouraria::resumo_extrato),
+        )
+        .route(
+            "/financeiro/extrato/{id}/ignorar",
+            post(routes::tesouraria::ignorar_extrato),
+        )
+        .route(
+            "/financeiro/extrato/{id}/sugestoes",
+            get(routes::tesouraria::sugestoes_extrato),
+        )
+        .route(
+            "/financeiro/extrato/{id}/conciliar",
+            post(routes::tesouraria::conciliar),
+        )
+        .route(
+            "/financeiro/extrato/{id}/classificar",
+            post(routes::tesouraria::classificar_extrato),
+        )
+        .route(
+            "/financeiro/conciliacoes/{id}",
+            delete(routes::tesouraria::desconciliar),
+        )
+        .route(
+            "/financeiro/conciliar-auto/{idconta}",
+            post(routes::tesouraria::auto_conciliar),
+        )
+        // tesouraria — tributos e split payment IBS/CBS
+        .route(
+            "/financeiro/tributos",
+            get(routes::tesouraria::tributo_config).post(routes::tesouraria::criar_tributo_config),
+        )
+        .route(
+            "/financeiro/tributos/historico",
+            get(routes::tesouraria::listar_tributo_configs),
+        )
+        .route(
+            "/financeiro/split/resumo",
+            get(routes::tesouraria::split_resumo),
+        )
+        .route(
+            "/financeiro/split/eventos",
+            get(routes::tesouraria::split_eventos),
+        )
+        .route(
+            "/financeiro/apuracoes",
+            get(routes::tesouraria::listar_apuracoes),
+        )
+        .route(
+            "/financeiro/apuracoes/recolher",
+            post(routes::tesouraria::recolher_apuracao),
+        )
+        // controle de caixa — turnos de gaveta
+        .route("/financeiro/caixa/aberto", get(routes::caixa::turno_aberto))
+        .route(
+            "/financeiro/caixa/turnos",
+            get(routes::caixa::listar_turnos).post(routes::caixa::abrir),
+        )
+        .route(
+            "/financeiro/caixa/turnos/{id}",
+            get(routes::caixa::buscar_turno),
+        )
+        .route(
+            "/financeiro/caixa/turnos/{id}/conferencia",
+            get(routes::caixa::conferir),
+        )
+        .route(
+            "/financeiro/caixa/turnos/{id}/movimentos",
+            get(routes::caixa::listar_movimentos).post(routes::caixa::movimentar),
+        )
+        .route(
+            "/financeiro/caixa/turnos/{id}/fechar",
+            post(routes::caixa::fechar),
+        )
+        // PDV & comandas — mesas, garçons, vendas salão/quarto/balcão
+        .route(
+            "/pdv/mesas",
+            get(routes::pdv::listar_mesas).post(routes::pdv::criar_mesa),
+        )
+        .route("/pdv/mesas/{id}/status", put(routes::pdv::status_mesa))
+        .route(
+            "/pdv/garcons",
+            get(routes::pdv::listar_garcons).post(routes::pdv::salvar_garcom),
+        )
+        .route(
+            "/pdv/comandas",
+            get(routes::pdv::listar_comandas).post(routes::pdv::abrir_comanda),
+        )
+        .route("/pdv/comandas/{id}", get(routes::pdv::buscar_comanda))
+        .route(
+            "/pdv/comandas/{id}/cancelar",
+            post(routes::pdv::cancelar_comanda),
+        )
+        .route(
+            "/pdv/comandas/{id}/fechar",
+            post(routes::pdv::fechar_comanda),
+        )
+        .route(
+            "/pdv/comandas/{id}/itens",
+            get(routes::pdv::listar_itens).post(routes::pdv::adicionar_item),
+        )
+        .route(
+            "/pdv/comandas/{id}/itens/{item}/entregar",
+            post(routes::pdv::entregar_item),
+        )
+        .route(
+            "/pdv/comandas/{id}/itens/{item}/cancelar",
+            post(routes::pdv::cancelar_item),
+        )
+        // KDS — cozinha em tempo real
+        .route("/pdv/cozinha/fila", get(routes::pdv::fila_cozinha))
+        .route(
+            "/pdv/comandas/{id}/itens/{item}/preparar",
+            post(routes::pdv::iniciar_preparo),
+        )
+        .route(
+            "/pdv/comandas/{id}/itens/{item}/pronto",
+            post(routes::pdv::marcar_pronto),
+        )
+        .route(
+            "/pdv/comandas/{id}/itens/{item}/retornar",
+            post(routes::pdv::retornar_fila),
+        )
+        // café da manhã — presença por reserva/dia
+        .route("/cafe/quadro", get(routes::cafe::quadro))
+        .route("/cafe/presencas", post(routes::cafe::registrar))
+        .route(
+            "/cafe/presencas/{id}",
+            axum::routing::delete(routes::cafe::remover),
+        )
+        .route("/cafe/historico", get(routes::cafe::historico))
+        .route("/pdv/itens-venda", get(routes::pdv::listar_itens_venda))
+        .route("/pdv/comissoes", get(routes::pdv::listar_comissoes))
+        .route("/pdv/comissoes/resumo", get(routes::pdv::resumo_comissoes))
+        .route(
+            "/pdv/comissoes/{id}/pagar",
+            post(routes::pdv::pagar_comissao),
+        )
         // dashboard + auditoria
         .route("/dashboard", get(routes::relatorios::dashboard))
         .route("/auditoria/logs", get(routes::relatorios::logs))
@@ -362,24 +625,17 @@ pub fn build(state: AppState) -> Router {
         // CMS de quartos (admin) — conteúdo editorial, mídia e publicação
         .route("/cms/acomodacoes", get(routes::cms::listar))
         .route("/cms/acomodacoes/{id}", put(routes::cms::salvar))
-        .route(
-            "/cms/acomodacoes/{id}/status",
-            patch(routes::cms::status),
-        )
+        .route("/cms/acomodacoes/{id}/status", patch(routes::cms::status))
         .route(
             "/cms/acomodacoes/{id}/midia",
-            post(routes::cms::upload_midia).route_layer(
-                axum::extract::DefaultBodyLimit::max(80 * 1024 * 1024),
-            ),
+            post(routes::cms::upload_midia)
+                .route_layer(axum::extract::DefaultBodyLimit::max(80 * 1024 * 1024)),
         )
         .route(
             "/cms/acomodacoes/{id}/midia/ordem",
             patch(routes::cms::ordenar_midia),
         )
-        .route(
-            "/cms/midia/{id}/capa",
-            patch(routes::cms::definir_capa),
-        )
+        .route("/cms/midia/{id}/capa", patch(routes::cms::definir_capa))
         .route(
             "/cms/midia/{id}/arquivo",
             get(routes::cms::servir_midia_admin),

@@ -5,12 +5,15 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
+# Contexto de build = raiz do repositório (monorepo Railway).
+# Local:  docker build -f server/maria/Dockerfile .   (na raiz do repo)
+# Railway: railway up + variável RAILWAY_DOCKERFILE_PATH=server/maria/Dockerfile
 WORKDIR /app
 
-COPY requirements.txt .
+COPY server/maria/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app ./app
+COPY server/maria/app ./app
 
 # Railway injeta PORT; fallback local 8090
 EXPOSE 8090

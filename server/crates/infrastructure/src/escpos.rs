@@ -7,6 +7,7 @@
 use clarituz_domain::ports::ImpressoraGateway;
 use clarituz_domain::ports::LinhaRecibo;
 use clarituz_domain::DomainError;
+use sqlx::PgPool;
 use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
@@ -43,7 +44,7 @@ fn par(texto: &str, valor: &str) -> String {
 }
 
 /// Monta o byte-stream completo do recibo.
-fn montar(linhas: &[LinhaRecibo]) -> Vec<u8> {
+pub(crate) fn montar(linhas: &[LinhaRecibo]) -> Vec<u8> {
     let mut b = Vec::with_capacity(2048);
     // init + codepage WPC1252 (acentos pt-BR)
     b.extend([ESC, b'@', ESC, b't', 16]);
@@ -115,6 +116,83 @@ impl ImpressoraGateway for TcpImpressora {
                     "Falha ao imprimir em {host}:{porta}. Verifique a impressora."
                 ))
             })
+    }
+
+    async fn etiqueta(&self, _host: &str, _porta: u16, _texto: &str) -> Result<(), DomainError> {
+        Err(DomainError::regra("Etiquetas requerem o agente local."))
+    }
+}
+
+/// Impressão via fila local — entrega real é feita pelo agente na LAN do
+/// hotel. Impressoras `usb:*` e IPs inalcançáveis da cloud viram jobs;
+/// rede alcançável imprime direto (fallback = enfileira mesmo assim).
+pub struct SpoolImpressora {
+    pool: PgPool,
+}
+
+impl SpoolImpressora {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+
+    async fn enfileirar(
+        &self,
+        host: &str,
+        porta: u16,
+        bytes: &[u8],
+        modo: &str,
+    ) -> Result<(), DomainError> {
+        sqlx::query(
+            "INSERT INTO impressao_job (host, porta, payload, modo) VALUES ($1, $2, $3, $4)",
+        )
+        .bind(host)
+        .bind(porta as i32)
+        .bind(bytes)
+        .bind(modo)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::warn!(host, error = %e, "falha ao enfileirar job de impressão");
+            DomainError::regra("Falha ao enfileirar impressão.")
+        })?;
+        Ok(())
+    }
+}
+
+#[async_trait::async_trait]
+impl ImpressoraGateway for SpoolImpressora {
+    async fn imprimir(
+        &self,
+        host: &str,
+        porta: u16,
+        linhas: &[LinhaRecibo],
+    ) -> Result<(), DomainError> {
+        let bytes = montar(linhas);
+        // USB só existe na máquina do agente — sempre vai para a fila.
+        if !host.starts_with("usb:") {
+            let io = async {
+                let mut s = TcpStream::connect((host, porta)).await?;
+                s.write_all(&bytes).await?;
+                s.flush().await?;
+                Ok::<_, std::io::Error>(())
+            };
+            if let Ok(Ok(())) = tokio::time::timeout(Duration::from_millis(800), io).await {
+                return Ok(());
+            }
+            tracing::info!(
+                host,
+                porta,
+                "impressora inalcançável — job enfileirado p/ agente"
+            );
+        }
+        self.enfileirar(host, porta, &bytes, "escpos").await
+    }
+
+    /// Etiqueta → job modo 'texto': o agente entrega via driver do SO
+    /// (qualquer modelo de etiqueteira/impressora comum).
+    async fn etiqueta(&self, host: &str, porta: u16, texto: &str) -> Result<(), DomainError> {
+        self.enfileirar(host, porta, texto.as_bytes(), "texto")
+            .await
     }
 }
 
