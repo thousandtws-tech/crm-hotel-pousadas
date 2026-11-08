@@ -1,7 +1,6 @@
 import { Component, computed, effect, inject, signal, ElementRef, viewChild } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MariaService } from '@core/services/maria.service';
-import { MariaAuraComponent, type AuraState } from './maria-aura.component';
 import { environment } from '../../../environments/environment';
 
 const SUGESTOES = [
@@ -13,7 +12,7 @@ const SUGESTOES = [
 
 @Component({
   selector: 'app-maria',
-  imports: [MatIconModule, MariaAuraComponent],
+  imports: [MatIconModule],
   template: `
     @if (habilitado) {
       <button
@@ -31,7 +30,6 @@ const SUGESTOES = [
       @if (aberta()) {
         <div
           class="mar-panel"
-          [class.mar-dark]="m.micLigado()"
           role="dialog"
           aria-label="Maria — assistente virtual"
         >
@@ -45,16 +43,6 @@ const SUGESTOES = [
                 {{ rotuloEstado() }}
               </span>
             </div>
-            <button
-              type="button"
-              class="mar-hbtn"
-              [class.mar-on]="m.vozLigada()"
-              (click)="m.vozLigada.set(!m.vozLigada())"
-              [title]="m.vozLigada() ? 'Voz ligada' : 'Voz desligada'"
-              [attr.aria-pressed]="m.vozLigada()"
-            >
-              <mat-icon>{{ m.vozLigada() ? 'volume_up' : 'volume_off' }}</mat-icon>
-            </button>
             <button type="button" class="mar-hbtn" (click)="aberta.set(false)" aria-label="Fechar">
               <mat-icon>close</mat-icon>
             </button>
@@ -64,27 +52,8 @@ const SUGESTOES = [
             <div class="mar-erro"><mat-icon>error_outline</mat-icon> {{ err }}</div>
           }
 
-          @if (m.micLigado()) {
-            <div class="mar-voz">
-              <app-maria-aura
-                [state]="auraEstado()"
-                [volumeSrc]="volumeSrc"
-                color="#4B95AB"
-                [colorShift]="0.45"
-                themeMode="dark"
-                size="lg"
-              />
-              @if (m.transcricaoViva()) {
-                <p class="mar-voz-tr">{{ m.transcricaoViva() }}<span class="cur">▌</span></p>
-              } @else if (m.assistenteParcial()) {
-                <p class="mar-voz-tr mar-voz-ia">{{ m.assistenteParcial() }}<span class="cur">▌</span></p>
-              } @else {
-                <p class="mar-voz-st">{{ rotuloEstado() }}</p>
-              }
-            </div>
-          } @else {
-            <!-- ===== mensagens (prompt-kit: ChatContainer) ===== -->
-            <div class="mar-scroll" #msgs (scroll)="aoRolar()">
+          <!-- ===== mensagens (prompt-kit: ChatContainer) ===== -->
+          <div class="mar-scroll" #msgs (scroll)="aoRolar()">
               @if (!m.mensagens().length && !m.assistenteParcial() && !m.transcricaoViva()) {
                 <div class="mar-vazio">
                   <div class="mar-avatar mar-avatar-lg">M</div>
@@ -140,7 +109,6 @@ const SUGESTOES = [
                 </button>
               }
             </div>
-          }
 
           <!-- confirmação de ação -->
           @if (m.pendente(); as a) {
@@ -176,18 +144,6 @@ const SUGESTOES = [
                 aria-label="Mensagem para a Maria"
               ></textarea>
               <div class="mar-acoes">
-                @if (m.micDisponivel()) {
-                  <button
-                    type="button"
-                    class="mar-ibtn"
-                    [class.mar-mic-on]="m.micLigado()"
-                    (click)="alternarMic()"
-                    [attr.aria-pressed]="m.micLigado()"
-                    [title]="m.micLigado() ? 'Parar de ouvir' : 'Falar com Maria'"
-                  >
-                    <mat-icon>{{ m.micLigado() ? 'mic' : 'mic_none' }}</mat-icon>
-                  </button>
-                }
                 @if (m.estado() === 'speaking' || m.estado() === 'thinking') {
                   <button type="button" class="mar-ibtn mar-ibtn-stop" (click)="m.interromper()" title="Interromper" aria-label="Interromper">
                     <mat-icon>stop</mat-icon>
@@ -265,7 +221,6 @@ const SUGESTOES = [
       border-radius: 8px; padding: 6px; display: inline-flex;
     }
     .mar-hbtn:hover { color: #054054; background: #eef3f6; }
-    .mar-hbtn.mar-on { color: #b5811f; }
     .mar-hbtn mat-icon { font-size: 18px; width: 18px; height: 18px; }
 
     .mar-erro {
@@ -345,38 +300,6 @@ const SUGESTOES = [
     .mar-chip:hover { border-color: #4b95ab; color: #054054; background: #f0f7fa; }
     .mar-chip mat-icon { font-size: 15px; width: 15px; height: 15px; color: #4b95ab; }
 
-    /* ===== voz (dark) ===== */
-    .mar-panel.mar-dark { background: #031c27; border-color: #0c3a4c; }
-    .mar-dark .mar-head { border-bottom-color: rgba(255,255,255,.06); }
-    .mar-dark .mar-head-txt strong { color: #e8f2f7; }
-    .mar-dark .mar-st { color: #5c8395; }
-    .mar-dark .mar-hbtn { color: #5c8395; }
-    .mar-dark .mar-hbtn:hover { color: #e8f2f7; background: rgba(255,255,255,.08); }
-    .mar-dark .mar-erro { background: #3a1d1d; color: #f0a8a2; border-bottom-color: #542b2b; }
-    .mar-dark .mar-composer { background: #0a2f3d; border-color: #14465c; }
-    .mar-dark .mar-txt { color: #e8f2f7; }
-    .mar-dark .mar-txt::placeholder { color: #55798a; }
-    .mar-dark .mar-ibtn { background: #12394c; color: #9fc3d0; }
-    .mar-dark .mar-ibtn-send { background: #1a6f8a; color: #fff; }
-    .mar-dark .mar-acao { background: #0a2f3d; }
-    .mar-dark .mar-acao-res { color: #b9d3dd; }
-
-    .mar-voz {
-      flex: 1; min-height: 300px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 16px; padding: 26px 16px;
-    }
-    .mar-voz-st {
-      margin: 0; font-size: 0.72rem; font-weight: 500; letter-spacing: .18em;
-      text-transform: uppercase; color: #4b95ab;
-    }
-    .mar-voz-tr {
-      margin: 0; max-width: 92%; text-align: center;
-      font-size: 0.88rem; color: #a9c9d6; line-height: 1.5;
-      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-    }
-    .mar-voz-ia { color: #7fa9bc; font-style: italic; }
-
     /* ===== confirmação ===== */
     .mar-acao {
       margin: 0 12px 8px; border: 1.5px solid #b5811f; border-radius: 12px;
@@ -428,7 +351,6 @@ const SUGESTOES = [
     .mar-ibtn-send:hover:not(:disabled) { background: #1a6f8a; }
     .mar-ibtn-send:disabled { opacity: .35; cursor: default; }
     .mar-ibtn-stop { background: #fdecec; color: #dc3545; }
-    .mar-mic-on { background: #b5811f; color: #054054; animation: pulse 1.4s infinite; }
   `,
 })
 export class MariaWidgetComponent {
@@ -443,14 +365,6 @@ export class MariaWidgetComponent {
     if (!this.m.conectado()) return 'offline';
     return this.m.estadoRotulo() ?? 'pronta';
   });
-
-  protected readonly auraEstado = computed<AuraState>(() => {
-    const e = this.m.estado();
-    if (e === 'offline') return 'disconnected';
-    return e;
-  });
-
-  protected readonly volumeSrc = (): number => this.m.volumeAura();
 
   constructor() {
     effect(() => {
@@ -488,19 +402,6 @@ export class MariaWidgetComponent {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       this.enviar(ta);
-    }
-  }
-
-  async alternarMic(): Promise<void> {
-    if (this.m.micLigado()) {
-      this.m.pararMic();
-      this.m.commit();
-    } else {
-      try {
-        await this.m.ligarMic();
-      } catch {
-        this.m.erro.set('microfone não autorizado — verifique a permissão do navegador');
-      }
     }
   }
 
