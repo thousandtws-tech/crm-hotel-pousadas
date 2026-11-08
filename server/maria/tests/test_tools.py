@@ -235,3 +235,23 @@ async def test_toda_tool_despacha(api, admin):
         # listas (pass-through da API) também provam dispatch
         assert not (isinstance(r, dict) and r.get("erro") == "desconhecida"), \
             t["name"]
+
+
+def test_rotulo_tool_humanizado():
+    """Nome técnico nunca vaza para a UI — sai gerúndio amigável."""
+    from app.tools.helpers import rotulo_tool
+    assert rotulo_tool("get_reservas") == "consultando reservas"
+    assert rotulo_tool("get_hospedes_atuais") == "consultando hospedes atuais"
+    assert rotulo_tool("preparar_reserva") == "preparando reserva"
+    assert rotulo_tool("confirmar_acao") == "confirmando a ação"
+    assert rotulo_tool("buscar_conhecimento") == \
+        "consultando a base de conhecimento"
+    assert "get_" not in rotulo_tool("get_reservas")
+
+
+def test_toda_tool_tem_rotulo_amigavel():
+    """Cada uma das 111 tools gera rótulo sem o nome cru."""
+    from app.tools.helpers import rotulo_tool
+    for t in TOOLS:
+        rotulo = rotulo_tool(t["name"])
+        assert rotulo and t["name"] not in rotulo, t["name"]

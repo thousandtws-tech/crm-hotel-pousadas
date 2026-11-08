@@ -78,22 +78,9 @@ class ElevenTts:
             )
         )
         self._recv = asyncio.create_task(self._recv_loop())
-        # ElevenLabs fecha o stream após ~20s sem novo texto — em turnos
-        # com ferramentas o LLM pode demorar mais que isso até a 1ª frase.
-        self._keepalive = asyncio.create_task(self._keepalive_loop())
-
-    async def _keepalive_loop(self) -> None:
-        try:
-            while not self._closed:
-                await asyncio.sleep(8)
-                if self._closed or not self.ws:
-                    return
-                try:
-                    await self.ws.send(json.dumps({"text": " "}))
-                except Exception:
-                    return
-        except asyncio.CancelledError:
-            pass
+        # Nota: sem keepalive de texto — `inactivity_timeout=180` já
+        # segura a conexão em turnos longos com ferramentas, e enviar
+        # " " a cada Ns criava fronteiras de geração (travava a voz).
 
     async def say(self, sentence: str) -> None:
         """Enfileira um segmento de texto para síntese incremental."""
@@ -134,8 +121,6 @@ class ElevenTts:
     def _stop_tasks(self) -> None:
         if self._recv:
             self._recv.cancel()
-        if getattr(self, "_keepalive", None):
-            self._keepalive.cancel()
 
     async def _finish(self) -> None:
         self._closed = True

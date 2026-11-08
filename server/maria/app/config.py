@@ -38,10 +38,11 @@ class Settings(BaseSettings):
     elevenlabs_voice_id: str = ""
     elevenlabs_model_id: str = "eleven_turbo_v2_5"
     elevenlabs_speed: float = 1.0
-    # Naturalidade: estabilidade baixa + estilo = voz mais solta/expressiva
-    elevenlabs_stability: float = 0.35
+    # Voz limpa e consistente (estilo ChatGPT): estabilidade mediana
+    # evita oscilações; estilo baixo reduz artefatos de expressividade.
+    elevenlabs_stability: float = 0.5
     elevenlabs_similarity: float = 0.75
-    elevenlabs_style: float = 0.4
+    elevenlabs_style: float = 0.2
 
     # MAR IA
     maria_voice_enabled: bool = True

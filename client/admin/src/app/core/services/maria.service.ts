@@ -172,7 +172,10 @@ export class MariaService {
         this.addMsg('sys', String(ev['mensagem'] ?? 'ação concluída'));
         break;
       case 'tool':
-        this.addMsg('sys', `consultando ${String(ev['name']).replace(/_/g, ' ')}…`);
+        // label amigável vem do backend; fallback = nome sem prefixos
+        this.addMsg('sys', `${String(
+          ev['label'] ?? String(ev['name']).replace(/^(get|preparar|set)_/, '').replace(/_/g, ' '),
+        )}…`);
         break;
       case 'nav': {
         const rota = String(ev['rota'] ?? '');
@@ -299,7 +302,9 @@ export class MariaService {
     src.buffer = buf;
     src.connect(ctx.destination);
     if (this.ttsAnalyser) src.connect(this.ttsAnalyser);
-    const t = Math.max(ctx.currentTime + 0.02, this.playProx);
+    // Lookahead de 120ms: jitter buffer que absorve atraso de rede.
+    // Com 20ms qualquer oscilação cortava o áudio ("voz travando").
+    const t = Math.max(ctx.currentTime + 0.12, this.playProx);
     src.start(t);
     this.playProx = t + buf.duration;
     this.fontes.push(src);

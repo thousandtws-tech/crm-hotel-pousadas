@@ -29,6 +29,7 @@ from ..pipeline.sentences import SentenceBuffer
 from ..pipeline.stt import OpenAiStt
 from ..pipeline.tts import ElevenTts
 from ..telemetry.metrics import Latencia, Uso
+from ..tools.helpers import rotulo_tool
 
 log = logging.getLogger("maria.session")
 
@@ -211,7 +212,8 @@ class MariaSession:
 
             async def on_tool(nome: str) -> None:
                 nonlocal falou_filler
-                await self._send({"type": "tool", "name": nome})
+                await self._send({"type": "tool", "name": nome,
+                                  "label": rotulo_tool(nome)})
                 # Reconhecimento falado na 1ª tool — elimina o silêncio
                 # enquanto o sistema consulta/ prepara ações.
                 s = get_settings()
