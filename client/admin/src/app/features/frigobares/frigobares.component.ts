@@ -522,7 +522,7 @@ import { TourGuiado } from '@core/services/tour.service';
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .fr-ativos {
-      font-size: 0.78rem; font-weight: 600; color: #b8842f;
+      font-size: 0.78rem; font-weight: 600; color: #b5811f;
       background: rgba(221, 165, 84, 0.16);
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
@@ -560,14 +560,14 @@ import { TourGuiado } from '@core/services/tour.service';
     }
     .fr-info-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
     .inf-teal { background: rgba(26, 111, 138, 0.12); color: #1a6f8a; }
-    .inf-gold { background: rgba(221, 165, 84, 0.16); color: #b8842f; }
+    .inf-gold { background: rgba(221, 165, 84, 0.16); color: #b5811f; }
     .inf-navy { background: rgba(5, 64, 84, 0.1); color: #054054; }
     .fr-info-txt { min-width: 0; }
     .fr-info-txt strong {
       display: block; font-size: 0.9rem; font-weight: 700;
       color: #054054; margin-bottom: 3px;
     }
-    .fr-info-txt p { margin: 0; font-size: 0.8rem; line-height: 1.5; color: #6b7f8a; }
+    .fr-info-txt p { margin: 0; font-size: 0.8rem; line-height: 1.5; color: #7d97a1; }
     .fr-info-txt b { color: #40525d; }
     @media (max-width: 960px) { .fr-info { grid-template-columns: 1fr; } }
 
@@ -588,12 +588,12 @@ import { TourGuiado } from '@core/services/tour.service';
       border-color: #1a6f8a;
       box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14);
     }
-    .fr-busca-icone { color: #6b7f8a; font-size: 20px; width: 20px; height: 20px; }
+    .fr-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
     .fr-busca-input {
       flex: 1; border: none; outline: none; background: transparent;
-      font-size: 0.9rem; color: #212529; font-family: inherit; height: 100%;
+      font-size: 0.9rem; color: #33424c; font-family: inherit; height: 100%;
     }
-    .fr-busca-input::placeholder { color: #9aa5b1; }
+    .fr-busca-input::placeholder { color: #8fa3ab; }
     .fr-busca-input::-webkit-search-cancel-button { display: none; }
     .fr-limpar {
       border: none; background: #eef2f5; border-radius: 50%;
@@ -602,7 +602,7 @@ import { TourGuiado } from '@core/services/tour.service';
       padding: 0;
     }
     .fr-limpar mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .fr-limpar:hover { background: #dde5ea; }
+    .fr-limpar:hover { background: #d7e0e6; }
 
     .fr-toggle {
       display: inline-flex; align-items: center; gap: 14px;
@@ -613,7 +613,7 @@ import { TourGuiado } from '@core/services/tour.service';
     }
     .fr-trilho {
       width: 34px; height: 19px; border-radius: 999px;
-      background: #cbd5dc; position: relative; transition: background 0.18s;
+      background: #c3d2d9; position: relative; transition: background 0.18s;
       flex-shrink: 0;
     }
     .fr-bolinha {
@@ -637,7 +637,7 @@ import { TourGuiado } from '@core/services/tour.service';
       border-bottom: 2px solid #e3eaef; white-space: nowrap;
     }
     .fr-tabela tbody td {
-      padding: 16px; border-bottom: 1px solid #edf1f4;
+      padding: 16px; border-bottom: 1px solid #eef2f5;
       vertical-align: middle; color: #33424c;
     }
     .fr-tabela tbody tr:hover { background: #f7fafb; }
@@ -660,17 +660,17 @@ import { TourGuiado } from '@core/services/tour.service';
 
     /* ---------- estado vazio / skeleton ---------- */
     .fr-vazio {
-      text-align: center; padding: 40px 16px !important; color: #7b8b96;
+      text-align: center; padding: 40px 16px !important; color: #7d97a1;
     }
     .fr-vazio mat-icon {
       font-size: 40px; width: 40px; height: 40px;
-      color: #b8c5cd; margin-bottom: 8px;
+      color: #c3d2d9; margin-bottom: 8px;
     }
     .fr-vazio p { margin: 0 0 14px; font-size: 0.9rem; }
-    .skel-row td { border-bottom: 1px solid #edf1f4; }
+    .skel-row td { border-bottom: 1px solid #eef2f5; }
     .skel {
       display: inline-block; border-radius: 6px;
-      background: linear-gradient(90deg, #eef2f5 25%, #e2e9ee 50%, #eef2f5 75%);
+      background: linear-gradient(90deg, #eef2f5 25%, #e3eaef 50%, #eef2f5 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
     }
@@ -703,23 +703,23 @@ import { TourGuiado } from '@core/services/tour.service';
     .drawer-head {
       display: flex; align-items: flex-start; justify-content: space-between;
       gap: 12px; padding: 18px 22px;
-      background: #fff; border-bottom: 1px solid #e3eaee;
+      background: #fff; border-bottom: 1px solid #e3eaef;
       flex-shrink: 0;
     }
     .drawer-head-txt h5 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #054054; }
-    .drawer-head-txt p { margin: 3px 0 0; font-size: 0.8rem; color: #7b8b96; }
+    .drawer-head-txt p { margin: 3px 0 0; font-size: 0.8rem; color: #7d97a1; }
     .drawer-fechar {
       border: none; background: #eef2f5; border-radius: 8px;
       width: 34px; height: 34px; cursor: pointer; color: #5d6d7e;
       display: inline-flex; align-items: center; justify-content: center;
       flex-shrink: 0; transition: background 0.15s;
     }
-    .drawer-fechar:hover { background: #dde5ea; color: #054054; }
+    .drawer-fechar:hover { background: #d7e0e6; color: #054054; }
     .drawer-fechar mat-icon { font-size: 18px; width: 18px; height: 18px; }
     .drawer-form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
     .drawer-body { flex: 1; overflow-y: auto; padding: 18px 22px; }
     .dsec {
-      background: #fff; border: 1px solid #e6edf1; border-radius: 10px;
+      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
       padding: 16px; margin-bottom: 14px;
     }
     .dsec-tit {
@@ -738,7 +738,7 @@ import { TourGuiado } from '@core/services/tour.service';
     .drawer-foot {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 13px 22px;
-      background: #fff; border-top: 1px solid #e3eaee;
+      background: #fff; border-top: 1px solid #e3eaef;
       flex-shrink: 0;
     }
     .drawer-req { font-size: 0.76rem; color: #8a99a4; }
@@ -807,7 +807,7 @@ import { TourGuiado } from '@core/services/tour.service';
     /* faixa de reposição de item */
     .fr-add {
       display: flex; align-items: stretch; gap: 10px; flex-wrap: wrap;
-      background: #f4f9fb; border: 1px solid #e0ebf0; border-radius: 10px;
+      background: #f4f8fa; border: 1px solid #e0ebf0; border-radius: 10px;
       padding: 12px;
     }
     .fr-add-cat { width: 200px; }
@@ -849,7 +849,7 @@ import { TourGuiado } from '@core/services/tour.service';
     }
     .btn-del {
       background: none; border: none; cursor: pointer;
-      color: #6c757d; padding: 4px; border-radius: 6px;
+      color: #7d97a1; padding: 4px; border-radius: 6px;
       display: inline-flex; align-items: center;
       transition: color 0.15s, background 0.15s;
     }

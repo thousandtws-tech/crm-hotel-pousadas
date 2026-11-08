@@ -37,10 +37,10 @@ const C = {
   navy: '#054054',
   teal: '#1a6f8a',
   light: '#4b95ab',
-  gold: '#dda554',
+  gold: '#b5811f',
   cinza: '#8a99a4',
 };
-const PALETA = ['#054054', '#1a6f8a', '#4b95ab', '#dda554', '#7fb8c9', '#b98a45', '#9fb9c4'];
+const PALETA = ['#054054', '#1a6f8a', '#4b95ab', '#b5811f', '#7fb8c9', '#b98a45', '#9fb9c4'];
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const COMPACTO = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 });
@@ -477,7 +477,7 @@ function ttItem(fmtExtra: (p: { name: string; value: number; dataIndex: number }
       border-bottom: 2px solid #e3eaef; white-space: nowrap;
     }
     .fin-tabela tbody td {
-      padding: 12px 16px; border-bottom: 1px solid #edf1f4;
+      padding: 12px 16px; border-bottom: 1px solid #eef2f5;
       vertical-align: middle; color: #33424c;
     }
     .fin-tabela tbody tr:hover { background: #f7fafb; }
@@ -862,7 +862,7 @@ export class FinanceiroComponent implements OnInit {
     return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.rotulo ?? s;
   }
   statusCor(s: string): string {
-    return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.cor ?? '#6c757d';
+    return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.cor ?? '#7d97a1';
   }
   statusTexto(s: string): string {
     return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.texto ?? '#fff';

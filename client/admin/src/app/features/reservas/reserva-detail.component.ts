@@ -904,9 +904,9 @@ interface AdicionalLinha {
     .head-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
     .badges { display: flex; gap: 8px; flex-wrap: wrap; }
     .my-badge { font-size: 0.8rem; }
-    .status-chip.bg-warn-t { background: #dda554; color: #212529; }
+    .status-chip.bg-warn-t { background: #b5811f; color: #33424c; }
     .status-chip.bg-blue { background: #1a6f8a; }
-    .status-chip.bg-danger { background: #6c757d; }
+    .status-chip.bg-danger { background: #7d97a1; }
     .acoes { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .acoes .btn-green, .acoes .btn-gray, .acoes .btn-danger { font-size: 0.8rem; padding: 0.3em 0.7em; }
     .btn-gray.sq { padding: 0 8px; display: inline-flex; align-items: center; }
@@ -930,9 +930,9 @@ interface AdicionalLinha {
     }
     .ig-icon mat-icon { font-size: 15px; width: 15px; height: 15px; }
     .ig-input {
-      flex: 1; border: 1px solid #ced4da; border-left: none;
+      flex: 1; border: 1px solid #c3d2d9; border-left: none;
       border-radius: 0 0.2rem 0.2rem 0; padding: 5px 9px;
-      font-size: 0.82rem; font-family: inherit; background: #e9ecef; color: #495057;
+      font-size: 0.82rem; font-family: inherit; background: #eef2f5; color: #495057;
     }
 
     .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; }
@@ -943,7 +943,7 @@ interface AdicionalLinha {
     .ig-add { display: flex; gap: 0; align-items: stretch; }
     .ig-add .input-inn { border-radius: 0.2rem 0 0 0.2rem; border-right: none; width: 110px; }
     .ig-add .rs {
-      background: #e9ecef; border: 1px solid #ced4da; border-right: none;
+      background: #eef2f5; border: 1px solid #c3d2d9; border-right: none;
       border-radius: 0.2rem 0 0 0.2rem; padding: 6px 9px; font-size: 0.85rem; color: #495057;
     }
     .ig-add .btn-green { border-radius: 0 0.2rem 0.2rem 0; }
@@ -958,12 +958,12 @@ interface AdicionalLinha {
     .modal-body { gap: 10px; }
     .alert-warn { animation: modal-in 0.3s ease-out; }
     .mt { margin-top: 8px; }
-    .bb { border-bottom: 1px solid #dee2e6; padding-bottom: 10px; }
-    .bt { border-top: 1px solid #dee2e6; padding-top: 12px; }
+    .bb { border-bottom: 1px solid #d7e0e6; padding-bottom: 10px; }
+    .bt { border-top: 1px solid #d7e0e6; padding-top: 12px; }
     .tc { text-align: center; }
     .end { display: flex; justify-content: flex-end; }
     .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .ro { background: #e9ecef; }
+    .ro { background: #eef2f5; }
     .note { font-size: 70%; }
     .radio-row {
       display: flex; align-items: center; gap: 8px;
@@ -986,7 +986,7 @@ interface AdicionalLinha {
     .cancel-title { font-size: 1rem; font-weight: 600; text-align: center; margin: 0.5rem 0; }
     .cancel-btns { display: flex; justify-content: space-between; }
     .admin-box {
-      border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 1rem;
+      border: 1px solid #d7e0e6; border-radius: 0.25rem; padding: 1rem;
       display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
     .admin-box h6 { margin: 0; font-size: 0.85rem; font-weight: 600; }

@@ -464,7 +464,7 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
     .est-check-item {
       display: inline-flex; align-items: center; gap: 9px;
     }
-    .est-check-item > mat-icon { font-size: 20px; width: 20px; height: 20px; color: #dda554; }
+    .est-check-item > mat-icon { font-size: 20px; width: 20px; height: 20px; color: #b5811f; }
     .est-check-item.ok > mat-icon { color: #1a6f8a; }
     .est-check-item span { display: flex; flex-direction: column; }
     .est-check-item b { font-size: 0.82rem; color: #054054; }
@@ -490,7 +490,7 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
     }
     .est-card-ic mat-icon { font-size: 21px; width: 21px; height: 21px; }
     .tint-teal { background: rgba(26, 111, 138, 0.1); color: #1a6f8a; }
-    .tint-gold { background: rgba(221, 165, 84, 0.14); color: #8a5a00; }
+    .tint-gold { background: rgba(221, 165, 84, 0.14); color: #b5811f; }
     .tint-navy { background: rgba(5, 64, 84, 0.08); color: #054054; }
     .est-card-head h4 { margin: 0; font-size: 0.95rem; font-weight: 700; color: #054054; }
     .est-card-head small { font-size: 0.74rem; color: #8a99a4; }
@@ -544,7 +544,7 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
       border-bottom: 2px solid #e3eaef; white-space: nowrap;
     }
     .est-tabela tbody td {
-      padding: 12px 14px; border-bottom: 1px solid #edf1f4;
+      padding: 12px 14px; border-bottom: 1px solid #eef2f5;
       vertical-align: middle; color: #33424c;
     }
     .est-tabela tbody tr:hover { background: #f7fafb; }
@@ -553,13 +553,13 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
     .td-nome mat-icon { font-size: 16px; width: 16px; height: 16px; vertical-align: -3px; color: #1a6f8a; margin-right: 7px; }
     .td-ip { font-family: monospace; font-size: 0.82rem; color: #5d6d7e; white-space: nowrap; }
     .est-chip-setor {
-      display: inline-flex; background: #eef4f7; color: #1a6f8a;
+      display: inline-flex; background: #eef4f6; color: #1a6f8a;
       border-radius: 999px; padding: 3px 12px;
       font-size: 0.78rem; font-weight: 700; text-transform: capitalize;
     }
     .est-chip-padrao {
       display: inline-flex; align-items: center; gap: 4px;
-      background: rgba(221, 165, 84, 0.15); color: #8a5a00;
+      background: rgba(221, 165, 84, 0.15); color: #b5811f;
       border-radius: 999px; padding: 3px 12px;
       font-size: 0.75rem; font-weight: 700; white-space: nowrap;
     }
@@ -573,14 +573,14 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
     .acao mat-icon { font-size: 16px; width: 16px; height: 16px; }
     .acao:hover { filter: brightness(1.12); }
     .acao.navy { background: #054054; color: #fff; }
-    .acao.gold { background: #dda554; color: #054054; }
+    .acao.gold { background: #b5811f; color: #054054; }
     .status-chip.clickable { cursor: pointer; border: none; font-family: inherit; }
     .status-chip.on { background: #1a6f8a; color: #fff; }
-    .status-chip.off { background: #6c757d; color: #fff; }
+    .status-chip.off { background: #7d97a1; color: #fff; }
     .est-vazio {
       text-align: center; color: #8a99a4; padding: 34px !important; font-size: 0.86rem;
     }
-    .est-vazio mat-icon { display: block; margin: 0 auto 8px; font-size: 30px; width: 30px; height: 30px; color: #c3d2da; }
+    .est-vazio mat-icon { display: block; margin: 0 auto 8px; font-size: 30px; width: 30px; height: 30px; color: #c3d2d9; }
 
     /* ---------- modais ---------- */
     .overlay {
@@ -610,21 +610,21 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
       width: 28px; height: 28px; cursor: pointer; color: #5d6d7e;
       display: inline-flex; align-items: center; justify-content: center; padding: 0;
     }
-    .modal-head .close:hover { background: #dde5ea; }
+    .modal-head .close:hover { background: #d7e0e6; }
     .modal-head .close mat-icon { font-size: 16px; width: 16px; height: 16px; }
     .modal-body { padding: 1.1rem 1.15rem; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
     .modal-body .form input:not([type='checkbox']) { height: 36px; padding: 0 9px; box-sizing: border-box; }
     .modal-foot {
       display: flex; justify-content: flex-end; gap: 8px;
       padding: 0.8rem 1.15rem; border-top: 1px solid #e3eaef;
-      background: #f8fafb; border-radius: 0 0 12px 12px;
+      background: #f7fafb; border-radius: 0 0 12px 12px;
     }
     .modal-foot button { display: inline-flex; align-items: center; gap: 6px; }
     .modal-foot mat-icon { font-size: 16px; width: 16px; height: 16px; }
     .logo-box {
       border: 1px dashed #c5d6de; border-radius: 10px;
       min-height: 140px; display: flex; align-items: center; justify-content: center;
-      background: #f8fafb; padding: 14px;
+      background: #f7fafb; padding: 14px;
     }
     .logo-img { max-height: 150px; max-width: 100%; }
     .logo-vazia { display: flex; flex-direction: column; align-items: center; gap: 6px; color: #a5b6bf; font-size: 0.82rem; }

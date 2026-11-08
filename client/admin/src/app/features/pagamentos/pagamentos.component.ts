@@ -305,7 +305,7 @@ import { AuthStore } from '@core/services/auth.store';
     }
     .pg-banner-ic mat-icon { font-size: 21px; width: 21px; height: 21px; }
     .tint-teal { background: rgba(26, 111, 138, 0.1); color: #1a6f8a; }
-    .tint-gold { background: rgba(221, 165, 84, 0.14); color: #8a5a00; }
+    .tint-gold { background: rgba(221, 165, 84, 0.14); color: #b5811f; }
     .tint-navy { background: rgba(5, 64, 84, 0.08); color: #054054; }
     .pg-banner strong { display: block; font-size: 0.88rem; color: #054054; margin-bottom: 3px; }
     .pg-banner p { margin: 0; font-size: 0.78rem; color: #7d97a1; line-height: 1.45; }
@@ -347,12 +347,12 @@ import { AuthStore } from '@core/services/auth.store';
       transition: border-color .15s, box-shadow .15s;
     }
     .pg-busca.foco { border-color: #1a6f8a; box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14); }
-    .pg-busca-icone { color: #6b7f8a; font-size: 20px; width: 20px; height: 20px; }
+    .pg-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
     .pg-busca-input {
       flex: 1; border: none; outline: none; background: transparent;
-      font-size: 0.9rem; color: #212529; font-family: inherit; height: 100%;
+      font-size: 0.9rem; color: #33424c; font-family: inherit; height: 100%;
     }
-    .pg-busca-input::placeholder { color: #9aa5b1; }
+    .pg-busca-input::placeholder { color: #8fa3ab; }
     .pg-busca-input::-webkit-search-cancel-button { display: none; }
     .pg-limpar {
       border: none; background: #eef2f5; border-radius: 50%;
@@ -360,7 +360,7 @@ import { AuthStore } from '@core/services/auth.store';
       display: inline-flex; align-items: center; justify-content: center; padding: 0;
     }
     .pg-limpar mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .pg-limpar:hover { background: #dde5ea; }
+    .pg-limpar:hover { background: #d7e0e6; }
     .pg-contagem { font-size: 0.78rem; color: #8a99a4; margin-left: auto; white-space: nowrap; }
 
     /* ---------- tabela ---------- */
@@ -373,7 +373,7 @@ import { AuthStore } from '@core/services/auth.store';
       border-bottom: 2px solid #e3eaef; white-space: nowrap;
     }
     .pg-tabela tbody td {
-      padding: 12px 16px; border-bottom: 1px solid #edf1f4;
+      padding: 12px 16px; border-bottom: 1px solid #eef2f5;
       vertical-align: middle; color: #33424c;
     }
     .pg-tabela tbody tr:hover { background: #f7fafb; }
@@ -396,7 +396,7 @@ import { AuthStore } from '@core/services/auth.store';
     }
     .pg-chip {
       display: inline-flex; align-items: center;
-      background: #eef4f7; color: #1a6f8a; border-radius: 999px;
+      background: #eef4f6; color: #1a6f8a; border-radius: 999px;
       padding: 3px 12px; font-size: 0.78rem; font-weight: 700; white-space: nowrap;
     }
     .pg-acoes-linha { display: inline-flex; gap: 5px; }
@@ -410,11 +410,11 @@ import { AuthStore } from '@core/services/auth.store';
     .acao:disabled { opacity: 0.55; cursor: wait; }
     .acao.teal { background: #1a6f8a; }
     .acao.navy { background: #054054; }
-    .acao.gold { background: #dda554; color: #054054; }
+    .acao.gold { background: #b5811f; color: #054054; }
     .pg-vazio {
       text-align: center; color: #8a99a4; padding: 34px !important; font-size: 0.86rem;
     }
-    .pg-vazio mat-icon { display: block; margin: 0 auto 8px; font-size: 30px; width: 30px; height: 30px; color: #c3d2da; }
+    .pg-vazio mat-icon { display: block; margin: 0 auto 8px; font-size: 30px; width: 30px; height: 30px; color: #c3d2d9; }
     .pg-vazio-tab { text-align: center; color: #8a99a4; padding: 22px !important; font-size: 0.84rem; }
     .pg-forma-nome {
       display: inline-flex; align-items: center; gap: 8px;
@@ -467,7 +467,7 @@ import { AuthStore } from '@core/services/auth.store';
       width: 28px; height: 28px; cursor: pointer; color: #5d6d7e;
       display: inline-flex; align-items: center; justify-content: center; padding: 0;
     }
-    .modal-head .close:hover { background: #dde5ea; }
+    .modal-head .close:hover { background: #d7e0e6; }
     .modal-head .close mat-icon { font-size: 16px; width: 16px; height: 16px; }
     .modal-body { padding: 1rem 1.15rem; overflow-y: auto; }
     .pg-novo {
@@ -487,7 +487,7 @@ import { AuthStore } from '@core/services/auth.store';
     .pg-novo-input { flex: 1; min-width: 140px; }
     .status-chip.clickable { cursor: pointer; border: none; font-family: inherit; }
     .status-chip.on { background: #1a6f8a; color: #fff; }
-    .status-chip.off { background: #6c757d; color: #fff; }
+    .status-chip.off { background: #7d97a1; color: #fff; }
   `,
 })
 export class PagamentosComponent implements OnInit {

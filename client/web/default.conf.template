@@ -8,6 +8,24 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
+    # service worker e manifest nunca cacheados (update check do PWA).
+    location ~* /(ngsw-worker|safety-worker|worker-basic\.min)\.js$ {
+        add_header Cache-Control "no-cache" always;
+        try_files $uri =404;
+    }
+
+    location = /manifest.webmanifest {
+        default_type application/manifest+json;
+        add_header Cache-Control "no-cache" always;
+        try_files $uri =404;
+    }
+
+    # index.html sem cache: referencia chunks com hash que expiram a cada deploy.
+    location = /index.html {
+        add_header Cache-Control "no-cache" always;
+        try_files $uri =404;
+    }
+
     location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?)$ {
         expires 7d;
         add_header Cache-Control "public, max-age=604800, immutable";

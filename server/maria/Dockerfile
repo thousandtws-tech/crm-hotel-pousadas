@@ -14,6 +14,7 @@ COPY server/maria/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY server/maria/app ./app
+COPY server/maria/knowledge ./knowledge
 
 # Railway injeta PORT; fallback local 8090
 EXPOSE 8090

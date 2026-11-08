@@ -332,7 +332,7 @@ interface LinhaNfe {
     .pg { padding: 24px; max-width: 1200px; margin: 0 auto; }
     .pg-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:18px; }
     h1 { font-size:22px; margin:0; }
-    .sub { margin:4px 0 0; color:var(--txt-2,#5f6b7a); font-size:13px; }
+    .sub { margin:4px 0 0; color:var(--txt-2,#5d6d7e); font-size:13px; }
     .head-actions { display:flex; gap:8px; }
     .btn { display:inline-flex; align-items:center; gap:6px; border:none; border-radius:10px;
            padding:10px 16px; font-size:14px; font-weight:600; cursor:pointer; text-decoration:none; }
@@ -346,7 +346,7 @@ interface LinhaNfe {
     .card { background:#fff; border:1px solid #e3e8ee; border-radius:14px; padding:16px; }
     .card-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
     .card-head h2 { font-size:15px; margin:0; }
-    .busca { flex:1; max-width:200px; border:1px solid #d8dfe6; border-radius:8px; padding:8px 10px; font-size:13px; }
+    .busca { flex:1; max-width:200px; border:1px solid #d7e0e6; border-radius:8px; padding:8px 10px; font-size:13px; }
     .lista { display:flex; flex-direction:column; gap:4px; max-height:70vh; overflow:auto; }
     .linha { display:flex; justify-content:space-between; align-items:center; gap:8px; text-align:left;
              border:none; background:none; padding:9px 10px; border-radius:8px; cursor:pointer; font-size:13px; }
@@ -356,16 +356,16 @@ interface LinhaNfe {
     .tag { font-size:10px; font-style:normal; padding:1px 7px; border-radius:99px; }
     .tag.insumo { background:#eef0ff; color:#5359c9; }
     .tag.baixo { background:#fdecea; color:#c0392b; }
-    .l-qtd { color:#5f6b7a; font-variant-numeric:tabular-nums; white-space:nowrap; }
-    .dica { font-size:12px; color:#5f6b7a; margin:0 0 10px; }
+    .l-qtd { color:#5d6d7e; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .dica { font-size:12px; color:#5d6d7e; margin:0 0 10px; }
     .tab { width:100%; border-collapse:collapse; font-size:13px; margin-bottom:10px; }
-    .tab th { text-align:left; color:#5f6b7a; font-size:11px; text-transform:uppercase; padding:6px 8px; }
+    .tab th { text-align:left; color:#5d6d7e; font-size:11px; text-transform:uppercase; padding:6px 8px; }
     .tab td { padding:7px 8px; border-top:1px solid #eef1f4; }
-    .tab tfoot td { border-top:1px solid #d8dfe6; font-weight:600; }
+    .tab tfoot td { border-top:1px solid #d7e0e6; font-weight:600; }
     .addlinha { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-top:10px; }
     .addlinha label { display:flex; flex-direction:column; gap:4px; font-size:12px; color:#44525f; flex:1; min-width:150px; }
     .addlinha label.w90 { flex:0 0 90px; min-width:0; }
-    .addlinha select, .addlinha input { border:1px solid #d8dfe6; border-radius:8px; padding:9px 10px; font-size:13px; }
+    .addlinha select, .addlinha input { border:1px solid #d7e0e6; border-radius:8px; padding:9px 10px; font-size:13px; }
     .vazio, .vazio-card p { color:#8a97a5; font-size:13px; margin:6px 0; }
     .vazio-card { display:flex; flex-direction:column; align-items:center; padding:48px 16px; color:#8a97a5; }
     .vazio-card mat-icon { font-size:40px; width:40px; height:40px; }
@@ -386,20 +386,20 @@ interface LinhaNfe {
     .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
     .nfe-resumo { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin-bottom:14px; }
     .nfe-resumo div { display:flex; flex-direction:column; gap:2px; font-size:13px; }
-    .nfe-resumo span { color:#5f6b7a; font-size:11px; text-transform:uppercase; }
+    .nfe-resumo span { color:#5d6d7e; font-size:11px; text-transform:uppercase; }
     .chave { font-size:11px; word-break:break-all; }
     .nfe-itens { display:flex; flex-direction:column; gap:8px; max-height:340px; overflow:auto; margin-bottom:14px; }
     .nfe-linha { display:flex; justify-content:space-between; gap:12px; border:1px solid #e3e8ee; border-radius:10px; padding:10px 12px; flex-wrap:wrap; }
     .nl-info { display:flex; flex-direction:column; gap:2px; font-size:13px; min-width:200px; }
-    .nl-info span { color:#5f6b7a; font-size:12px; }
+    .nl-info span { color:#5d6d7e; font-size:12px; }
     .nl-map { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-    .nl-map select { border:1px solid #d8dfe6; border-radius:8px; padding:8px; font-size:13px; max-width:220px; }
+    .nl-map select { border:1px solid #d7e0e6; border-radius:8px; padding:8px; font-size:13px; max-width:220px; }
     .fator { display:flex; align-items:center; gap:6px; font-size:13px; }
-    .fator input { width:64px; border:1px solid #d8dfe6; border-radius:8px; padding:8px; font-size:13px; }
-    .fator .u { color:#5f6b7a; font-size:12px; }
+    .fator input { width:64px; border:1px solid #d7e0e6; border-radius:8px; padding:8px; font-size:13px; }
+    .fator .u { color:#5d6d7e; font-size:12px; }
     .nfe-rodape { display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap; }
     .nfe-rodape label { display:flex; flex-direction:column; gap:4px; font-size:12px; color:#44525f; }
-    .nfe-rodape input[type=date] { border:1px solid #d8dfe6; border-radius:8px; padding:9px 10px; font-size:13px; }
+    .nfe-rodape input[type=date] { border:1px solid #d7e0e6; border-radius:8px; padding:9px 10px; font-size:13px; }
     .chk { flex-direction:row !important; align-items:center; gap:8px !important; font-size:13px !important; }
     .chk input { width:16px; height:16px; }
     .erro { color:#c0392b; font-size:13px; }
@@ -594,7 +594,7 @@ export class InsumosComponent implements OnInit {
           );
         },
         error: (e) =>
-          this.nfeErro.set(e?.error?.mensagem || 'Não consegui ler este XML.'),
+          this.nfeErro.set(e?.error?.erro?.mensagem || 'Não consegui ler este XML.'),
       });
     };
     reader.readAsText(file);
@@ -640,7 +640,7 @@ export class InsumosComponent implements OnInit {
       },
       error: (e) => {
         this.importando.set(false);
-        this.nfeErro.set(e?.error?.mensagem || 'Falha na importação.');
+        this.nfeErro.set(e?.error?.erro?.mensagem || 'Falha na importação.');
       },
     });
   }

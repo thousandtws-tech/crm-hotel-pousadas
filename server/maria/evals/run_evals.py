@@ -1,0 +1,213 @@
+"""Harness de avaliação da MAR IA — golden set contra a OpenAI real.
+
+Roda cada caso do dataset pelo Orquestrador com uma API do sistema
+stubada (respostas enlatadas) e mede:
+- precisão de seleção de ferramentas (tool calling)
+- respeito a permissões por nível
+- latência por turno
+- taxa de erro
+
+Uso:
+    cd server/maria
+    set OPENAI_API_KEY=sk-...          (Windows) | export OPENAI_API_KEY=...
+    python -m evals.run_evals [--dataset evals/dataset.json] [--nivel N]
+                              [--limite K] [--saida evals/report.json]
+
+Sem chave OpenAI, sai com erro explicando — os testes unitários
+(tests/) já cobrem o dispatch offline.
+"""
+from __future__ import annotations
+
+import argparse
+import asyncio
+import json
+import sys
+import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from app.agent.llm import Orquestrador  # noqa: E402
+from app.config import get_settings  # noqa: E402
+from app.infra.auth import Ator  # noqa: E402
+
+# ------------------------------------------------------------- stub API --
+
+class StubApi:
+    """PousadaApi falsa — respostas plausíveis para qualquer endpoint.
+
+    O objetivo do eval é medir a SELEÇÃO de ferramentas, não a
+    qualidade do dado — respostas genéricas bastam.
+    """
+
+    async def close(self) -> None:
+        pass
+
+    async def get(self, path: str, params=None):
+        if path.startswith("/reservas/disponibilidade"):
+            return {"acomodacoes": [{"id": 1, "nome": "Suíte 4"}]}
+        if path == "/clientes":
+            return {"total": 1, "items": [{"id": 7, "nome": "João Silva"}]}
+        if path.startswith("/reservas/"):
+            return {"id": 12, "cliente_nome": "João Silva",
+                    "acomodacao_nome": "Suíte 4", "status": "pendente"}
+        if path == "/formas-pagamento":
+            return [{"id": 1, "nome": "PIX", "ativo": True}]
+        if path == "/dashboard":
+            return {"cards": {"total_acomodacoes": 10,
+                              "acomodacoes_ocupadas": 6,
+                              "acomodacoes_disponiveis": 4,
+                              "hospedes_atuais": 14}}
+        return {"total": 2, "items": [{"id": 1, "nome": "Exemplo"}]}
+
+    async def post(self, path: str, body=None):
+        return {"ok": True, "id": 99}
+
+    async def put(self, path: str, body=None):
+        return {"ok": True}
+
+    async def patch(self, path: str, body=None):
+        return {"ok": True}
+
+    async def delete(self, path: str):
+        return {"ok": True}
+
+    async def request(self, metodo: str, path: str, body=None):
+        fn = {"get": self.get, "post": self.post, "put": self.put,
+              "patch": self.patch}.get(metodo.lower())
+        return await (fn(path, body) if fn else self.delete(path))
+
+
+# ---------------------------------------------------------------- eval --
+
+async def _sem_stream(_: str) -> None:
+    pass
+
+
+async def _sem_tool(_: str) -> None:
+    pass
+
+
+async def _sem_result(_: str, __: dict) -> None:
+    pass
+
+
+async def roda_caso(caso: dict, ator: Ator) -> dict:
+    orq = Orquestrador(StubApi(), ator)
+    inicio = time.perf_counter()
+    try:
+        res = await orq.responder(
+            caso["pergunta"], _sem_stream, _sem_tool, _sem_result)
+        dt = time.perf_counter() - inicio
+        chamadas = [t["name"] for t in res.tools]
+        erros = [t for t in res.tools if not t.get("ok")]
+        return {
+            "id": caso["id"],
+            "pergunta": caso["pergunta"],
+            "tools": chamadas,
+            "tools_full": res.tools,
+            "resposta": res.texto[:400],
+            "tool_calls": res.tool_calls,
+            "erros_tools": len(erros),
+            "latencia_s": round(dt, 2),
+            "tokens": res.usage,
+        }
+    except Exception as e:  # noqa: BLE001 — eval registra e segue
+        return {"id": caso["id"], "pergunta": caso["pergunta"],
+                "erro": str(e)[:300],
+                "latencia_s": round(time.perf_counter() - inicio, 2)}
+
+
+def avalia(caso: dict, r: dict) -> dict:
+    """Regras de avaliação do caso → passou/falhou + motivo."""
+    if "erro" in r:
+        return {"passou": False, "motivo": f"exceção: {r['erro'][:120]}"}
+
+    tools = set(r["tools"])
+
+    if caso.get("espera_sem_tools"):
+        ok = not tools
+        return {"passou": ok,
+                "motivo": "sem tools" if ok else f"chamou: {sorted(tools)}"}
+
+    if caso.get("espera_erro_permissao"):
+        # recepção pedindo dado restrito → a tool deve ter devolvido erro
+        # ou o modelo deve ter se recusado sem chamar.
+        errou_perm = any(
+            not t.get("ok") for t in r.get("tools_full", []))
+        ok = (not tools) or errou_perm
+        return {"passou": ok,
+                "motivo": "sem tools chamadas" if not tools
+                else f"tools: {sorted(tools)}"}
+
+    esperadas = caso.get("espera_tools")
+    if esperadas:
+        faltam = [t for t in esperadas if t not in tools]
+        ok = not faltam
+        return {"passou": ok,
+                "motivo": "ok" if ok else f"faltou: {faltam} (chamou {sorted(tools)})"}
+
+    alguma = caso.get("espera_tools_contem_alguma")
+    if alguma and not any(set(g) & tools for g in alguma):
+        return {"passou": False,
+                "motivo": f"nenhuma de {alguma} em {sorted(tools)}"}
+    final = caso.get("espera_tool_final")
+    if final and final not in tools:
+        return {"passou": False,
+                "motivo": f"tool final '{final}' ausente em {sorted(tools)}"}
+    return {"passou": True, "motivo": "ok"}
+
+
+async def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--dataset", default=str(Path(__file__).parent / "dataset.json"))
+    ap.add_argument("--nivel", type=int, default=None,
+                    help="só casos deste nível (1 admin, 2 gerente, 3 recepção)")
+    ap.add_argument("--limite", type=int, default=None)
+    ap.add_argument("--saida", default="evals/report.json")
+    args = ap.parse_args()
+
+    if not get_settings().openai_api_key:
+        print("ERRO: OPENAI_API_KEY ausente — configure e rode de novo.")
+        return 2
+
+    casos = json.loads(Path(args.dataset).read_text(encoding="utf-8"))
+    if args.nivel:
+        casos = [c for c in casos if c.get("nivel", 3) == args.nivel]
+    if args.limite:
+        casos = casos[: args.limite]
+
+    resultados = []
+    for caso in casos:
+        ator = Ator(idfuncionario=1, login="eval", nome="Avaliador",
+                    nivel=caso.get("nivel", 3))
+        r = await roda_caso(caso, ator)
+        veredito = avalia(caso, r)
+        r.update(veredito)
+        r.pop("tools_full", None)
+        marca = "PASS" if r["passou"] else "FAIL"
+        print(f"{marca}  {caso['id']:<28} {r['motivo']}")
+        resultados.append({k: v for k, v in r.items()})
+
+    total = len(resultados)
+    ok = sum(1 for r in resultados if r["passou"])
+    lat = [r["latencia_s"] for r in resultados if "latencia_s" in r]
+    resumo = {
+        "total": total,
+        "passou": ok,
+        "acuracia": round(ok / total, 3) if total else 0,
+        "latencia_media_s": round(sum(lat) / len(lat), 2) if lat else 0,
+        "modelo": get_settings().openai_llm_model,
+        "reasoning": get_settings().openai_llm_reasoning_effort,
+    }
+    print(json.dumps(resumo, ensure_ascii=False, indent=2))
+    Path(args.saida).write_text(
+        json.dumps({"resumo": resumo, "casos": resultados},
+                   ensure_ascii=False, indent=2),
+        encoding="utf-8")
+    print(f"relatório → {args.saida}")
+    return 0 if ok == total else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(asyncio.run(main()))

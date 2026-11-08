@@ -1,0 +1,22 @@
+{
+  "name": "crm-hotel-pousadas",
+  "version": "1.0.0",
+  "description": "Sistema de gest\u00c3\u00a3o de uma pousada real em Cabo Frio (Per\u00c3\u00b3, RJ), constru\u00c3\u00addo para a\r rotina de quem trabalha na recep\u00c3\u00a7\u00c3\u00a3o: reservas, check-in/check-out, h\u00c3\u00b3spedes e\r FNRH, estoque, frigobar, vagas de estacionamento, financeiro e impressoras por\r setor. Junto vem o site p\u00c3\u00bablico da pousada (com reserva online e conte\u00c3\u00bado\r edit\u00c3\u00a1vel) e a **MAR IA**, uma assistente de voz em portugu\u00c3\u00aas que conversa com o\r sistema inteiro \u00e2\u20ac\u201d responde perguntas, executa a\u00c3\u00a7\u00c3\u00b5es com confirma\u00c3\u00a7\u00c3\u00a3o e abre telas\r por comando de voz.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thousandtws-tech/crm-hotel-pousadas.git"
+  },
+  "keywords": [],
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/thousandtws-tech/crm-hotel-pousadas/issues"
+  },
+  "homepage": "https://github.com/thousandtws-tech/crm-hotel-pousadas#readme",
+  "dependencies": {
+    "railway": "^3.16.0"
+  }
+}

@@ -3,13 +3,19 @@
 @import 'driver.js/dist/driver.css';
 
 /*
- * Design system — paridade visual com o sistema legado INNJOY.
- * Tokens extraídos de legado/app/assets/css/{sidebar,style}.css
+ * Design system — Espírito do Mar (prancha UX/UI Figma lKYxKQTnG0V7AJjWuOZ2wn).
+ * Paridade visual com o sistema legado INNJOY + identidade da marca:
+ * superfícies creme quentes, serifas editoriais nos títulos, azul-oceano
+ * conduzindo a interface e dourado em pequenos acentos.
  */
 :root {
   --header-height: 3rem;
   --nav-width: 68px;
   --nav-width-open: 230px;
+
+  --font-body: 'Manrope', 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --cream: #f4f8fa;
 
   /* padrão pos2 — layout AdminLTE, cores da marca Pousada Espírito do Mar */
   --inn-first: #14303c;
@@ -18,31 +24,31 @@
   --inn-navbar: #054054;
   --inn-navbar-dark: #042f3d;
   --inn-accent: #4b95ab;
-  --inn-gold: #dda554;
+  --inn-gold: #b5811f;
   --inn-navlink-hover: #0e2530;
   --inn-darkblue: #054054;
   --inn-blue: #17a2b8;
   --inn-blue1: #4b95ab;
-  --inn-yellow: #dda554;
+  --inn-yellow: #b5811f;
   --inn-orange: #f5b041;
-  --inn-green: #00a65a;
-  --inn-success: #00a65a;
+  --inn-green: #198754;
+  --inn-success: #198754;
   --inn-danger: #dc3545;
   --inn-warning: #ffc107;
-  --inn-body: #ecf0f5;
+  --inn-body: #f4f8fa;
 
-  --mat-sys-primary: #054054;
+  --mat-sys-primary: #1a6f8a;
   --mat-sys-on-primary: #ffffff;
   --mat-sys-primary-container: #dcecf5;
   --mat-sys-on-primary-container: #10212f;
   --mat-sys-secondary-container: #ccd1d1;
   --mat-sys-on-secondary-container: #1b2a38;
-  --mat-sys-surface: #f2f6f8;
-  --mat-sys-background: #f2f6f8;
-  --mat-sys-surface-container: #eef3f5;
-  --mat-sys-surface-container-low: #f2f6f8;
+  --mat-sys-surface: #f4f8fa;
+  --mat-sys-background: #f4f8fa;
+  --mat-sys-surface-container: #eef2f5;
+  --mat-sys-surface-container-low: #f4f8fa;
   --mat-sys-surface-container-lowest: #ffffff;
-  --mat-sys-surface-container-high: #e6edf0;
+  --mat-sys-surface-container-high: #e3eaef;
 }
 
 *,
@@ -58,8 +64,9 @@ body {
 }
 
 body {
-  font-family: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
+  font-family: var(--font-body);
   background-color: var(--inn-body);
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
@@ -75,9 +82,10 @@ a:hover {
   min-height: 80vh;
   margin: 0 auto;
   background-color: #fff;
-  padding: 10px 14px;
-  border-radius: 0.25rem;
-  box-shadow: 5px 5px 15px 5px rgba(0, 0, 0, 0.09);
+  padding: 14px 18px;
+  border-radius: 0.75rem;
+  border: 1px solid #e3eaef;
+  box-shadow: 0 1px 3px rgba(5, 64, 84, 0.06), 0 6px 18px rgba(5, 64, 84, 0.06);
 }
 
 .page-header {
@@ -89,11 +97,30 @@ a:hover {
   flex-wrap: wrap;
 }
 
-.page-header h1 {
-  font-size: 1.15rem;
-  font-weight: 700;
+/* Títulos editoriais — serifa da marca em azul-escuro */
+.page-header h1,
+.page h1,
+.page h2 {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 600;
   margin: 0;
-  color: #212f3c;
+  color: var(--inn-navbar);
+  line-height: 1.15;
+}
+
+.page h2 {
+  font-size: 1.4rem;
+}
+
+/* Rótulo "eyebrow" em versalete — hierarquia calma da prancha */
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--inn-accent);
 }
 
 .table-card {
@@ -109,11 +136,14 @@ table.mat-mdc-table {
 
 table.mat-mdc-table .mat-mdc-header-cell {
   font-weight: 700;
-  color: #212529;
+  color: var(--inn-navbar);
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 table.mat-mdc-table .mat-mdc-row:nth-of-type(odd) {
-  background: #eef3f5;
+  background: #eef3f6;
 }
 
 table.mat-mdc-table .mat-mdc-row:hover {
@@ -129,10 +159,10 @@ table.plain th,
 table.plain td {
   text-align: left;
   padding: 8px 12px;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid #d7e0e6;
 }
 table.plain tbody tr:nth-of-type(odd) {
-  background: #eef3f5;
+  background: #eef3f6;
 }
 table.plain tbody tr:hover {
   background: #dde9ed;
@@ -181,7 +211,7 @@ tr.clickable {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background-color: #6c757d;
+  background-color: #7d97a1;
   color: #fff;
   border: none;
   border-radius: 0.2rem;
@@ -200,18 +230,19 @@ tr.clickable {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background-color: #0d6efd;
+  background-color: #1a6f8a;
   color: #fff;
   border: none;
-  border-radius: 0.2rem;
-  padding: 0.25rem 0.75rem;
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.95rem;
   font-size: 0.875rem;
+  font-weight: 600;
   font-family: inherit;
   cursor: pointer;
   transition: 0.2s ease;
 }
 .btn-primary:hover {
-  background-color: #0b5ed7;
+  background-color: var(--inn-navbar);
 }
 .btn-primary:disabled {
   opacity: 0.6;
@@ -244,7 +275,7 @@ tr.clickable {
   align-items: center;
   gap: 6px;
   background-color: #ffc107;
-  color: #212529;
+  color: #33424c;
   border: none;
   border-radius: 0.2rem;
   padding: 0.25rem 0.75rem;
@@ -292,7 +323,7 @@ tr.clickable {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid #d7e0e6;
 }
 .modal-head h5 {
   margin: 0;
@@ -346,8 +377,8 @@ tr.clickable {
 /* ===== card-dash (cards coloridos do dashboard/financeiro do legado) ===== */
 .card-dash {
   height: 6rem;
-  border-radius: 0.25rem;
-  box-shadow: 0 0 1px rgba(0, 0, 0, 0.125), 0 1px 3px rgba(0, 0, 0, 0.3);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(5, 64, 84, 0.18), 0 4px 14px rgba(5, 64, 84, 0.12);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -406,13 +437,13 @@ tr.clickable {
 
 .bg-blue { background-color: #1a6f8a !important; }
 .bg-blue1 { background-color: #4b95ab !important; }
-.bg-yellow { background-color: #dda554 !important; }
+.bg-yellow { background-color: #b5811f !important; }
 .bg-orange { background-color: #f5b041 !important; }
 .bg-green { background-color: #198754 !important; }
 .bg-success { background-color: #198754 !important; }
 .bg-danger { background-color: #dc3545 !important; }
-.bg-warning { background-color: #dda554 !important; }
-.bg-secondary2 { background-color: #6c757d !important; }
+.bg-warning { background-color: #b5811f !important; }
+.bg-secondary2 { background-color: #7d97a1 !important; }
 .text-white { color: #fff !important; }
 .text-black-50 { color: rgba(0, 0, 0, 0.55) !important; }
 
@@ -448,7 +479,7 @@ tr.clickable {
   background: rgba(0, 0, 0, 0.03);
   font-weight: 600;
   font-size: 1.05rem;
-  color: #212529;
+  color: #33424c;
 }
 .inner-card > .inner-card-header h4 {
   margin: 0;
@@ -467,9 +498,9 @@ tr.clickable {
   font-size: 0.875rem;
   font-family: inherit;
   line-height: 1.5;
-  color: #212529;
+  color: #33424c;
   background: #fff;
-  border: 1px solid #ced4da;
+  border: 1px solid #c3d2d9;
   border-radius: 0.2rem;
   transition: border-color 0.15s;
 }
@@ -479,7 +510,7 @@ tr.clickable {
   box-shadow: 0 0 0 0.2rem rgba(75, 149, 171, 0.18);
 }
 .input-inn[readonly] {
-  background: #e9ecef;
+  background: #eef2f5;
 }
 select.input-inn {
   width: auto;
@@ -534,7 +565,7 @@ input[type='number'].input-inn::-webkit-inner-spin-button {
 /* ===== tabela com bordas (table-bordered do legado) ====================== */
 table.plain.bordered th,
 table.plain.bordered td {
-  border: 1px solid #dee2e6;
+  border: 1px solid #d7e0e6;
 }
 
 .badge-toggle {
@@ -568,7 +599,7 @@ table.plain.bordered td {
 }
 
 .muted {
-  color: #6c757d;
+  color: #7d97a1;
   font-size: 13px;
 }
 
@@ -637,27 +668,27 @@ body {
 .toast-ico.toast-aviso { background: #ffc107; }
 .toast-titulo {
   font-size: 0.875rem;
-  color: #212529;
+  color: #33424c;
 }
 .toast-quando {
   margin-left: auto;
-  color: #6c757d;
+  color: #7d97a1;
   font-size: 0.75rem;
 }
 .toast-close {
   border: 0;
   background: transparent;
-  color: #6c757d;
+  color: #7d97a1;
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
   padding: 0 2px;
 }
-.toast-close:hover { color: #212529; }
+.toast-close:hover { color: #33424c; }
 .toast-body {
   padding: 10px 12px;
   font-size: 0.85rem;
-  color: #212529;
+  color: #33424c;
   word-break: break-word;
 }
 .toast-bar-wrap {
@@ -687,19 +718,19 @@ body {
 .confirm-msg {
   margin: 0 0 6px;
   font-size: 0.9rem;
-  color: #212529;
+  color: #33424c;
 }
 .confirm-dica {
   margin: 0;
   font-size: 0.78rem;
-  color: #6c757d;
+  color: #7d97a1;
 }
 .confirm-foot {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   padding: 10px 14px;
-  border-top: 1px solid #dee2e6;
+  border-top: 1px solid #d7e0e6;
 }
 
 /* ============ Formulários dentro de modais (padrão legado) ============ */
@@ -710,12 +741,12 @@ body {
 }
 .campo { display: flex; flex-direction: column; gap: 4px; }
 .campo.full { grid-column: 1 / -1; }
-.lbl { font-size: 0.82rem; color: #212529; margin: 0; }
+.lbl { font-size: 0.82rem; color: #33424c; margin: 0; }
 .req { color: #dc3545; }
 .check-inn { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; }
 .modal-foot {
   display: flex; justify-content: flex-end; gap: 8px;
-  padding: 10px 14px; border-top: 1px solid #dee2e6;
+  padding: 10px 14px; border-top: 1px solid #d7e0e6;
 }
 .modal-foot .btn-green { display: inline-flex; align-items: center; gap: 6px; }
 .modal-foot mat-icon { font-size: 15px; width: 15px; height: 15px; }
@@ -738,7 +769,7 @@ body {
 }
 .badge-acao mat-icon { font-size: 15px; width: 15px; height: 15px; }
 .badge-acao:hover { filter: brightness(0.9); }
-.bg-gray { background-color: #6c757d !important; }
+.bg-gray { background-color: #7d97a1 !important; }
 .bg-dark-blue { background-color: #054054 !important; }
 @media (max-width: 560px) {
   .f-grid { grid-template-columns: 1fr; }
@@ -753,7 +784,7 @@ body {
   padding: 30px 30px 22px;
   min-width: 400px;
   max-width: 470px;
-  border-top: 4px solid #dda554;
+  border-top: 4px solid #b5811f;
   box-shadow: 0 20px 55px rgba(2, 20, 27, 0.45);
   color: #44565f;
 }
@@ -821,7 +852,7 @@ body {
 .driver-popover-arrow-side-top.driver-popover-arrow { border-top-color: #fff; }
 .driver-popover-arrow-side-bottom.driver-popover-arrow { border-bottom-color: #fff; }
 .driver-active-element {
-  outline: 2px solid #dda554;
+  outline: 2px solid #b5811f;
   outline-offset: 3px;
   border-radius: 8px;
 }
@@ -882,7 +913,7 @@ body {
   background: none; border: none;
   cursor: pointer; font-family: inherit;
 }
-.sino-item:hover { background: #f8f9fa; }
+.sino-item:hover { background: #f7fafb; }
 .sino-item.sino-nova { background: #eef6ff; }
 .sino-item.sino-nova:hover { background: #e3efff; }
 .sino-del {
@@ -898,7 +929,7 @@ body {
   flex: none; width: 8px; height: 8px; border-radius: 50%;
   margin-top: 6px; background: #198754;
 }
-.sino-item:not(.sino-nova) .sino-dot { background: #dee2e6; }
+.sino-item:not(.sino-nova) .sino-dot { background: #d7e0e6; }
 .sino-dot-alerta { background: #dc3545; }
 .sino-item:not(.sino-nova) .sino-dot-alerta { background: #f0b7bd; }
 .sino-txt { flex: 1; min-width: 0; font-size: 0.82rem; line-height: 1.3; color: #333; }
@@ -916,25 +947,25 @@ body {
 }
 .busca-icone {
   position: absolute; left: 10px; font-size: 18px;
-  width: 18px; height: 18px; color: #6c757d; pointer-events: none;
+  width: 18px; height: 18px; color: #7d97a1; pointer-events: none;
 }
 .busca-input {
   width: 100%; height: 34px;
   padding: 0 52px 0 34px;
-  border: 1px solid #dee2e6; border-radius: 6px;
-  background: #f8f9fa; font-size: 0.85rem; font-family: inherit;
+  border: 1px solid #d7e0e6; border-radius: 6px;
+  background: #f7fafb; font-size: 0.85rem; font-family: inherit;
   color: #333; outline: none;
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
-.busca-input::placeholder { color: #9aa5b1; }
+.busca-input::placeholder { color: #8fa3ab; }
 .busca-input:focus {
   background: #fff; border-color: #4b95ab;
   box-shadow: 0 0 0 3px rgba(75, 149, 171, 0.18);
 }
 .busca-kbd {
   position: absolute; right: 8px; pointer-events: none;
-  font-size: 0.65rem; color: #9aa5b1; font-family: inherit;
-  border: 1px solid #dee2e6; border-radius: 4px;
+  font-size: 0.65rem; color: #8fa3ab; font-family: inherit;
+  border: 1px solid #d7e0e6; border-radius: 4px;
   padding: 1px 5px; background: #fff;
 }
 .busca-input:focus ~ .busca-kbd { display: none; }
@@ -951,7 +982,7 @@ body {
   display: flex; align-items: center; gap: 6px;
   padding: 0.5rem 0.9rem 0.25rem; margin: 0;
   font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.05em; color: #9aa5b1;
+  letter-spacing: 0.05em; color: #8fa3ab;
 }
 .busca-grupo mat-icon { font-size: 14px; width: 14px; height: 14px; }
 .busca-item {
@@ -1063,7 +1094,7 @@ body {
   top: 21px;
   transform: translateY(-50%);
   right: 10px;
-  color: #9aa5b1;
+  color: #8fa3ab;
   font-size: 18px;
   width: 18px;
   height: 18px;
@@ -1084,7 +1115,7 @@ body {
   width: 100%;
   height: 42px;
   border: none;
-  border-radius: 2px;
+  border-radius: 0.4rem;
   background: #054054;
   color: #fff;
   font-family: inherit;
@@ -1111,7 +1142,7 @@ body {
 .login-contato {
   text-align: center;
   font-size: 0.78rem;
-  color: #9aa5b1;
+  color: #8fa3ab;
   margin: 1.5rem 0 0;
 }
 
@@ -1123,7 +1154,7 @@ body {
   padding: 1.25rem 1.5rem;
   margin: 0.5rem 0;
 }
-.caixa-sucesso h3 { margin: 0 0 0.5rem; color: #2e7d32; }
+.caixa-sucesso h3 { margin: 0 0 0.5rem; color: #198754; }
 .caixa-sucesso p { font-size: 0.92rem; color: #37475a; margin: 0 0 0.75rem; }
 
 @media (min-width: 861px) {

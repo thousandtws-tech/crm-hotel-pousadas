@@ -507,12 +507,12 @@ const JANELA_DIAS = 14;
       border-color: #1a6f8a;
       box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14);
     }
-    .rs-busca-icone { color: #6b7f8a; font-size: 20px; width: 20px; height: 20px; }
+    .rs-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
     .rs-busca-input {
       flex: 1; border: none; outline: none; background: transparent;
-      font-size: 0.9rem; color: #212529; font-family: inherit; height: 100%;
+      font-size: 0.9rem; color: #33424c; font-family: inherit; height: 100%;
     }
-    .rs-busca-input::placeholder { color: #9aa5b1; }
+    .rs-busca-input::placeholder { color: #8fa3ab; }
     .rs-busca-input::-webkit-search-cancel-button { display: none; }
     .rs-limpar {
       border: none; background: #eef2f5; border-radius: 50%;
@@ -521,7 +521,7 @@ const JANELA_DIAS = 14;
       padding: 0;
     }
     .rs-limpar mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .rs-limpar:hover { background: #dde5ea; }
+    .rs-limpar:hover { background: #d7e0e6; }
     .rs-range { width: 250px; }
     .rs-limpa-range {
       display: inline-flex; align-items: center; gap: 5px;
@@ -570,7 +570,7 @@ const JANELA_DIAS = 14;
       border-bottom: 2px solid #e3eaef; white-space: nowrap;
     }
     .rs-tabela tbody td {
-      padding: 14px 16px; border-bottom: 1px solid #edf1f4;
+      padding: 14px 16px; border-bottom: 1px solid #eef2f5;
       vertical-align: middle; color: #33424c;
     }
     .rs-tabela tbody tr:hover { background: #f7fafb; }
@@ -598,7 +598,7 @@ const JANELA_DIAS = 14;
     }
     .rs-periodo strong mat-icon { font-size: 14px; width: 14px; height: 14px; color: #8fa3ab; }
     .rs-periodo small { font-size: 0.74rem; color: #8a99a4; }
-    .rs-hj { color: #b8842f; }
+    .rs-hj { color: #b5811f; }
     .rs-valor { font-variant-numeric: tabular-nums; font-weight: 600; color: #054054; white-space: nowrap; }
     .rs-total { display: block; font-size: 0.73rem; color: #8a99a4; white-space: nowrap; }
     .rs-st {
@@ -611,17 +611,17 @@ const JANELA_DIAS = 14;
 
     /* ---------- vazio / skeleton ---------- */
     .rs-vazio {
-      text-align: center; padding: 40px 16px !important; color: #7b8b96;
+      text-align: center; padding: 40px 16px !important; color: #7d97a1;
     }
     .rs-vazio mat-icon {
       font-size: 40px; width: 40px; height: 40px;
-      color: #b8c5cd; margin-bottom: 8px;
+      color: #c3d2d9; margin-bottom: 8px;
     }
     .rs-vazio p { margin: 0 0 14px; font-size: 0.9rem; }
-    .skel-row td { border-bottom: 1px solid #edf1f4; }
+    .skel-row td { border-bottom: 1px solid #eef2f5; }
     .skel {
       display: inline-block; border-radius: 6px;
-      background: linear-gradient(90deg, #eef2f5 25%, #e2e9ee 50%, #eef2f5 75%);
+      background: linear-gradient(90deg, #eef2f5 25%, #e3eaef 50%, #eef2f5 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
     }
@@ -649,13 +649,13 @@ const JANELA_DIAS = 14;
       color: #8fa3ab; letter-spacing: 0.03em;
     }
     .tape-dia strong { font-size: 0.85rem; color: #40525d; font-weight: 700; }
-    .tape-dia.fds { background: #eef4f7; }
+    .tape-dia.fds { background: #eef4f6; }
     .tape-dia.fds strong { color: #1a6f8a; }
     .tape-dia.hj { background: rgba(221, 165, 84, 0.18); }
     .tape-dia.hj small, .tape-dia.hj strong { color: #8a5f1d; }
     .tape-row {
       display: grid; grid-template-columns: 180px 1fr;
-      border-bottom: 1px solid #edf1f4;
+      border-bottom: 1px solid #eef2f5;
     }
     .tape-row:hover .tape-track { background: #fafcfd; }
     .tape-room {
@@ -703,23 +703,23 @@ const JANELA_DIAS = 14;
     .tape-bar-txt { overflow: hidden; text-overflow: ellipsis; }
     .tape-legenda {
       display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
-      padding: 10px 4px 2px; font-size: 0.74rem; color: #7b8b96;
+      padding: 10px 4px 2px; font-size: 0.74rem; color: #7d97a1;
     }
     .tape-legenda span { display: inline-flex; align-items: center; gap: 6px; }
     .lg { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
-    .lg-cor { background: linear-gradient(135deg, #1a6f8a, #dda554); }
+    .lg-cor { background: linear-gradient(135deg, #1a6f8a, #b5811f); }
     .lg-hj { background: rgba(221, 165, 84, 0.35); }
-    .lg-fds { background: #eef4f7; border: 1px solid #dbe4e9; }
+    .lg-fds { background: #eef4f6; border: 1px solid #dbe4e9; }
     .lg-can {
       background: repeating-linear-gradient(
         45deg, #9aa8b0, #9aa8b0 3px, #8a98a1 3px, #8a98a1 6px
       );
     }
     .tape-vazio {
-      text-align: center; padding: 40px 16px; color: #7b8b96;
+      text-align: center; padding: 40px 16px; color: #7d97a1;
     }
     .tape-vazio mat-icon {
-      font-size: 40px; width: 40px; height: 40px; color: #b8c5cd;
+      font-size: 40px; width: 40px; height: 40px; color: #c3d2d9;
     }
 
     @media (max-width: 700px) {
@@ -808,10 +808,10 @@ export class ReservasComponent implements OnInit {
 
   /** Status na paleta da pousada (o STATUS_RESERVA global é do legado). */
   private readonly STATUS: Record<StatusReserva, { rotulo: string; bg: string; fg: string }> = {
-    p: { rotulo: 'Pendente', bg: '#dda554', fg: '#3d2c10' },
+    p: { rotulo: 'Pendente', bg: '#b5811f', fg: '#3d2c10' },
     i: { rotulo: 'Hospedado', bg: '#4b95ab', fg: '#fff' },
     f: { rotulo: 'Finalizado', bg: '#1a6f8a', fg: '#fff' },
-    c: { rotulo: 'Cancelada', bg: '#6c757d', fg: '#fff' },
+    c: { rotulo: 'Cancelada', bg: '#7d97a1', fg: '#fff' },
   };
 
   constructor() {

@@ -212,7 +212,7 @@ const fmt = (v: string | number | null | undefined) => BRL.format(num(v));
     .tab-wrap { overflow-x:auto; }
     .tab { width:100%; border-collapse:collapse; font-size:.9rem; }
     .tab thead th { background:#f4f8fa; color:#40525d; font-size:.73rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:11px 14px; text-align:left; border-bottom:2px solid #e3eaef; white-space:nowrap; }
-    .tab tbody td { padding:11px 14px; border-bottom:1px solid #edf1f4; vertical-align:middle; color:#33424c; }
+    .tab tbody td { padding:11px 14px; border-bottom:1px solid #eef2f5; vertical-align:middle; color:#33424c; }
     .tab .tc { text-align:center; } .tab .tr { text-align:right; }
     .nw { white-space:nowrap; }
     .desat td { opacity:.55; }
@@ -221,7 +221,7 @@ const fmt = (v: string | number | null | undefined) => BRL.format(num(v));
     .td-valor { font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
     .pos { color:#198754; } .neg { color:#dc3545; }
     .st { display:inline-block; font-size:.72rem; font-weight:700; border-radius:999px; padding:3px 11px; white-space:nowrap; }
-    .st-pendente { background:#fff3d6; color:#9a6b00; }
+    .st-pendente { background:#f7ead2; color:#9a6b00; }
     .st-conciliado { background:#dff2e5; color:#198754; }
     .st-ignorado { background:#eee; color:#7d97a1; }
     .score, .sug-score { font-size:.78rem; font-weight:800; color:#8a99a4; font-variant-numeric:tabular-nums; }

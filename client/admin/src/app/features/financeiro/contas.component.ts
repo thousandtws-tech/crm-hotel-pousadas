@@ -364,7 +364,7 @@ function hojeIso(): string {
     .tab-wrap { overflow-x:auto; }
     .tab { width:100%; border-collapse:collapse; font-size:.9rem; }
     .tab thead th { background:#f4f8fa; color:#40525d; font-size:.73rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:11px 14px; text-align:left; border-bottom:2px solid #e3eaef; white-space:nowrap; }
-    .tab tbody td { padding:11px 14px; border-bottom:1px solid #edf1f4; vertical-align:middle; color:#33424c; }
+    .tab tbody td { padding:11px 14px; border-bottom:1px solid #eef2f5; vertical-align:middle; color:#33424c; }
     .tab .tc { text-align:center; } .tab .tr { text-align:right; }
     .td-desc { font-weight:600; color:#054054; }
     .td-mini { font-size:.72rem; color:#8a99a4; }
@@ -372,9 +372,9 @@ function hojeIso(): string {
     .td-venc { color:#dc3545; font-weight:700; white-space:nowrap; }
     .linha-vencida { background:#fdf6f6; }
     .ic-alerta { font-size:15px; width:15px; height:15px; vertical-align:-3px; color:#dc3545; }
-    .chip-conta { font-size:.78rem; color:#5d6d7e; background:#eef4f7; border-radius:5px; padding:3px 8px; white-space:nowrap; }
+    .chip-conta { font-size:.78rem; color:#5d6d7e; background:#eef4f6; border-radius:5px; padding:3px 8px; white-space:nowrap; }
     .st { display:inline-block; font-size:.72rem; font-weight:700; border-radius:999px; padding:3px 11px; white-space:nowrap; }
-    .st-aberto { background:#fff3d6; color:#9a6b00; }
+    .st-aberto { background:#f7ead2; color:#9a6b00; }
     .st-parcial { background:#dbe9f5; color:#1a6f8a; }
     .st-liquidado { background:#dff2e5; color:#198754; }
     .st-cancelado { background:#eee; color:#7d97a1; text-decoration:line-through; }

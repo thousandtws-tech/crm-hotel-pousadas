@@ -161,14 +161,14 @@ interface LinhaDre {
     .tab-wrap { overflow-x:auto; }
     .tab { width:100%; border-collapse:collapse; font-size:.9rem; }
     .tab thead th { background:#f4f8fa; color:#40525d; font-size:.73rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:11px 14px; text-align:left; border-bottom:2px solid #e3eaef; white-space:nowrap; }
-    .tab tbody td { padding:11px 14px; border-bottom:1px solid #edf1f4; color:#33424c; }
+    .tab tbody td { padding:11px 14px; border-bottom:1px solid #eef2f5; color:#33424c; }
     .tab .tr { text-align:right; font-variant-numeric:tabular-nums; }
     .neg { color:#dc3545; }
     .dre td { padding:13px 16px; font-variant-numeric:tabular-nums; }
     .dre .l-subtotal td { font-weight:700; color:#054054; background:#f4f8fa; border-top:1px solid #dbe4e9; }
     .dre .l-destaque td { font-weight:800; color:#054054; background:#eaf4f0; border-top:2px solid #1a6f8a; font-size:.98rem; }
     .cod { font-family:ui-monospace,monospace; font-size:.78rem; color:#7d97a1; margin-right:6px; }
-    .chip { font-size:.74rem; color:#5d6d7e; background:#eef4f7; border-radius:5px; padding:3px 9px; white-space:nowrap; }
+    .chip { font-size:.74rem; color:#5d6d7e; background:#eef4f6; border-radius:5px; padding:3px 9px; white-space:nowrap; }
     .fw { font-weight:700; }
     .vazio { color:#8a99a4; font-size:.85rem; text-align:center; padding:22px 0; margin:0; }
     .skel { border-radius:8px; background:linear-gradient(90deg,#eef2f5 25%,#f7fafb 50%,#eef2f5 75%); background-size:200% 100%; animation:sk 1.2s infinite; }

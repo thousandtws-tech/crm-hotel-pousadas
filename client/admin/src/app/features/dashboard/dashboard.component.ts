@@ -572,7 +572,7 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
       border-bottom: 2px solid #e3eaef; white-space: nowrap;
     }
     .d-tab tbody td {
-      padding: 9px 14px; border-bottom: 1px solid #edf1f4;
+      padding: 9px 14px; border-bottom: 1px solid #eef2f5;
       vertical-align: middle; color: #33424c;
     }
     .d-tab tbody tr:hover { background: #f7fafb; }
@@ -913,7 +913,7 @@ export class DashboardComponent implements OnInit {
           name: p.rotulo,
           value: num(p.valor),
           itemStyle: {
-            color: ['#054054', '#1a6f8a', '#4b95ab', '#dda554', '#8ab4c4'][
+            color: ['#054054', '#1a6f8a', '#4b95ab', '#b5811f', '#8ab4c4'][
               i % 5
             ],
           },
@@ -935,7 +935,7 @@ export class DashboardComponent implements OnInit {
     return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.rotulo ?? s;
   }
   statusCor(s: string): string {
-    return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.cor ?? '#6c757d';
+    return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.cor ?? '#7d97a1';
   }
   statusTexto(s: string): string {
     return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.texto ?? '#fff';

@@ -398,7 +398,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
     }
     .fn-banner-ic mat-icon { font-size: 21px; width: 21px; height: 21px; }
     .tint-teal { background: rgba(26, 111, 138, 0.1); color: #1a6f8a; }
-    .tint-gold { background: rgba(221, 165, 84, 0.14); color: #8a5a00; }
+    .tint-gold { background: rgba(221, 165, 84, 0.14); color: #b5811f; }
     .tint-navy { background: rgba(5, 64, 84, 0.08); color: #054054; }
     .fn-banner strong { display: block; font-size: 0.88rem; color: #054054; margin-bottom: 3px; }
     .fn-banner p { margin: 0; font-size: 0.78rem; color: #7d97a1; line-height: 1.45; }
@@ -440,12 +440,12 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       transition: border-color .15s, box-shadow .15s;
     }
     .fn-busca.foco { border-color: #1a6f8a; box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14); }
-    .fn-busca-icone { color: #6b7f8a; font-size: 20px; width: 20px; height: 20px; }
+    .fn-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
     .fn-busca-input {
       flex: 1; border: none; outline: none; background: transparent;
-      font-size: 0.9rem; color: #212529; font-family: inherit; height: 100%;
+      font-size: 0.9rem; color: #33424c; font-family: inherit; height: 100%;
     }
-    .fn-busca-input::placeholder { color: #9aa5b1; }
+    .fn-busca-input::placeholder { color: #8fa3ab; }
     .fn-busca-input::-webkit-search-cancel-button { display: none; }
     .fn-limpar {
       border: none; background: #eef2f5; border-radius: 50%;
@@ -453,7 +453,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       display: inline-flex; align-items: center; justify-content: center; padding: 0;
     }
     .fn-limpar mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .fn-limpar:hover { background: #dde5ea; }
+    .fn-limpar:hover { background: #d7e0e6; }
     .fn-contagem { font-size: 0.78rem; color: #8a99a4; margin-left: auto; white-space: nowrap; }
 
     /* ---------- tabela ---------- */
@@ -466,7 +466,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       border-bottom: 2px solid #e3eaef; white-space: nowrap;
     }
     .fn-tabela tbody td {
-      padding: 12px 16px; border-bottom: 1px solid #edf1f4;
+      padding: 12px 16px; border-bottom: 1px solid #eef2f5;
       vertical-align: middle; color: #33424c;
     }
     .fn-tabela tbody tr:hover { background: #f7fafb; }
@@ -478,7 +478,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       display: inline-flex; align-items: center; justify-content: center;
       font-size: 0.82rem; font-weight: 700; letter-spacing: 0.02em;
     }
-    .fn-avatar.eu { background: linear-gradient(135deg, #dda554, #c98f3e); color: #fff; }
+    .fn-avatar.eu { background: linear-gradient(135deg, #b5811f, #c98f3e); color: #fff; }
     .fn-cell-txt { display: flex; flex-direction: column; min-width: 0; }
     .fn-cell-txt strong {
       font-size: 0.93rem; color: #054054; font-weight: 700;
@@ -486,7 +486,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px;
     }
     .fn-voce {
-      background: rgba(221, 165, 84, 0.16); color: #8a5a00;
+      background: rgba(221, 165, 84, 0.16); color: #b5811f;
       font-size: 0.65rem; font-weight: 700; padding: 1px 8px; border-radius: 999px;
     }
     .fn-cell-txt small {
@@ -503,10 +503,10 @@ import { DateInputComponent } from '@shared/components/date-input.component';
     .fn-nivel mat-icon { font-size: 14px; width: 14px; height: 14px; }
     .fn-nivel.n1 { background: #054054; color: #fff; }
     .fn-nivel.n2 { background: #1a6f8a; color: #fff; }
-    .fn-nivel.n3 { background: #eef4f7; color: #1a6f8a; }
+    .fn-nivel.n3 { background: #eef4f6; color: #1a6f8a; }
     .status-chip.clickable, .status-chip.badge-toggle { cursor: pointer; border: none; font-family: inherit; }
     .status-chip.on, .status-chip.bg-blue { background: #1a6f8a; color: #fff; }
-    .status-chip.off, .status-chip.bg-gray { background: #6c757d; color: #fff; }
+    .status-chip.off, .status-chip.bg-gray { background: #7d97a1; color: #fff; }
     .status-chip:disabled { opacity: 0.55; cursor: not-allowed; }
     .fn-acoes-linha { display: inline-flex; gap: 5px; }
     .acao {
@@ -517,12 +517,12 @@ import { DateInputComponent } from '@shared/components/date-input.component';
     .acao mat-icon { font-size: 16px; width: 16px; height: 16px; }
     .acao:hover:not(:disabled) { filter: brightness(1.12); }
     .acao:disabled { opacity: 0.4; cursor: not-allowed; }
-    .acao.gold { background: #dda554; color: #054054; }
+    .acao.gold { background: #b5811f; color: #054054; }
     .acao.navy { background: #054054; color: #fff; }
     .fn-vazio {
       text-align: center; color: #8a99a4; padding: 40px !important; font-size: 0.86rem;
     }
-    .fn-vazio mat-icon { display: block; margin: 0 auto 8px; font-size: 32px; width: 32px; height: 32px; color: #c3d2da; }
+    .fn-vazio mat-icon { display: block; margin: 0 auto 8px; font-size: 32px; width: 32px; height: 32px; color: #c3d2d9; }
 
     /* ---------- skeleton ---------- */
     .skel-row td { padding: 14px 16px; }
@@ -562,22 +562,22 @@ import { DateInputComponent } from '@shared/components/date-input.component';
     .drawer-head {
       display: flex; align-items: flex-start; justify-content: space-between;
       gap: 12px; padding: 18px 22px;
-      background: #fff; border-bottom: 1px solid #e3eaee; flex-shrink: 0;
+      background: #fff; border-bottom: 1px solid #e3eaef; flex-shrink: 0;
     }
     .drawer-head-txt h5 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #054054; }
-    .drawer-head-txt p { margin: 3px 0 0; font-size: 0.8rem; color: #7b8b96; }
+    .drawer-head-txt p { margin: 3px 0 0; font-size: 0.8rem; color: #7d97a1; }
     .drawer-fechar {
       border: none; background: #eef2f5; border-radius: 8px;
       width: 34px; height: 34px; cursor: pointer; color: #5d6d7e;
       display: inline-flex; align-items: center; justify-content: center;
       flex-shrink: 0; transition: background 0.15s;
     }
-    .drawer-fechar:hover { background: #dde5ea; color: #054054; }
+    .drawer-fechar:hover { background: #d7e0e6; color: #054054; }
     .drawer-fechar mat-icon { font-size: 18px; width: 18px; height: 18px; }
     .drawer-form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
     .drawer-body { flex: 1; overflow-y: auto; padding: 18px 22px; }
     .dsec {
-      background: #fff; border: 1px solid #e6edf1; border-radius: 10px;
+      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
       padding: 16px; margin-bottom: 14px;
     }
     .dsec-tit {
@@ -599,12 +599,12 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       cursor: pointer;
     }
     .dica-sec { background: #fbf7ef; border-color: #efe4cd; }
-    .dica-sec .dsec-tit { color: #8a5a00; }
+    .dica-sec .dsec-tit { color: #b5811f; }
     .dicas { margin: 0; padding-left: 18px; font-size: 0.8rem; color: #6b5d40; line-height: 1.7; }
     .drawer-foot {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 13px 22px;
-      background: #fff; border-top: 1px solid #e3eaee; flex-shrink: 0;
+      background: #fff; border-top: 1px solid #e3eaef; flex-shrink: 0;
     }
     .drawer-req { font-size: 0.76rem; color: #8a99a4; }
     .drawer-foot-acoes { display: flex; gap: 8px; }

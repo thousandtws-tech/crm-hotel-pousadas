@@ -22,7 +22,7 @@ export interface RelatorioCfg {
 
 const NAVY = '#054054';
 const TEAL = '#1a6f8a';
-const GOLD = '#dda554';
+const GOLD = '#b5811f';
 
 const agora = (): string =>
   new Intl.DateTimeFormat('pt-BR', {

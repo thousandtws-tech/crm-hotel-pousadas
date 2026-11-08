@@ -16,6 +16,18 @@ server {
         try_files $uri =404;
     }
 
+    # service worker nunca cacheado: o browser faz update check a cada carga.
+    location ~* /(ngsw-worker|safety-worker|worker-basic\.min)\.js$ {
+        add_header Cache-Control "no-cache" always;
+        try_files $uri =404;
+    }
+
+    location = /manifest.webmanifest {
+        default_type application/manifest+json;
+        add_header Cache-Control "no-cache" always;
+        try_files $uri =404;
+    }
+
     location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?)$ {
         expires 7d;
         add_header Cache-Control "public, max-age=604800, immutable";

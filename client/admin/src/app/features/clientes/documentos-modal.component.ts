@@ -311,19 +311,19 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
     .modal-body { gap: 12px; }
     .center { display: grid; place-items: center; padding: 32px; }
     .sec { font-size: 0.9rem; font-weight: 600; display: block; }
-    .sec.bt { border-top: 1px solid #dee2e6; padding-top: 12px; }
+    .sec.bt { border-top: 1px solid #d7e0e6; padding-top: 12px; }
     table.sm { font-size: 80%; }
-    .muted { color: #6c757d; }
+    .muted { color: #7d97a1; }
     .tc { text-align: center; }
     .scan-thumb {
-      border: 1px solid #ced4da; border-radius: 4px; padding: 0;
-      width: 44px; height: 30px; overflow: hidden; cursor: zoom-in; background: #f8f9fa;
+      border: 1px solid #c3d2d9; border-radius: 4px; padding: 0;
+      width: 44px; height: 30px; overflow: hidden; cursor: zoom-in; background: #f7fafb;
     }
     .scan-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .scan-loading { font-size: 16px; width: 16px; height: 16px; color: #adb5bd; }
     .linha-acoes { white-space: nowrap; }
     .doc-form {
-      border-top: 1px solid #dee2e6; padding-top: 10px;
+      border-top: 1px solid #d7e0e6; padding-top: 10px;
       display: flex; flex-direction: column; gap: 8px;
     }
     .doc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }

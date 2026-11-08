@@ -1,0 +1,24 @@
+# Ruff — lint estático da MAR IA (roda no CI em .github/workflows/maria.yml).
+target-version = "py310"
+line-length = 88
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "ASYNC",
+]
+ignore = [
+    "E501",  # linhas longas — texto de prompt/docstring em pt-BR estoura
+    "B008",  # function call in default arg — FastAPI usa Depends/Query assim
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["B011"]
+# CLIs sequenciais — IO bloqueante no main async é proposital
+"evals/*" = ["ASYNC"]
+"finetune/*" = ["ASYNC"]

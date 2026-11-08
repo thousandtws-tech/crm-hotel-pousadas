@@ -210,15 +210,15 @@ function isoLocal(d: Date): string {
     .tab-wrap { overflow-x:auto; }
     .tab { width:100%; border-collapse:collapse; font-size:.88rem; }
     .tab thead th { background:#f4f8fa; color:#40525d; font-size:.73rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:11px 14px; text-align:left; border-bottom:2px solid #e3eaef; white-space:nowrap; }
-    .tab tbody td { padding:10px 14px; border-bottom:1px solid #edf1f4; color:#33424c; }
+    .tab tbody td { padding:10px 14px; border-bottom:1px solid #eef2f5; color:#33424c; }
     .tab .tr { text-align:right; font-variant-numeric:tabular-nums; }
     .tab .tc { text-align:center; }
     .nw { white-space:nowrap; }
     .td-desc { font-weight:600; color:#054054; }
     .fw { font-weight:700; }
-    .chip { font-size:.74rem; color:#5d6d7e; background:#eef4f7; border-radius:5px; padding:3px 9px; }
+    .chip { font-size:.74rem; color:#5d6d7e; background:#eef4f6; border-radius:5px; padding:3px 9px; }
     .st { display:inline-block; font-size:.72rem; font-weight:700; border-radius:999px; padding:3px 11px; text-transform:capitalize; }
-    .st-provisionado { background:#fff3d6; color:#9a6b00; }
+    .st-provisionado { background:#f7ead2; color:#9a6b00; }
     .st-segregado { background:#dbe9f5; color:#1a6f8a; }
     .st-recolhido { background:#dff2e5; color:#198754; }
     .st-conc { background:#dff2e5; color:#198754; }

@@ -592,7 +592,7 @@ const LADO_FOTO = 640;
     }
     .cli-info-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
     .inf-teal { background: rgba(26, 111, 138, 0.12); color: #1a6f8a; }
-    .inf-gold { background: rgba(221, 165, 84, 0.16); color: #b8842f; }
+    .inf-gold { background: rgba(221, 165, 84, 0.16); color: #b5811f; }
     .inf-navy { background: rgba(5, 64, 84, 0.1); color: #054054; }
     .cli-info-txt { min-width: 0; }
     .cli-info-txt strong {
@@ -600,7 +600,7 @@ const LADO_FOTO = 640;
       color: #054054; margin-bottom: 3px;
     }
     .cli-info-txt p {
-      margin: 0; font-size: 0.8rem; line-height: 1.5; color: #6b7f8a;
+      margin: 0; font-size: 0.8rem; line-height: 1.5; color: #7d97a1;
     }
     @media (max-width: 960px) { .cli-info { grid-template-columns: 1fr; } }
 
@@ -623,12 +623,12 @@ const LADO_FOTO = 640;
       border-color: #1a6f8a;
       box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14);
     }
-    .cli-busca-icone { color: #6b7f8a; font-size: 20px; width: 20px; height: 20px; }
+    .cli-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
     .cli-busca-input {
       flex: 1; border: none; outline: none; background: transparent;
-      font-size: 0.9rem; color: #212529; font-family: inherit; height: 100%;
+      font-size: 0.9rem; color: #33424c; font-family: inherit; height: 100%;
     }
-    .cli-busca-input::placeholder { color: #9aa5b1; }
+    .cli-busca-input::placeholder { color: #8fa3ab; }
     .cli-busca-input::-webkit-search-cancel-button { display: none; }
     .cli-limpar {
       border: none; background: #eef2f5; border-radius: 50%;
@@ -637,13 +637,13 @@ const LADO_FOTO = 640;
       padding: 0;
     }
     .cli-limpar mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .cli-limpar:hover { background: #dde5ea; }
+    .cli-limpar:hover { background: #d7e0e6; }
 
     /* ---------- smart search: dropdown de sugestões ---------- */
     .sug-dropdown {
       position: absolute; top: calc(100% + 8px); left: 0; right: 0;
       min-width: 380px; max-height: 340px; overflow-y: auto;
-      background: #fff; border: 1px solid #dde5ea; border-radius: 12px;
+      background: #fff; border: 1px solid #d7e0e6; border-radius: 12px;
       box-shadow: 0 16px 44px rgba(2, 20, 27, 0.18);
       z-index: 60; padding: 6px;
       animation: sugIn 0.14s ease-out;
@@ -676,15 +676,15 @@ const LADO_FOTO = 640;
       background: rgba(221, 165, 84, 0.35); color: #054054;
       border-radius: 3px; padding: 0 1px;
     }
-    .sug-txt small { color: #7b8b96; font-size: 0.76rem; }
+    .sug-txt small { color: #7d97a1; font-size: 0.76rem; }
     .sug-cpf { font-size: 0.78rem; flex-shrink: 0; }
     .sug-go { opacity: 0; font-size: 17px; width: 17px; height: 17px; color: #8fa3ab; }
     .sug-item.skel { cursor: default; }
     .sug-vazio {
       display: flex; align-items: center; gap: 10px;
-      padding: 18px 14px; color: #7b8b96; font-size: 0.85rem;
+      padding: 18px 14px; color: #7d97a1; font-size: 0.85rem;
     }
-    .sug-vazio mat-icon { color: #b8c5cd; }
+    .sug-vazio mat-icon { color: #c3d2d9; }
     .sug-foot {
       display: flex; align-items: center; justify-content: space-between;
       border-top: 1px solid #eef2f5; margin-top: 4px;
@@ -703,7 +703,7 @@ const LADO_FOTO = 640;
     }
     .cli-trilho {
       width: 34px; height: 19px; border-radius: 999px;
-      background: #cbd5dc; position: relative; transition: background 0.18s;
+      background: #c3d2d9; position: relative; transition: background 0.18s;
       flex-shrink: 0;
     }
     .cli-bolinha {
@@ -728,11 +728,11 @@ const LADO_FOTO = 640;
       white-space: nowrap;
     }
     .cli-tabela tbody td {
-      padding: 16px 14px; border-bottom: 1px solid #edf1f4;
+      padding: 16px 14px; border-bottom: 1px solid #eef2f5;
       color: #2c3a44; vertical-align: middle; white-space: nowrap;
     }
     .cli-row { transition: background 0.12s; }
-    .cli-row:hover { background: #f4f9fb; }
+    .cli-row:hover { background: #f4f8fa; }
     .cli-row:last-child td { border-bottom: none; }
     .tc { text-align: center; }
     .cli-th-nome { min-width: 240px; }
@@ -740,7 +740,7 @@ const LADO_FOTO = 640;
     .cli-cell { display: flex; align-items: center; gap: 12px; min-width: 220px; }
     .cli-cell-txt { display: flex; flex-direction: column; line-height: 1.3; }
     .cli-cell-txt strong { color: #054054; font-weight: 600; font-size: 0.95rem; }
-    .cli-cell-txt small { color: #7b8b96; font-size: 0.8rem; }
+    .cli-cell-txt small { color: #7d97a1; font-size: 0.8rem; }
 
     .avatar-sm, .avatar-lg {
       display: inline-flex; align-items: center; justify-content: center;
@@ -749,7 +749,7 @@ const LADO_FOTO = 640;
     }
     .avatar-sm { width: 42px; height: 42px; }
     .avatar-iniciais { font-size: 0.8rem; letter-spacing: 0.02em; }
-    .avatar-lg { width: 72px; height: 72px; border: 1px solid #dee2e6; background: #e9ecef; color: #adb5bd; }
+    .avatar-lg { width: 72px; height: 72px; border: 1px solid #d7e0e6; background: #eef2f5; color: #adb5bd; }
     .avatar-lg mat-icon { font-size: 40px; width: 40px; height: 40px; }
     .avatar-sm img, .avatar-lg img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -769,19 +769,19 @@ const LADO_FOTO = 640;
 
     /* ---------- estado vazio ---------- */
     .cli-vazio {
-      text-align: center; padding: 40px 16px !important; color: #7b8b96;
+      text-align: center; padding: 40px 16px !important; color: #7d97a1;
     }
     .cli-vazio mat-icon {
       font-size: 40px; width: 40px; height: 40px;
-      color: #b8c5cd; margin-bottom: 8px;
+      color: #c3d2d9; margin-bottom: 8px;
     }
     .cli-vazio p { margin: 0 0 14px; font-size: 0.9rem; }
 
     /* ---------- skeleton ---------- */
-    .skel-row td { border-bottom: 1px solid #edf1f4; }
+    .skel-row td { border-bottom: 1px solid #eef2f5; }
     .skel {
       display: inline-block; border-radius: 6px;
-      background: linear-gradient(90deg, #eef2f5 25%, #e2e9ee 50%, #eef2f5 75%);
+      background: linear-gradient(90deg, #eef2f5 25%, #e3eaef 50%, #eef2f5 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
     }
@@ -814,25 +814,25 @@ const LADO_FOTO = 640;
     .drawer-head {
       display: flex; align-items: flex-start; justify-content: space-between;
       gap: 12px; padding: 18px 22px;
-      background: #fff; border-bottom: 1px solid #e3eaee;
+      background: #fff; border-bottom: 1px solid #e3eaef;
       flex-shrink: 0;
     }
     .drawer-head-txt h5 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #054054; }
-    .drawer-head-txt p { margin: 3px 0 0; font-size: 0.8rem; color: #7b8b96; }
+    .drawer-head-txt p { margin: 3px 0 0; font-size: 0.8rem; color: #7d97a1; }
     .drawer-fechar {
       border: none; background: #eef2f5; border-radius: 8px;
       width: 34px; height: 34px; cursor: pointer; color: #5d6d7e;
       display: inline-flex; align-items: center; justify-content: center;
       flex-shrink: 0; transition: background 0.15s;
     }
-    .drawer-fechar:hover { background: #dde5ea; color: #054054; }
+    .drawer-fechar:hover { background: #d7e0e6; color: #054054; }
     .drawer-fechar mat-icon { font-size: 18px; width: 18px; height: 18px; }
 
     .drawer-form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
     .drawer-body { flex: 1; overflow-y: auto; padding: 18px 22px; }
 
     .dsec {
-      background: #fff; border: 1px solid #e6edf1; border-radius: 10px;
+      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
       padding: 16px; margin-bottom: 14px;
     }
     .dsec-tit {
@@ -854,7 +854,7 @@ const LADO_FOTO = 640;
     .drawer-foot {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 13px 22px;
-      background: #fff; border-top: 1px solid #e3eaee;
+      background: #fff; border-top: 1px solid #e3eaef;
       flex-shrink: 0;
     }
     .drawer-req { font-size: 0.76rem; color: #8a99a4; }
@@ -1071,7 +1071,7 @@ export class ClientesComponent implements OnInit, OnDestroy {
 
   /** Cor estável do avatar a partir do id — tons da paleta da pousada. */
   avatarCor(id: number): string {
-    const cores = ['#054054', '#1a6f8a', '#4b95ab', '#dda554', '#2e7d5b', '#7c5cb8'];
+    const cores = ['#054054', '#1a6f8a', '#4b95ab', '#b5811f', '#2e7d5b', '#7c5cb8'];
     return cores[id % cores.length];
   }
 

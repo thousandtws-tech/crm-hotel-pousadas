@@ -147,16 +147,16 @@ import { of } from 'rxjs';
     .disp-warn { color: #b45309; margin: 0; font-size: 0.85rem; }
     .cli-sel {
       display: flex; align-items: center; gap: 8px;
-      border: 1px solid #ced4da; border-radius: 4px;
-      padding: 6px 10px; background: #f8f9fa; font-size: 0.85rem;
+      border: 1px solid #c3d2d9; border-radius: 4px;
+      padding: 6px 10px; background: #f7fafb; font-size: 0.85rem;
     }
     .cli-sel mat-icon { font-size: 18px; width: 18px; height: 18px; color: #5d6d7e; }
     .cli-x {
       margin-left: auto; border: 0; background: none;
-      color: #6c757d; font-size: 1.1rem; cursor: pointer; line-height: 1;
+      color: #7d97a1; font-size: 1.1rem; cursor: pointer; line-height: 1;
     }
     .cli-drop {
-      border: 1px solid #ced4da; border-radius: 4px;
+      border: 1px solid #c3d2d9; border-radius: 4px;
       background: #fff; margin-top: 4px;
       max-height: 180px; overflow-y: auto;
       box-shadow: 0 4px 8px rgba(0,0,0,0.08);

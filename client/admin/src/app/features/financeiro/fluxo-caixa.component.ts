@@ -152,7 +152,7 @@ function fimMes(): string {
     .tab-wrap { overflow-x:auto; }
     .tab { width:100%; border-collapse:collapse; font-size:.88rem; }
     .tab thead th { background:#f4f8fa; color:#40525d; font-size:.73rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:11px 14px; text-align:left; border-bottom:2px solid #e3eaef; white-space:nowrap; }
-    .tab tbody td { padding:9px 14px; border-bottom:1px solid #edf1f4; color:#33424c; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .tab tbody td { padding:9px 14px; border-bottom:1px solid #eef2f5; color:#33424c; font-variant-numeric:tabular-nums; white-space:nowrap; }
     .tab .tr { text-align:right; }
     .pos { color:#198754; } .prev { color:#8a99a4; }
     .fw { font-weight:700; color:#054054; }
@@ -246,7 +246,7 @@ export class FinFluxoCaixaComponent implements OnInit {
           type: 'bar',
           stack: 'mov2',
           barMaxWidth: 14,
-          itemStyle: { color: '#dda554' },
+          itemStyle: { color: '#b5811f' },
           data: f.dias.map((d) => num(d.saidas)),
         },
         {

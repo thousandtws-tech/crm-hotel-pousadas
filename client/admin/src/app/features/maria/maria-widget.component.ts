@@ -224,7 +224,7 @@ const SUGESTOES = [
     }
     .mar-fab:hover { transform: scale(1.06); }
     .mar-fab mat-icon { font-size: 26px; width: 26px; height: 26px; }
-    .mar-fab-live { border-color: #dda554; box-shadow: 0 0 0 6px rgba(221,165,84,.18), 0 4px 18px rgba(0,0,0,.35); }
+    .mar-fab-live { border-color: #b5811f; box-shadow: 0 0 0 6px rgba(221,165,84,.18), 0 4px 18px rgba(0,0,0,.35); }
     .mar-fab-think { border-color: #4b95ab; animation: fab-think 1.2s ease-in-out infinite; }
     @keyframes fab-think { 50% { box-shadow: 0 0 0 8px rgba(75,149,171,.16), 0 4px 18px rgba(0,0,0,.35); } }
 
@@ -255,7 +255,7 @@ const SUGESTOES = [
     .mar-st { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; color: #8a99a4; }
     .mar-dot { width: 7px; height: 7px; border-radius: 50%; background: #6c7f88; flex-shrink: 0; }
     .mar-dot-idle { background: #2e9e6b; }
-    .mar-dot-listening { background: #dda554; animation: pulse 1s infinite; }
+    .mar-dot-listening { background: #b5811f; animation: pulse 1s infinite; }
     .mar-dot-thinking { background: #4b95ab; animation: pulse .8s infinite; }
     .mar-dot-speaking { background: #2e9e6b; animation: pulse .6s infinite; }
     .mar-dot-offline { background: #9aa7ad; }
@@ -270,7 +270,7 @@ const SUGESTOES = [
 
     .mar-erro {
       display: flex; align-items: center; gap: 6px;
-      background: #fdecec; color: #b3261e; font-size: 0.78rem;
+      background: #fdecec; color: #dc3545; font-size: 0.78rem;
       padding: 8px 12px; border-bottom: 1px solid #f3d3d1;
     }
     .mar-erro mat-icon { font-size: 16px; width: 16px; height: 16px; }
@@ -379,7 +379,7 @@ const SUGESTOES = [
 
     /* ===== confirmação ===== */
     .mar-acao {
-      margin: 0 12px 8px; border: 1.5px solid #dda554; border-radius: 12px;
+      margin: 0 12px 8px; border: 1.5px solid #b5811f; border-radius: 12px;
       background: #fdf7ec; padding: 10px 12px;
     }
     .mar-acao-tit {
@@ -427,8 +427,8 @@ const SUGESTOES = [
     .mar-ibtn-send { background: #054054; color: #fff; }
     .mar-ibtn-send:hover:not(:disabled) { background: #1a6f8a; }
     .mar-ibtn-send:disabled { opacity: .35; cursor: default; }
-    .mar-ibtn-stop { background: #fdecec; color: #b3261e; }
-    .mar-mic-on { background: #dda554; color: #054054; animation: pulse 1.4s infinite; }
+    .mar-ibtn-stop { background: #fdecec; color: #dc3545; }
+    .mar-mic-on { background: #b5811f; color: #054054; animation: pulse 1.4s infinite; }
   `,
 })
 export class MariaWidgetComponent {

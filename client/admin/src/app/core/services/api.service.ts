@@ -381,25 +381,25 @@ export class ApiService {
     return this.get<M.Fornecedor[]>('/compras/fornecedores', { apenas_ativos: apenasAtivos });
   }
   salvarFornecedor(b: M.FornecedorInput) {
-    return this.post<{ id: number }>('/compras/fornecedores', b);
+    return this.post<M.Fornecedor>('/compras/fornecedores', b);
   }
   statusFornecedor(id: number, ativo: boolean) {
-    return this.patch<{ ok: boolean }>(`/compras/fornecedores/${id}/status`, { ativo });
+    return this.patch<M.Fornecedor>(`/compras/fornecedores/${id}/status`, { ativo });
   }
   listarPedidos(f: { status?: string; pagina?: number } = {}) {
     return this.get<M.Page<M.PedidoCompraView>>('/compras/pedidos', { ...f, por_pagina: 15 });
   }
   buscarPedido(id: number) {
-    return this.get<M.PedidoCompraView>(`/compras/pedidos/${id}`);
+    return this.get<M.PedidoDetalhe>(`/compras/pedidos/${id}`);
   }
   criarPedido(b: M.PedidoCompraInput) {
-    return this.post<{ id: number; total: number }>('/compras/pedidos', b);
+    return this.post<M.PedidoCriado>('/compras/pedidos', b);
   }
   receberPedido(id: number, b: { itens: M.RecebimentoItem[]; observacao?: string }) {
-    return this.post<{ recebido: number; status: string }>(`/compras/pedidos/${id}/receber`, b);
+    return this.post<{ status: string }>(`/compras/pedidos/${id}/receber`, b);
   }
-  cancelarPedido(id: number, b: { motivo: string }) {
-    return this.post<{ cancelado: boolean }>(`/compras/pedidos/${id}/cancelar`, b);
+  cancelarPedido(id: number) {
+    return this.post<{ mensagem: string }>(`/compras/pedidos/${id}/cancelar`, {});
   }
 
   previewNfe(xml: string) {

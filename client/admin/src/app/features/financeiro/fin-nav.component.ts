@@ -35,7 +35,7 @@ import { MatIconModule } from '@angular/material/icon';
       transition: background .14s ease, color .14s ease;
     }
     .fin-nav-link mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .fin-nav-link:hover { background: #eef4f7; color: #054054; }
+    .fin-nav-link:hover { background: #eef4f6; color: #054054; }
     .fin-nav-link.ativo { background: #054054; color: #fff; }
     .fin-nav-link:focus-visible { outline: 2px solid #1a6f8a; outline-offset: 2px; }
   `,

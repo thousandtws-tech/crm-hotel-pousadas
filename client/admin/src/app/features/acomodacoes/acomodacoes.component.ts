@@ -703,7 +703,7 @@ type Modal = 'tipos' | 'quarto' | null;
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .acm-ativas {
-      font-size: 0.78rem; font-weight: 600; color: #b8842f;
+      font-size: 0.78rem; font-weight: 600; color: #b5811f;
       background: rgba(221, 165, 84, 0.16);
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
@@ -743,7 +743,7 @@ type Modal = 'tipos' | 'quarto' | null;
     }
     .acm-info-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
     .inf-teal { background: rgba(26, 111, 138, 0.12); color: #1a6f8a; }
-    .inf-gold { background: rgba(221, 165, 84, 0.16); color: #b8842f; }
+    .inf-gold { background: rgba(221, 165, 84, 0.16); color: #b5811f; }
     .inf-navy { background: rgba(5, 64, 84, 0.1); color: #054054; }
     .acm-info-txt { min-width: 0; }
     .acm-info-txt strong {
@@ -751,7 +751,7 @@ type Modal = 'tipos' | 'quarto' | null;
       color: #054054; margin-bottom: 3px;
     }
     .acm-info-txt p {
-      margin: 0; font-size: 0.8rem; line-height: 1.5; color: #6b7f8a;
+      margin: 0; font-size: 0.8rem; line-height: 1.5; color: #7d97a1;
     }
     .acm-info-txt b { color: #40525d; }
     @media (max-width: 960px) { .acm-info { grid-template-columns: 1fr; } }
@@ -773,12 +773,12 @@ type Modal = 'tipos' | 'quarto' | null;
       border-color: #1a6f8a;
       box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14);
     }
-    .acm-busca-icone { color: #6b7f8a; font-size: 20px; width: 20px; height: 20px; }
+    .acm-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
     .acm-busca-input {
       flex: 1; border: none; outline: none; background: transparent;
-      font-size: 0.9rem; color: #212529; font-family: inherit; height: 100%;
+      font-size: 0.9rem; color: #33424c; font-family: inherit; height: 100%;
     }
-    .acm-busca-input::placeholder { color: #9aa5b1; }
+    .acm-busca-input::placeholder { color: #8fa3ab; }
     .acm-busca-input::-webkit-search-cancel-button { display: none; }
     .acm-limpar {
       border: none; background: #eef2f5; border-radius: 50%;
@@ -787,7 +787,7 @@ type Modal = 'tipos' | 'quarto' | null;
       padding: 0;
     }
     .acm-limpar mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .acm-limpar:hover { background: #dde5ea; }
+    .acm-limpar:hover { background: #d7e0e6; }
 
     .acm-toggle {
       display: inline-flex; align-items: center; gap: 14px;
@@ -798,7 +798,7 @@ type Modal = 'tipos' | 'quarto' | null;
     }
     .acm-trilho {
       width: 34px; height: 19px; border-radius: 999px;
-      background: #cbd5dc; position: relative; transition: background 0.18s;
+      background: #c3d2d9; position: relative; transition: background 0.18s;
       flex-shrink: 0;
     }
     .acm-bolinha {
@@ -823,11 +823,11 @@ type Modal = 'tipos' | 'quarto' | null;
       white-space: nowrap;
     }
     .acm-tabela tbody td {
-      padding: 16px 14px; border-bottom: 1px solid #edf1f4;
+      padding: 16px 14px; border-bottom: 1px solid #eef2f5;
       color: #2c3a44; vertical-align: middle; white-space: nowrap;
     }
     .acm-row { transition: background 0.12s; }
-    .acm-row:hover { background: #f4f9fb; }
+    .acm-row:hover { background: #f4f8fa; }
     .acm-row.sel { background: rgba(26, 111, 138, 0.07); }
     .acm-row:last-child td { border-bottom: none; }
     .tc { text-align: center; }
@@ -841,7 +841,7 @@ type Modal = 'tipos' | 'quarto' | null;
     .acm-cell-txt { display: flex; flex-direction: column; line-height: 1.3; min-width: 0; }
     .acm-cell-txt strong { color: #054054; font-weight: 600; font-size: 0.95rem; }
     .acm-cell-txt small {
-      color: #7b8b96; font-size: 0.8rem;
+      color: #7d97a1; font-size: 0.8rem;
       max-width: 320px; white-space: nowrap;
       overflow: hidden; text-overflow: ellipsis;
     }
@@ -863,19 +863,19 @@ type Modal = 'tipos' | 'quarto' | null;
 
     /* ---------- estado vazio ---------- */
     .acm-vazio {
-      text-align: center; padding: 40px 16px !important; color: #7b8b96;
+      text-align: center; padding: 40px 16px !important; color: #7d97a1;
     }
     .acm-vazio mat-icon {
       font-size: 40px; width: 40px; height: 40px;
-      color: #b8c5cd; margin-bottom: 8px;
+      color: #c3d2d9; margin-bottom: 8px;
     }
     .acm-vazio p { margin: 0 0 14px; font-size: 0.9rem; }
 
     /* ---------- skeleton ---------- */
-    .skel-row td { border-bottom: 1px solid #edf1f4; }
+    .skel-row td { border-bottom: 1px solid #eef2f5; }
     .skel {
       display: inline-block; border-radius: 6px;
-      background: linear-gradient(90deg, #eef2f5 25%, #e2e9ee 50%, #eef2f5 75%);
+      background: linear-gradient(90deg, #eef2f5 25%, #e3eaef 50%, #eef2f5 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
     }
@@ -891,7 +891,7 @@ type Modal = 'tipos' | 'quarto' | null;
     .modal-detalhe .modal-body { max-height: 78vh; overflow-y: auto; }
     .det-titulo { display: flex; align-items: center; gap: 10px; }
     .det-desc {
-      margin: 0 0 4px; font-size: 0.84rem; line-height: 1.5; color: #6b7f8a;
+      margin: 0 0 4px; font-size: 0.84rem; line-height: 1.5; color: #7d97a1;
     }
     .modal-detalhe h4 {
       display: flex; align-items: center; gap: 6px;
@@ -933,14 +933,14 @@ type Modal = 'tipos' | 'quarto' | null;
     }
     .chip {
       display: inline-flex; align-items: center; gap: 8px;
-      border: 1px solid #dde5ea; border-radius: 8px; padding: 6px 10px;
+      border: 1px solid #d7e0e6; border-radius: 8px; padding: 6px 10px;
       background: #fff;
     }
     .chip strong { color: #054054; font-size: 0.9rem; }
     .chip-del {
       display: inline-flex; align-items: center; justify-content: center;
       border: none; background: transparent; cursor: pointer;
-      color: #9aa5b1; padding: 0;
+      color: #8fa3ab; padding: 0;
     }
     .chip-del mat-icon { font-size: 15px; width: 15px; height: 15px; }
     .chip-del:hover { color: #054054; }
@@ -957,11 +957,11 @@ type Modal = 'tipos' | 'quarto' | null;
     /* ---------- modais pequenos (tipos / quarto) ---------- */
     .modal-sm { max-width: 360px; }
     .modal-dica {
-      margin: 0 0 12px; font-size: 0.8rem; line-height: 1.5; color: #6b7f8a;
+      margin: 0 0 12px; font-size: 0.8rem; line-height: 1.5; color: #7d97a1;
     }
     .modal-foot {
       display: flex; justify-content: flex-end;
-      padding: 10px 14px; border-top: 1px solid #dee2e6;
+      padding: 10px 14px; border-top: 1px solid #d7e0e6;
     }
     .modal-foot .btn-green { display: inline-flex; align-items: center; gap: 6px; }
     .modal-foot mat-icon { font-size: 15px; width: 15px; height: 15px; }
@@ -988,24 +988,24 @@ type Modal = 'tipos' | 'quarto' | null;
     .drawer-head {
       display: flex; align-items: flex-start; justify-content: space-between;
       gap: 12px; padding: 18px 22px;
-      background: #fff; border-bottom: 1px solid #e3eaee;
+      background: #fff; border-bottom: 1px solid #e3eaef;
       flex-shrink: 0;
     }
     .drawer-head-txt h5 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #054054; }
-    .drawer-head-txt p { margin: 3px 0 0; font-size: 0.8rem; color: #7b8b96; }
+    .drawer-head-txt p { margin: 3px 0 0; font-size: 0.8rem; color: #7d97a1; }
     .drawer-fechar {
       border: none; background: #eef2f5; border-radius: 8px;
       width: 34px; height: 34px; cursor: pointer; color: #5d6d7e;
       display: inline-flex; align-items: center; justify-content: center;
       flex-shrink: 0; transition: background 0.15s;
     }
-    .drawer-fechar:hover { background: #dde5ea; color: #054054; }
+    .drawer-fechar:hover { background: #d7e0e6; color: #054054; }
     .drawer-fechar mat-icon { font-size: 18px; width: 18px; height: 18px; }
 
     .drawer-form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
     .drawer-body { flex: 1; overflow-y: auto; padding: 18px 22px; }
     .dsec {
-      background: #fff; border: 1px solid #e6edf1; border-radius: 10px;
+      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
       padding: 16px; margin-bottom: 14px;
     }
     .dsec-tit {
@@ -1045,7 +1045,7 @@ type Modal = 'tipos' | 'quarto' | null;
     .drawer-foot {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 13px 22px;
-      background: #fff; border-top: 1px solid #e3eaee;
+      background: #fff; border-top: 1px solid #e3eaef;
       flex-shrink: 0;
     }
     .drawer-req { font-size: 0.76rem; color: #8a99a4; }

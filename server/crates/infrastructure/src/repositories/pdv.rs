@@ -852,7 +852,7 @@ impl PdvRepository for PgPdvRepository {
             .await
             .map_err(map_db_err)?;
             sqlx::query(
-                "UPDATE lancamento SET valor_liquidado = valor, status = 'quitado',
+                "UPDATE lancamento SET valor_liquidado = valor, status = 'liquidado',
                      atualizado_em = now() WHERE id = $1",
             )
             .bind(lanc)
@@ -1117,7 +1117,7 @@ impl PdvRepository for PgPdvRepository {
         .map_err(map_db_err)?;
 
         sqlx::query(
-            "UPDATE lancamento SET valor_liquidado = valor, status = 'quitado',
+            "UPDATE lancamento SET valor_liquidado = valor, status = 'liquidado',
                  atualizado_em = now() WHERE id = $1",
         )
         .bind(lanc)

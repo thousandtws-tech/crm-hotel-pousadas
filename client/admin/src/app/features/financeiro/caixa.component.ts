@@ -268,7 +268,7 @@ const fmt = (v: string | number | null | undefined) => BRL.format(num(v));
     .tab-wrap.linhas { max-height:300px; overflow-y:auto; }
     .tab { width:100%; border-collapse:collapse; font-size:.85rem; }
     .tab thead th { background:#f4f8fa; color:#40525d; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:9px 12px; text-align:left; border-bottom:2px solid #e3eaef; white-space:nowrap; }
-    .tab tbody td { padding:8px 12px; border-bottom:1px solid #edf1f4; color:#33424c; font-variant-numeric:tabular-nums; }
+    .tab tbody td { padding:8px 12px; border-bottom:1px solid #eef2f5; color:#33424c; font-variant-numeric:tabular-nums; }
     .tab .tr { text-align:right; }
     .tag { display:inline-block; padding:2px 9px; border-radius:20px; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
     .tag.san { background:#fdeaea; color:#dc3545; } .tag.sup { background:#e6f4ec; color:#198754; }
