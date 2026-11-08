@@ -22,7 +22,7 @@ const SUGESTOES = [
         [class.mar-fab-live]="m.estado() === 'listening' || m.estado() === 'speaking'"
         [class.mar-fab-think]="m.estado() === 'thinking'"
         (click)="alternar()"
-        aria-label="Abrir MAR IA"
+        aria-label="Abrir Maria"
         [attr.aria-expanded]="aberta()"
       >
         <mat-icon>auto_awesome</mat-icon>
@@ -33,13 +33,13 @@ const SUGESTOES = [
           class="mar-panel"
           [class.mar-dark]="m.micLigado()"
           role="dialog"
-          aria-label="MAR IA — assistente virtual"
+          aria-label="Maria — assistente virtual"
         >
           <!-- header -->
           <header class="mar-head">
             <div class="mar-avatar">M</div>
             <div class="mar-head-txt">
-              <strong>MAR IA</strong>
+              <strong>Maria</strong>
               <span class="mar-st">
                 <span class="mar-dot" [class]="'mar-dot-' + m.estado()"></span>
                 {{ rotuloEstado() }}
@@ -127,7 +127,7 @@ const SUGESTOES = [
                 @if (m.estado() === 'thinking' && !m.assistenteParcial()) {
                   <div class="mar-linha">
                     <div class="mar-avatar mar-avatar-sm">M</div>
-                    <div class="mar-balao mar-balao-ia mar-typing" aria-label="MAR IA pensando">
+                    <div class="mar-balao mar-balao-ia mar-typing" aria-label="Maria pensando">
                       <span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>
                     </div>
                   </div>
@@ -169,11 +169,11 @@ const SUGESTOES = [
               <textarea
                 class="mar-txt"
                 rows="1"
-                placeholder="Pergunte à MAR IA…"
+                placeholder="Pergunte à Maria…"
                 #entrada
                 (input)="autoResize(entrada)"
                 (keydown)="tecla($event, entrada)"
-                aria-label="Mensagem para a MAR IA"
+                aria-label="Mensagem para a Maria"
               ></textarea>
               <div class="mar-acoes">
                 @if (m.micDisponivel()) {
@@ -183,7 +183,7 @@ const SUGESTOES = [
                     [class.mar-mic-on]="m.micLigado()"
                     (click)="alternarMic()"
                     [attr.aria-pressed]="m.micLigado()"
-                    [title]="m.micLigado() ? 'Parar de ouvir' : 'Falar com MAR IA'"
+                    [title]="m.micLigado() ? 'Parar de ouvir' : 'Falar com Maria'"
                   >
                     <mat-icon>{{ m.micLigado() ? 'mic' : 'mic_none' }}</mat-icon>
                   </button>

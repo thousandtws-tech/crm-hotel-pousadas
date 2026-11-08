@@ -42,7 +42,7 @@ SCHEMAS: list[dict[str, Any]] = [
     {
         "type": "function",
         "name": "listar_memorias",
-        "description": "Lista o que a MAR IA memorizou (pousada + deste usuário).",
+        "description": "Lista o que a Maria memorizou (pousada + deste usuário).",
         "parameters": {"type": "object", "properties": {}},
     },
     {

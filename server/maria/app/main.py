@@ -77,7 +77,7 @@ async def lifespan(app: FastAPI):
         await store.fechar()
 
 
-app = FastAPI(title="MAR IA", lifespan=lifespan)
+app = FastAPI(title="Maria", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().cors_origins,

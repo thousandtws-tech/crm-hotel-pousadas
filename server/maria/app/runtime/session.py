@@ -342,7 +342,7 @@ class MariaSession:
                    else "Boa tarde" if hora < 18 else "Boa noite")
         nome = (self.ator.nome or "").split()[0] or "por aqui"
         return (
-            f"{periodo}, {nome}! Sou a MAR IA, assistente da pousada. "
+            f"{periodo}, {nome}! Sou a Maria, assistente da pousada. "
             "Como posso ajudar?"
         )
 

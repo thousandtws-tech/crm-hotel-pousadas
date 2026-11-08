@@ -363,7 +363,7 @@ async def handle(ex, nome: str, a: dict[str, Any]) -> dict[str, Any]:
             return ex._exec(
                 "cancelar_comanda", "post",
                 f"/pdv/comandas/{int(a['idcomanda'])}/cancelar",
-                {"motivo": a.get("motivo") or "cancelada via MAR IA"},
+                {"motivo": a.get("motivo") or "cancelada via Maria"},
                 {"comanda": a["idcomanda"], "motivo": a.get("motivo")},
                 "Comanda cancelada.",
             )
@@ -375,7 +375,7 @@ async def handle(ex, nome: str, a: dict[str, Any]) -> dict[str, Any]:
                 "cancelar": "cancelar",
             }
             acao_item = mapa[a["acao"]]
-            corpo = ({"motivo": a.get("motivo") or "via MAR IA"}
+            corpo = ({"motivo": a.get("motivo") or "via Maria"}
                      if acao_item == "cancelar" else {})
             return ex._exec(
                 f"item_comanda_{acao_item}", "post",

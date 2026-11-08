@@ -338,7 +338,7 @@ class Preparadores:
             "iditem": int(a["iditem"]),
             "tipo": a["tipo"],
             "quantidade": int(a["quantidade"]),
-            "motivo": a.get("motivo") or "lançamento via MAR IA",
+            "motivo": a.get("motivo") or "lançamento via Maria",
         }]}
         return self._exec(
             "movimentar_estoque", "post", "/estoque/movimentacoes", corpo,

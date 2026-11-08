@@ -101,7 +101,7 @@ export class MariaService {
           setTimeout(() => this.conectar(), wait);
         }
       };
-      this.ws.onerror = () => this.erro.set('serviço MAR IA fora do ar');
+      this.ws.onerror = () => this.erro.set('serviço Maria fora do ar');
       this.ws.onmessage = (e) => this.onMsg(e);
     } catch {
       this.ws = null;
