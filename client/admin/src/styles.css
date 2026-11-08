@@ -777,7 +777,7 @@ body {
 
 /* ============ Tour guiado (driver.js) — tema pousada ============ */
 :root {
-  --driver-popover-font-family: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
+  --driver-popover-font-family: 'Manrope', 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 .driver-popover {
   border-radius: 14px;
@@ -1222,3 +1222,41 @@ body {
 .mat-sel-sm { min-height: 32px; font-size: 0.84rem; }
 .mat-sel-sm .mat-mdc-select-trigger { padding: 5px 10px; }
 .mat-sel.vago .mat-mdc-select-value { color: #8a99a4; font-style: italic; }
+
+/* ============ ngb-datepicker — CSS mínimo (substitui o Bootstrap global) ============
+   O ng-bootstrap traz a CSS estrutural própria; aqui ficam só as variáveis
+   --bs-* e as poucas utilitárias que o template aplica (bg-primary,
+   text-white, form-select, dropdown-menu…), no tema da pousada. */
+ngb-datepicker {
+  --bs-border-color: #d7e0e6;
+  --bs-tertiary-bg: #f1f5f7;
+  --bs-info: #4b95ab;
+  --bs-text-muted: #8a99a4;
+  --bs-primary: #1a6f8a;
+  font-family: var(--font-body);
+  font-size: 0.84rem;
+}
+ngb-datepicker.dropdown-menu {
+  position: absolute; z-index: 1060;
+  background: #fff; border: 1px solid #d7e0e6; border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(5, 40, 54, .22);
+  padding: 0; margin-top: 6px;
+}
+ngb-datepicker .ngb-dp-day { border-radius: 8px; }
+ngb-datepicker .ngb-dp-day:hover:not(.disabled):not(.bg-primary) { background: #e6f0f4; }
+ngb-datepicker .bg-primary { background: #1a6f8a !important; }
+ngb-datepicker .text-white { color: #fff !important; }
+ngb-datepicker .text-muted { color: #8a99a4 !important; }
+ngb-datepicker .small { font-size: .82em; }
+ngb-datepicker .btn { font: inherit; cursor: pointer; }
+ngb-datepicker .btn-link { border: 0; background: transparent; color: #054054; }
+ngb-datepicker .btn-link:hover { color: #1a6f8a; }
+ngb-datepicker .form-select {
+  flex: 1 1 auto; min-width: 0; margin: 0 2px;
+  padding: 3px 22px 3px 8px; font: inherit; font-size: .82rem; color: #1c3038;
+  border: 1px solid #d7e0e6; border-radius: 7px; background-color: #fff;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23546a75' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat; background-position: right 6px center; background-size: 12px;
+  appearance: none; cursor: pointer;
+}
+ngb-datepicker .form-select:focus { border-color: #4b95ab; outline: 2px solid rgba(75,149,171,.25); }

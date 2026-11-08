@@ -13,7 +13,7 @@
 
 import { Service, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { Socket, Channel } from 'phoenix';
+import type { Socket, Channel } from 'phoenix';
 import { environment } from '../../../environments/environment';
 import { AuthStore } from './auth.store';
 import { Notify } from './notify.service';
@@ -79,7 +79,7 @@ export class Realtime {
     if (this.rodando) return;
     if (!this.auth.accessToken()) return;
     this.rodando = true;
-    this.conectar();
+    void this.conectar();
   }
 
   parar(): void {
@@ -93,7 +93,11 @@ export class Realtime {
     this.online.set(false);
   }
 
-  private conectar(): void {
+  private async conectar(): Promise<void> {
+    // phoenix é carregado sob demanda — fora do bundle inicial; a primeira
+    // conexão (pós-login) baixa o chunk e as seguintes reutilizam o cache.
+    const { Socket } = await import('phoenix');
+    if (!this.rodando) return;
     const socket = new Socket(environment.realtimeUrl, {
       // função → reavaliada a cada (re)conexão; pega o token renovado
       params: () => ({ token: this.auth.accessToken() }),
