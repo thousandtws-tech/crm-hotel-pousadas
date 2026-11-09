@@ -59,6 +59,22 @@ pub struct Settings {
     pub sinal_percentual: u32,
     /// Minutos que a acomodação fica bloqueada aguardando pagamento.
     pub hold_minutos: i64,
+    /// Resend — sem chave, o canal e-mail falha controlado na fila.
+    pub resend_api_key: Option<String>,
+    /// Remetente verificado — ex.: "Pousada <reservas@dominio>".
+    pub email_remetente: String,
+    /// Meta Cloud API — token de acesso permanente + Phone Number ID.
+    pub whatsapp_token: Option<String>,
+    pub whatsapp_phone_id: Option<String>,
+    /// VAPID — PEM da chave privada P-256 + pública base64url pro PWA.
+    pub vapid_private_pem: Option<String>,
+    pub vapid_public_b64: Option<String>,
+    /// Contato do operador no JWT VAPID (`mailto:` ou https).
+    pub vapid_contato: String,
+    /// Base pública dos links de hóspede (ficha, avaliação, checkout).
+    pub site_base: String,
+    /// Nome exibido nas mensagens ao hóspede.
+    pub pousada_nome: String,
 }
 
 impl Settings {
@@ -110,6 +126,20 @@ impl Settings {
             }),
             sinal_percentual: env_u32("SINAL_PERCENTUAL").unwrap_or(30).min(100),
             hold_minutos: env_i64("HOLD_MINUTOS").unwrap_or(30).clamp(30, 1440),
+            resend_api_key: env_string("RESEND_API_KEY"),
+            email_remetente: env_string("EMAIL_REMETENTE").unwrap_or_else(|| {
+                "Pousada Espírito do Mar <reservas@espiritodomar.com.br>".into()
+            }),
+            whatsapp_token: env_string("WHATSAPP_TOKEN"),
+            whatsapp_phone_id: env_string("WHATSAPP_PHONE_ID"),
+            vapid_private_pem: env_string("VAPID_PRIVATE_PEM"),
+            vapid_public_b64: env_string("VAPID_PUBLIC_B64"),
+            vapid_contato: env_string("VAPID_CONTATO")
+                .unwrap_or_else(|| "mailto:contato@espiritodomar.com.br".into()),
+            site_base: env_string("SITE_BASE")
+                .unwrap_or_else(|| "https://espiritodomar.com.br".into()),
+            pousada_nome: env_string("POUSADA_NOME")
+                .unwrap_or_else(|| "Pousada Espírito do Mar".into()),
         })
     }
 }

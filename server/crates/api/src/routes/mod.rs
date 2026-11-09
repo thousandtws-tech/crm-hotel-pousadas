@@ -4,6 +4,7 @@ pub mod caixa;
 pub mod catalogo;
 pub mod cms;
 pub mod compras;
+pub mod comunicacao;
 pub mod estoque;
 pub mod impressoras;
 pub mod notificacoes;

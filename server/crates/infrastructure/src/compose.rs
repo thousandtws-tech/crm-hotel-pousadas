@@ -7,6 +7,7 @@ use crate::eventos::{spawn_aviso_persister, EventBus};
 use crate::jwt::JwtIssuer;
 use crate::password::Argon2Hasher;
 use crate::repositories::*;
+
 use clarituz_application::services::*;
 use clarituz_application::Services;
 use clarituz_domain::ports::{
@@ -62,6 +63,39 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
     // consumer do bus → histórico persistido (inbox/badges)
     let notif_repo = Arc::new(PgNotificacaoRepository::new(pool.clone()));
     spawn_aviso_persister(eventos.clone(), notif_repo.clone());
+
+    // Emissores externos — cada um entra só com as credenciais presentes.
+    // Sem credencial, o item da fila falha com backoff (degradação segura,
+    // igual ao gateway Stripe ausente).
+    let mut emissores: Vec<Arc<dyn clarituz_domain::ports::Emissor>> = Vec::new();
+    if let Some(key) = settings.resend_api_key.as_ref() {
+        emissores.push(Arc::new(crate::senders::ResendEmissor::new(
+            key.clone(),
+            settings.email_remetente.clone(),
+        )));
+    }
+    if let (Some(tok), Some(phone)) = (
+        settings.whatsapp_token.as_ref(),
+        settings.whatsapp_phone_id.as_ref(),
+    ) {
+        emissores.push(Arc::new(crate::senders::MetaWaEmissor::new(
+            tok.clone(),
+            phone.clone(),
+        )));
+    }
+    if let (Some(pem), Some(pub_b64)) = (
+        settings.vapid_private_pem.as_ref(),
+        settings.vapid_public_b64.as_ref(),
+    ) {
+        emissores.push(Arc::new(crate::senders::VapidPushEmissor::new(
+            pem.clone(),
+            pub_b64.clone(),
+            settings.vapid_contato.clone(),
+        )));
+    }
+    let fila_envio_repo = Arc::new(PgFilaEnvio::new(pool.clone()));
+    let avaliacao_repo = Arc::new(PgAvaliacaoRepository::new(pool.clone()));
+    let fidelidade_repo = Arc::new(PgFidelidadeRepository::new(pool.clone()));
 
     let services = Services {
         auth: auth.clone(),
@@ -147,6 +181,18 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             Arc::new(PgComprasRepository::new(pool.clone())),
             Arc::new(PgEstoqueRepository::new(pool.clone())),
         )),
+        comunicacao: Arc::new(ComunicacaoService::new(
+            fila_envio_repo,
+            Arc::new(PgPushRepository::new(pool.clone())),
+            avaliacao_repo.clone(),
+            Arc::new(PgAutomacaoRepository::new(pool.clone())),
+            emissores,
+            publisher.clone(),
+            &settings.site_base,
+            settings.pousada_nome.clone(),
+        )),
+        avaliacoes: Arc::new(AvaliacoesService::new(avaliacao_repo)),
+        fidelidade: Arc::new(FidelidadeService::new(fidelidade_repo)),
     };
 
     BuiltServices {

@@ -64,6 +64,8 @@ thiserror = { version = "2" }
 argon2 = { version = "0.5" }
 jsonwebtoken = { version = "9" }
 sha2 = { version = "0.10" }
+base64 = { version = "0.22" }
+url = { version = "2" }
 hmac = { version = "0.12" }
 quick-xml = { version = "0.38", features = ["encoding"] }
 hex = { version = "0.4" }

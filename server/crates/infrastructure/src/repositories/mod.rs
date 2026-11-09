@@ -7,6 +7,7 @@ pub mod caixa;
 pub mod catalogo;
 pub mod cms;
 pub mod compras;
+pub mod comunicacao;
 pub mod estoque;
 pub mod impressora;
 pub mod notificacao;
@@ -27,6 +28,10 @@ pub use catalogo::{
 };
 pub use cms::PgCmsRepository;
 pub use compras::PgComprasRepository;
+pub use comunicacao::{
+    PgAutomacaoRepository, PgAvaliacaoRepository, PgFidelidadeRepository, PgFilaEnvio,
+    PgPushRepository,
+};
 pub use estoque::PgEstoqueRepository;
 pub use impressora::PgImpressoraRepository;
 pub use notificacao::PgNotificacaoRepository;

@@ -240,6 +240,46 @@ pub fn build(state: AppState) -> Router {
             "/financeiro/pagamentos/receita-acomodacoes",
             get(routes::pagamentos_online::receita_acomodacoes),
         )
+        // comunicação — fila, matriz, push, cobrança
+        .route("/comunicacao/fila", get(routes::comunicacao::fila_listar))
+        .route(
+            "/comunicacao/matriz",
+            get(routes::comunicacao::matriz_listar).post(routes::comunicacao::matriz_gravar),
+        )
+        .route(
+            "/comunicacao/cobranca/{idreserva}",
+            post(routes::comunicacao::cobranca_enviar),
+        )
+        .route("/push/subscribe", post(routes::comunicacao::push_subscribe))
+        .route(
+            "/push/unsubscribe",
+            post(routes::comunicacao::push_unsubscribe),
+        )
+        .route("/push/vapid-key", get(routes::comunicacao::push_vapid_key))
+        // avaliações — painel reputação
+        .route("/avaliacoes", get(routes::comunicacao::avaliacoes_listar))
+        .route(
+            "/avaliacoes/dashboard",
+            get(routes::comunicacao::avaliacoes_dashboard),
+        )
+        .route(
+            "/avaliacoes/{id}/responder",
+            post(routes::comunicacao::avaliacao_responder),
+        )
+        // fidelidade + perfil 360
+        .route(
+            "/fidelidade/niveis",
+            get(routes::comunicacao::fidelidade_niveis_get)
+                .post(routes::comunicacao::fidelidade_niveis_post),
+        )
+        .route(
+            "/fidelidade/niveis/{id}",
+            axum::routing::delete(routes::comunicacao::fidelidade_niveis_delete),
+        )
+        .route(
+            "/clientes/{id}/perfil360",
+            get(routes::comunicacao::cliente_perfil360),
+        )
         // estoque
         .route(
             "/estoque/categorias",
@@ -766,6 +806,31 @@ pub fn build(state: AppState) -> Router {
         .route(
             "/api/v1/webhooks/stripe",
             post(routes::pagamentos_online::webhook_stripe),
+        )
+        // webhook Resend — bounce/complaint → supressão. Origem = Resend.
+        .route(
+            "/api/v1/webhooks/resend",
+            post(routes::comunicacao::webhook_resend),
+        )
+        // pré-ficha FNRH pública — link único por reserva (token opaco)
+        .route(
+            "/api/v1/publico/fnrh/{token}",
+            get(routes::comunicacao::pre_ficha_get)
+                .post(routes::comunicacao::pre_ficha_post)
+                .route_layer(from_fn_with_state(
+                    IpRateLimit::novo(20, Duration::from_secs(60)),
+                    IpRateLimit::middleware,
+                )),
+        )
+        // pesquisa pós-estadia pública — token único por avaliação
+        .route(
+            "/api/v1/publico/avaliacoes/{token}",
+            get(routes::comunicacao::avaliacao_get)
+                .post(routes::comunicacao::avaliacao_post)
+                .route_layer(from_fn_with_state(
+                    IpRateLimit::novo(20, Duration::from_secs(60)),
+                    IpRateLimit::middleware,
+                )),
         )
         .route("/api/v1/midia/{id}", get(routes::cms::servir_midia))
         // scrape Prometheus — req/s, latência e status por rota

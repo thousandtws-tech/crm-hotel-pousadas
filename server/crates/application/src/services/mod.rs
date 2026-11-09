@@ -10,6 +10,7 @@ pub mod caixa;
 pub mod clientes;
 pub mod cms;
 pub mod compras;
+pub mod comunicacao;
 pub mod dashboard;
 pub mod documentos;
 pub mod estabelecimento;
@@ -35,6 +36,7 @@ pub use caixa::CaixaService;
 pub use clientes::ClienteService;
 pub use cms::CmsService;
 pub use compras::ComprasService;
+pub use comunicacao::{AvaliacoesService, ComunicacaoService, FidelidadeService};
 pub use dashboard::DashboardService;
 pub use documentos::DocumentoService;
 pub use estabelecimento::EstabelecimentoService;
@@ -80,4 +82,7 @@ pub struct Services {
     pub pdv: Arc<PdvService>,
     pub cafe: Arc<CafeService>,
     pub compras: Arc<ComprasService>,
+    pub comunicacao: Arc<ComunicacaoService>,
+    pub avaliacoes: Arc<AvaliacoesService>,
+    pub fidelidade: Arc<FidelidadeService>,
 }

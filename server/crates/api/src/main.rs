@@ -159,6 +159,7 @@ async fn serve(settings: Settings, pool: sqlx::PgPool) -> Result<(), Box<dyn std
         eventos,
         cors_origins: settings.cors_origins.clone(),
         stripe_webhook_secret: settings.stripe_webhook_secret.clone(),
+        vapid_public_b64: settings.vapid_public_b64.clone(),
     };
     // Sweeper de conciliação: holds expirados, webhooks falhos e
     // pagamentos pendentes consultados direto no provedor (a cada 5min).
@@ -171,6 +172,33 @@ async fn serve(settings: Settings, pool: sqlx::PgPool) -> Result<(), Box<dyn std
                 tick.tick().await;
                 if let Err(e) = svc.conciliar().await {
                     tracing::warn!(erro = %e, "conciliação de pagamentos falhou");
+                }
+            }
+        });
+    }
+    // Fila de comunicação — worker drena a outbox a cada 30s; o agendador
+    // roda lembretes/pesquisas a cada hora (dedup por reserva+template no
+    // repo garante envio único por hóspede).
+    {
+        let svc = state.services.comunicacao.clone();
+        tokio::spawn(async move {
+            let mut tick = tokio::time::interval(std::time::Duration::from_secs(30));
+            tick.tick().await;
+            loop {
+                tick.tick().await;
+                if let Err(e) = svc.drenar_fila().await {
+                    tracing::warn!(erro = %e, "fila_envio: worker falhou");
+                }
+            }
+        });
+        let svc = state.services.comunicacao.clone();
+        tokio::spawn(async move {
+            let mut tick = tokio::time::interval(std::time::Duration::from_secs(3600));
+            tick.tick().await;
+            loop {
+                tick.tick().await;
+                if let Err(e) = svc.rodar_lembretes().await {
+                    tracing::warn!(erro = %e, "lembretes: rodada falhou");
                 }
             }
         });

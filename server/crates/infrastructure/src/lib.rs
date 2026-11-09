@@ -11,6 +11,7 @@ pub mod ofx;
 pub mod password;
 pub mod repositories;
 pub mod s3_probe;
+pub mod senders;
 pub mod stripe;
 
 pub use compose::{build_services, BuiltServices};

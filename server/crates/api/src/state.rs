@@ -22,4 +22,6 @@ pub struct AppState {
     pub cors_origins: Vec<String>,
     /// Segredo de assinatura do webhook Stripe — `None` desabilita a rota.
     pub stripe_webhook_secret: Option<String>,
+    /// Chave pública VAPID (base64url) exposta ao PWA —  sem push.
+    pub vapid_public_b64: Option<String>,
 }

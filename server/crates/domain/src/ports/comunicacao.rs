@@ -1,0 +1,170 @@
+use async_trait::async_trait;
+use chrono::{DateTime, Utc};
+
+use crate::entities::*;
+use crate::enums::{CanalEnvio, StatusAvaliacao};
+use crate::error::DomainError;
+
+/// Outbox persistente + resolução da matriz. Implementada sobre Postgres;
+/// o worker drena `proximos` e marca o resultado.
+#[async_trait]
+pub trait FilaEnvioRepository: Send + Sync {
+    async fn enfileirar(&self, novo: NovoEnvio) -> Result<i64, DomainError>;
+    /// Itens vencidos (agendado_para <= agora) com status pendente — o
+    /// worker pega um lote por rodada.
+    async fn proximos(
+        &self,
+        agora: DateTime<Utc>,
+        limite: i64,
+    ) -> Result<Vec<ItemFila>, DomainError>;
+    async fn marcar_enviado(
+        &self,
+        id: i64,
+        provider_msg_id: Option<String>,
+    ) -> Result<(), DomainError>;
+    async fn marcar_falha(
+        &self,
+        id: i64,
+        erro: &str,
+        backoff_segundos: i64,
+    ) -> Result<(), DomainError>;
+    async fn cancelar(&self, id: i64) -> Result<(), DomainError>;
+    /// Monitor administrativo.
+    async fn listar(&self, limite: i64) -> Result<Vec<ItemFila>, DomainError>;
+
+    async fn email_suprimido(&self, email: &str) -> Result<bool, DomainError>;
+    async fn suprimir_email(&self, email: &str, motivo: &str) -> Result<(), DomainError>;
+
+    /// Regras ativas da matriz para um evento.
+    async fn regras_do_evento(&self, evento: &str) -> Result<Vec<RegraMatriz>, DomainError>;
+    async fn listar_matriz(&self) -> Result<Vec<RegraMatriz>, DomainError>;
+    async fn gravar_regra(&self, regra: &RegraMatriz) -> Result<(), DomainError>;
+}
+
+/// Sender externo plugável — Resend, Meta Cloud API, VAPID. Devolve o id
+/// da mensagem no provedor quando disponível. A aplicação decide o canal;
+/// o emissor só transporta.
+#[async_trait]
+pub trait Emissor: Send + Sync {
+    fn canal(&self) -> CanalEnvio;
+    /// `destino`: e-mail | telefone | endpoint push (serializado no tickle).
+    async fn enviar(
+        &self,
+        destino: &str,
+        template: &str,
+        payload: &serde_json::Value,
+    ) -> Result<Option<String>, DomainError>;
+}
+
+#[async_trait]
+pub trait PushRepository: Send + Sync {
+    async fn gravar(&self, sub: &PushSubscription) -> Result<(), DomainError>;
+    async fn remover(&self, endpoint: &str) -> Result<(), DomainError>;
+    /// Assinaturas dos funcionários com `nivel <= papel` (matriz: papel alvo).
+    async fn por_papel(&self, papel: i16) -> Result<Vec<PushSubscription>, DomainError>;
+}
+
+#[async_trait]
+pub trait AvaliacaoRepository: Send + Sync {
+    async fn criar(
+        &self,
+        idreserva: i64,
+        idcliente: i64,
+        plataforma: &str,
+    ) -> Result<Avaliacao, DomainError>;
+    async fn por_token(&self, token: uuid::Uuid) -> Result<Avaliacao, DomainError>;
+    async fn por_reserva(&self, idreserva: i64) -> Result<Option<Avaliacao>, DomainError>;
+    async fn marcar_enviada(&self, id: i64) -> Result<(), DomainError>;
+    async fn marcar_lembrete(&self, id: i64) -> Result<(), DomainError>;
+    async fn gravar_resposta_hospede(
+        &self,
+        id: i64,
+        r: &RespostaAvaliacao,
+    ) -> Result<(), DomainError>;
+    async fn responder(
+        &self,
+        id: i64,
+        resposta: &str,
+        idfuncionario: i64,
+    ) -> Result<(), DomainError>;
+    async fn listar(
+        &self,
+        status: Option<StatusAvaliacao>,
+        limite: i64,
+    ) -> Result<Vec<Avaliacao>, DomainError>;
+    /// Pendentes cujo envio inicial já ocorreu e que levam lembrete +3d.
+    async fn pendentes_lembrete(&self, ate: DateTime<Utc>) -> Result<Vec<Avaliacao>, DomainError>;
+    /// Pendentes além do prazo de resposta — o sweeper expira.
+    async fn pendentes_expirar(&self, ate: DateTime<Utc>) -> Result<Vec<Avaliacao>, DomainError>;
+    async fn expirar(&self, id: i64) -> Result<(), DomainError>;
+}
+
+#[async_trait]
+pub trait FidelidadeRepository: Send + Sync {
+    async fn niveis(&self) -> Result<Vec<NivelFidelidade>, DomainError>;
+    async fn gravar_nivel(&self, nivel: &NivelFidelidade) -> Result<i64, DomainError>;
+    async fn remover_nivel(&self, id: i64) -> Result<(), DomainError>;
+    async fn do_cliente(&self, idcliente: i64) -> Result<Option<FidelidadeCliente>, DomainError>;
+    /// Recomputa diárias + gasto do cliente (pós-checkout / batch) e
+    /// promove/rebaixa o nível conforme `fidelidade_nivel.min_diarias`.
+    async fn recomputar(&self, idcliente: i64) -> Result<(), DomainError>;
+    /// KPIs agregados do perfil 360: total de estadias, LTV (centavos),
+    /// ticket médio, diárias acumuladas — tudo numa consulta.
+    async fn kpis_cliente(&self, idcliente: i64) -> Result<serde_json::Value, DomainError>;
+}
+
+/// Consultas de reserva usadas pelas automações (crons de lembretes e
+/// pesquisa). Filtra no SQL — o worker nunca varre a tabela.
+#[async_trait]
+pub trait AutomacaoRepository: Send + Sync {
+    /// Check-in `data` (geralmente amanhã), reserva ativa, pré-ficha não
+    /// preenchida — alvos do lembrete FNRH.
+    async fn checkins_sem_fnrh(
+        &self,
+        data: chrono::NaiveDate,
+    ) -> Result<Vec<ReservaAuto>, DomainError>;
+    /// Check-out `data` (hoje), reserva iniciada — lembrete de saída.
+    async fn checkouts_do_dia(
+        &self,
+        data: chrono::NaiveDate,
+    ) -> Result<Vec<ReservaAuto>, DomainError>;
+    /// Finalizadas desde `desde` sem linha em `avaliacao` — pesquisa nova.
+    async fn finalizadas_sem_avaliacao(
+        &self,
+        desde: DateTime<Utc>,
+    ) -> Result<Vec<ReservaAuto>, DomainError>;
+    /// Já existe item desta reserva+template+canal na fila (dedup do cron).
+    async fn existe_envio(
+        &self,
+        idreserva: i64,
+        template: &str,
+        canal: CanalEnvio,
+    ) -> Result<bool, DomainError>;
+    /// Reserva enxuta por id (lembrete +3d — a avaliação já traz idreserva).
+    async fn reserva_por_id(&self, idreserva: i64) -> Result<Option<ReservaAuto>, DomainError>;
+    /// Reserva + hóspede numa linha pro payload da mensagem.
+    async fn reserva_publica_por_token(
+        &self,
+        token: uuid::Uuid,
+    ) -> Result<Option<ReservaAuto>, DomainError>;
+    /// Pré-ficha enviada pelo hóspede via link público.
+    async fn gravar_pre_ficha(
+        &self,
+        idreserva: i64,
+        dados: &serde_json::Value,
+    ) -> Result<(), DomainError>;
+}
+
+/// Linha enxuta de reserva para automações — sem carregar o detalhe completo.
+#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize)]
+pub struct ReservaAuto {
+    pub idreserva: i64,
+    pub idcliente: i64,
+    pub cliente_nome: String,
+    pub cliente_email: Option<String>,
+    pub cliente_telefone: Option<String>,
+    pub entradaprevista: chrono::NaiveDate,
+    pub saidaprevista: chrono::NaiveDate,
+    pub acomodacao_nome: Option<String>,
+    pub token_publico: Option<uuid::Uuid>,
+}
