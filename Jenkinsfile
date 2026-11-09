@@ -6,7 +6,12 @@ pipeline {
     options {
         disableConcurrentBuilds()
     }
-    triggers { githubPush() }
+    triggers {
+        githubPush()
+        // Fallback: se o webhook cair durante um restart do Jenkins,
+        // o polling detecta o commit novo em ~10min.
+        pollSCM('H/10 * * * *')
+    }
     environment {
         RAILWAY_TOKEN   = credentials('railway-token')
         RAILWAY_PROJECT = '540c1145-2aa0-41a3-83d1-3ea71e659a52'
