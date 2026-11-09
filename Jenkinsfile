@@ -25,23 +25,23 @@ pipeline {
                 changeset 'server/Cargo.*'
                 changeset 'server/Dockerfile'
             } }
-            steps { sh 'railway up -d -y -s api -e $RAILWAY_ENV -p $RAILWAY_PROJECT' }
+            steps { sh 'railway up -d -y -s api-server-rust -e $RAILWAY_ENV -p $RAILWAY_PROJECT' }
         }
         stage('maria') {
             when { changeset 'server/maria/**' }
-            steps { sh 'railway up -d -y -s maria -e $RAILWAY_ENV -p $RAILWAY_PROJECT' }
+            steps { sh 'railway up -d -y -s inteligencia-artificial -e $RAILWAY_ENV -p $RAILWAY_PROJECT' }
         }
         stage('realtime') {
             when { changeset 'server/realtime/**' }
-            steps { sh 'railway up -d -y -s realtime -e $RAILWAY_ENV -p $RAILWAY_PROJECT' }
+            steps { sh 'railway up -d -y -s motor-realtime-erlang -e $RAILWAY_ENV -p $RAILWAY_PROJECT' }
         }
         stage('admin') {
             when { changeset 'client/admin/**' }
-            steps { sh 'railway up -d -y -s admin -e $RAILWAY_ENV -p $RAILWAY_PROJECT' }
+            steps { sh 'railway up -d -y -s painel-administrativo -e $RAILWAY_ENV -p $RAILWAY_PROJECT' }
         }
         stage('web') {
             when { changeset 'client/web/**' }
-            steps { sh 'railway up -d -y -s web -e $RAILWAY_ENV -p $RAILWAY_PROJECT' }
+            steps { sh 'railway up -d -y -s website-institucional -e $RAILWAY_ENV -p $RAILWAY_PROJECT' }
         }
         stage('prometheus') {
             when { changeset 'monitoring/prometheus/**' }

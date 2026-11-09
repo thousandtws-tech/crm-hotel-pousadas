@@ -7,7 +7,7 @@ export default defineRailway(() => {
   const bucketVolume = volume("bucket-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "ams", sizeMB: 5000 });
   const mariaVolume = volume("maria-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "ams", sizeMB: 5000 });
   const postgresVolume = volume("postgres-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "ams", sizeMB: 5000 });
-  const admin = service("admin", {
+  const admin = service("painel-administrativo", {
     replicas: { "ams": 1 },
     // nginx estático — 0.25 vCPU / 512 MiB
     deploy: {
@@ -24,7 +24,7 @@ export default defineRailway(() => {
     networking: { privateNetworkEndpoint: "console" },
     env: { CONSOLE_MINIO_SERVER: preserve(), PASSWORD: preserve(), PORT: preserve(), USERNAME: preserve() },
   });
-  const maria = service("maria", {
+  const maria = service("inteligencia-artificial", {
     replicas: { "ams": 1 },
     // agente de voz Python — 0.5 vCPU / 1 GiB
     deploy: {
@@ -34,7 +34,7 @@ export default defineRailway(() => {
     volumeMounts: { "/app/data": mariaVolume },
     env: { API_BASE: preserve(), ELEVENLABS_API_KEY: preserve(), ELEVENLABS_MODEL_ID: preserve(), ELEVENLABS_SIMILARITY: preserve(), ELEVENLABS_SPEED: preserve(), ELEVENLABS_STABILITY: preserve(), ELEVENLABS_STYLE: preserve(), ELEVENLABS_VOICE_ID: preserve(), JWT_SECRET: preserve(), MARIA_BACKUP_ENABLED: preserve(), MARIA_BACKUP_INTERVAL_H: preserve(), MARIA_BACKUP_RETAIN: preserve(), MARIA_DEFAULT_LANGUAGE: preserve(), MARIA_HISTORY_ENABLED: preserve(), MARIA_HISTORY_MAX_TURNS: preserve(), MARIA_S3_ACCESS_KEY: preserve(), MARIA_S3_BUCKET: preserve(), MARIA_S3_ENDPOINT: preserve(), MARIA_S3_PREFIX: preserve(), MARIA_S3_REGION: preserve(), MARIA_S3_SECRET_KEY: preserve(), MARIA_TIMEZONE: preserve(), MARIA_VOICE_ENABLED: preserve(), OPENAI_API_KEY: preserve(), OPENAI_LLM_MODEL: preserve(), OPENAI_REALTIME_MODEL: preserve(), OPENAI_SERVER_VAD: preserve(), OPENAI_TRANSCRIPTION_MODEL: preserve(), RAILWAY_DOCKERFILE_PATH: preserve() },
   });
-  const realtime = service("realtime", {
+  const realtime = service("motor-realtime-erlang", {
     replicas: { "ams": 1 },
     // hub Phoenix/BEAM — 1 vCPU / 1 GiB (não hibernar: WebSocket + LISTEN 24/7)
     deploy: {
@@ -43,7 +43,7 @@ export default defineRailway(() => {
     },
     env: { CHECK_ORIGIN: preserve(), DATABASE_URL: preserve(), INGEST_TOKEN: preserve(), JWT_SECRET: preserve(), PHX_HOST: preserve(), PHX_SERVER: preserve(), PORT: preserve(), RAILWAY_DOCKERFILE_PATH: preserve(), SECRET_KEY_BASE: preserve() },
   });
-  const web = service("web", {
+  const web = service("website-institucional", {
     replicas: { "ams": 1 },
     // nginx estático — 0.25 vCPU / 512 MiB
     deploy: {
@@ -52,7 +52,7 @@ export default defineRailway(() => {
     },
     env: { RAILWAY_DOCKERFILE_PATH: preserve() },
   });
-  const api = service("api", {
+  const api = service("api-server-rust", {
     // API stateless: réplicas N×(DB_MAX_CONNECTIONS + 1 LISTEN) devem ficar
     // < ~80% do max_connections do Postgres (2×(10+1)=22 conns aqui — ok).
     // Avisos/deltas cruzam réplicas via LISTEN/NOTIFY (clarituz_aviso/delta).
