@@ -17,6 +17,10 @@ class Settings(BaseSettings):
 
     # OpenAI
     openai_api_key: str = ""
+    # timeout/retry do SDK — default do client é 10min, longo demais
+    # para um assistente de voz por turno
+    openai_timeout_secs: float = 45.0
+    openai_max_retries: int = 2
     openai_llm_model: str = "gpt-5.2"
     # Esforço de raciocínio da Responses API: low = TTFT bem menor
     # (ideal p/ voz). Use "none" para desativar o parâmetro.
@@ -59,6 +63,11 @@ class Settings(BaseSettings):
     maria_filler_enabled: bool = True
     # Tools independentes na mesma rodada executam em paralelo.
     maria_parallel_tools: bool = True
+
+    # circuit breaker das dependências externas — após N falhas seguidas
+    # chamadas falham na hora durante o cooldown (ver app/infra/resilience.py)
+    maria_circuit_failures: int = 3
+    maria_circuit_cooldown_secs: float = 60.0
     # Diário de turnos (JSONL) — vira dataset de avaliação/treino.
     maria_transcript_enabled: bool = True
     maria_transcript_file: str = "data/turns.jsonl"

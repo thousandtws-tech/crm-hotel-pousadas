@@ -16,6 +16,7 @@ from collections.abc import Awaitable, Callable
 import websockets
 
 from ..config import get_settings
+from ..infra.resilience import breaker
 
 log = logging.getLogger("maria.stt")
 
@@ -46,13 +47,16 @@ class OpenAiStt:
         # colateral via audio.input.transcription.model.
         # (O shape beta `?intent=transcription` retorna beta_api_shape_disabled.)
         url = f"wss://api.openai.com/v1/realtime?model={s.openai_realtime_model}"
-        self.ws = await websockets.connect(
-            url,
-            additional_headers={"Authorization": f"Bearer {s.openai_api_key}"},
-            ping_interval=20,
-            ping_timeout=20,
-            max_size=8 * 1024 * 1024,
-        )
+        # circuito aberto → falha na hora (sessão avisa "indisponível")
+        with breaker("openai-stt").vigiar():
+            self.ws = await websockets.connect(
+                url,
+                additional_headers={"Authorization": f"Bearer {s.openai_api_key}"},
+                ping_interval=20,
+                ping_timeout=20,
+                max_size=8 * 1024 * 1024,
+                open_timeout=15,
+            )
 
         turn_detection = (
             {
@@ -149,7 +153,10 @@ class OpenAiStt:
                     log.warning("stt erro: %s", ev)
         except asyncio.CancelledError:
             raise
-        except websockets.ConnectionClosed:
+        except websockets.ConnectionClosed as exc:
+            # queda mid-stream é sinal do provedor — conta no breaker
+            breaker("openai-stt").falha(exc)
             log.info("stt conexão encerrada")
-        except Exception:
+        except Exception as exc:
+            breaker("openai-stt").falha(exc)
             log.exception("stt falhou")

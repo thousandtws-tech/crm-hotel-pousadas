@@ -1,11 +1,18 @@
 """Cliente HTTP da API do sistema — cada chamada usa o Bearer do usuário,
 mantendo as regras de autorização (nível) aplicadas pelo backend Rust.
+
+Resiliência: timeout de 12s em toda chamada e 1 retry com backoff só em
+GET (idempotente) — writes nunca retentam, senão uma falha de rede
+poderia duplicar reservas/lançamentos.
 """
+import asyncio
 from typing import Any
 
 import httpx
 
 from ..config import get_settings
+
+_RETRY_STATUS = {502, 503, 504}
 
 
 class ApiError(Exception):
@@ -28,8 +35,19 @@ class PousadaApi:
         await self._client.aclose()
 
     async def get(self, path: str, params: dict[str, Any] | None = None) -> Any:
-        r = await self._client.get(path, params=_limpa(params or {}))
-        return self._ok(r)
+        params = _limpa(params or {})
+        for tentativa in range(2):
+            try:
+                r = await self._client.get(path, params=params)
+            except httpx.TransportError:
+                if tentativa == 0:
+                    await asyncio.sleep(0.25)
+                    continue
+                raise
+            if r.status_code not in _RETRY_STATUS or tentativa == 1:
+                return self._ok(r)
+            await asyncio.sleep(0.25)
+        raise AssertionError("inalcançável")
 
     async def post(self, path: str, body: Any = None) -> Any:
         r = await self._client.post(path, json=body)

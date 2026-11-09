@@ -88,11 +88,14 @@ app.add_middleware(
 
 @app.get("/healthz")
 async def healthz():
+    from .infra.resilience import circuitos
+
     s = get_settings()
     return {
         "status": "ok",
         "voz": s.maria_voice_enabled,
         "config_pendente": s.validate_runtime(),
+        "circuitos": circuitos(),
     }
 
 

@@ -14,6 +14,7 @@ from collections.abc import Awaitable, Callable
 import websockets
 
 from ..config import get_settings
+from ..infra.resilience import breaker
 
 log = logging.getLogger("maria.tts")
 
@@ -60,7 +61,11 @@ class ElevenTts:
             # sem texto novo (era o input_timeout_exceeded).
             "&inactivity_timeout=180"
         )
-        self.ws = await websockets.connect(url, ping_interval=20, ping_timeout=30)
+        # circuito aberto → falha na hora (sessão avisa "indisponível")
+        with breaker("elevenlabs-tts").vigiar():
+            self.ws = await websockets.connect(
+                url, ping_interval=20, ping_timeout=30, open_timeout=15
+            )
         await self.ws.send(
             json.dumps(
                 {
@@ -149,10 +154,13 @@ class ElevenTts:
                     log.warning("tts erro: %s", ev)
         except asyncio.CancelledError:
             raise
-        except websockets.ConnectionClosed:
+        except websockets.ConnectionClosed as exc:
             if not self._closed:
+                # queda não solicitada é sinal do provedor — conta no breaker
+                breaker("elevenlabs-tts").falha(exc)
                 await self.on_done()
-        except Exception:
+        except Exception as exc:
+            breaker("elevenlabs-tts").falha(exc)
             log.exception("tts falhou")
             if not self._closed:
                 await self.on_done()

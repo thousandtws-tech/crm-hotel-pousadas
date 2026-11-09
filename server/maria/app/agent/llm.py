@@ -12,11 +12,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from openai import AsyncOpenAI
+from openai import APIError, AsyncOpenAI
 
 from ..config import get_settings
 from ..infra import memory
 from ..infra.api_client import PousadaApi
+from ..infra.resilience import breaker
 from ..infra.auth import Ator
 from ..telemetry.metrics import Uso
 from ..tools import TOOLS, ToolExecutor
@@ -28,6 +29,11 @@ OnText = Callable[[str], Awaitable[None]]
 OnToolStatus = Callable[[str], Awaitable[None]]
 
 MAX_TOOL_ROUNDS = 6
+
+
+class _FalhaStream(RuntimeError):
+    """Falha do lado do provedor no meio do stream (evento
+    `response.failed`/`error`) — conta no circuit breaker."""
 
 
 @dataclass
@@ -45,7 +51,12 @@ class Orquestrador:
         self.api = api
         self.ator = ator
         self.tools = ToolExecutor(api, ator)
-        self._client = AsyncOpenAI(api_key=get_settings().openai_api_key)
+        s = get_settings()
+        self._client = AsyncOpenAI(
+            api_key=s.openai_api_key,
+            timeout=s.openai_timeout_secs,
+            max_retries=s.openai_max_retries,
+        )
         self._historico: list[dict[str, Any]] = []
         self._cancelado = False
 
@@ -127,39 +138,48 @@ class Orquestrador:
             if self._cancelado:
                 break
 
-            stream = await self._client.responses.create(
-                model=s.openai_llm_model,
-                input=input_msgs,
-                tools=TOOLS,
-                stream=True,
-                **kwargs,
-            )
+            # circuito aberto → falha na hora, sem esperar o timeout do SDK
+            br = breaker("openai-llm")
+            with br.vigiar():
+                stream = await self._client.responses.create(
+                    model=s.openai_llm_model,
+                    input=input_msgs,
+                    tools=TOOLS,
+                    stream=True,
+                    **kwargs,
+                )
 
             calls: list[dict[str, Any]] = []
             final = None
-            async for ev in stream:
-                if self._cancelado:
-                    break
-                t = ev.type
-                if t == "response.output_text.delta":
-                    saida_total += ev.delta
-                    await on_text(ev.delta)
-                elif t == "response.output_item.done":
-                    item = ev.item
-                    if getattr(item, "type", None) == "function_call":
-                        chamadas += 1
-                        calls.append(
-                            {
-                                "call_id": item.call_id,
-                                "name": item.name,
-                                "arguments": item.arguments,
-                            }
-                        )
-                elif t == "response.completed":
-                    final = ev.response
-                elif t in ("response.failed", "response.incomplete", "error"):
-                    det = getattr(getattr(ev, "response", None), "error", None) or ev
-                    raise RuntimeError(f"resposta LLM falhou: {det}")
+            try:
+                async for ev in stream:
+                    if self._cancelado:
+                        break
+                    t = ev.type
+                    if t == "response.output_text.delta":
+                        saida_total += ev.delta
+                        await on_text(ev.delta)
+                    elif t == "response.output_item.done":
+                        item = ev.item
+                        if getattr(item, "type", None) == "function_call":
+                            chamadas += 1
+                            calls.append(
+                                {
+                                    "call_id": item.call_id,
+                                    "name": item.name,
+                                    "arguments": item.arguments,
+                                }
+                            )
+                    elif t == "response.completed":
+                        final = ev.response
+                    elif t in ("response.failed", "response.incomplete", "error"):
+                        det = getattr(getattr(ev, "response", None), "error", None) or ev
+                        raise _FalhaStream(f"resposta LLM falhou: {det}")
+            except (APIError, _FalhaStream) as exc:
+                # falha do provedor no meio do stream conta no breaker;
+                # exceções do callback on_text (TTS/UI) não são da OpenAI
+                br.falha(exc)
+                raise
 
             if final is not None and getattr(final, "usage", None):
                 Uso.tokens(final.usage)

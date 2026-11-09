@@ -30,6 +30,8 @@ from typing import Any
 
 from openai import AsyncOpenAI
 
+from .resilience import breaker
+
 from ..config import get_settings
 from .storage import Store, get_store
 
@@ -142,9 +144,16 @@ class BaseConhecimento:
     async def _embed_openai(self, textos: list[str]) -> list[list[float]]:
         s = get_settings()
         if self._client is None:
-            self._client = AsyncOpenAI(api_key=s.openai_api_key)
-        r = await self._client.embeddings.create(
-            model=s.openai_embed_model, input=textos)
+            self._client = AsyncOpenAI(
+                api_key=s.openai_api_key,
+                timeout=s.openai_timeout_secs,
+                max_retries=s.openai_max_retries,
+            )
+        # embeddings também passam pelo breaker — queda da OpenAI não
+        # deve segurar o RAG no timeout do SDK a cada chamada
+        with breaker("openai-embed").vigiar():
+            r = await self._client.embeddings.create(
+                model=s.openai_embed_model, input=textos)
         return [d.embedding for d in r.data]
 
     async def _carregar_cache(self) -> dict[str, Any]:
