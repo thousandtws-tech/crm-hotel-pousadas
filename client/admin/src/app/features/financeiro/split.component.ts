@@ -2,6 +2,7 @@ import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { DateInputComponent } from '@shared/components/date-input.component';
 import { ApiService, num } from '@core/services/api.service';
 import {
   SplitEventoView,
@@ -24,7 +25,7 @@ function isoLocal(d: Date): string {
 
 @Component({
   selector: 'app-fin-split',
-  imports: [FinNavComponent, DatePipe, ReactiveFormsModule, MatIconModule],
+  imports: [FinNavComponent, DatePipe, ReactiveFormsModule, MatIconModule, DateInputComponent],
   template: `
     <div class="page">
       <app-fin-nav />
@@ -64,7 +65,7 @@ function isoLocal(d: Date): string {
               <option value="split">Split payment</option>
               <option value="destaque">Destaque na nota</option>
             </select>
-            <input class="inp" formControlName="vigente_desde" type="date" aria-label="Vigente desde" />
+            <app-date class="inp-date" formControlName="vigente_desde" rotulo="Vigente desde" />
             <button class="btn-prim" type="submit" [disabled]="cfgForm.invalid">Salvar</button>
           </form>
         }

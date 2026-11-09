@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, signal, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { DateInputComponent } from '@shared/components/date-input.component';
 import { RouterLink } from '@angular/router';
 import { ApiService, num } from '@core/services/api.service';
 import { Realtime } from '@core/services/realtime.service';
@@ -29,7 +30,7 @@ interface LinhaNfe {
 
 @Component({
   selector: 'app-insumos',
-  imports: [ReactiveFormsModule, MatIconModule, RouterLink],
+  imports: [ReactiveFormsModule, MatIconModule, RouterLink, DateInputComponent],
   template: `
     <div class="pg">
       <header class="pg-head">
@@ -306,7 +307,7 @@ interface LinhaNfe {
             <form class="nfe-rodape" [formGroup]="formNfe">
               <label>
                 Vencimento da fatura
-                <input type="date" formControlName="vencimento" />
+                <app-date formControlName="vencimento" rotulo="Vencimento da fatura" />
               </label>
               <label class="chk">
                 <input type="checkbox" formControlName="gerar_pagamento" />

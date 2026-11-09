@@ -6,6 +6,7 @@ import {
   Component, OnDestroy, OnInit, computed, effect, inject, signal,
 } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { DateInputComponent } from '@shared/components/date-input.component';
 import { ApiService } from '../../core/services/api.service';
 import { Realtime } from '../../core/services/realtime.service';
 import { Notify } from '../../core/services/notify.service';
@@ -15,7 +16,7 @@ type FiltroPresenca = 'todas' | 'aguardando' | 'presentes';
 
 @Component({
   selector: 'app-cafe',
-  imports: [MatIconModule],
+  imports: [MatIconModule, DateInputComponent],
   template: `
     <div class="page cafe">
       <header class="cafe-head">
@@ -34,11 +35,9 @@ type FiltroPresenca = 'todas' | 'aguardando' | 'presentes';
             <button type="button" class="nav-dia" (click)="mudarDia(-1)" aria-label="Dia anterior">
               <mat-icon>chevron_left</mat-icon>
             </button>
-            <label class="dia-input">
-              <mat-icon>calendar_month</mat-icon>
-              <input type="date" [value]="dia()" (change)="definirDia($event)"
-                     aria-label="Data do quadro" />
-            </label>
+            <div class="dia-input">
+              <app-date [value]="dia()" (alterar)="definirDia($event)" rotulo="Data do quadro" />
+            </div>
             <button type="button" class="nav-dia" (click)="mudarDia(1)" aria-label="Próximo dia">
               <mat-icon>chevron_right</mat-icon>
             </button>
@@ -220,8 +219,8 @@ type FiltroPresenca = 'todas' | 'aguardando' | 'presentes';
     .dia-input { display: flex; align-items: center; gap: 8px; padding: 0 14px;
       border-left: 1px solid #e3eaef; border-right: 1px solid #e3eaef;
       color: #054054; }
-    .dia-input mat-icon { font-size: 18px; width: 18px; height: 18px; }
-    .dia-input input { border: 0; outline: none; font: inherit; font-size: 0.88rem;
+    .dia-input app-date { width: 150px; }
+    .dia-input ::ng-deep .dw-txt { border: 0; outline: none; box-shadow: none; font-size: 0.88rem;
       font-weight: 600; color: #33424c; background: transparent; height: 44px; }
     .hoje { border: 0; background: transparent; color: #4b95ab; font-size: 0.76rem;
       font-weight: 700; cursor: pointer; padding: 2px 4px; }
@@ -466,9 +465,8 @@ export class CafeComponent implements OnInit, OnDestroy {
     this.carregar(true);
   }
 
-  definirDia(ev: Event): void {
-    const v = (ev.target as HTMLInputElement).value;
-    if (v) {
+  definirDia(v: string): void {
+    if (v && v !== this.dia()) {
       this.dia.set(v);
       this.carregar(true);
     }

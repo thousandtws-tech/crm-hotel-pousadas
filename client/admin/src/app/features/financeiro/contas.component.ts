@@ -7,6 +7,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { DateInputComponent } from '@shared/components/date-input.component';
 import { ApiService, num } from '@core/services/api.service';
 import {
   BaixaView,
@@ -40,7 +41,7 @@ function hojeIso(): string {
 
 @Component({
   selector: 'app-fin-contas',
-  imports: [FinNavComponent, DatePipe, ReactiveFormsModule, MatIconModule],
+  imports: [FinNavComponent, DatePipe, ReactiveFormsModule, MatIconModule, DateInputComponent],
   template: `
     <div class="page">
       <app-fin-nav />
@@ -120,7 +121,7 @@ function hojeIso(): string {
               <input class="inp" formControlName="valor" type="number" step="0.01" min="0.01" placeholder="0,00" required />
             </label>
             <label class="lbl">Vencimento *
-              <input class="inp" formControlName="vencimento" type="date" required />
+              <app-date formControlName="vencimento" rotulo="Vencimento" />
             </label>
             <label class="lbl">Parcelas
               <input class="inp" formControlName="parcelas" type="number" min="1" max="60" aria-label="Parcelas mensais" />
@@ -240,7 +241,7 @@ function hojeIso(): string {
                             }
                           </select>
                           <input class="inp" formControlName="valor" type="number" step="0.01" min="0.01" [max]="num(l.saldo)" aria-label="Valor da baixa" />
-                          <input class="inp" formControlName="data" type="date" aria-label="Data da baixa" />
+                          <app-date class="inp-date" formControlName="data" rotulo="Data da baixa" />
                           <select class="inp" formControlName="idforma_pagamento" aria-label="Forma de pagamento">
                             <option [ngValue]="null">Pagamento…</option>
                             @for (f of pagamentos(); track f.id) {

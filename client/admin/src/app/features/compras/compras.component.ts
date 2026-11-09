@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { DateInputComponent } from '@shared/components/date-input.component';
 import { firstValueFrom } from 'rxjs';
 import {
   Fornecedor,
@@ -39,7 +40,7 @@ interface LinhaPedido {
 
 @Component({
   selector: 'app-compras',
-  imports: [ReactiveFormsModule, MatIconModule, DatePipe],
+  imports: [ReactiveFormsModule, MatIconModule, DatePipe, DateInputComponent],
   host: { '(document:keydown.escape)': 'fecharModais()' },
   template: `
     <div class="page">
@@ -584,12 +585,7 @@ interface LinhaPedido {
                     @if (geraPag()) {
                       <label class="fld mt-6">
                         <span class="lbl">Vencimento da fatura (opcional)</span>
-                        <input
-                          class="inp"
-                          type="date"
-                          formControlName="vencimento"
-                          aria-label="Vencimento da conta a pagar"
-                        />
+                        <app-date formControlName="vencimento" rotulo="Vencimento da conta a pagar" />
                         <small class="hint">Se deixar em branco, usa a data prevista de entrega.</small>
                       </label>
                     }
