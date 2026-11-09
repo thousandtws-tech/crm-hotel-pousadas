@@ -18,6 +18,9 @@ groups:
         data:
           - refId: A
             datasourceUid: clarituz-prom
+            relativeTimeRange:
+              from: 600
+              to: 0
             model:
               refId: A
               expr: sum(clarituz_db_pool_idle == 0)
@@ -31,6 +34,9 @@ groups:
               editorMode: code
           - refId: C
             datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
             model:
               refId: C
               type: threshold
@@ -62,6 +68,9 @@ groups:
         data:
           - refId: A
             datasourceUid: clarituz-prom
+            relativeTimeRange:
+              from: 600
+              to: 0
             model:
               refId: A
               expr: >-
@@ -77,6 +86,9 @@ groups:
               editorMode: code
           - refId: C
             datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
             model:
               refId: C
               type: threshold
@@ -109,6 +121,9 @@ groups:
         data:
           - refId: A
             datasourceUid: clarituz-prom
+            relativeTimeRange:
+              from: 600
+              to: 0
             model:
               refId: A
               expr: 1 - max(up{job="api"})
@@ -122,6 +137,9 @@ groups:
               editorMode: code
           - refId: C
             datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
             model:
               refId: C
               type: threshold
@@ -154,6 +172,9 @@ groups:
         data:
           - refId: A
             datasourceUid: clarituz-prom
+            relativeTimeRange:
+              from: 600
+              to: 0
             model:
               refId: A
               expr: 1 - max(up{job="maria"})
@@ -167,6 +188,9 @@ groups:
               editorMode: code
           - refId: C
             datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
             model:
               refId: C
               type: threshold
