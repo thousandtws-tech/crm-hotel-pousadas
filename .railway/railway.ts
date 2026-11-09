@@ -1,4 +1,4 @@
-import { defineRailway, github, group, postgres, preserve, project, service, volume } from "railway/iac";
+import { defineRailway, github, group, image, postgres, preserve, project, service, volume } from "railway/iac";
 
 export default defineRailway(() => {
   const Postgres = postgres("Postgres", { region: "ams" });
@@ -53,7 +53,10 @@ export default defineRailway(() => {
     env: { RAILWAY_DOCKERFILE_PATH: preserve() },
   });
   const api = service("api", {
-    replicas: { "ams": 1 },
+    // API stateless: réplicas N×(DB_MAX_CONNECTIONS + 1 LISTEN) devem ficar
+    // < ~80% do max_connections do Postgres (2×(10+1)=22 conns aqui — ok).
+    // Avisos/deltas cruzam réplicas via LISTEN/NOTIFY (clarituz_aviso/delta).
+    replicas: { "ams": 2 },
     // Rust/Axum — 1 vCPU / 1 GiB
     deploy: {
       limitOverride: { containers: { cpu: 1, memoryBytes: 1073741824 } },
@@ -73,7 +76,62 @@ export default defineRailway(() => {
   });
   const MinIO = group("MinIO", [Console, Bucket]);
 
+  // --------------------------------------------------------- Observabilidade
+  const prometheusVolume = volume("prometheus-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "ams", sizeMB: 2000 });
+  const grafanaVolume = volume("grafana-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "ams", sizeMB: 1000 });
+  const prometheus = service("prometheus", {
+    // monitoring/prometheus/Dockerfile — scrape api/maria/pg-exporter pela
+    // rede privada; alvos chegam via ${{service.RAILWAY_PRIVATE_DOMAIN}}.
+    source: github("thousandtws-tech/crm-hotel-pousadas", { rootDirectory: "monitoring/prometheus" }),
+    healthcheck: "/-/healthy",
+    replicas: { "ams": 1 },
+    networking: { privateNetworkEndpoint: "prometheus" },
+    deploy: {
+      limitOverride: { containers: { cpu: 0.5, memoryBytes: 536870912 } },
+      restartPolicyMaxRetries: 5,
+    },
+    volumeMounts: { "/prometheus": prometheusVolume },
+    env: {
+      API_SCRAPE: "${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}",
+      MARIA_SCRAPE: "${{maria.RAILWAY_PRIVATE_DOMAIN}}:${{maria.PORT}}",
+    },
+  });
+  const grafana = service("grafana", {
+    // monitoring/grafana/Dockerfile — datasource + dashboards + regras de
+    // alerta provisionados; admin/senha e webhook ficam no dashboard.
+    source: github("thousandtws-tech/crm-hotel-pousadas", { rootDirectory: "monitoring/grafana" }),
+    healthcheck: "/api/health",
+    replicas: { "ams": 1 },
+    networking: { privateNetworkEndpoint: "grafana" },
+    deploy: {
+      limitOverride: { containers: { cpu: 0.5, memoryBytes: 536870912 } },
+      restartPolicyMaxRetries: 5,
+    },
+    volumeMounts: { "/var/lib/grafana": grafanaVolume },
+    env: {
+      GF_SECURITY_ADMIN_USER: preserve(),
+      GF_SECURITY_ADMIN_PASSWORD: preserve(),
+      GF_USERS_ALLOW_SIGN_UP: "false",
+      ALERT_WEBHOOK_URL: preserve(),
+    },
+  });
+  const pgExporter = service("pg-exporter", {
+    // métricas internas do Postgres (conexões, locks, tamanho) — sem elas
+    // o gargalo real do sistema ficaria invisível.
+    source: image("quay.io/prometheuscommunity/postgres-exporter:v0.17.1"),
+    replicas: { "ams": 1 },
+    networking: { privateNetworkEndpoint: "pg-exporter" },
+    deploy: {
+      limitOverride: { containers: { cpu: 0.25, memoryBytes: 268435456 } },
+      restartPolicyMaxRetries: 5,
+    },
+    env: {
+      DATA_SOURCE_NAME: "postgresql://${{Postgres.PGUSER}}:${{Postgres.PGPASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}?sslmode=disable",
+    },
+  });
+  const Observabilidade = group("Observabilidade", [prometheus, grafana, pgExporter]);
+
   return project("projeto-espirito-do-mar", {
-    resources: [admin, maria, realtime, Postgres, web, api, bucketVolume, mariaVolume, postgresVolume, apiVolume, MinIO],
+    resources: [admin, maria, realtime, Postgres, web, api, bucketVolume, mariaVolume, postgresVolume, apiVolume, prometheusVolume, grafanaVolume, MinIO, Observabilidade],
   });
 });

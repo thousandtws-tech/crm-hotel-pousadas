@@ -1,0 +1,18 @@
+apiVersion: 1
+
+# Webhook de destino dos alertas — defina ALERT_WEBHOOK_URL no serviço
+# grafana (Discord/Slack incoming webhook ou endpoint próprio).
+contactPoints:
+  - orgId: 1
+    name: alert-webhook
+    receivers:
+      - uid: alert-webhook
+        type: webhook
+        settings:
+          url: "${ALERT_WEBHOOK_URL}"
+          httpMethod: POST
+        disableResolveMessage: false
+
+policies:
+  - orgId: 1
+    receiver: alert-webhook
