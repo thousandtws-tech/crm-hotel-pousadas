@@ -150,9 +150,8 @@ impl PaymentGateway for StripeGateway {
             ("success_url".into(), nova.success_url.clone()),
             ("cancel_url".into(), nova.cancel_url.clone()),
             ("expires_at".into(), expires_ts.to_string()),
-            // Stripe escolhe os métodos ativados no dashboard (card hoje;
-            // Pix entra sozinho quando ativado na conta — sem deploy).
-            ("automatic_payment_methods[enabled]".into(), "true".into()),
+            // Sem payment_method_types: o Stripe usa os métodos ativados no
+            // dashboard (card hoje; Pix entra sozinho quando ativado).
             ("line_items[0][quantity]".into(), "1".into()),
             ("line_items[0][price_data][currency]".into(), "brl".into()),
             (
