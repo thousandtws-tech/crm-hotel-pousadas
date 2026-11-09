@@ -34,6 +34,10 @@ credentials:
 jobs:
   - script: >
       pipelineJob('clarituz-deploy') {
+        triggers {
+          githubPush()
+          scm('H/10 * * * *')
+        }
         definition {
           cpsScm {
             scm {
