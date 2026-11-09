@@ -7,7 +7,7 @@ export default defineRailway(() => {
   const bucketVolume = volume("bucket-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "ams", sizeMB: 5000 });
   const mariaVolume = volume("maria-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "ams", sizeMB: 5000 });
   const postgresVolume = volume("postgres-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "ams", sizeMB: 5000 });
-  const admin = service("painel-administrativo", {
+  const admin = service("admin", {
     replicas: { "ams": 1 },
     // nginx estático — 0.25 vCPU / 512 MiB
     deploy: {

@@ -37,7 +37,7 @@ pipeline {
         }
         stage('admin') {
             when { changeset 'client/admin/**' }
-            steps { sh 'railway up -d -y -s painel-administrativo -e $RAILWAY_ENV -p $RAILWAY_PROJECT' }
+            steps { sh 'railway up -d -y -s admin -e $RAILWAY_ENV -p $RAILWAY_PROJECT' }
         }
         stage('web') {
             when { changeset 'client/web/**' }
