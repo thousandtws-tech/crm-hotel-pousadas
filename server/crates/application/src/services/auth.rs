@@ -156,6 +156,7 @@ impl AuthService {
             login: f.login.clone(),
             nome: f.nome.clone(),
             nivel: f.nivel,
+            financeiro: f.financeiro,
             iat: now.timestamp(),
             exp: (now + Duration::seconds(self.access_ttl_secs)).timestamp(),
             iss: "clarituz-api".into(),

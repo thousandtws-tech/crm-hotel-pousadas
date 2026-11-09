@@ -41,6 +41,7 @@ fn extrair_ator(parts: &Parts, state: &AppState) -> Result<Ator, Response> {
         login: claims.login,
         nome: claims.nome,
         nivel: NivelAcesso::from_i16(claims.nivel),
+        financeiro: claims.financeiro,
     })
 }
 

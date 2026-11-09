@@ -32,7 +32,7 @@ impl PgReservaRepository {
 
 const RESERVA_COLS: &str = "id, idacomodacao, idcliente, idquarto, quantidade_hospedes,
     entradaprevista, saidaprevista, checkin_em, checkout_em, obs, status,
-    valordiaria, criado_em, atualizado_em";
+    valordiaria, expira_em, token_publico, criado_em, atualizado_em";
 
 const CONSUMO_COLS: &str = "id, idreserva, valor_estadia, valor_itens, valor_adicional,
     total_desconto, valor_final, idforma_pagamento, comprovante, status, fechado_em,
@@ -67,7 +67,7 @@ impl ReservaRepository for PgReservaRepository {
                     r.quantidade_hospedes, r.entradaprevista, r.saidaprevista,
                     r.checkin_em, r.checkout_em, r.obs, r.status, r.valordiaria, r.criado_em,
                     a.nome AS acomodacao_nome, a.numero AS acomodacao_numero, a.valor AS acomodacao_valor,
-                    c.nome AS cliente_nome, c.cpf AS cliente_cpf
+                    c.nome AS cliente_nome, c.cpf AS cliente_cpf, r.expira_em
              FROM reserva r
              JOIN acomodacao a ON a.id = r.idacomodacao
              JOIN cliente c ON c.id = r.idcliente
@@ -201,8 +201,8 @@ impl ReservaRepository for PgReservaRepository {
         let reserva = sqlx::query_as::<_, Reserva>(&format!(
             "INSERT INTO reserva
                 (idacomodacao, idcliente, quantidade_hospedes, entradaprevista,
-                 saidaprevista, obs, status, valordiaria)
-             VALUES ($1, $2, $3, $4, $5, $6, 'p', $7)
+                 saidaprevista, obs, status, valordiaria, expira_em)
+             VALUES ($1, $2, $3, $4, $5, $6, 'p', $7, $8)
              RETURNING {RESERVA_COLS}"
         ))
         .bind(nova.idacomodacao)
@@ -212,6 +212,7 @@ impl ReservaRepository for PgReservaRepository {
         .bind(nova.periodo.saida)
         .bind(&nova.obs)
         .bind(nova.valordiaria)
+        .bind(nova.expira_em)
         .fetch_one(&mut *tx)
         .await
         .map_err(map_db_err)?; // 23P01 → Conflito (overbooking impossível)

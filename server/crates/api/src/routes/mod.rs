@@ -7,6 +7,7 @@ pub mod compras;
 pub mod estoque;
 pub mod impressoras;
 pub mod notificacoes;
+pub mod pagamentos_online;
 pub mod pdv;
 pub mod pessoas;
 pub mod relatorios;

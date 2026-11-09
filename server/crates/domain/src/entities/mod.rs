@@ -43,7 +43,10 @@ pub use frigobar::{Frigobar, ItemFrigobar};
 pub use funcionario::{Funcionario, LogAcesso, SessaoRefresh};
 pub use impressora::{ImpressaoJob, Impressora, ImpressoraDescoberta};
 pub use notificacao::Notificacao;
-pub use pagamento::FormaPagamento;
+pub use pagamento::{
+    FormaPagamento, NovaAuditoriaPagamento, PagamentoOnline, ReembolsoPagamento,
+    TentativaPagamento, WebhookEvento,
+};
 pub use pdv::{PdvComanda, PdvComandaItem, PdvComissao, PdvGarcom, PdvMesa};
 pub use reserva::{
     Acompanhante, AdicionalConsumo, Consumo, Fnrh, ItemConsumido, Reembolso, Reserva,

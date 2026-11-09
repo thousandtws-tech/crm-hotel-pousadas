@@ -7,6 +7,7 @@ use chrono::{DateTime, NaiveDate, Utc};
 use rust_decimal::Decimal;
 use serde::Serialize;
 use sqlx::FromRow;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct Reserva {
@@ -25,6 +26,12 @@ pub struct Reserva {
     /// Diária contratada no momento da reserva (congelada — imune a
     /// reajustes posteriores da tarifa da acomodação).
     pub valordiaria: Decimal,
+    /// Prazo de pagamento da reserva online — NULL nas criadas pela
+    /// recepção (hold permanente). O sweeper cancela as vencidas.
+    pub expira_em: Option<DateTime<Utc>>,
+    /// Identificador opaco para o fluxo público (checkout/status) —
+    /// impede enumeração de reservas pelo id sequencial.
+    pub token_publico: Uuid,
     pub criado_em: DateTime<Utc>,
     pub atualizado_em: DateTime<Utc>,
 }

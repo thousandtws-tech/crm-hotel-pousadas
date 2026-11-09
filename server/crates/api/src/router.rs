@@ -219,6 +219,27 @@ pub fn build(state: AppState) -> Router {
             "/reservas/{id}/fnrh",
             get(routes::reservas::fnrh_reserva).post(routes::reservas::emitir_fnrh),
         )
+        // pagamentos online (Stripe) — painel financeiro
+        .route(
+            "/pagamentos",
+            get(routes::pagamentos_online::listar_pagamentos),
+        )
+        .route(
+            "/pagamentos/{id}/reembolsos",
+            post(routes::pagamentos_online::reembolsar_pagamento),
+        )
+        .route(
+            "/reservas/{id}/pagamentos",
+            get(routes::pagamentos_online::pagamentos_da_reserva),
+        )
+        .route(
+            "/financeiro/pagamentos/resumo",
+            get(routes::pagamentos_online::resumo_financeiro),
+        )
+        .route(
+            "/financeiro/pagamentos/receita-acomodacoes",
+            get(routes::pagamentos_online::receita_acomodacoes),
+        )
         // estoque
         .route(
             "/estoque/categorias",
@@ -723,6 +744,28 @@ pub fn build(state: AppState) -> Router {
                 IpRateLimit::novo(8, Duration::from_secs(60)),
                 IpRateLimit::middleware,
             )),
+        )
+        // pagamento online — criação de checkout limitada por IP (cada
+        // sessão Stripe custa uma chamada ao provedor)
+        .route(
+            "/api/v1/publico/pagamentos/checkout",
+            post(routes::pagamentos_online::checkout_publico).route_layer(from_fn_with_state(
+                IpRateLimit::novo(10, Duration::from_secs(60)),
+                IpRateLimit::middleware,
+            )),
+        )
+        .route(
+            "/api/v1/publico/pagamentos/status",
+            get(routes::pagamentos_online::status_publico).route_layer(from_fn_with_state(
+                IpRateLimit::novo(60, Duration::from_secs(60)),
+                IpRateLimit::middleware,
+            )),
+        )
+        // webhook Stripe — fora do /api/v1 autenticado; a assinatura HMAC
+        // do provedor é a credencial. Sem rate limit de IP (origem = Stripe).
+        .route(
+            "/api/v1/webhooks/stripe",
+            post(routes::pagamentos_online::webhook_stripe),
         )
         .route("/api/v1/midia/{id}", get(routes::cms::servir_midia))
         // scrape Prometheus — req/s, latência e status por rota

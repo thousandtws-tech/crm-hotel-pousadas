@@ -20,4 +20,6 @@ pub struct AppState {
     pub eventos: EventBus,
     /// Origens permitidas (env `CORS_ORIGINS`; `*` = dev aberto).
     pub cors_origins: Vec<String>,
+    /// Segredo de assinatura do webhook Stripe — `None` desabilita a rota.
+    pub stripe_webhook_secret: Option<String>,
 }

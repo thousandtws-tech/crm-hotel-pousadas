@@ -21,6 +21,7 @@ pub mod funcionarios;
 pub mod impressoras;
 pub mod notificacoes;
 pub mod pagamentos;
+pub mod pagamentos_online;
 pub mod pdv;
 pub mod reservas;
 pub mod tesouraria;
@@ -45,6 +46,7 @@ pub use funcionarios::FuncionarioService;
 pub use impressoras::ImpressoraService;
 pub use notificacoes::NotificacaoService;
 pub use pagamentos::PagamentoService;
+pub use pagamentos_online::PagamentosOnlineService;
 pub use pdv::PdvService;
 pub use reservas::{ReservaDeps, ReservaService};
 pub use tesouraria::TesourariaService;
@@ -64,6 +66,7 @@ pub struct Services {
     pub frigobar: Arc<FrigobarService>,
     pub estacionamento: Arc<EstacionamentoService>,
     pub pagamentos: Arc<PagamentoService>,
+    pub pagamentos_online: Arc<PagamentosOnlineService>,
     pub funcionarios: Arc<FuncionarioService>,
     pub estabelecimento: Arc<EstabelecimentoService>,
     pub impressoras: Arc<ImpressoraService>,

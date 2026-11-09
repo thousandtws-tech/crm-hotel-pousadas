@@ -54,7 +54,7 @@ export class BookingService {
 
   public async submitBookingRequest(
     submission: BookingSubmission
-  ): Promise<{ success: boolean; message: string; idreserva?: number | null }> {
+  ): Promise<{ success: boolean; message: string; idreserva?: number | null; token?: string | null }> {
     try {
       const res = await fetch(`${environment.apiUrl}/publico/reservas`, {
         method: 'POST',
@@ -80,6 +80,7 @@ export class BookingService {
       return {
         success: true,
         idreserva: data?.idreserva ?? null,
+        token: data?.token_publico ?? null,
         message:
           data?.mensagem ||
           'Reserva registrada com sucesso! Nossa recepção já foi notificada em tempo real.'

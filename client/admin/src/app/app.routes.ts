@@ -120,6 +120,13 @@ export const routes: Routes = [
           import('./features/financeiro/financeiro.component').then((m) => m.FinanceiroComponent),
       },
       {
+        path: 'financeiro/pagamentos-online',
+        loadComponent: () =>
+          import('./features/financeiro/pagamentos-online.component').then(
+            (m) => m.FinPagamentosOnlineComponent,
+          ),
+      },
+      {
         path: 'financeiro/contas',
         loadComponent: () =>
           import('./features/financeiro/contas.component').then((m) => m.FinContasComponent),

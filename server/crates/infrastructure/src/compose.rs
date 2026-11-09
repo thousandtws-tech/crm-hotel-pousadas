@@ -48,9 +48,17 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
     let acom_repo = Arc::new(PgAcomodacaoRepository::new(pool.clone()));
     let pag_repo = Arc::new(PgFormaPagamentoRepository::new(pool.clone()));
     let reserva_repo = Arc::new(PgReservaRepository::new(pool.clone()));
+    let pag_online_repo = Arc::new(PgPagamentoRepository::new(pool.clone()));
     let impressora_repo = Arc::new(PgImpressoraRepository::new(pool.clone()));
     let impressora_gw: Arc<dyn ImpressoraGateway> = Arc::new(SpoolImpressora::new(pool.clone()));
     let publisher: Arc<dyn EventoPublisher> = Arc::new(eventos.clone());
+
+    // Gateway Stripe — sem `STRIPE_SECRET_KEY` o serviço sobe normalmente
+    // e o checkout público responde erro explícito (degradação segura).
+    let gateway: Option<Arc<dyn clarituz_domain::ports::PaymentGateway>> = settings
+        .stripe_secret_key
+        .as_ref()
+        .map(|k| Arc::new(crate::stripe::StripeGateway::new(k.clone())) as _);
     // consumer do bus → histórico persistido (inbox/badges)
     let notif_repo = Arc::new(PgNotificacaoRepository::new(pool.clone()));
     spawn_aviso_persister(eventos.clone(), notif_repo.clone());
@@ -80,10 +88,21 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             impressoras: impressora_repo.clone(),
             impressora: impressora_gw.clone(),
             auth: auth.clone(),
-            eventos: publisher,
+            eventos: publisher.clone(),
             acompanhantes: reserva_repo.clone(),
-            fnrh: reserva_repo,
+            fnrh: reserva_repo.clone(),
+            hold_minutos: settings.hold_minutos,
         })),
+        pagamentos_online: Arc::new(PagamentosOnlineService::new(
+            pag_online_repo,
+            reserva_repo,
+            gateway,
+            publisher.clone(),
+            settings.sinal_percentual,
+            settings.hold_minutos,
+            settings.stripe_success_url.clone(),
+            settings.stripe_cancel_url.clone(),
+        )),
         estoque: Arc::new(
             EstoqueService::new(Arc::new(PgEstoqueRepository::new(pool.clone())))
                 .com_etiquetas(impressora_repo.clone(), impressora_gw.clone()),

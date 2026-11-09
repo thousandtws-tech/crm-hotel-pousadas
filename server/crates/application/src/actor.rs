@@ -11,6 +11,8 @@ pub struct Ator {
     pub login: String,
     pub nome: String,
     pub nivel: NivelAcesso,
+    /// Permissão granular financeira (claim do JWT; admin tem implicitamente).
+    pub financeiro: bool,
 }
 
 impl Ator {
@@ -39,6 +41,18 @@ impl Ator {
         } else {
             Err(clarituz_domain::DomainError::proibido(
                 "Ação restrita a gerência ou administração.",
+            ))
+        }
+    }
+
+    /// Exige permissão financeira: admin ou funcionário com a flag
+    /// `financeiro` — reembolsos e conciliação passam por aqui.
+    pub fn exigir_financeiro(&self) -> Result<(), clarituz_domain::DomainError> {
+        if self.is_admin() || self.financeiro {
+            Ok(())
+        } else {
+            Err(clarituz_domain::DomainError::proibido(
+                "Ação restrita a usuários com permissão financeira.",
             ))
         }
     }

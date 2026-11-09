@@ -13,6 +13,7 @@ use crate::dto::{
 };
 use crate::error::AppResult;
 use crate::services::AuthService;
+use chrono::{Duration, Utc};
 use clarituz_domain::entities::{
     Acompanhante, AdicionalConsumo, Consumo, Fnrh, ItemConsumido, NovoLog, Reserva,
 };
@@ -49,6 +50,8 @@ pub struct ReservaDeps {
     pub eventos: Arc<dyn EventoPublisher>,
     pub acompanhantes: Arc<dyn AcompanhanteRepository>,
     pub fnrh: Arc<dyn FnrhRepository>,
+    /// Minutos do hold de pagamento nas reservas criadas pelo site.
+    pub hold_minutos: i64,
 }
 
 pub struct ReservaService {
@@ -63,6 +66,7 @@ pub struct ReservaService {
     eventos: Arc<dyn EventoPublisher>,
     acompanhantes: Arc<dyn AcompanhanteRepository>,
     fnrh: Arc<dyn FnrhRepository>,
+    hold_minutos: i64,
 }
 
 impl ReservaService {
@@ -79,6 +83,7 @@ impl ReservaService {
             auth: d.auth,
             acompanhantes: d.acompanhantes,
             fnrh: d.fnrh,
+            hold_minutos: d.hold_minutos,
         }
     }
 
@@ -523,6 +528,7 @@ impl ReservaService {
                 .filter(|o| !o.is_empty()),
             valordiaria: money::round2(valordiaria),
             valor_total,
+            expira_em: None,
         };
 
         let log = ator.log(
@@ -642,6 +648,9 @@ impl ReservaService {
             obs: Some(obs),
             valordiaria: money::round2(acomodacao.valor),
             valor_total: money::round2(acomodacao.valor * diarias),
+            // Reserva do site segura a acomodação por `hold_minutos`
+            // aguardando o pagamento; expirada, o sweeper a cancela.
+            expira_em: Some(Utc::now() + Duration::minutes(self.hold_minutos)),
         };
         let log = NovoLog {
             idfuncionario: None,
@@ -683,6 +692,7 @@ impl ReservaService {
                     status: "reserva_criada",
                     idreserva: Some(reserva.id),
                     idcliente,
+                    token_publico: Some(reserva.token_publico),
                     mensagem: format!(
                         "Reserva Nº #{} registrada com sucesso! Nossa recepção já foi notificada em tempo real.",
                         reserva.id
@@ -715,6 +725,7 @@ impl ReservaService {
                     status: "consulta_registrada",
                     idreserva: None,
                     idcliente,
+                    token_publico: None,
                     mensagem: "Sua solicitação foi enviada em tempo real para a recepção! Como este quarto já possui bloqueio em parte das datas escolhidas, nossa equipe entrará em contato para confirmar a melhor opção.".into(),
                 })
             }

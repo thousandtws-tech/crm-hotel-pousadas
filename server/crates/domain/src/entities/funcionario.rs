@@ -16,6 +16,9 @@ pub struct Funcionario {
     pub data_nascimento: Option<NaiveDate>,
     /// 1 = administrador, 2 = gerente, 3+ = operacional.
     pub nivel: i16,
+    /// Permissão granular de operações financeiras (reembolso, conciliação).
+    /// Admin possui implicitamente — ver `Ator::exigir_financeiro`.
+    pub financeiro: bool,
     pub ativo: bool,
     pub version: i64,
     pub criado_em: DateTime<Utc>,

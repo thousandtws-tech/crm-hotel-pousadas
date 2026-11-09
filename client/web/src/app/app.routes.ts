@@ -43,6 +43,14 @@ export const routes: Routes = [
         loadComponent: () => import('./features/booking/booking.component').then((m) => m.BookingComponent)
       },
       {
+        path: 'reserva/pagamento/sucesso',
+        loadComponent: () => import('./features/booking/payment-status.component').then((m) => m.PaymentStatusComponent)
+      },
+      {
+        path: 'reserva/pagamento/cancelado',
+        loadComponent: () => import('./features/booking/payment-status.component').then((m) => m.PaymentStatusComponent)
+      },
+      {
         path: 'privacidade',
         loadComponent: () => import('./features/privacy/privacy.component').then((m) => m.PrivacyComponent)
       },

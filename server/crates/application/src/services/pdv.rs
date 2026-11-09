@@ -589,6 +589,7 @@ mod tests {
             login: "teste".into(),
             nome: "Teste".into(),
             nivel,
+            financeiro: false,
         }
     }
 

@@ -103,6 +103,7 @@ pub async fn cenario(pool: PgPool) -> Cenario {
             login: "recep.teste".into(),
             nome: "Recepcionista Teste".into(),
             nivel: NivelAcesso::Administrador,
+            financeiro: false,
         },
         idacomodacao,
         idcliente,
@@ -120,6 +121,7 @@ pub fn ator_recepcao() -> Ator {
         login: "recep.nivel3".into(),
         nome: "Recepção".into(),
         nivel: NivelAcesso::Recepcao,
+        financeiro: false,
     }
 }
 
@@ -139,6 +141,12 @@ fn settings_teste() -> Settings {
         s3_access_key: None,
         s3_secret_key: None,
         s3_region: "us-east-1".into(),
+        stripe_secret_key: None,
+        stripe_webhook_secret: None,
+        stripe_success_url: "https://site.teste/ok".into(),
+        stripe_cancel_url: "https://site.teste/cancel".into(),
+        sinal_percentual: 30,
+        hold_minutos: 30,
     }
 }
 

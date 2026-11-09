@@ -158,7 +158,23 @@ async fn serve(settings: Settings, pool: sqlx::PgPool) -> Result<(), Box<dyn std
             .expect("object store inválido: confira as variáveis S3_*"),
         eventos,
         cors_origins: settings.cors_origins.clone(),
+        stripe_webhook_secret: settings.stripe_webhook_secret.clone(),
     };
+    // Sweeper de conciliação: holds expirados, webhooks falhos e
+    // pagamentos pendentes consultados direto no provedor (a cada 5min).
+    if settings.stripe_secret_key.is_some() {
+        let svc = state.services.pagamentos_online.clone();
+        tokio::spawn(async move {
+            let mut tick = tokio::time::interval(std::time::Duration::from_secs(300));
+            tick.tick().await; // pula o disparo imediato do boot
+            loop {
+                tick.tick().await;
+                if let Err(e) = svc.conciliar().await {
+                    tracing::warn!(erro = %e, "conciliação de pagamentos falhou");
+                }
+            }
+        });
+    }
     spawn_metricas_saturacao(pool.clone(), state.eventos.clone());
     let app = router::build(state);
 

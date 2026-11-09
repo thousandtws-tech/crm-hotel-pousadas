@@ -46,6 +46,19 @@ pub struct Settings {
     pub s3_secret_key: Option<String>,
     /// Região de assinatura SigV4 (MinIO aceita `us-east-1`).
     pub s3_region: String,
+    /// Chave secreta Stripe (`sk_test_…`/`sk_live_…`) — ausente desabilita
+    /// pagamentos online com erro explícito, nunca silencioso.
+    pub stripe_secret_key: Option<String>,
+    /// Segredo de assinatura do webhook (`whsec_…`).
+    pub stripe_webhook_secret: Option<String>,
+    /// URL de retorno pós-pagamento aprovado (site público).
+    pub stripe_success_url: String,
+    /// URL de retorno quando o hóspede abandona/cancela.
+    pub stripe_cancel_url: String,
+    /// Percentual do sinal (0–100) cobrado quando o hóspede escolhe sinal.
+    pub sinal_percentual: u32,
+    /// Minutos que a acomodação fica bloqueada aguardando pagamento.
+    pub hold_minutos: i64,
 }
 
 impl Settings {
@@ -88,6 +101,15 @@ impl Settings {
             s3_access_key: env_string("S3_ACCESS_KEY"),
             s3_secret_key: env_string("S3_SECRET_KEY"),
             s3_region: env_string("S3_REGION").unwrap_or_else(|| "us-east-1".into()),
+            stripe_secret_key: env_string("STRIPE_SECRET_KEY"),
+            stripe_webhook_secret: env_string("STRIPE_WEBHOOK_SECRET"),
+            stripe_success_url: env_string("STRIPE_SUCCESS_URL")
+                .unwrap_or_else(|| "https://espiritodomar.com.br/reserva/pagamento/sucesso".into()),
+            stripe_cancel_url: env_string("STRIPE_CANCEL_URL").unwrap_or_else(|| {
+                "https://espiritodomar.com.br/reserva/pagamento/cancelado".into()
+            }),
+            sinal_percentual: env_u32("SINAL_PERCENTUAL").unwrap_or(30).min(100),
+            hold_minutos: env_i64("HOLD_MINUTOS").unwrap_or(30).clamp(30, 1440),
         })
     }
 }

@@ -46,6 +46,7 @@ pub async fn stream_ticket(
         login: ator.login,
         nome: ator.nome,
         nivel: ator.nivel.as_i16(),
+        financeiro: ator.financeiro,
         iat: now.timestamp(),
         exp: exp.timestamp(),
         iss: "clarituz-api".into(),

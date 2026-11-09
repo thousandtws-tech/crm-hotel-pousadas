@@ -2,6 +2,7 @@ import { Component, afterNextRender, ElementRef, inject, DestroyRef, OnInit, sig
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BookingService } from '../../core/services/booking.service';
+import { PaymentService, TipoPagamento } from '../../core/services/payment.service';
 import { AccommodationService } from '../../core/services/accommodation.service';
 import { SeoService } from '../../core/services/seo.service';
 import { IconComponent } from '../../shared/components/icons/icon.component';
@@ -271,6 +272,64 @@ import { MotionService } from '../../core/services/motion.service';
               {{ serverMessage() || ('Registramos seu interesse na categoria ' + (selectedAccommodation()?.name || '') + '.') }}
             </p>
 
+            @if (reservaToken()) {
+              <!-- Pagamento online — integral ou sinal (30%) -->
+              <div class="mb-8 p-5 bg-[#EEF3F5] border border-[#DCE6EA] text-left">
+                <span class="type-eyebrow text-[#DDA554] block mb-2">Garanta sua reserva</span>
+                <p class="text-xs text-[#536B73] mb-4 leading-relaxed">
+                  Sua acomodação fica reservada por <strong>30 minutos</strong>.
+                  Confirme agora com cartão ou Pix e tenha a reserva garantida na hora.
+                </p>
+
+                @if (estimatedTotal() > 0) {
+                  <div class="space-y-2 mb-4">
+                    <label class="flex items-start gap-3 p-3 border cursor-pointer"
+                      [class]="tipoPagamento() === 'integral' ? 'border-[#054054] bg-white' : 'border-[#DCE6EA]'">
+                      <input type="radio" name="tipoPagamento" value="integral"
+                        [checked]="tipoPagamento() === 'integral'"
+                        (change)="tipoPagamento.set('integral')" class="mt-0.5" />
+                      <span class="flex-1">
+                        <span class="block text-sm font-medium text-[#054054]">Pagamento integral</span>
+                        <span class="block text-xs text-[#536B73]">{{ paymentService.formatCentavos(estimatedTotal()) }}</span>
+                      </span>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 border cursor-pointer"
+                      [class]="tipoPagamento() === 'sinal' ? 'border-[#054054] bg-white' : 'border-[#DCE6EA]'">
+                      <input type="radio" name="tipoPagamento" value="sinal"
+                        [checked]="tipoPagamento() === 'sinal'"
+                        (change)="tipoPagamento.set('sinal')" class="mt-0.5" />
+                      <span class="flex-1">
+                        <span class="block text-sm font-medium text-[#054054]">Sinal de 30% agora</span>
+                        <span class="block text-xs text-[#536B73]">{{ paymentService.formatCentavos(estimatedTotal() * 0.3) }} — restante no check-in</span>
+                      </span>
+                    </label>
+                  </div>
+                }
+
+                @if (paymentError()) {
+                  <div class="p-3 bg-red-50 border border-red-200 text-red-700 text-xs mb-3">
+                    {{ paymentError() }}
+                  </div>
+                }
+
+                <button
+                  type="button"
+                  (click)="pagarAgora()"
+                  [disabled]="isPaying()"
+                  class="btn-primary w-full cursor-pointer"
+                >
+                  @if (isPaying()) {
+                    <span>Redirecionando ao pagamento seguro…</span>
+                  } @else {
+                    <span>Pagar agora — cartão ou Pix</span>
+                  }
+                </button>
+                <p class="type-caption text-center text-[#536B73] mt-2">
+                  Ambiente seguro Stripe · Ou pague na recepção no check-in
+                </p>
+              </div>
+            }
+
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
                 routerLink="/"
@@ -296,6 +355,7 @@ export class BookingComponent implements OnInit {
   public readonly hotelConfig = HOTEL_CONFIG;
   private readonly route = inject(ActivatedRoute);
   public readonly bookingService = inject(BookingService);
+  public readonly paymentService = inject(PaymentService);
   public readonly accommodationService = inject(AccommodationService);
   private readonly seoService = inject(SeoService);
   private readonly el = inject(ElementRef);
@@ -315,6 +375,12 @@ export class BookingComponent implements OnInit {
   public readonly isSuccess = signal<boolean>(false);
   public readonly serverMessage = signal<string>('');
   public readonly errorMessage = signal<string>('');
+
+  // Pagamento online — token opaco da reserva criada + escolha do tipo.
+  public readonly reservaToken = signal<string | null>(null);
+  public readonly tipoPagamento = signal<TipoPagamento>('integral');
+  public readonly isPaying = signal<boolean>(false);
+  public readonly paymentError = signal<string>('');
 
   constructor() {
     afterNextRender(() => {
@@ -377,10 +443,34 @@ export class BookingComponent implements OnInit {
     this.isLoading.set(false);
     if (resp.success) {
       this.serverMessage.set(resp.message);
+      this.reservaToken.set(resp.token ?? null);
       this.isSuccess.set(true);
     } else {
       this.errorMessage.set(resp.message);
     }
+  }
+
+  /** Estimativa exibida ao hóspede — o valor cobrado é recalculado no servidor. */
+  public readonly estimatedTotal = computed(() => {
+    const acc = this.selectedAccommodation();
+    return acc?.price ? Math.round(acc.price * this.calculatedNights() * 100) : 0;
+  });
+
+  /** Cria a sessão Stripe e redireciona o hóspede ao checkout hospedado. */
+  public async pagarAgora(): Promise<void> {
+    const token = this.reservaToken();
+    if (!token || this.isPaying()) return;
+    this.isPaying.set(true);
+    this.paymentError.set('');
+    const out = await this.paymentService.criarCheckout(token, this.tipoPagamento());
+    if (!out?.checkout_url) {
+      this.isPaying.set(false);
+      this.paymentError.set(
+        'Não foi possível iniciar o pagamento agora. Tente novamente ou reserve e pague na recepção.'
+      );
+      return;
+    }
+    window.location.href = out.checkout_url;
   }
 
   private initAnimations(): void {

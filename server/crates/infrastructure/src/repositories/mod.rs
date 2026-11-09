@@ -10,6 +10,7 @@ pub mod compras;
 pub mod estoque;
 pub mod impressora;
 pub mod notificacao;
+pub mod pagamento;
 pub mod pdv;
 pub mod pessoas;
 pub mod reserva;
@@ -29,6 +30,7 @@ pub use compras::PgComprasRepository;
 pub use estoque::PgEstoqueRepository;
 pub use impressora::PgImpressoraRepository;
 pub use notificacao::PgNotificacaoRepository;
+pub use pagamento::PgPagamentoRepository;
 pub use pdv::PgPdvRepository;
 pub use pessoas::{
     PgClienteRepository, PgDocumentoRepository, PgFuncionarioRepository, PgLogAcessoRepository,

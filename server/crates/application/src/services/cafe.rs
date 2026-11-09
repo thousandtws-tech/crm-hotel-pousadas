@@ -163,6 +163,7 @@ mod tests {
             login: "t".into(),
             nome: "T".into(),
             nivel: NivelAcesso::Recepcao,
+            financeiro: false,
         }
     }
     fn input(id: i64, data: &str, qtd: i32) -> RegistrarPresencaInput {

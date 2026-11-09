@@ -14,6 +14,10 @@ pub struct TokenClaims {
     pub login: String,
     pub nome: String,
     pub nivel: i16,
+    /// Permissão granular financeira do funcionário — `false` em tokens
+    /// emitidos antes da flag existir (serde default, retrocompatível).
+    #[serde(default)]
+    pub financeiro: bool,
     pub exp: i64,
     pub iat: i64,
     pub iss: String,

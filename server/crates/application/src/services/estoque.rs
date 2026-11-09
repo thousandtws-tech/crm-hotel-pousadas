@@ -920,6 +920,7 @@ mod tests {
             login: "t".into(),
             nome: "Teste".into(),
             nivel: NivelAcesso::Administrador,
+            financeiro: false,
         }
     }
 

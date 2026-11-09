@@ -108,6 +108,8 @@ pub struct FuncionarioView {
     pub nivel: i16,
     pub nivel_nome: &'static str,
     pub ativo: bool,
+    /// Permissão granular de operações financeiras (reembolso).
+    pub financeiro: bool,
 }
 
 impl From<&clarituz_domain::entities::Funcionario> for FuncionarioView {
@@ -123,6 +125,7 @@ impl From<&clarituz_domain::entities::Funcionario> for FuncionarioView {
                 NivelAcesso::Recepcao => "Recepção",
             },
             ativo: f.ativo,
+            financeiro: f.financeiro,
         }
     }
 }
@@ -301,7 +304,62 @@ pub struct ReservaPublicaOutput {
     pub status: &'static str,
     pub idreserva: Option<i64>,
     pub idcliente: i64,
+    /// Token público opaco — o site usa para criar o checkout e consultar
+    /// o status sem expor o id sequencial (anti-enumeração).
+    pub token_publico: Option<uuid::Uuid>,
     pub mensagem: String,
+}
+
+// ---------------------------------------------------------------------------
+// pagamentos online (Stripe)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+pub struct CheckoutPublicoInput {
+    /// Token público retornado na criação da reserva.
+    pub token: uuid::Uuid,
+    /// 'integral' | 'sinal' | 'saldo' — o valor é recalculado no servidor.
+    pub tipo: clarituz_domain::enums::TipoPagamento,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CheckoutPublicoOutput {
+    /// URL hospedada Stripe para onde o hóspede é redirecionado.
+    pub checkout_url: String,
+    pub valor_centavos: i64,
+    pub expira_em: chrono::DateTime<chrono::Utc>,
+    pub idpagamento: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PagamentoResumoPublico {
+    pub tipo: clarituz_domain::enums::TipoPagamento,
+    pub status: clarituz_domain::enums::StatusPagamento,
+    pub valor_centavos: i64,
+    pub metodo: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct StatusPublicoOutput {
+    pub status_reserva: clarituz_domain::enums::StatusReserva,
+    /// True quando ao menos um pagamento está confirmado — leitura apenas;
+    /// a confirmação de fato depende do webhook.
+    pub confirmada: bool,
+    pub pagamentos: Vec<PagamentoResumoPublico>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ReembolsarPagamentoInput {
+    /// Centavos — igual ao pago = reembolso integral.
+    pub valor_centavos: i64,
+    pub motivo: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ReembolsoOutput {
+    pub id: i64,
+    pub refund_id: Option<String>,
+    pub status: String,
 }
 
 #[derive(Debug, Deserialize, Default)]

@@ -25,6 +25,8 @@ export interface FuncionarioView {
   nivel: number;
   nivel_nome: string;
   ativo: boolean;
+  /** Permissão granular: consulta financeira completa e reembolsos. */
+  financeiro?: boolean;
 }
 
 export interface TokenResponse {
@@ -1505,4 +1507,42 @@ export interface ImpressoraDescoberta {
   status: 'pendente' | 'registrada' | 'ignorada';
   impressora_id: number | null;
   visto_em: string;
+}
+
+// ---- Pagamentos online (Stripe) -------------------------------------------
+
+export type StatusPagOnline =
+  | 'pendente' | 'pago' | 'expirado' | 'falhou' | 'cancelado'
+  | 'reembolso_parcial' | 'reembolsado';
+
+export interface PagOnlineResumo {
+  id: number;
+  idreserva: number;
+  tipo: 'integral' | 'sinal' | 'saldo';
+  status: StatusPagOnline;
+  valor_centavos: number;
+  metodo: string | null;
+  paid_em: string | null;
+  criado_em: string;
+  cliente_nome: string;
+  acomodacao_nome: string;
+  reembolsado_centavos: number;
+}
+
+export interface ResumoFinanceiroOnline {
+  recebido_centavos: number;
+  pendente_centavos: number;
+  reembolsado_centavos: number;
+  total_pagos: number;
+  total_pendentes: number;
+  total_recusados: number;
+  card_centavos: number;
+  pix_centavos: number;
+}
+
+export interface ReceitaAcomodacao {
+  idacomodacao: number;
+  nome: string;
+  recebido_centavos: number;
+  total_pagos: number;
 }

@@ -21,6 +21,8 @@ export class AuthStore {
   readonly user = this._user.asReadonly();
   readonly autenticado = computed(() => this._user() !== null && this.accessToken() !== null);
   readonly isAdmin = computed(() => this._user()?.nivel === 1);
+  /** Pode consultar financeiro online e executar reembolsos (admin implícito). */
+  readonly canFinanceiro = computed(() => this.isAdmin() || this._user()?.financeiro === true);
 
   private refreshing: Observable<boolean> | null = null;
 

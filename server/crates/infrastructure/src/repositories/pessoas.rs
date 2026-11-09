@@ -31,7 +31,7 @@ impl PgFuncionarioRepository {
 }
 
 const FUNCIONARIO_COLS: &str =
-    "id, nome, login, senha_hash, cpf, data_nascimento, nivel, ativo, version, criado_em, atualizado_em";
+    "id, nome, login, senha_hash, cpf, data_nascimento, nivel, financeiro, ativo, version, criado_em, atualizado_em";
 
 #[async_trait]
 impl FuncionarioRepository for PgFuncionarioRepository {

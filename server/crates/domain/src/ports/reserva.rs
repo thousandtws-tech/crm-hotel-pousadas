@@ -26,6 +26,8 @@ pub struct NovaReserva {
     pub valordiaria: Decimal,
     /// Valor total da estadia gravado em `consumo.valor_estadia`.
     pub valor_total: Decimal,
+    /// Prazo de hold da reserva online (None = recepção, sem expiração).
+    pub expira_em: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone)]

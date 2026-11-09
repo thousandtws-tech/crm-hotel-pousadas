@@ -479,6 +479,31 @@ export class ApiService {
   comprovantes() {
     return this.get<M.ComprovanteResumo[]>('/pagamentos/comprovantes');
   }
+
+  // ---- Pagamentos online (Stripe) -------------------------------------
+
+  pagamentosOnline(f: { status?: string; idreserva?: number; inicio?: string; fim?: string; per_page?: number; page?: number }) {
+    return this.get<{ items: M.PagOnlineResumo[]; total: number }>('/pagamentos', f);
+  }
+
+  resumoFinanceiroOnline(inicio?: string, fim?: string) {
+    return this.get<M.ResumoFinanceiroOnline>('/financeiro/pagamentos/resumo', { inicio, fim });
+  }
+
+  receitaPorAcomodacao(inicio?: string, fim?: string) {
+    return this.get<M.ReceitaAcomodacao[]>('/financeiro/pagamentos/receita-acomodacoes', { inicio, fim });
+  }
+
+  pagamentosDaReserva(idreserva: number) {
+    return this.get<M.PagOnlineResumo[]>(`/reservas/${idreserva}/pagamentos`);
+  }
+
+  reembolsarPagamento(id: number, valorCentavos: number | null, motivo: string) {
+    return this.post<{ idreembolso: number }>(`/pagamentos/${id}/reembolsos`, {
+      valor_centavos: valorCentavos,
+      motivo: motivo || null,
+    });
+  }
   comprovanteTexto(idreserva: number) {
     return this.http.get(`${this.base}/pagamentos/comprovantes/${idreserva}`, {
       responseType: 'text',
