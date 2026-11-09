@@ -3,3 +3,7 @@
 
 # Shell scripts devem manter LF mesmo em checkout Windows (CRLF quebra shebang)
 *.sh text eol=lf
+
+# Migrations: bytes determinísticos em qualquer checkout — o checksum que o
+# sqlx grava em _sqlx_migrations muda se o line-ending muda (CRLF!=LF).
+*.sql text eol=lf
