@@ -1,11 +1,9 @@
 FROM postgres:17-bookworm
 
-# mc (MinIO client) para upload no bucket privado do Railway
+# awscli para upload no MinIO (pacote Debian — sem download externo)
 RUN apt-get update \
- && apt-get install -y --no-install-recommends curl ca-certificates \
- && rm -rf /var/lib/apt/lists/* \
- && curl -fsSL -o /usr/local/bin/mc https://dl.min.io/client/mc/release/linux-amd64/mc \
- && chmod +x /usr/local/bin/mc
+ && apt-get install -y --no-install-recommends awscli \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY backup.sh /backup.sh
 RUN chmod +x /backup.sh
