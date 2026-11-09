@@ -11,13 +11,13 @@
     {
       "id": 1, "type": "stat", "title": "API — req/s",
       "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
-      "targets": [{"refId": "A", "expr": "sum(rate(http_requests_total[5m]))", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}],
+      "targets": [{"refId": "A", "expr": "sum(rate(axum_http_requests_total[5m]))", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}],
       "fieldConfig": {"defaults": {"unit": "reqps", "decimals": 1}, "overrides": []}
     },
     {
       "id": 2, "type": "stat", "title": "5xx — taxa",
       "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
-      "targets": [{"refId": "A", "expr": "100 * sum(rate(http_requests_total{status=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m]))", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}],
+      "targets": [{"refId": "A", "expr": "100 * sum(rate(axum_http_requests_total{status=~\"5..\"}[5m])) / sum(rate(axum_http_requests_total[5m]))", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}],
       "fieldConfig": {"defaults": {"unit": "percent", "decimals": 2, "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 2}]}}, "overrides": []}
     },
     {
@@ -48,16 +48,16 @@
       "id": 7, "type": "timeseries", "title": "API — latência p50/p95/p99",
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
       "targets": [
-        {"refId": "A", "expr": "histogram_quantile(0.50, sum by (le) (rate(http_requests_duration_seconds_bucket[5m])))", "legendFormat": "p50", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}},
-        {"refId": "B", "expr": "histogram_quantile(0.95, sum by (le) (rate(http_requests_duration_seconds_bucket[5m])))", "legendFormat": "p95", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}},
-        {"refId": "C", "expr": "histogram_quantile(0.99, sum by (le) (rate(http_requests_duration_seconds_bucket[5m])))", "legendFormat": "p99", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}
+        {"refId": "A", "expr": "histogram_quantile(0.50, sum by (le) (rate(axum_http_requests_duration_seconds_bucket[5m])))", "legendFormat": "p50", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}},
+        {"refId": "B", "expr": "histogram_quantile(0.95, sum by (le) (rate(axum_http_requests_duration_seconds_bucket[5m])))", "legendFormat": "p95", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}},
+        {"refId": "C", "expr": "histogram_quantile(0.99, sum by (le) (rate(axum_http_requests_duration_seconds_bucket[5m])))", "legendFormat": "p99", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}
       ],
       "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}
     },
     {
       "id": 8, "type": "timeseries", "title": "API — req/s por status",
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
-      "targets": [{"refId": "A", "expr": "sum by (status) (rate(http_requests_total[5m]))", "legendFormat": "{{status}}", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}],
+      "targets": [{"refId": "A", "expr": "sum by (status) (rate(axum_http_requests_total[5m]))", "legendFormat": "{{status}}", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}],
       "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []}
     },
     {
@@ -73,13 +73,13 @@
     {
       "id": 10, "type": "timeseries", "title": "API — top rotas por req/s",
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
-      "targets": [{"refId": "A", "expr": "topk(8, sum by (endpoint) (rate(http_requests_total[5m])))", "legendFormat": "{{endpoint}}", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}],
+      "targets": [{"refId": "A", "expr": "topk(8, sum by (endpoint) (rate(axum_http_requests_total[5m])))", "legendFormat": "{{endpoint}}", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}],
       "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []}
     },
     {
       "id": 11, "type": "timeseries", "title": "Maria — latência por estágio",
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
-      "targets": [{"refId": "A", "expr": "maria_latencia_segundos", "legendFormat": "{{estagio}} {{quantil}}", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}],
+      "targets": [{"refId": "A", "expr": "maria_latencia_segundos", "legendFormat": "{{estagio}} {{medida}}", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}],
       "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}
     },
     {

@@ -11,8 +11,8 @@ groups:
 
       - alert: ApiErros5xx
         expr: >-
-          sum(rate(http_requests_total{status=~"5.."}[5m]))
-          / sum(rate(http_requests_total[5m])) > 0.02
+          sum(rate(axum_http_requests_total{status=~"5.."}[5m]))
+          / sum(rate(axum_http_requests_total[5m])) > 0.02
         for: 5m
         labels:
           severity: warning
@@ -22,7 +22,7 @@ groups:
       - alert: ApiP95Alto
         expr: >-
           histogram_quantile(0.95,
-            sum by (le) (rate(http_requests_duration_seconds_bucket[5m]))
+            sum by (le) (rate(axum_http_requests_duration_seconds_bucket[5m]))
           ) > 0.8
         for: 10m
         labels:

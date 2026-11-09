@@ -76,8 +76,8 @@ groups:
             model:
               refId: A
               expr: >-
-                100 * sum(rate(http_requests_total{status=~"5.."}[5m]))
-                / sum(rate(http_requests_total[5m]))
+                100 * sum(rate(axum_http_requests_total{status=~"5.."}[5m]))
+                / sum(rate(axum_http_requests_total[5m]))
               instant: true
               range: false
               intervalMs: 1000

@@ -21,7 +21,7 @@ pg-exporter:9187 ─────┘        │                        │
 
 ## O que é coletado
 
-- **api** (`/metrics`): `http_requests_total`, `http_requests_duration_seconds`
+- **api** (`/metrics`): `axum_http_requests_total`, `axum_http_requests_duration_seconds`
   (por método/rota/status) + gauges `clarituz_db_pool_connections`,
   `clarituz_db_pool_idle`, `clarituz_sse_subscribers` a cada 10s.
 - **maria** (`/metrics.prom`): `maria_turnos_total`, `maria_tool_calls_total`,
