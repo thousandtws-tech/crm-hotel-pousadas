@@ -158,7 +158,27 @@ export default defineRailway(() => {
   });
   const CI = group("CI", [jenkins]);
 
+  // ------------------------------------------------------------------- Ops
+  const pgBackup = service("pg-backup", {
+    // Dump diário do Postgres → MinIO (ops/pg-backup, deploy via `railway up`).
+    // Só-outbound: nenhum endpoint — nada conecta nele, ele conecta nos outros.
+    replicas: { "ams": 1 },
+    deploy: {
+      limitOverride: { containers: { cpu: 0.25, memoryBytes: 268435456 } },
+      restartPolicyMaxRetries: 10,
+    },
+    env: {
+      PGHOST: "${{Postgres.PGHOST}}",
+      PGPORT: "${{Postgres.PGPORT}}",
+      PGUSER: "${{Postgres.PGUSER}}",
+      PGPASSWORD: "${{Postgres.PGPASSWORD}}",
+      PGDATABASE: "${{Postgres.PGDATABASE}}",
+      S3_ACCESS_KEY: "${{Bucket.MINIO_ROOT_USER}}",
+      S3_SECRET_KEY: "${{Bucket.MINIO_ROOT_PASSWORD}}",
+    },
+  });
+
   return project("projeto-espirito-do-mar", {
-    resources: [admin, maria, realtime, Postgres, web, api, bucketVolume, mariaVolume, postgresVolume, prometheusVolume, grafanaVolume, jenkinsVolume, MinIO, Observabilidade, CI],
+    resources: [admin, maria, realtime, Postgres, web, api, bucketVolume, mariaVolume, postgresVolume, prometheusVolume, grafanaVolume, jenkinsVolume, MinIO, Observabilidade, CI, pgBackup],
   });
 });

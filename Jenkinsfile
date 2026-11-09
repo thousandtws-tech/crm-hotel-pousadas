@@ -55,6 +55,10 @@ pipeline {
             when { changeset 'ci/jenkins/**' }
             steps { sh 'railway up ci/jenkins --path-as-root -d -y -s jenkins -e $RAILWAY_ENV -p $RAILWAY_PROJECT' }
         }
+        stage('pg-backup') {
+            when { changeset 'ops/pg-backup/**' }
+            steps { sh 'railway up ops/pg-backup --path-as-root -d -y -s pg-backup -e $RAILWAY_ENV -p $RAILWAY_PROJECT' }
+        }
         stage('iac-drift') {
             when { changeset '.railway/**' }
             steps {
