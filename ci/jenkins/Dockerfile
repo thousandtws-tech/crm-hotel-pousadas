@@ -1,3 +1,5 @@
+FROM postgres:17-bookworm AS pgtools
+
 FROM jenkins/jenkins:lts-jdk21
 
 USER root
@@ -9,12 +11,14 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && npm install -g @railway/cli
 
-# Backup job: pg_dump (cliente PG17 — precisa >= versão do server) + mc (MinIO client)
-RUN curl -fsSL -o /usr/share/keyrings/pgdg.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc \
- && echo "deb [signed-by=/usr/share/keyrings/pgdg.asc] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
- && apt-get update \
- && apt-get install -y --no-install-recommends postgresql-client-17 \
+# Backup job: pg_dump copiado da imagem oficial postgres:17 (mesma versão do server)
+# + mc (MinIO client) para upload no bucket.
+COPY --from=pgtools /usr/lib/postgresql/17/bin/pg_dump /usr/local/bin/pg_dump
+COPY --from=pgtools /usr/lib/x86_64-linux-gnu/libpq.so.5* /usr/lib/x86_64-linux-gnu/
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends liblz4-1 libzstd1 libgssapi-krb5-2 libldap-2.5-0 \
  && rm -rf /var/lib/apt/lists/* \
+ && ldconfig \
  && curl -fsSL -o /usr/local/bin/mc https://dl.min.io/client/mc/release/linux-amd64/mc \
  && chmod +x /usr/local/bin/mc
 
