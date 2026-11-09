@@ -7,7 +7,6 @@ export default defineRailway(() => {
   const bucketVolume = volume("bucket-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "ams", sizeMB: 5000 });
   const mariaVolume = volume("maria-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "ams", sizeMB: 5000 });
   const postgresVolume = volume("postgres-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "ams", sizeMB: 5000 });
-  const apiVolume = volume("api-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "ams", sizeMB: 5000 });
   const admin = service("admin", {
     replicas: { "ams": 1 },
     // nginx estático — 0.25 vCPU / 512 MiB
@@ -160,6 +159,6 @@ export default defineRailway(() => {
   const CI = group("CI", [jenkins]);
 
   return project("projeto-espirito-do-mar", {
-    resources: [admin, maria, realtime, Postgres, web, api, bucketVolume, mariaVolume, postgresVolume, apiVolume, prometheusVolume, grafanaVolume, jenkinsVolume, MinIO, Observabilidade, CI],
+    resources: [admin, maria, realtime, Postgres, web, api, bucketVolume, mariaVolume, postgresVolume, prometheusVolume, grafanaVolume, jenkinsVolume, MinIO, Observabilidade, CI],
   });
 });
