@@ -88,11 +88,11 @@ impl PagamentoRepository for PgPagamentoRepository {
         &self,
         session_id: &str,
     ) -> Result<Option<PagamentoOnline>, DomainError> {
-        sqlx::query_as::<_, PagamentoOnline>(&format!(
-            "SELECT {PAGAMENTO_COLS} FROM pagamento p
+        sqlx::query_as::<_, PagamentoOnline>(
+            "SELECT p.* FROM pagamento p
              JOIN pagamento_tentativa t ON t.idpagamento = p.id
-             WHERE t.session_id = $1"
-        ))
+             WHERE t.session_id = $1",
+        )
         .bind(session_id)
         .fetch_optional(&self.pool)
         .await
@@ -302,7 +302,7 @@ impl PagamentoRepository for PgPagamentoRepository {
 
     async fn total_reembolsado(&self, idpagamento: i64) -> Result<i64, DomainError> {
         sqlx::query_scalar::<_, i64>(
-            "SELECT COALESCE(SUM(valor_centavos), 0) FROM pagamento_reembolso
+            "SELECT COALESCE(SUM(valor_centavos), 0)::bigint FROM pagamento_reembolso
              WHERE idpagamento = $1 AND status != 'falhou'",
         )
         .bind(idpagamento)
@@ -318,7 +318,7 @@ impl PagamentoRepository for PgPagamentoRepository {
     ) -> Result<(), DomainError> {
         let mut tx = self.pool.begin().await.map_err(map_db_err)?;
         let total: i64 = sqlx::query_scalar(
-            "SELECT COALESCE(SUM(valor_centavos), 0) FROM pagamento_reembolso
+            "SELECT COALESCE(SUM(valor_centavos), 0)::bigint FROM pagamento_reembolso
              WHERE idpagamento = $1 AND status = 'concluido'",
         )
         .bind(idpagamento)
@@ -505,7 +505,7 @@ impl PagamentoRepository for PgPagamentoRepository {
             "SELECT p.id, p.idreserva, p.tipo, p.status, p.valor_centavos, p.metodo,
                     p.paid_em, p.criado_em, c.nome AS cliente_nome,
                     a.nome AS acomodacao_nome,
-                    COALESCE((SELECT SUM(rb.valor_centavos) FROM pagamento_reembolso rb
+                    COALESCE((SELECT SUM(rb.valor_centavos)::bigint FROM pagamento_reembolso rb
                         WHERE rb.idpagamento = p.id AND rb.status = 'concluido'), 0)
                         AS reembolsado_centavos
              {base} ORDER BY p.criado_em DESC
@@ -549,23 +549,23 @@ impl PagamentoRepository for PgPagamentoRepository {
         sqlx::query_as::<_, ResumoFinanceiro>(
             "SELECT
                 COALESCE(SUM(valor_centavos) FILTER (WHERE status IN
-                    ('pago','reembolso_parcial','reembolsado')), 0) AS recebido_centavos,
-                COALESCE(SUM(valor_centavos) FILTER (WHERE status = 'pendente'), 0)
+                    ('pago','reembolso_parcial','reembolsado')), 0)::bigint AS recebido_centavos,
+                COALESCE(SUM(valor_centavos) FILTER (WHERE status = 'pendente'), 0)::bigint
                     AS pendente_centavos,
-                COALESCE((SELECT SUM(rb.valor_centavos) FROM pagamento_reembolso rb
+                COALESCE((SELECT SUM(rb.valor_centavos)::bigint FROM pagamento_reembolso rb
                     JOIN pagamento p2 ON p2.id = rb.idpagamento
                     WHERE rb.status = 'concluido'
-                      AND rb.criado_em >= $1 AND rb.criado_em < $2::date + 1), 0)
+                      AND rb.criado_em >= $1 AND rb.criado_em < $2::date + 1), 0)::bigint
                     AS reembolsado_centavos,
                 COUNT(*) FILTER (WHERE status IN
                     ('pago','reembolso_parcial','reembolsado')) AS total_pagos,
                 COUNT(*) FILTER (WHERE status = 'pendente') AS total_pendentes,
                 COUNT(*) FILTER (WHERE status IN ('falhou','expirado')) AS total_recusados,
                 COALESCE(SUM(valor_centavos) FILTER (WHERE metodo = 'card'
-                    AND status IN ('pago','reembolso_parcial','reembolsado')), 0)
+                    AND status IN ('pago','reembolso_parcial','reembolsado')), 0)::bigint
                     AS card_centavos,
                 COALESCE(SUM(valor_centavos) FILTER (WHERE metodo = 'pix'
-                    AND status IN ('pago','reembolso_parcial','reembolsado')), 0)
+                    AND status IN ('pago','reembolso_parcial','reembolsado')), 0)::bigint
                     AS pix_centavos
              FROM pagamento
              WHERE criado_em >= $1 AND criado_em < $2::date + 1",
@@ -584,7 +584,7 @@ impl PagamentoRepository for PgPagamentoRepository {
     ) -> Result<Vec<ReceitaAcomodacao>, DomainError> {
         sqlx::query_as::<_, ReceitaAcomodacao>(
             "SELECT a.id AS idacomodacao, a.nome,
-                    COALESCE(SUM(p.valor_centavos), 0) AS recebido_centavos,
+                    COALESCE(SUM(p.valor_centavos), 0)::bigint AS recebido_centavos,
                     COUNT(p.id) AS total_pagos
              FROM acomodacao a
              JOIN reserva r ON r.idacomodacao = a.id

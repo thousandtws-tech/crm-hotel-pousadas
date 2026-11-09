@@ -115,7 +115,7 @@ fn evento_session(
     }
 }
 
-#[sqlx::test]
+#[sqlx::test(migrations = "../../migrations")]
 async fn checkout_integral_cria_sessao_e_tentativa(pool: PgPool) {
     let c = cenario(pool.clone()).await;
     let (_idreserva, token) = reserva_do_site(&c, &pool).await;
@@ -134,7 +134,7 @@ async fn checkout_integral_cria_sessao_e_tentativa(pool: PgPool) {
     assert_eq!(out.valor_centavos, 70000);
 }
 
-#[sqlx::test]
+#[sqlx::test(migrations = "../../migrations")]
 async fn checkout_sinal_cobra_30_porcento(pool: PgPool) {
     let c = cenario(pool.clone()).await;
     let (_idreserva, token) = reserva_do_site(&c, &pool).await;
@@ -151,7 +151,7 @@ async fn checkout_sinal_cobra_30_porcento(pool: PgPool) {
     assert_eq!(out.valor_centavos, 21000); // 30% de 70000
 }
 
-#[sqlx::test]
+#[sqlx::test(migrations = "../../migrations")]
 async fn webhook_confirmado_paga_e_e_idempotente(pool: PgPool) {
     let c = cenario(pool.clone()).await;
     let (_idreserva, token) = reserva_do_site(&c, &pool).await;
@@ -194,7 +194,7 @@ async fn webhook_confirmado_paga_e_e_idempotente(pool: PgPool) {
     assert_eq!(pi, format!("pi_fake_{p}"));
 }
 
-#[sqlx::test]
+#[sqlx::test(migrations = "../../migrations")]
 async fn saldo_respeita_ja_pago(pool: PgPool) {
     let c = cenario(pool.clone()).await;
     let (_idreserva, token) = reserva_do_site(&c, &pool).await;
@@ -230,7 +230,7 @@ async fn saldo_respeita_ja_pago(pool: PgPool) {
     assert_eq!(out.valor_centavos, 49000);
 }
 
-#[sqlx::test]
+#[sqlx::test(migrations = "../../migrations")]
 async fn reembolso_parcial_atualiza_status(pool: PgPool) {
     let c = cenario(pool.clone()).await;
     let (_idreserva, token) = reserva_do_site(&c, &pool).await;
@@ -275,7 +275,7 @@ async fn reembolso_parcial_atualiza_status(pool: PgPool) {
     assert_eq!(status, "reembolso_parcial");
 }
 
-#[sqlx::test]
+#[sqlx::test(migrations = "../../migrations")]
 async fn reembolso_exige_permissao_financeira(pool: PgPool) {
     let c = cenario(pool.clone()).await;
     let (_idreserva, token) = reserva_do_site(&c, &pool).await;
@@ -305,7 +305,7 @@ async fn reembolso_exige_permissao_financeira(pool: PgPool) {
     assert!(r.is_err());
 }
 
-#[sqlx::test]
+#[sqlx::test(migrations = "../../migrations")]
 async fn webhook_duplicado_na_inbox_e_noop(pool: PgPool) {
     let c = cenario(pool.clone()).await;
     let _ = reserva_do_site(&c, &pool).await;
@@ -320,7 +320,7 @@ async fn webhook_duplicado_na_inbox_e_noop(pool: PgPool) {
     assert!(!repo.registrar_evento(&ev).await.unwrap()); // 2ª: duplicado
 }
 
-#[sqlx::test]
+#[sqlx::test(migrations = "../../migrations")]
 async fn hold_expirado_cancela_reserva_e_pagamento(pool: PgPool) {
     let c = cenario(pool.clone()).await;
     let (idreserva, token) = reserva_do_site(&c, &pool).await;
@@ -355,7 +355,7 @@ async fn hold_expirado_cancela_reserva_e_pagamento(pool: PgPool) {
     assert_eq!(sp, "expirado");
 }
 
-#[sqlx::test]
+#[sqlx::test(migrations = "../../migrations")]
 async fn conciliacao_confirma_pagamento_sem_webhook(pool: PgPool) {
     let c = cenario(pool.clone()).await;
     let (_idreserva, token) = reserva_do_site(&c, &pool).await;
