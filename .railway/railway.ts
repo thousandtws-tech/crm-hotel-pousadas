@@ -62,7 +62,6 @@ export default defineRailway(() => {
       limitOverride: { containers: { cpu: 1, memoryBytes: 1073741824 } },
       restartPolicyMaxRetries: 5,
     },
-    volumeMounts: { "//srv/storage": apiVolume },
     env: { CORS_ORIGINS: preserve(), DATABASE_URL: preserve(), DB_MAX_CONNECTIONS: preserve(), JWT_SECRET: preserve(), RAILWAY_DOCKERFILE_PATH: preserve(), RUST_LOG: preserve(), S3_ACCESS_KEY: preserve(), S3_BUCKET: preserve(), S3_ENDPOINT: preserve(), S3_REGION: preserve(), S3_SECRET_KEY: preserve(), STORAGE_DIR: preserve() },
   });
   const Bucket = service("Bucket", {
@@ -91,6 +90,7 @@ export default defineRailway(() => {
     },
     volumeMounts: { "/prometheus": prometheusVolume },
     env: {
+      PORT: "9090",
       API_SCRAPE: "${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}",
       MARIA_SCRAPE: "${{maria.RAILWAY_PRIVATE_DOMAIN}}:${{maria.PORT}}",
     },
@@ -107,6 +107,8 @@ export default defineRailway(() => {
     },
     volumeMounts: { "/var/lib/grafana": grafanaVolume },
     env: {
+      PORT: "3000",
+      GF_SERVER_HTTP_PORT: "3000",
       GF_SECURITY_ADMIN_USER: preserve(),
       GF_SECURITY_ADMIN_PASSWORD: preserve(),
       GF_USERS_ALLOW_SIGN_UP: "false",

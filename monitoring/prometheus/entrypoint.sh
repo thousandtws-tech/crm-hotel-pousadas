@@ -10,4 +10,5 @@ exec /bin/prometheus \
     --config.file=/tmp/prometheus.yml \
     --storage.tsdb.path=/prometheus \
     --storage.tsdb.retention.time=30d \
+    --web.listen-address=":${PORT:-9090}" \
     --web.enable-lifecycle
