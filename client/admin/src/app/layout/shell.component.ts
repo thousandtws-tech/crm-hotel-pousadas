@@ -60,6 +60,7 @@ const NAV: NavItem[] = [
   },
   { rota: '/pagamentos', rotulo: 'Pagamentos', icone: 'credit_card', admin: true },
   { rota: '/cms', rotulo: 'Site / Quartos', icone: 'web', admin: true },
+  { rota: '/comunicacao', rotulo: 'Comunicação', icone: 'forum', admin: true },
   { rota: '/estabelecimento', rotulo: 'Pousada / Hotel', icone: 'home', admin: true },
   { rota: '/funcionarios', rotulo: 'Administrador', icone: 'lock_open', admin: true },
 ];

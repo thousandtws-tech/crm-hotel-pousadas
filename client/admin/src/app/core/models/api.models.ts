@@ -1546,3 +1546,70 @@ export interface ReceitaAcomodacao {
   recebido_centavos: number;
   total_pagos: number;
 }
+
+// -- comunicação / reputação -----------------------------------------------------
+
+export type CanalEnvio = 'email' | 'whatsapp' | 'push' | 'inbox';
+export type StatusEnvio = 'pendente' | 'enviando' | 'enviado' | 'falhou' | 'cancelado';
+export type StatusAvaliacao = 'pendente' | 'respondida' | 'expirada';
+
+export interface ItemFila {
+  id: number;
+  canal: CanalEnvio;
+  destino: string;
+  template: string;
+  payload: Record<string, unknown>;
+  idreserva: number | null;
+  tentativas: number;
+  ultimo_erro: string | null;
+  status: StatusEnvio;
+  agendado_para: string;
+  criado_em: string;
+  enviado_em: string | null;
+}
+
+export interface RegraMatriz {
+  evento: string;
+  canal: CanalEnvio;
+  papel: number;
+  ativo: boolean;
+}
+
+export interface Avaliacao {
+  id: number;
+  idreserva: number;
+  plataforma: string;
+  nota_geral: number | null;
+  nota_limpeza: number | null;
+  nota_atendimento: number | null;
+  nota_custo: number | null;
+  nota_localizacao: number | null;
+  nps: number | null;
+  comentario: string | null;
+  resposta: string | null;
+  status: StatusAvaliacao;
+  criado_em: string;
+}
+
+export interface AvaliacoesDash {
+  total: number;
+  respondidas: number;
+  taxa_resposta: number;
+  media_geral: number | null;
+  media_limpeza: number | null;
+  media_atendimento: number | null;
+  media_custo: number | null;
+  media_localizacao: number | null;
+  nps: number | null;
+  plataformas: Record<string, { total: number; soma: number }>;
+}
+
+export interface NivelFidelidade {
+  id: number;
+  nome: string;
+  min_diarias: number;
+  desconto_pct: string;
+  beneficios: string | null;
+  ordem: number;
+  ativo: boolean;
+}

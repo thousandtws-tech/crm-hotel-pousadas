@@ -933,6 +933,41 @@ export class ApiService {
       page: f.page ?? 1, por_pagina: f.porPagina ?? 50,
     });
   }
+  // -- comunicação / reputação --------------------------------------------------
+  filaEnvio() {
+    return this.get<M.ItemFila[]>('/comunicacao/fila');
+  }
+  matrizNotificacao() {
+    return this.get<M.RegraMatriz[]>('/comunicacao/matriz');
+  }
+  gravarRegraMatriz(regra: M.RegraMatriz) {
+    return this.post<void>('/comunicacao/matriz', regra);
+  }
+  dispararCobranca(idreserva: number) {
+    return this.post<void>(`/comunicacao/cobranca/${idreserva}`, {});
+  }
+  avaliacoes(status?: string) {
+    return this.get<M.Avaliacao[]>('/avaliacoes', { status });
+  }
+  avaliacoesDashboard() {
+    return this.get<M.AvaliacoesDash>('/avaliacoes/dashboard');
+  }
+  responderAvaliacao(id: number, resposta: string) {
+    return this.post<void>(`/avaliacoes/${id}/responder`, { resposta });
+  }
+  fidelidadeNiveis() {
+    return this.get<M.NivelFidelidade[]>('/fidelidade/niveis');
+  }
+  pushVapidKey() {
+    return this.get<{ publica: string }>('/push/vapid-key');
+  }
+  pushSubscribe(sub: { endpoint: string; p256dh: string; auth: string; user_agent?: string }) {
+    return this.post<void>('/push/subscribe', sub);
+  }
+  pushUnsubscribe(endpoint: string) {
+    return this.post<void>('/push/unsubscribe', { endpoint });
+  }
+
   resumoComissoes(inicio?: string | null, fim?: string | null) {
     return this.get<M.ComissaoResumo[]>('/pdv/comissoes/resumo', { inicio, fim });
   }

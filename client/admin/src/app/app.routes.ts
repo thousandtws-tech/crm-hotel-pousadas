@@ -115,6 +115,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'comunicacao',
+        loadComponent: () =>
+          import('./features/comunicacao/comunicacao.component').then(
+            (m) => m.ComunicacaoComponent,
+          ),
+      },
+      {
         path: 'financeiro',
         loadComponent: () =>
           import('./features/financeiro/financeiro.component').then((m) => m.FinanceiroComponent),
