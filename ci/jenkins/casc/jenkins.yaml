@@ -30,6 +30,18 @@ credentials:
               username: "${GITHUB_USER}"
               password: "${GITHUB_TOKEN}"
               description: "PAT do GitHub — clone do repo privado"
+          - usernamePassword:
+              scope: GLOBAL
+              id: "pg-backup-pg"
+              username: "${PG_BACKUP_USER}"
+              password: "${PG_BACKUP_PASSWORD}"
+              description: "Credencial do Postgres para o pg_dump diário"
+          - usernamePassword:
+              scope: GLOBAL
+              id: "pg-backup-s3"
+              username: "${S3_BACKUP_KEY}"
+              password: "${S3_BACKUP_SECRET}"
+              description: "Chave MinIO para upload dos dumps"
 
 jobs:
   - script: >
@@ -50,6 +62,28 @@ jobs:
               }
             }
             scriptPath('Jenkinsfile')
+            lightweight(true)
+          }
+        }
+      }
+  - script: >
+      pipelineJob('pg-backup') {
+        displayName('pg-backup — dump diário do Postgres para o MinIO')
+        triggers {
+          cron('H 3 * * *')
+        }
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('https://github.com/thousandtws-tech/crm-hotel-pousadas.git')
+                  credentials('github-token')
+                }
+                branch('*/main')
+              }
+            }
+            scriptPath('ci/jenkins/pg-backup.Jenkinsfile')
             lightweight(true)
           }
         }

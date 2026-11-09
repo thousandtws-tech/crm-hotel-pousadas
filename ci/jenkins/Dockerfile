@@ -9,6 +9,15 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && npm install -g @railway/cli
 
+# Backup job: pg_dump (cliente PG17 — precisa >= versão do server) + mc (MinIO client)
+RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/pgdg.gpg \
+ && echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends postgresql-client-17 \
+ && rm -rf /var/lib/apt/lists/* \
+ && curl -fsSL -o /usr/local/bin/mc https://dl.min.io/client/mc/release/linux-amd64/mc \
+ && chmod +x /usr/local/bin/mc
+
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
 
