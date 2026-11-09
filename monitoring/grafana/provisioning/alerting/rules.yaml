@@ -23,7 +23,9 @@ groups:
               to: 0
             model:
               refId: A
-              expr: sum(clarituz_db_pool_idle == 0)
+              expr: >-
+                sum((clarituz_db_pool_idle == 0)
+                and (clarituz_db_pool_connections >= clarituz_db_pool_max))
               instant: true
               range: false
               intervalMs: 1000

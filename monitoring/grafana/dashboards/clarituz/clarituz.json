@@ -65,7 +65,8 @@
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
       "targets": [
         {"refId": "A", "expr": "clarituz_db_pool_connections", "legendFormat": "em uso ({{instance}})", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}},
-        {"refId": "B", "expr": "clarituz_db_pool_idle", "legendFormat": "ociosas ({{instance}})", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}
+        {"refId": "B", "expr": "clarituz_db_pool_idle", "legendFormat": "ociosas ({{instance}})", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}},
+        {"refId": "C", "expr": "clarituz_db_pool_max", "legendFormat": "teto ({{instance}})", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}
       ],
       "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
     },

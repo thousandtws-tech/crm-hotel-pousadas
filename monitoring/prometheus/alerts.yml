@@ -31,12 +31,14 @@ groups:
           summary: "p95 da API acima de 800ms por 10min"
 
       - alert: DbPoolSaturado
-        expr: clarituz_db_pool_idle == 0
+        expr: >-
+          clarituz_db_pool_idle == 0
+          and clarituz_db_pool_connections >= clarituz_db_pool_max
         for: 5m
         labels:
           severity: critical
         annotations:
-          summary: "Pool do Postgres esgotado (idle=0) — subir réplicas ou DB_MAX_CONNECTIONS"
+          summary: "Pool do Postgres esgotado ({{ $value }} conexões, 0 ociosas) — subir réplicas ou DB_MAX_CONNECTIONS"
 
       - alert: SseAltaDemanda
         expr: clarituz_sse_subscribers > 500

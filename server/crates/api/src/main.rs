@@ -184,6 +184,8 @@ fn spawn_metricas_saturacao(pool: sqlx::PgPool, eventos: EventBus) {
             tick.tick().await;
             metrics::gauge!("clarituz_db_pool_connections").set(pool.size() as f64);
             metrics::gauge!("clarituz_db_pool_idle").set(pool.num_idle() as f64);
+            metrics::gauge!("clarituz_db_pool_max")
+                .set(pool.options().get_max_connections() as f64);
             metrics::gauge!("clarituz_sse_subscribers").set(eventos.assinantes() as f64);
         }
     });
