@@ -1,7 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 # Backup diário do Postgres → MinIO (bucket `backups`, prefixo pg/, retenção RETAIN_DAYS).
 # Roda na rede privada do Railway: PGHOST/MinIO internos.
-set -eu
+set -euo pipefail
 
 : "${PGHOST:=postgres.railway.internal}"
 : "${PGPORT:=5432}"

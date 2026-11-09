@@ -1,4 +1,4 @@
-FROM postgres:17-bookworm
+FROM postgres:18
 
 # awscli para upload no MinIO (pacote Debian — sem download externo)
 RUN apt-get update \
