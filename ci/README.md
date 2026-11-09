@@ -59,3 +59,4 @@ token (menor privilégio).
   saudável.
 - O primeiro build após provisionar o job registra o trigger
   `githubPush()` — pushes subsequentes já disparam sozinhos.
+# CI
