@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '@core/services/api.service';
 import { AuthStore } from '@core/services/auth.store';
@@ -14,7 +15,7 @@ import {
 // filtros e reembolso restrito à permissão `financeiro`.
 @Component({
   selector: 'app-fin-pagamentos-online',
-  imports: [FormsModule],
+  imports: [FormsModule, DatePipe],
   template: `
     <section class="pg">
       <header class="pg-head">
