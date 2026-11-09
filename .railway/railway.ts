@@ -80,9 +80,8 @@ export default defineRailway(() => {
   const prometheusVolume = volume("prometheus-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "ams", sizeMB: 2000 });
   const grafanaVolume = volume("grafana-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "ams", sizeMB: 1000 });
   const prometheus = service("prometheus", {
-    // monitoring/prometheus/Dockerfile — scrape api/maria/pg-exporter pela
-    // rede privada; alvos chegam via ${{service.RAILWAY_PRIVATE_DOMAIN}}.
-    source: github("thousandtws-tech/crm-hotel-pousadas", { rootDirectory: "monitoring/prometheus" }),
+    // Deploy via `railway up` a partir de monitoring/prometheus (como os
+    // demais serviços — nenhum build conectado ao GitHub).
     healthcheck: "/-/healthy",
     replicas: { "ams": 1 },
     networking: { privateNetworkEndpoint: "prometheus" },
@@ -97,9 +96,8 @@ export default defineRailway(() => {
     },
   });
   const grafana = service("grafana", {
-    // monitoring/grafana/Dockerfile — datasource + dashboards + regras de
-    // alerta provisionados; admin/senha e webhook ficam no dashboard.
-    source: github("thousandtws-tech/crm-hotel-pousadas", { rootDirectory: "monitoring/grafana" }),
+    // Deploy via `railway up` a partir de monitoring/grafana — datasource +
+    // dashboards + regras provisionados; admin/senha/webhook no dashboard.
     healthcheck: "/api/health",
     replicas: { "ams": 1 },
     networking: { privateNetworkEndpoint: "grafana" },
