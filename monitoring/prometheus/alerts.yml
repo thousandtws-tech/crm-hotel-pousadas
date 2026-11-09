@@ -1,4 +1,5 @@
 groups:
+  # Avaliadas a cada 15s (evaluation_interval no prometheus.yml)
   - name: clarituz-api
     rules:
       - alert: ApiFora
