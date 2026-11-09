@@ -27,6 +27,7 @@ import {
   TipoDocumento,
 } from '@core/models/api.models';
 import { Notify } from '@core/services/notify.service';
+import { Confirm } from '@core/services/confirm.service';
 import { DateInputComponent } from '@shared/components/date-input.component';
 import { FotoCaptureComponent } from '@shared/components/foto-capture.component';
 import { imprimirFnrh } from '@shared/utils/fnrh-print';
@@ -151,9 +152,16 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
                 @for (d of docs(); track d.id) {
                   <tr>
                     <td>{{ rotulo(d.tipo) }}</td>
-                    <td>{{ d.numero }}</td>
+                    <td class="num">{{ formatarNumero(d) }}</td>
                     <td>{{ emissor(d) }}</td>
-                    <td>{{ d.validade | date: 'dd/MM/yyyy' }}</td>
+                    <td>
+                      @if (d.validade) {
+                        <span [class.vencido]="vencido(d)">{{ d.validade | date: 'dd/MM/yyyy' }}</span>
+                        @if (vencido(d)) { <span class="tag-venc">vencido</span> }
+                      } @else {
+                        <span class="muted">—</span>
+                      }
+                    </td>
                     <td>
                       @if (scans().get(d.id); as url) {
                         <button type="button" class="scan-thumb" title="Ampliar scan" (click)="ampliado.set(url)">
@@ -168,25 +176,25 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
                     <td class="linha-acoes">
                       <button
                         type="button" class="badge-acao bg-dark-blue" title="Digitalizar pela câmera"
-                        (click)="docScan.set(d)"
+                        aria-label="Digitalizar pela câmera" (click)="docScan.set(d)"
                       ><mat-icon>photo_camera</mat-icon></button>
                       <button
                         type="button" class="badge-acao bg-dark-blue" title="Enviar arquivo de imagem"
-                        (click)="alvoArquivo.set(d); arq.click()"
+                        aria-label="Enviar arquivo de imagem" (click)="alvoArquivo.set(d); arq.click()"
                       ><mat-icon>upload</mat-icon></button>
                       @if (d.tem_scan) {
                         <button
                           type="button" class="badge-acao bg-yellow" title="Remover scan"
-                          (click)="removerScan(d)"
+                          aria-label="Remover scan" (click)="removerScan(d)"
                         ><mat-icon>hide_image</mat-icon></button>
                       }
                       <button
                         type="button" class="badge-acao bg-yellow" title="Editar dados"
-                        (click)="editar(d)"
+                        aria-label="Editar dados" (click)="editar(d)"
                       ><mat-icon>edit</mat-icon></button>
                       <button
-                        type="button" class="badge-acao bg-dark-blue" title="Excluir documento"
-                        (click)="excluir(d)"
+                        type="button" class="badge-acao bg-danger" title="Excluir documento"
+                        aria-label="Excluir documento" (click)="excluir(d)"
                       ><mat-icon>delete</mat-icon></button>
                     </td>
                   </tr>
@@ -255,6 +263,11 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
                   </label>
                 }
               </div>
+              @if (duplicado()) {
+                <p class="aviso-dup" role="status">
+                  <mat-icon>info</mat-icon> Já existe um {{ rotulo(form.controls.tipo.value) }} cadastrado para este hóspede.
+                </p>
+              }
               <div class="doc-form-acoes">
                 @if (editando()) {
                   <button type="button" class="btn-gray" (click)="cancelarEdicao()">Cancelar</button>
@@ -351,16 +364,31 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
       border-top: 1px solid #e3eaef; padding-top: 14px;
       display: flex; flex-direction: column; gap: 12px;
     }
-    .doc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 14px; align-items: start; }
+    .doc-grid { display: grid; grid-template-columns: 1fr 1.3fr 1fr 80px; gap: 12px 14px; align-items: start; }
+    .doc-grid:has(app-date) { grid-template-columns: repeat(3, 1fr); }
+    .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .vencido { color: #dc3545; font-weight: 600; }
+    .tag-venc {
+      margin-left: 6px; padding: 1px 6px; border-radius: 999px;
+      background: #fdecec; color: #dc3545; font-size: 0.7rem; font-weight: 700;
+    }
+    .aviso-dup {
+      margin: 0; display: flex; align-items: center; gap: 6px;
+      font-size: 0.78rem; color: #8a5a10; background: #fdf7ec;
+      border: 1px solid #f0dcb4; border-radius: 8px; padding: 6px 10px;
+    }
+    .aviso-dup mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .bg-danger { background: #c0392b; color: #fff; }
     .doc-form-acoes { display: flex; justify-content: flex-end; gap: 8px; }
     .lbl2 { font-size: 0.78rem; font-weight: 600; color: #374151; display: flex; flex-direction: column; gap: 6px; }
     .req { color: #dc3545; margin-left: 2px; }
-    .uf { text-transform: uppercase; max-width: 90px; }
+    .uf { text-transform: uppercase; }
+    @media (max-width: 700px) { .doc-grid, .doc-grid:has(app-date) { grid-template-columns: 1fr 1fr; } }
     .btn-green:disabled { opacity: .5; cursor: not-allowed; }
     .zoom-box { position: relative; max-width: 90vw; max-height: 90vh; }
     .zoom-box img { max-width: 90vw; max-height: 86vh; border-radius: 6px; display: block; }
     .zoom-close { position: absolute; top: -12px; right: -12px; }
-    @media (max-width: 700px) { .doc-grid { grid-template-columns: 1fr 1fr; } }
+
   `,
 })
 export class DocumentosModalComponent implements OnInit, OnDestroy {
@@ -370,6 +398,7 @@ export class DocumentosModalComponent implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly notify = inject(Notify);
   private readonly fb = inject(FormBuilder);
+  private readonly confirm = inject(Confirm);
 
   protected readonly tipos = TIPOS;
   protected readonly docs = signal<ClienteDocumento[]>([]);
@@ -401,6 +430,11 @@ export class DocumentosModalComponent implements OnInit, OnDestroy {
   });
   /** Campos pertinentes ao tipo escolhido (labels, placeholders, visibilidade). */
   protected readonly campos = computed(() => CAMPOS_DOC[this.tipoSel()]);
+  /** Já há documento do mesmo tipo (fora o que está em edição)? */
+  protected readonly duplicado = computed(() => {
+    const ed = this.editando();
+    return this.docs().some((d) => d.tipo === this.tipoSel() && d.id !== ed?.id);
+  });
 
   ngOnInit(): void {
     this.api.listarDocumentos(this.cliente().id).subscribe({
@@ -430,6 +464,23 @@ export class DocumentosModalComponent implements OnInit, OnDestroy {
     const el = e.target as HTMLInputElement;
     const v = el.value.replace(/[^a-z]/gi, '').toUpperCase();
     if (v !== el.value) this.form.controls.uf_emissor.setValue(v);
+  }
+
+  /** Exibição com máscara para CPF/RG; demais tipos como digitados. */
+  formatarNumero(d: ClienteDocumento): string {
+    const n = d.numero.replace(/\D/g, '');
+    if (d.tipo === 'cpf' && n.length === 11)
+      return n.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    if (d.tipo === 'rg' && n.length === 9 && /^\d+$/.test(d.numero))
+      return n.replace(/(\d{2})(\d{3})(\d{3})(\d)/, '$1.$2.$3-$4');
+    return d.numero;
+  }
+
+  vencido(d: ClienteDocumento): boolean {
+    if (!d.validade) return false;
+    const hoje = new Date();
+    const iso = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+    return d.validade.slice(0, 10) < iso;
   }
 
   rotulo(t: TipoDocumento): string {
@@ -487,7 +538,12 @@ export class DocumentosModalComponent implements OnInit, OnDestroy {
     });
   }
 
-  excluir(d: ClienteDocumento): void {
+  async excluir(d: ClienteDocumento): Promise<void> {
+    const ok = await this.confirm.perguntar(
+      `Excluir o ${this.rotulo(d.tipo)} ${this.formatarNumero(d)}?`,
+      { titulo: 'Excluir documento', confirmar: 'Excluir', detalhe: 'O scan vinculado também será apagado.' },
+    );
+    if (!ok) return;
     this.api.removerDocumento(d.id).subscribe({
       next: () => {
         this.liberarScan(d.id);
@@ -535,7 +591,12 @@ export class DocumentosModalComponent implements OnInit, OnDestroy {
       .catch(() => this.notify.aviso('Não foi possível ler a imagem escolhida.'));
   }
 
-  removerScan(d: ClienteDocumento): void {
+  async removerScan(d: ClienteDocumento): Promise<void> {
+    const ok = await this.confirm.perguntar(`Remover o scan do ${this.rotulo(d.tipo)}?`, {
+      titulo: 'Remover scan',
+      confirmar: 'Remover',
+    });
+    if (!ok) return;
     this.api.removerScanDocumento(d.id).subscribe({
       next: () => {
         this.liberarScan(d.id);
