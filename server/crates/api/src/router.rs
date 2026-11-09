@@ -280,6 +280,71 @@ pub fn build(state: AppState) -> Router {
             "/clientes/{id}/perfil360",
             get(routes::comunicacao::cliente_perfil360),
         )
+        // operação — manutenção & PMOC
+        .route(
+            "/manutencao/ordens",
+            get(routes::operacao::ordens_listar).post(routes::operacao::ordem_criar),
+        )
+        .route(
+            "/manutencao/ordens/{id}/status",
+            post(routes::operacao::ordem_status),
+        )
+        .route(
+            "/manutencao/pmoc",
+            get(routes::operacao::pmoc_listar).post(routes::operacao::pmoc_registrar),
+        )
+        .route("/manutencao/pmoc/itens", get(routes::operacao::pmoc_itens))
+        // governança — tarefas, previsão, D-1
+        .route(
+            "/governanca/tarefas",
+            get(routes::operacao::gov_quadro).post(routes::operacao::gov_criar),
+        )
+        .route(
+            "/governanca/tarefas/{id}/status",
+            post(routes::operacao::gov_status),
+        )
+        .route(
+            "/governanca/tarefas/{id}/atribuir",
+            post(routes::operacao::gov_atribuir),
+        )
+        .route("/governanca/previsao", get(routes::operacao::gov_previsao))
+        .route("/governanca/gerar-d1", post(routes::operacao::gov_gerar_d1))
+        // lavanderia & enxoval
+        .route(
+            "/governanca/lavanderia",
+            get(routes::operacao::lav_lotes).post(routes::operacao::lav_abrir),
+        )
+        .route(
+            "/governanca/lavanderia/{id}/devolver",
+            post(routes::operacao::lav_devolver),
+        )
+        .route(
+            "/governanca/lavanderia/fechar",
+            post(routes::operacao::lav_fechar),
+        )
+        .route(
+            "/governanca/enxoval",
+            get(routes::operacao::enxoval_movs).post(routes::operacao::enxoval_registrar),
+        )
+        .route(
+            "/governanca/enxoval/saldo",
+            get(routes::operacao::enxoval_saldo),
+        )
+        // escalas & CLT
+        .route(
+            "/escalas/jornadas",
+            get(routes::operacao::jornadas_listar).post(routes::operacao::jornada_gravar),
+        )
+        .route("/escalas/turnos", get(routes::operacao::turnos_listar))
+        .route(
+            "/escalas/turnos/{id}",
+            delete(routes::operacao::turno_remover),
+        )
+        .route("/escalas/clt/validar", get(routes::operacao::clt_validar))
+        .route(
+            "/escalas/clt/corrigir",
+            post(routes::operacao::clt_corrigir),
+        )
         // estoque
         .route(
             "/estoque/categorias",

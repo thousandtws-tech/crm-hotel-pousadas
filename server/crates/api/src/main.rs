@@ -202,6 +202,33 @@ async fn serve(settings: Settings, pool: sqlx::PgPool) -> Result<(), Box<dyn std
                 }
             }
         });
+        // Governança D-1 — às 22:00 UTC gera as tarefas de amanhã e alerta
+        // PMOC vencido. Idempotente (UNIQUE idquarto+data+tipo): seguro
+        // rodar em todas as réplicas.
+        let gov = state.services.governanca.clone();
+        let manut = state.services.manutencao.clone();
+        tokio::spawn(async move {
+            let mut tick = tokio::time::interval(std::time::Duration::from_secs(600));
+            tick.tick().await;
+            loop {
+                tick.tick().await;
+                let agora = chrono::Utc::now();
+                if chrono::Timelike::hour(&agora) == 22 {
+                    match gov.gerar_d1().await {
+                        Ok(n) if n > 0 => {
+                            tracing::info!(criadas = n, "governanca: tarefas D-1 geradas");
+                        }
+                        Err(e) => tracing::warn!(erro = %e, "governanca: geração D-1 falhou"),
+                        _ => {}
+                    }
+                }
+                if chrono::Timelike::hour(&agora) == 8 {
+                    if let Err(e) = manut.alertar_pmoc_vencido().await {
+                        tracing::warn!(erro = %e, "pmoc: alerta de vencimento falhou");
+                    }
+                }
+            }
+        });
     }
     spawn_metricas_saturacao(pool.clone(), state.eventos.clone());
     let app = router::build(state);

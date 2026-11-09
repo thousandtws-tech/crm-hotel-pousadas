@@ -9,6 +9,7 @@ use crate::password::Argon2Hasher;
 use crate::repositories::*;
 
 use clarituz_application::services::*;
+use clarituz_application::services::{EscalasService, GovernancaService, ManutencaoService};
 use clarituz_application::Services;
 use clarituz_domain::ports::{
     EventoPublisher, FuncionarioRepository, ImpressoraGateway, PasswordHasher, TokenIssuer,
@@ -94,6 +95,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         )));
     }
     let fila_envio_repo = Arc::new(PgFilaEnvio::new(pool.clone()));
+    let fila_envio_repo2 = fila_envio_repo.clone();
     let avaliacao_repo = Arc::new(PgAvaliacaoRepository::new(pool.clone()));
     let fidelidade_repo = Arc::new(PgFidelidadeRepository::new(pool.clone()));
 
@@ -193,6 +195,18 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         )),
         avaliacoes: Arc::new(AvaliacoesService::new(avaliacao_repo)),
         fidelidade: Arc::new(FidelidadeService::new(fidelidade_repo)),
+        manutencao: Arc::new(ManutencaoService::new(
+            Arc::new(PgManutencaoRepository::new(pool.clone())),
+            fila_envio_repo2.clone(),
+            publisher.clone(),
+        )),
+        governanca: Arc::new(GovernancaService::new(
+            Arc::new(PgGovernancaRepository::new(pool.clone())),
+            publisher.clone(),
+        )),
+        escalas: Arc::new(EscalasService::new(Arc::new(PgEscalaRepository::new(
+            pool.clone(),
+        )))),
     };
 
     BuiltServices {

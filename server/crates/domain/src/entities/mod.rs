@@ -18,6 +18,7 @@ pub mod frigobar;
 pub mod funcionario;
 pub mod impressora;
 pub mod notificacao;
+pub mod operacao;
 pub mod pagamento;
 pub mod pdv;
 pub mod reserva;
@@ -45,6 +46,7 @@ pub use frigobar::{Frigobar, ItemFrigobar};
 pub use funcionario::{Funcionario, LogAcesso, SessaoRefresh};
 pub use impressora::{ImpressaoJob, Impressora, ImpressoraDescoberta};
 pub use notificacao::Notificacao;
+pub use operacao::*;
 pub use pagamento::{
     FormaPagamento, NovaAuditoriaPagamento, PagamentoOnline, ReembolsoPagamento,
     TentativaPagamento, WebhookEvento,

@@ -8,6 +8,7 @@ pub mod comunicacao;
 pub mod estoque;
 pub mod impressoras;
 pub mod notificacoes;
+pub mod operacao;
 pub mod pagamentos_online;
 pub mod pdv;
 pub mod pessoas;

@@ -13,13 +13,16 @@ pub mod compras;
 pub mod comunicacao;
 pub mod dashboard;
 pub mod documentos;
+pub mod escalas;
 pub mod estabelecimento;
 pub mod estacionamento;
 pub mod estoque;
 pub mod financeiro;
 pub mod frigobar;
 pub mod funcionarios;
+pub mod governanca;
 pub mod impressoras;
+pub mod manutencao;
 pub mod notificacoes;
 pub mod pagamentos;
 pub mod pagamentos_online;
@@ -39,13 +42,16 @@ pub use compras::ComprasService;
 pub use comunicacao::{AvaliacoesService, ComunicacaoService, FidelidadeService};
 pub use dashboard::DashboardService;
 pub use documentos::DocumentoService;
+pub use escalas::EscalasService;
 pub use estabelecimento::EstabelecimentoService;
 pub use estacionamento::EstacionamentoService;
 pub use estoque::EstoqueService;
 pub use financeiro::FinanceiroService;
 pub use frigobar::FrigobarService;
 pub use funcionarios::FuncionarioService;
+pub use governanca::GovernancaService;
 pub use impressoras::ImpressoraService;
+pub use manutencao::ManutencaoService;
 pub use notificacoes::NotificacaoService;
 pub use pagamentos::PagamentoService;
 pub use pagamentos_online::PagamentosOnlineService;
@@ -85,4 +91,7 @@ pub struct Services {
     pub comunicacao: Arc<ComunicacaoService>,
     pub avaliacoes: Arc<AvaliacoesService>,
     pub fidelidade: Arc<FidelidadeService>,
+    pub manutencao: Arc<ManutencaoService>,
+    pub governanca: Arc<GovernancaService>,
+    pub escalas: Arc<EscalasService>,
 }
