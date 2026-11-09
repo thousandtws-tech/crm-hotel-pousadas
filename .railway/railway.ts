@@ -1,3 +1,4 @@
+// IaC do Railway — mudanças aqui disparam o stage 'iac-drift' no Jenkins (apenas aviso; apply é manual).
 import { defineRailway, github, group, image, postgres, preserve, project, service, volume } from "railway/iac";
 
 export default defineRailway(() => {
