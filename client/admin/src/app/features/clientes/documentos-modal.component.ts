@@ -127,6 +127,15 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
             <div class="center"><mat-spinner diameter="36" /></div>
           } @else {
             <!-- ============ lista de documentos ============ -->
+            @if (!docs().length) {
+              <div class="vazio">
+                <mat-icon>badge</mat-icon>
+                <div>
+                  <strong>Nenhum documento cadastrado</strong>
+                  <span>Adicione o primeiro documento de identidade abaixo.</span>
+                </div>
+              </div>
+            } @else {
             <table class="plain bordered sm">
               <thead>
                 <tr>
@@ -181,11 +190,10 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
                       ><mat-icon>delete</mat-icon></button>
                     </td>
                   </tr>
-                } @empty {
-                  <tr><td colspan="6" class="muted tc">Nenhum documento cadastrado.</td></tr>
                 }
               </tbody>
             </table>
+            }
             <input #arq type="file" accept="image/*" hidden (change)="arquivoScan($event)" />
 
             <!-- ============ form novo/edição ============ -->
@@ -193,7 +201,7 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
               <span class="sec">{{ editando() ? 'Editar documento' : 'Novo documento' }}</span>
               <div class="doc-grid">
                 <label class="lbl2">
-                  Tipo <small class="req">*</small>
+                  <span>Tipo <span class="req" aria-hidden="true">*</span></span>
                   <select class="input-inn" formControlName="tipo">
                     @for (t of tipos; track t[0]) {
                       <option [ngValue]="t[0]">{{ t[1] }}</option>
@@ -201,10 +209,11 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
                   </select>
                 </label>
                 <label class="lbl2">
-                  {{ campos().numLabel }} <small class="req">*</small>
+                  <span>{{ campos().numLabel }} <span class="req" aria-hidden="true">*</span></span>
                   <input
                     class="input-inn"
                     type="text"
+                    required
                     formControlName="numero"
                     [placeholder]="campos().numPlaceholder"
                   />
@@ -223,7 +232,14 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
                 @if (campos().uf) {
                   <label class="lbl2">
                     UF emissor
-                    <input class="input-inn" type="text" formControlName="uf_emissor" maxlength="2" />
+                    <input
+                      class="input-inn uf"
+                      type="text"
+                      formControlName="uf_emissor"
+                      maxlength="2"
+                      placeholder="SP"
+                      (input)="maiuscula($event)"
+                    />
                   </label>
                 }
                 @if (campos().pais) {
@@ -322,14 +338,25 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
     .scan-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .scan-loading { font-size: 16px; width: 16px; height: 16px; color: #adb5bd; }
     .linha-acoes { white-space: nowrap; }
-    .doc-form {
-      border-top: 1px solid #d7e0e6; padding-top: 10px;
-      display: flex; flex-direction: column; gap: 8px;
+    .vazio {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; border: 1px dashed #c3d2d9; border-radius: 10px;
+      background: #f7fafb; color: #5d6d7e;
     }
-    .doc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .vazio mat-icon { color: #4b95ab; font-size: 28px; width: 28px; height: 28px; }
+    .vazio div { display: flex; flex-direction: column; gap: 2px; }
+    .vazio strong { color: #054054; font-size: 0.88rem; }
+    .vazio span { font-size: 0.8rem; }
+    .doc-form {
+      border-top: 1px solid #e3eaef; padding-top: 14px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .doc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 14px; align-items: start; }
     .doc-form-acoes { display: flex; justify-content: flex-end; gap: 8px; }
-    .lbl2 { font-size: 0.78rem; font-weight: 600; color: #374151; display: flex; flex-direction: column; gap: 4px; }
-    .req { color: #dc3545; }
+    .lbl2 { font-size: 0.78rem; font-weight: 600; color: #374151; display: flex; flex-direction: column; gap: 6px; }
+    .req { color: #dc3545; margin-left: 2px; }
+    .uf { text-transform: uppercase; max-width: 90px; }
+    .btn-green:disabled { opacity: .5; cursor: not-allowed; }
     .zoom-box { position: relative; max-width: 90vw; max-height: 90vh; }
     .zoom-box img { max-width: 90vw; max-height: 86vh; border-radius: 6px; display: block; }
     .zoom-close { position: absolute; top: -12px; right: -12px; }
@@ -397,6 +424,12 @@ export class DocumentosModalComponent implements OnInit, OnDestroy {
     for (const url of this.scans().values()) URL.revokeObjectURL(url);
     const ampliado = this.ampliado();
     if (ampliado && !ampliado.startsWith('blob:shared')) URL.revokeObjectURL(ampliado);
+  }
+
+  maiuscula(e: Event): void {
+    const el = e.target as HTMLInputElement;
+    const v = el.value.replace(/[^a-z]/gi, '').toUpperCase();
+    if (v !== el.value) this.form.controls.uf_emissor.setValue(v);
   }
 
   rotulo(t: TipoDocumento): string {
