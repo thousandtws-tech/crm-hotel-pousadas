@@ -41,9 +41,8 @@ pub fn slugify(s: &str) -> String {
     out.trim_end_matches('-').to_string()
 }
 
-fn vazio(s: &Option<String>) -> Option<String> {
-    s.as_deref()
-        .map(str::trim)
+fn vazio(s: Option<&str>) -> Option<String> {
+    s.map(str::trim)
         .filter(|v| !v.is_empty())
         .map(str::to_string)
 }
@@ -74,7 +73,7 @@ impl CmsService {
             .await?
             .ok_or_else(|| DomainError::nao_encontrado("Acomodação não encontrada."))?;
 
-        let slug = match vazio(&input.slug) {
+        let slug = match vazio(input.slug.as_deref()) {
             Some(s) => slugify(&s),
             None => slugify(&acom.nome),
         };
@@ -87,7 +86,7 @@ impl CmsService {
             );
         }
         if let Some(b) = input.banheiros {
-            if b < 0 || b > 20 {
+            if !(0..=20).contains(&b) {
                 return Err(DomainError::validacao("Banheiros inválido.").into());
             }
         }
@@ -97,15 +96,15 @@ impl CmsService {
 
         let dados = ConteudoCms {
             slug: slug.clone(),
-            subtitulo: vazio(&input.subtitulo),
-            descricao_curta: vazio(&input.descricao_curta),
-            descricao_longa: vazio(&input.descricao_longa),
-            destaque_editorial: vazio(&input.destaque_editorial),
-            camas: vazio(&input.camas),
+            subtitulo: vazio(input.subtitulo.as_deref()),
+            descricao_curta: vazio(input.descricao_curta.as_deref()),
+            descricao_longa: vazio(input.descricao_longa.as_deref()),
+            destaque_editorial: vazio(input.destaque_editorial.as_deref()),
+            camas: vazio(input.camas.as_deref()),
             banheiros: input.banheiros,
             metragem: input.metragem,
-            vista: vazio(&input.vista),
-            andar: vazio(&input.andar),
+            vista: vazio(input.vista.as_deref()),
+            andar: vazio(input.andar.as_deref()),
             comodidades: input.comodidades.unwrap_or_else(|| serde_json::json!([])),
             destaque: input.destaque.unwrap_or(false),
             ordem: input.ordem.unwrap_or(0),

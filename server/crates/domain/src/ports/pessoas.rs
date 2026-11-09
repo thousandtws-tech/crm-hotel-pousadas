@@ -132,6 +132,19 @@ pub struct FiltroCliente {
     pub apenas_ativos: bool,
 }
 
+/// Cadastro mínimo enviado pelo formulário de reserva do site — campos
+/// de ficha (endereço, profissão…) ficam para o check-in/FNRH.
+#[derive(Debug, Clone)]
+pub struct NovoClienteSite {
+    pub nome: String,
+    /// CPF definitivo gravado no cadastro (limpo ou fallback `SITE-…`).
+    pub cpf: String,
+    /// CPF limpo usado só para localizar cadastro existente (≥ 11 dígitos).
+    pub cpf_busca: Option<String>,
+    pub email: String,
+    pub telefone: String,
+}
+
 #[async_trait]
 pub trait ClienteRepository: Send + Sync {
     async fn buscar(&self, id: i64) -> Result<Option<Cliente>, DomainError>;
@@ -166,6 +179,10 @@ pub trait ClienteRepository: Send + Sync {
     async fn foto_caminho(&self, id: i64) -> Result<Option<String>, DomainError>;
     /// Histórico de reservas do cliente (relatório do legado).
     async fn total_reservas(&self, id: i64) -> Result<i64, DomainError>;
+    /// Reserva online: localiza pelo e-mail (case-insensitive) ou CPF,
+    /// atualiza o contato; senão, cria cadastro mínimo. Devolve o id —
+    /// não escreve auditoria (o `NovoLog` da reserva cobre a ação).
+    async fn site_upsert(&self, dados: &NovoClienteSite) -> Result<i64, DomainError>;
     /// Remove o cliente e seus documentos (cascade) — falha (409) se houver
     /// reservas, fichas FNRH ou vínculo como acompanhante. Devolve as chaves
     /// (foto + scans) para a camada de API apagar no object store.

@@ -60,9 +60,9 @@ pub fn map_db_err(e: sqlx::Error) -> DomainError {
             _ => {}
         }
     }
-    match &e {
+    match e {
         sqlx::Error::RowNotFound => DomainError::nao_encontrado("Registro não encontrado."),
-        _ => {
+        e => {
             tracing::error!(erro = ?e, "erro de banco");
             DomainError::Infra
         }

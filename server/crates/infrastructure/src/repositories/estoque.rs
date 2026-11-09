@@ -593,36 +593,35 @@ impl EstoqueRepository for PgEstoqueRepository {
         .map_err(map_db_err)?;
 
         for it in itens {
-            let iditem = match it.iditem {
-                Some(id) => id,
-                None => {
-                    let custo = if it.quantidade_base > 0 {
-                        (it.valor_total / Decimal::from(it.quantidade_base)).round_dp(2)
-                    } else {
-                        Decimal::ZERO
-                    };
-                    sqlx::query_scalar::<_, i64>(
-                        "INSERT INTO estoque (nome, unidade, quantidade, valor_unitario, eh_insumo)
+            let iditem = if let Some(id) = it.iditem {
+                id
+            } else {
+                let custo = if it.quantidade_base > 0 {
+                    (it.valor_total / Decimal::from(it.quantidade_base)).round_dp(2)
+                } else {
+                    Decimal::ZERO
+                };
+                sqlx::query_scalar::<_, i64>(
+                    "INSERT INTO estoque (nome, unidade, quantidade, valor_unitario, eh_insumo)
                          VALUES ($1, 'un', 0, $2, TRUE)
                          ON CONFLICT (nome) WHERE ativo DO NOTHING
                          RETURNING id",
-                    )
-                    .bind(&it.nome)
-                    .bind(custo)
-                    .fetch_optional(&mut *tx)
-                    .await
-                    .map_err(map_db_err)?
-                    .or(sqlx::query_scalar::<_, i64>(
-                        "SELECT id FROM estoque WHERE nome = $1 AND ativo",
-                    )
-                    .bind(&it.nome)
-                    .fetch_optional(&mut *tx)
-                    .await
-                    .map_err(map_db_err)?)
-                    .ok_or_else(|| {
-                        DomainError::regra(format!("Nao foi possivel criar o item '{}'.", it.nome))
-                    })?
-                }
+                )
+                .bind(&it.nome)
+                .bind(custo)
+                .fetch_optional(&mut *tx)
+                .await
+                .map_err(map_db_err)?
+                .or(sqlx::query_scalar::<_, i64>(
+                    "SELECT id FROM estoque WHERE nome = $1 AND ativo",
+                )
+                .bind(&it.nome)
+                .fetch_optional(&mut *tx)
+                .await
+                .map_err(map_db_err)?)
+                .ok_or_else(|| {
+                    DomainError::regra(format!("Nao foi possivel criar o item '{}'.", it.nome))
+                })?
             };
 
             if it.fator != 1 {

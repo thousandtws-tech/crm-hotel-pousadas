@@ -1,8 +1,3 @@
-//! Mapeamento AppError → resposta HTTP consistente.
-//!
-//! Formato: `{ "erro": { "codigo": "...", "mensagem": "..." } }`.
-//! Detalhes internos nunca vazam — `Infra` rende mensagem genérica.
-
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
@@ -10,8 +5,6 @@ use clarituz_application::AppError;
 use clarituz_domain::DomainError;
 use serde_json::json;
 
-/// Wrapper local de `AppError` — exigido pela orphan rule para
-/// implementar `IntoResponse` (trait externa em tipo externo).
 #[derive(Debug)]
 pub struct ApiError(pub AppError);
 

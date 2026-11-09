@@ -32,20 +32,19 @@ pub struct TesourariaService {
 }
 
 fn periodo_ou_mes(inicio: Option<NaiveDate>, fim: Option<NaiveDate>) -> AppResult<PeriodoEstadia> {
-    let (i, f) = match (inicio, fim) {
-        (Some(i), Some(f)) => (i, f),
-        _ => {
-            let h = time::hoje();
-            let ini = h.with_day(1).unwrap_or(h);
-            let fim = if h.month() == 12 {
-                NaiveDate::from_ymd_opt(h.year(), 12, 31).unwrap_or(h)
-            } else {
-                NaiveDate::from_ymd_opt(h.year(), h.month() + 1, 1)
-                    .and_then(|d| d.pred_opt())
-                    .unwrap_or(h)
-            };
-            (ini, fim)
-        }
+    let (i, f) = if let (Some(i), Some(f)) = (inicio, fim) {
+        (i, f)
+    } else {
+        let h = time::hoje();
+        let ini = h.with_day(1).unwrap_or(h);
+        let fim = if h.month() == 12 {
+            NaiveDate::from_ymd_opt(h.year(), 12, 31).unwrap_or(h)
+        } else {
+            NaiveDate::from_ymd_opt(h.year(), h.month() + 1, 1)
+                .and_then(|d| d.pred_opt())
+                .unwrap_or(h)
+        };
+        (ini, fim)
     };
     Ok(PeriodoEstadia::new(i, f)?)
 }
@@ -260,8 +259,7 @@ impl TesourariaService {
                                         .and_then(|n| n.pred_opt())
                                 }
                             })
-                            .map(|f| f.day())
-                            .unwrap_or(28),
+                            .map_or(28, |f| f.day()),
                     );
                     NaiveDate::from_ymd_opt(ano, mes, dia).unwrap_or(input.vencimento)
                 };

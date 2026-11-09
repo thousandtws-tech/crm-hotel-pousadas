@@ -124,19 +124,18 @@ fn periodo_ou_mes_atual(
     inicio: Option<NaiveDate>,
     fim: Option<NaiveDate>,
 ) -> (NaiveDate, NaiveDate) {
-    match (inicio, fim) {
-        (Some(i), Some(f)) => (i, f),
-        _ => {
-            let hoje = time::hoje();
-            let ini = hoje.with_day(1).unwrap_or(hoje);
-            let fim = if hoje.month() == 12 {
-                NaiveDate::from_ymd_opt(hoje.year(), 12, 31).unwrap_or(hoje)
-            } else {
-                NaiveDate::from_ymd_opt(hoje.year(), hoje.month() + 1, 1)
-                    .and_then(|d| d.pred_opt())
-                    .unwrap_or(hoje)
-            };
-            (ini, fim)
-        }
+    if let (Some(i), Some(f)) = (inicio, fim) {
+        (i, f)
+    } else {
+        let hoje = time::hoje();
+        let ini = hoje.with_day(1).unwrap_or(hoje);
+        let fim = if hoje.month() == 12 {
+            NaiveDate::from_ymd_opt(hoje.year(), 12, 31).unwrap_or(hoje)
+        } else {
+            NaiveDate::from_ymd_opt(hoje.year(), hoje.month() + 1, 1)
+                .and_then(|d| d.pred_opt())
+                .unwrap_or(hoje)
+        };
+        (ini, fim)
     }
 }

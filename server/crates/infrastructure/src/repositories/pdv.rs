@@ -217,13 +217,15 @@ impl PdvRepository for PgPdvRepository {
         filtro: &FiltroComanda,
         page: PageParams,
     ) -> Result<Page<ComandaView>, DomainError> {
+        use std::fmt::Write as _;
+
         let mut wh = String::from("WHERE TRUE");
         let mut binds: Vec<String> = Vec::new();
         let mut n = 0i32;
         let push =
             |wh: &mut String, binds: &mut Vec<String>, n: &mut i32, frag: &str, v: String| {
                 *n += 1;
-                wh.push_str(&format!(" AND {frag} = ${n}"));
+                let _ = write!(wh, " AND {frag} = ${n}");
                 binds.push(v);
             };
         if let Some(t) = &filtro.tipo {
@@ -253,12 +255,12 @@ impl PdvRepository for PgPdvRepository {
         }
         if let Some(d) = filtro.inicio {
             n += 1;
-            wh.push_str(&format!(" AND c.aberto_em::date >= ${n}::date"));
+            let _ = write!(wh, " AND c.aberto_em::date >= ${n}::date");
             binds.push(d.to_string());
         }
         if let Some(d) = filtro.fim {
             n += 1;
-            wh.push_str(&format!(" AND c.aberto_em::date <= ${n}::date"));
+            let _ = write!(wh, " AND c.aberto_em::date <= ${n}::date");
             binds.push(d.to_string());
         }
 
@@ -775,12 +777,12 @@ impl PdvRepository for PgPdvRepository {
                 "Só é possível faturar comanda de quarto com reserva em estadia.",
             ));
         }
-        if f.modo == ModoFechamento::Pagar {
-            if f.idconta_financeira.is_none() || f.idforma_pagamento.is_none() {
-                return Err(DomainError::validacao(
-                    "Pagamento exige conta financeira e forma de pagamento.",
-                ));
-            }
+        if f.modo == ModoFechamento::Pagar
+            && (f.idconta_financeira.is_none() || f.idforma_pagamento.is_none())
+        {
+            return Err(DomainError::validacao(
+                "Pagamento exige conta financeira e forma de pagamento.",
+            ));
         }
 
         // descrição humana da comanda p/ o lançamento
@@ -940,27 +942,7 @@ impl PdvRepository for PgPdvRepository {
         filtro: &FiltroComissao,
         page: PageParams,
     ) -> Result<Page<ComissaoView>, DomainError> {
-        let mut wh = String::from("WHERE TRUE");
-        let mut binds: Vec<String> = Vec::new();
-        let mut n = 0i32;
-        if let Some(g) = filtro.idgarcom {
-            n += 1;
-            wh.push_str(&format!(" AND cm.idgarcom::text = ${n}"));
-            binds.push(g.to_string());
-        }
-        if filtro.apenas_pendentes {
-            wh.push_str(" AND cm.status = 'pendente'");
-        }
-        if let Some(d) = filtro.inicio {
-            n += 1;
-            wh.push_str(&format!(" AND cm.criado_em::date >= ${n}::date"));
-            binds.push(d.to_string());
-        }
-        if let Some(d) = filtro.fim {
-            n += 1;
-            wh.push_str(&format!(" AND cm.criado_em::date <= ${n}::date"));
-            binds.push(d.to_string());
-        }
+        use std::fmt::Write as _;
 
         const SEL: &str = "
             SELECT cm.id, cm.idgarcom, f.nome AS garcom_nome,
@@ -970,6 +952,28 @@ impl PdvRepository for PgPdvRepository {
                    cm.pago_em, cm.criado_em
             FROM pdv_comissao cm
             JOIN funcionario f ON f.id = cm.idgarcom";
+
+        let mut wh = String::from("WHERE TRUE");
+        let mut binds: Vec<String> = Vec::new();
+        let mut n = 0i32;
+        if let Some(g) = filtro.idgarcom {
+            n += 1;
+            let _ = write!(wh, " AND cm.idgarcom::text = ${n}");
+            binds.push(g.to_string());
+        }
+        if filtro.apenas_pendentes {
+            wh.push_str(" AND cm.status = 'pendente'");
+        }
+        if let Some(d) = filtro.inicio {
+            n += 1;
+            let _ = write!(wh, " AND cm.criado_em::date >= ${n}::date");
+            binds.push(d.to_string());
+        }
+        if let Some(d) = filtro.fim {
+            n += 1;
+            let _ = write!(wh, " AND cm.criado_em::date <= ${n}::date");
+            binds.push(d.to_string());
+        }
 
         let count_sql = format!(
             "SELECT COUNT(*) FROM pdv_comissao cm JOIN funcionario f ON f.id = cm.idgarcom {wh}"

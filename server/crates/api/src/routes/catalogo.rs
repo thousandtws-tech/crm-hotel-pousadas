@@ -500,10 +500,10 @@ pub async fn upload_logo(
     if body.is_empty() || body.len() > 2 * 1024 * 1024 {
         return Err(DomainError::validacao("Imagem vazia ou maior que 2 MB.").into());
     }
-    let ext = content_type
-        .strip_prefix("image/")
-        .map(|e| e.replace("jpeg", "jpg").replace("svg+xml", "svg"))
-        .unwrap_or_else(|| "bin".into());
+    let ext = content_type.strip_prefix("image/").map_or_else(
+        || "bin".into(),
+        |e| e.replace("jpeg", "jpg").replace("svg+xml", "svg"),
+    );
     let nome = format!("logo.{ext}");
     let key = format!("logo/{nome}");
 

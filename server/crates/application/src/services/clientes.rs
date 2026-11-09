@@ -50,7 +50,7 @@ impl ClienteService {
     }
 
     pub async fn criar(&self, ator: &Ator, input: ClienteInput) -> AppResult<Cliente> {
-        let novo = self.validar(input).await?;
+        let novo = Self::validar(input)?;
         self.garantir_unicidade(&novo.cpf, novo.email.as_deref(), 0)
             .await?;
 
@@ -66,7 +66,7 @@ impl ClienteService {
 
     pub async fn atualizar(&self, ator: &Ator, id: i64, input: ClienteInput) -> AppResult<Cliente> {
         self.buscar(id).await?;
-        let dados = self.validar(input).await?;
+        let dados = Self::validar(input)?;
         self.garantir_unicidade(&dados.cpf, dados.email.as_deref(), id)
             .await?;
 
@@ -148,7 +148,7 @@ impl ClienteService {
         Ok(self.repo.remover(id, log).await?)
     }
 
-    async fn validar(&self, input: ClienteInput) -> AppResult<NovoCliente> {
+    fn validar(input: ClienteInput) -> AppResult<NovoCliente> {
         if input.nome.trim().is_empty() {
             return Err(DomainError::validacao("Nome é obrigatório.").into());
         }

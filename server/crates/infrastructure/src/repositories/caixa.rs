@@ -296,6 +296,16 @@ impl CaixaRepository for PgCaixaRepository {
     }
 
     async fn conferir(&self, idturno: i64) -> Result<ConferenciaCaixa, DomainError> {
+        // detalhamento: baixas da tesouraria + consumos em espécie na janela
+        #[derive(sqlx::FromRow)]
+        struct LinhaRow {
+            origem: String,
+            descricao: String,
+            valor: Decimal,
+            sinal: i32,
+            criado_em: chrono::DateTime<chrono::Utc>,
+        }
+
         let turno = self
             .buscar_turno(idturno)
             .await?
@@ -313,15 +323,6 @@ impl CaixaRepository for PgCaixaRepository {
 
         let movimentos = self.listar_movimentos(idturno).await?;
 
-        // detalhamento: baixas da tesouraria + consumos em espécie na janela
-        #[derive(sqlx::FromRow)]
-        struct LinhaRow {
-            origem: String,
-            descricao: String,
-            valor: Decimal,
-            sinal: i32,
-            criado_em: chrono::DateTime<chrono::Utc>,
-        }
         let linhas = sqlx::query_as::<_, LinhaRow>(
             "SELECT x.origem, x.descricao, x.valor, x.sinal, x.criado_em FROM (
                 SELECT 'baixa' AS origem,

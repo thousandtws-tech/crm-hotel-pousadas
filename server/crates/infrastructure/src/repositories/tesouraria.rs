@@ -391,7 +391,7 @@ impl TesourariaRepository for PgTesourariaRepository {
             criados.push(l);
         }
         let mut log = log;
-        log.idtabela = criados.first().map(|l| l.id).unwrap_or(0);
+        log.idtabela = criados.first().map_or(0, |l| l.id);
         audit::gravar(&mut *tx, &log).await?;
         tx.commit().await.map_err(map_db_err)?;
         Ok(criados)
@@ -663,6 +663,15 @@ impl TesourariaRepository for PgTesourariaRepository {
     // =======================================================================
 
     async fn fluxo_caixa(&self, periodo: PeriodoEstadia) -> Result<FluxoCaixa, DomainError> {
+        #[derive(sqlx::FromRow)]
+        struct DiaRow {
+            data: NaiveDate,
+            entradas: Decimal,
+            saidas: Decimal,
+            prev_entradas: Decimal,
+            prev_saidas: Decimal,
+        }
+
         // saldo de abertura = saldos iniciais das contas ativas + tudo que já
         // movimentou antes do período (baixas + consumos fechados − reembolsos)
         let abertura = sqlx::query_scalar::<_, Decimal>(
@@ -687,15 +696,6 @@ impl TesourariaRepository for PgTesourariaRepository {
         .fetch_one(&self.pool)
         .await
         .map_err(map_db_err)?;
-
-        #[derive(sqlx::FromRow)]
-        struct DiaRow {
-            data: NaiveDate,
-            entradas: Decimal,
-            saidas: Decimal,
-            prev_entradas: Decimal,
-            prev_saidas: Decimal,
-        }
 
         let rows = sqlx::query_as::<_, DiaRow>(
             "SELECT d.dia::date AS data,
@@ -787,6 +787,25 @@ impl TesourariaRepository for PgTesourariaRepository {
     // =======================================================================
 
     async fn dre(&self, periodo: PeriodoEstadia) -> Result<Dre, DomainError> {
+        use clarituz_domain::enums::GrupoDre as G;
+
+        // totais por grupo: deduções/custos/despesas positivos;
+        // resultado_financeiro e outras assinados pelo tipo do lançamento
+        #[derive(sqlx::FromRow)]
+        struct GrupoRow {
+            grupo_dre: clarituz_domain::enums::GrupoDre,
+            valor: Decimal,
+        }
+        // linhas por conta do plano (detalhamento)
+        #[derive(sqlx::FromRow)]
+        struct LinhaRow {
+            codigo: String,
+            nome: String,
+            grupo_dre: clarituz_domain::enums::GrupoDre,
+            tipo: TipoLancamento,
+            valor: Decimal,
+        }
+
         // receita operacional: contas de consumo fechadas no período
         let (rec_operacional, descontos) = sqlx::query_as::<_, (Decimal, Decimal)>(
             "SELECT COALESCE(SUM(valor_final), 0), COALESCE(SUM(total_desconto), 0)
@@ -811,13 +830,6 @@ impl TesourariaRepository for PgTesourariaRepository {
         .await
         .map_err(map_db_err)?;
 
-        // totais por grupo: deduções/custos/despesas positivos;
-        // resultado_financeiro e outras assinados pelo tipo do lançamento
-        #[derive(sqlx::FromRow)]
-        struct GrupoRow {
-            grupo_dre: clarituz_domain::enums::GrupoDre,
-            valor: Decimal,
-        }
         let grupos = sqlx::query_as::<_, GrupoRow>(
             "SELECT pc.grupo_dre,
                     SUM(CASE WHEN pc.grupo_dre IN ('resultado_financeiro','outras')
@@ -833,15 +845,6 @@ impl TesourariaRepository for PgTesourariaRepository {
         .await
         .map_err(map_db_err)?;
 
-        // linhas por conta do plano (detalhamento)
-        #[derive(sqlx::FromRow)]
-        struct LinhaRow {
-            codigo: String,
-            nome: String,
-            grupo_dre: clarituz_domain::enums::GrupoDre,
-            tipo: TipoLancamento,
-            valor: Decimal,
-        }
         let linha_rows = sqlx::query_as::<_, LinhaRow>(
             "SELECT pc.codigo, pc.nome, pc.grupo_dre, l.tipo, SUM(l.valor) AS valor
              FROM lancamento l JOIN plano_conta pc ON pc.id = l.idplano_conta
@@ -869,13 +872,11 @@ impl TesourariaRepository for PgTesourariaRepository {
         .await
         .map_err(map_db_err)?;
 
-        use clarituz_domain::enums::GrupoDre as G;
         let de = |g: G| -> Decimal {
             grupos
                 .iter()
                 .find(|r| r.grupo_dre == g)
-                .map(|r| r.valor)
-                .unwrap_or(Decimal::ZERO)
+                .map_or(Decimal::ZERO, |r| r.valor)
         };
 
         let receita_bruta = rec_operacional + de(G::ReceitaBruta);
@@ -1124,12 +1125,6 @@ impl TesourariaRepository for PgTesourariaRepository {
         id: i64,
         janela_dias: i64,
     ) -> Result<Vec<SugestaoConciliacao>, DomainError> {
-        let Some(e) = self.buscar_extrato(id).await? else {
-            return Err(DomainError::nao_encontrado(
-                "Item de extrato não encontrado.",
-            ));
-        };
-
         #[derive(sqlx::FromRow)]
         struct CandRow {
             // BaixaView embutido por prefixo
@@ -1148,6 +1143,12 @@ impl TesourariaRepository for PgTesourariaRepository {
             lancamento_tipo: TipoLancamento,
             dias: i64,
         }
+
+        let Some(e) = self.buscar_extrato(id).await? else {
+            return Err(DomainError::nao_encontrado(
+                "Item de extrato não encontrado.",
+            ));
+        };
 
         let candidatos = sqlx::query_as::<_, CandRow>(
             "SELECT b.id, b.idlancamento, b.idconta_financeira,
@@ -1240,7 +1241,7 @@ impl TesourariaRepository for PgTesourariaRepository {
             })
             .filter(|s| s.score >= Decimal::from(45))
             .collect();
-        sugestoes.sort_by(|a, b| b.score.cmp(&a.score));
+        sugestoes.sort_by_key(|s| std::cmp::Reverse(s.score));
         sugestoes.truncate(5);
         Ok(sugestoes)
     }

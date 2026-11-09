@@ -122,30 +122,40 @@ impl ObjectStore for S3Store {
     }
 }
 
-/// Monta o store conforme `S3_*` configurado; sem config completo → filesystem.
-pub fn build_store(settings: &Settings) -> Result<Arc<dyn ObjectStore>, DomainError> {
-    match (
+/// Configuração S3 resolvida — `None` quando `S3_*` está incompleto.
+/// Compartilhada entre `build_store` e o probe `clarituz-api s3-probe`.
+pub(crate) fn s3_parts(settings: &Settings) -> Option<(Region, Credentials, String)> {
+    let (Some(endpoint), Some(bucket), Some(access), Some(secret)) = (
         &settings.s3_endpoint,
         &settings.s3_bucket,
         &settings.s3_access_key,
         &settings.s3_secret_key,
-    ) {
-        (Some(endpoint), Some(bucket_name), Some(access), Some(secret)) => {
-            let region = Region::Custom {
-                region: settings.s3_region.clone(),
-                endpoint: endpoint.trim_end_matches('/').to_string(),
-            };
-            let creds = Credentials::new(Some(access), Some(secret), None, None, None)
-                .map_err(|_| DomainError::Infra)?;
-            let bucket = Bucket::new(bucket_name, region, creds)
-                .map_err(|_| DomainError::Infra)?
-                .with_path_style();
-            tracing::info!(endpoint, bucket = bucket_name, "object store: S3/MinIO");
-            Ok(Arc::new(S3Store { bucket }))
-        }
-        _ => {
-            tracing::info!(dir = %settings.storage_dir, "object store: filesystem");
-            Ok(Arc::new(FsStore::new(&settings.storage_dir)))
-        }
+    ) else {
+        return None;
+    };
+    let region = Region::Custom {
+        region: settings.s3_region.clone(),
+        endpoint: endpoint.trim_end_matches('/').to_string(),
+    };
+    let creds = Credentials::new(Some(access), Some(secret), None, None, None).ok()?;
+    Some((region, creds, bucket.clone()))
+}
+
+/// Monta o store conforme `S3_*` configurado; sem config completo → filesystem.
+pub fn build_store(settings: &Settings) -> Result<Arc<dyn ObjectStore>, DomainError> {
+    if let Some((region, creds, bucket_name)) = s3_parts(settings) {
+        let endpoint = settings
+            .s3_endpoint
+            .as_deref()
+            .unwrap_or_default()
+            .to_string();
+        let bucket = Bucket::new(&bucket_name, region, creds)
+            .map_err(|_| DomainError::Infra)?
+            .with_path_style();
+        tracing::info!(endpoint, bucket = bucket_name, "object store: S3/MinIO");
+        Ok(Arc::new(S3Store { bucket }))
+    } else {
+        tracing::info!(dir = %settings.storage_dir, "object store: filesystem");
+        Ok(Arc::new(FsStore::new(&settings.storage_dir)))
     }
 }

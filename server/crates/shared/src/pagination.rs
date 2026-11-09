@@ -59,6 +59,7 @@ impl Default for PageParams {
 
 impl PageParams {
     /// Limita `per_page` ao teto e normaliza `page >= 1`.
+    #[must_use]
     pub fn sanitized(self) -> Self {
         Self {
             page: self.page.max(1),

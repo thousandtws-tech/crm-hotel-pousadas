@@ -354,6 +354,8 @@ impl CmsRepository for PgCmsRepository {
         &self,
         slug: &str,
     ) -> Result<Option<AcomodacaoPublica>, DomainError> {
+        use sqlx::Row;
+
         let r = sqlx::query(
             "SELECT a.id, c.slug, a.nome, a.numero, a.valor, a.capacidade, a.cor,
                     c.subtitulo, c.descricao_curta, c.descricao_longa, c.destaque_editorial,
@@ -369,7 +371,6 @@ impl CmsRepository for PgCmsRepository {
         .map_err(map_db_err)?;
 
         let Some(r) = r else { return Ok(None) };
-        use sqlx::Row;
         let idacom: i64 = r.get("idacomodacao");
         Ok(Some(AcomodacaoPublica {
             id: r.get("id"),

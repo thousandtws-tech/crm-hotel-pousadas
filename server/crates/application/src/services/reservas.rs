@@ -9,11 +9,12 @@ use crate::actor::Ator;
 use crate::dto::{
     AcompanhanteInput, AdicionalInput, CancelamentoResponse, CancelarReservaRequest,
     CheckoutRequest, DisponibilidadeResponse, FnrhEmitRequest, ItemConsumidoRequest, ReservaInput,
+    ReservaPublicaInput, ReservaPublicaOutput,
 };
 use crate::error::AppResult;
 use crate::services::AuthService;
 use clarituz_domain::entities::{
-    Acompanhante, AdicionalConsumo, Consumo, Fnrh, ItemConsumido, Reserva,
+    Acompanhante, AdicionalConsumo, Consumo, Fnrh, ItemConsumido, NovoLog, Reserva,
 };
 use clarituz_domain::enums::StatusReserva;
 use clarituz_domain::events::{Aviso, TipoAviso};
@@ -21,12 +22,13 @@ use clarituz_domain::ports::{
     AcomodacaoRepository, AcompanhanteRepository, ClienteRepository, ComandoCheckout,
     EstabelecimentoRepository, EventoPublisher, FiltroReserva, FnrhRepository,
     FormaPagamentoRepository, ImpressoraGateway, ImpressoraRepository, LinhaRecibo, NovaFnrh,
-    NovaReserva, NovoAcompanhante, NovoAdicional, NovoItemConsumido, ReservaRepository,
+    NovaReserva, NovoAcompanhante, NovoAdicional, NovoClienteSite, NovoItemConsumido,
+    ReservaRepository,
 };
 use clarituz_domain::queries::{ComprovanteResumo, ReservaDetalhe, ReservaResumo};
 use clarituz_domain::value_objects::PeriodoEstadia;
 use clarituz_domain::DomainError;
-use clarituz_shared::{money, time, Page, PageParams};
+use clarituz_shared::{ids, money, time, Page, PageParams};
 use rust_decimal::Decimal;
 use serde_json::json;
 use std::sync::Arc;
@@ -103,10 +105,13 @@ impl ReservaService {
     /// substitui o PDF estático do legado (sempre consistente com a conta).
     /// Retorna `(nome_do_arquivo, conteúdo)`.
     pub async fn comprovante_texto(&self, id: i64) -> AppResult<(String, String)> {
+        use std::fmt::Write as _;
+
         let det = self.detalhe(id).await?;
         let consumo = det
             .consumo
             .ok_or_else(|| DomainError::regra("Reserva sem conta de consumo."))?;
+
         let arquivo = consumo
             .comprovante
             .clone()
@@ -128,50 +133,55 @@ impl ReservaService {
         linha(&mut s);
         s.push_str("          COMPROVANTE DE PAGAMENTO\n");
         linha(&mut s);
-        s.push_str(&format!("Reserva Nº: {}\n", det.id));
-        s.push_str(&format!("Cliente:    {}\n", det.cliente_nome));
-        s.push_str(&format!(
-            "Acomodação: {} (Nº {})\n",
+        let _ = writeln!(s, "Reserva Nº: {}", det.id);
+        let _ = writeln!(s, "Cliente:    {}", det.cliente_nome);
+        let _ = writeln!(
+            s,
+            "Acomodação: {} (Nº {})",
             det.acomodacao_nome, det.acomodacao_numero
-        ));
-        s.push_str(&format!(
-            "Período:    {} a {}\n",
+        );
+        let _ = writeln!(
+            s,
+            "Período:    {} a {}",
             det.entradaprevista.format("%d/%m/%Y"),
             det.saidaprevista.format("%d/%m/%Y")
-        ));
+        );
         linha(&mut s);
-        s.push_str(&format!(
-            "Estadia ({} diária(s) x R$ {}): R$ {}\n",
+        let _ = writeln!(
+            s,
+            "Estadia ({} diária(s) x R$ {}): R$ {}",
             time::diarias(det.entradaprevista, det.saidaprevista),
             det.valordiaria,
             consumo.valor_estadia
-        ));
+        );
         for i in &itens {
-            s.push_str(&format!(
-                "  {} x{} ............ R$ {}\n",
+            let _ = writeln!(
+                s,
+                "  {} x{} ............ R$ {}",
                 i.nome, i.quantidade, i.valor_total
-            ));
+            );
         }
         if !itens.is_empty() {
             let total_itens = money::sum(itens.iter().map(|i| &i.valor_total));
-            s.push_str(&format!("Itens: R$ {total_itens}\n"));
+            let _ = writeln!(s, "Itens: R$ {total_itens}");
         }
         for a in &adicionais {
-            s.push_str(&format!("  {} ............. R$ {}\n", a.motivo, a.valor));
+            let _ = writeln!(s, "  {} ............. R$ {}", a.motivo, a.valor);
         }
         if consumo.total_desconto > Decimal::ZERO {
-            s.push_str(&format!("Desconto: -R$ {}\n", consumo.total_desconto));
+            let _ = writeln!(s, "Desconto: -R$ {}", consumo.total_desconto);
         }
         linha(&mut s);
-        s.push_str(&format!(
-            "TOTAL PAGO: R$ {}\n",
+        let _ = writeln!(
+            s,
+            "TOTAL PAGO: R$ {}",
             consumo.valor_final.unwrap_or_default()
-        ));
+        );
         if let Some(fp) = &consumo.forma_pagamento {
-            s.push_str(&format!("Forma de pagamento: {fp}\n"));
+            let _ = writeln!(s, "Forma de pagamento: {fp}");
         }
         if let Some(f) = consumo.fechado_em {
-            s.push_str(&format!("Fechado em: {}\n", f.format("%d/%m/%Y %H:%M")));
+            let _ = writeln!(s, "Fechado em: {}", f.format("%d/%m/%Y %H:%M"));
         }
         linha(&mut s);
         Ok((arquivo, s))
@@ -545,6 +555,171 @@ impl ReservaService {
             .dados(serde_json::json!({"idreserva": reserva.id})),
         );
         Ok(reserva)
+    }
+
+    /// Reserva online vinda do site público — mesmo agregado de `criar`,
+    /// sem `Ator`: valida o formulário, faz find-or-create do cliente e
+    /// cria a reserva pendente ('p'). Período ocupado devolve
+    /// `status="consulta_registrada"` e avisa a recepção em tempo real —
+    /// o visitante vira lead em vez de erro 409.
+    pub async fn criar_reserva_site(
+        &self,
+        input: ReservaPublicaInput,
+    ) -> AppResult<ReservaPublicaOutput> {
+        let nome = input.nome.trim().to_string();
+        let email = input.email.trim().to_lowercase();
+        let telefone = input.telefone.trim().to_string();
+        if nome.is_empty() || email.is_empty() || telefone.is_empty() {
+            return Err(DomainError::validacao("Informe nome, e-mail e telefone.").into());
+        }
+        if input.check_out < input.check_in {
+            return Err(DomainError::validacao(
+                "A data de check-out deve ser igual ou posterior ao check-in.",
+            )
+            .into());
+        }
+
+        // id explícito → slug do CMS → primeira acomodação ativa.
+        let acomodacao = if let Some(id) = input.idacomodacao {
+            self.acomodacoes.buscar(id).await?.filter(|a| a.ativo)
+        } else if let Some(slug) = input
+            .slug
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            self.acomodacoes.buscar_ativa_por_slug(slug).await?
+        } else {
+            None
+        };
+        let acomodacao = match acomodacao {
+            Some(a) => a,
+            None => self.acomodacoes.primeira_ativa().await?.ok_or_else(|| {
+                DomainError::nao_encontrado("Nenhuma acomodação ativa encontrada.")
+            })?,
+        };
+
+        let hospedes = input.hospedes.clamp(1, acomodacao.capacidade.max(1));
+
+        // CPF limpo localiza o cadastro; sem CPF válido gera `SITE-…`
+        // para satisfazer a coluna NOT NULL até o check-in completar a ficha.
+        let cpf_limpo = input
+            .cpf
+            .as_deref()
+            .map(|c| c.chars().filter(char::is_ascii_digit).collect::<String>())
+            .filter(|c| c.len() >= 11);
+        let cpf = cpf_limpo.clone().unwrap_or_else(|| {
+            let digitos: String = telefone.chars().filter(char::is_ascii_digit).collect();
+            format!("SITE-{digitos}-{}", &ids::simples()[..6])
+        });
+        let idcliente = self
+            .clientes
+            .site_upsert(&NovoClienteSite {
+                nome: nome.clone(),
+                cpf,
+                cpf_busca: cpf_limpo,
+                email: email.clone(),
+                telefone: telefone.clone(),
+            })
+            .await?;
+
+        let obs = match input
+            .observacoes
+            .as_deref()
+            .map(str::trim)
+            .filter(|o| !o.is_empty())
+        {
+            Some(o) => format!("[Site] Tel: {telefone} | E-mail: {email} | Obs: {o}"),
+            None => format!("[Reserva pelo Site] Tel: {telefone} | E-mail: {email}"),
+        };
+        let periodo = PeriodoEstadia::new(input.check_in, input.check_out)?;
+        let diarias = Decimal::from(time::diarias(periodo.entrada, periodo.saida));
+        let nova = NovaReserva {
+            idacomodacao: acomodacao.id,
+            idcliente,
+            quantidade_hospedes: hospedes,
+            periodo,
+            obs: Some(obs),
+            valordiaria: money::round2(acomodacao.valor),
+            valor_total: money::round2(acomodacao.valor * diarias),
+        };
+        let log = NovoLog {
+            idfuncionario: None,
+            acao: "cadastro".into(),
+            obs: format!("Reserva pelo site — {nome} ({telefone})"),
+            tabela: "reserva",
+            idtabela: 0,
+            dados: Some(json!({
+                "idcliente": idcliente,
+                "idacomodacao": acomodacao.id,
+                "origem": "site",
+            })),
+        };
+
+        match self.reservas.criar(&nova, log).await {
+            Ok(reserva) => {
+                self.eventos.avisar(
+                    Aviso::novo(
+                        TipoAviso::Sucesso,
+                        format!(
+                            "Nova reserva pelo site — #{} {}",
+                            acomodacao.numero, acomodacao.nome
+                        ),
+                        format!(
+                            "{nome} ({telefone}) reservou de {} a {} para {hospedes} hóspede(s).",
+                            periodo.entrada.format("%d/%m/%Y"),
+                            periodo.saida.format("%d/%m/%Y"),
+                        ),
+                    )
+                    .dados(json!({
+                        "idreserva": reserva.id,
+                        "idcliente": idcliente,
+                        "idacomodacao": acomodacao.id,
+                        "origem": "site",
+                    })),
+                );
+                Ok(ReservaPublicaOutput {
+                    ok: true,
+                    status: "reserva_criada",
+                    idreserva: Some(reserva.id),
+                    idcliente,
+                    mensagem: format!(
+                        "Reserva Nº #{} registrada com sucesso! Nossa recepção já foi notificada em tempo real.",
+                        reserva.id
+                    ),
+                })
+            }
+            // Período ocupado: lead para a recepção, não erro para o visitante.
+            Err(DomainError::Conflito(_)) => {
+                self.eventos.avisar(
+                    Aviso::novo(
+                        TipoAviso::Alerta,
+                        format!(
+                            "Consulta pelo site (período ocupado) — #{} {}",
+                            acomodacao.numero, acomodacao.nome
+                        ),
+                        format!(
+                            "{nome} ({telefone} / {email}) pediu {} a {} ({hospedes} hóspede(s)) — quarto já possui reserva no período.",
+                            periodo.entrada.format("%d/%m/%Y"),
+                            periodo.saida.format("%d/%m/%Y"),
+                        ),
+                    )
+                    .dados(json!({
+                        "idcliente": idcliente,
+                        "idacomodacao": acomodacao.id,
+                        "origem": "site_conflito",
+                    })),
+                );
+                Ok(ReservaPublicaOutput {
+                    ok: true,
+                    status: "consulta_registrada",
+                    idreserva: None,
+                    idcliente,
+                    mensagem: "Sua solicitação foi enviada em tempo real para a recepção! Como este quarto já possui bloqueio em parte das datas escolhidas, nossa equipe entrará em contato para confirmar a melhor opção.".into(),
+                })
+            }
+            Err(e) => Err(e.into()),
+        }
     }
 
     #[instrument(skip(self, ator))]

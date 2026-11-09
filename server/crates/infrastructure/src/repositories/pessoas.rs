@@ -7,8 +7,8 @@ use chrono::{DateTime, Utc};
 use clarituz_domain::entities::{Cliente, ClienteDocumento, Funcionario, NovoLog, SessaoRefresh};
 use clarituz_domain::ports::{
     AtualizaFuncionario, ClienteRepository, DocumentoRepository, FiltroCliente,
-    FuncionarioRepository, LogAcessoRepository, NovoCliente, NovoDocumento, NovoFuncionario,
-    SessaoRepository,
+    FuncionarioRepository, LogAcessoRepository, NovoCliente, NovoClienteSite, NovoDocumento,
+    NovoFuncionario, SessaoRepository,
 };
 use clarituz_domain::DomainError;
 use clarituz_shared::{Page, PageParams};
@@ -550,7 +550,7 @@ impl ClienteRepository for PgClienteRepository {
             .bind(id)
             .fetch_optional(&self.pool)
             .await
-            .map(|row| row.flatten())
+            .map(Option::flatten)
             .map_err(map_db_err)
     }
 
@@ -560,6 +560,47 @@ impl ClienteRepository for PgClienteRepository {
             .fetch_one(&self.pool)
             .await
             .map_err(map_db_err)
+    }
+
+    async fn site_upsert(&self, dados: &NovoClienteSite) -> Result<i64, DomainError> {
+        let existente = sqlx::query_scalar::<_, i64>(
+            "SELECT id FROM cliente
+             WHERE LOWER(email) = $1 OR ($2::text IS NOT NULL AND cpf = $2)
+             LIMIT 1",
+        )
+        .bind(&dados.email)
+        .bind(&dados.cpf_busca)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+
+        if let Some(id) = existente {
+            sqlx::query(
+                "UPDATE cliente SET nome = $2, telefone = $3, atualizado_em = now() WHERE id = $1",
+            )
+            .bind(id)
+            .bind(&dados.nome)
+            .bind(&dados.telefone)
+            .execute(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+            return Ok(id);
+        }
+
+        // Cadastro mínimo do site — `data_nascimento` é NOT NULL no schema e
+        // recebe placeholder até o check-in completar a ficha (FNRH).
+        sqlx::query_scalar::<_, i64>(
+            "INSERT INTO cliente (nome, cpf, data_nascimento, email, telefone, ativo)
+             VALUES ($1, $2, DATE '1990-01-01', $3, $4, TRUE)
+             RETURNING id",
+        )
+        .bind(&dados.nome)
+        .bind(&dados.cpf)
+        .bind(&dados.email)
+        .bind(&dados.telefone)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
     }
 
     async fn remover(&self, id: i64, log: NovoLog) -> Result<Vec<String>, DomainError> {
@@ -755,7 +796,7 @@ impl DocumentoRepository for PgDocumentoRepository {
             .bind(id)
             .fetch_optional(&self.pool)
             .await
-            .map(|row| row.flatten())
+            .map(Option::flatten)
             .map_err(map_db_err)
     }
 }

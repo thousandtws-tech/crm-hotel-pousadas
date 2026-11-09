@@ -1,43 +1,28 @@
-//! Probe de verificação S3/MinIO — lista buckets, cria o bucket de mídia
-//! se necessário e exercita put/get/delete.
+//! Probe de verificação S3/MinIO — `clarituz-api s3-probe`.
 //!
-//! Uso:
-//!   S3_ENDPOINT=https://bucket-production-e66fc.up.railway.app \
-//!   S3_ACCESS_KEY=... S3_SECRET_KEY=... S3_BUCKET=midias \
-//!   cargo run -p clarituz-infrastructure --example s3probe
+//! Lista buckets, garante o bucket de mídia e exercita put/get/delete.
+//! Roda dentro do container de produção (o Docker só shipa o binário
+//! `clarituz-api`) — é o caminho de diagnóstico do object store no
+//! Railway sem precisar de build local.
+//!
+//! Falhas parciais são reportadas e o probe segue — é diagnóstico,
+//! não verificação de deploy (essa é a `/readyz`).
 
+use crate::object_store::s3_parts;
+use clarituz_domain::DomainError;
+use clarituz_shared::Settings;
 use s3::bucket::Bucket;
-use s3::creds::Credentials;
-use s3::region::Region;
+use s3::BucketConfiguration;
 
-fn creds() -> Credentials {
-    Credentials::new(
-        Some(&std::env::var("S3_ACCESS_KEY").expect("S3_ACCESS_KEY")),
-        Some(&std::env::var("S3_SECRET_KEY").expect("S3_SECRET_KEY")),
-        None,
-        None,
-        None,
-    )
-    .expect("credentials")
-}
+/// Executa o probe. Não depende de banco — pode rodar com o Postgres fora.
+pub async fn run(settings: &Settings) -> Result<(), DomainError> {
+    let (region, creds, name) = s3_parts(settings).ok_or_else(|| {
+        tracing::error!(
+            "S3_* incompleto — exige S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY e S3_SECRET_KEY"
+        );
+        DomainError::Infra
+    })?;
 
-fn region() -> Region {
-    Region::Custom {
-        region: std::env::var("S3_REGION").unwrap_or_else(|_| "us-east-1".into()),
-        endpoint: std::env::var("S3_ENDPOINT")
-            .expect("S3_ENDPOINT")
-            .trim_end_matches('/')
-            .to_string(),
-    }
-}
-
-#[tokio::main]
-async fn main() {
-    let name = std::env::var("S3_BUCKET").unwrap_or_else(|_| "midias".into());
-    let creds = creds();
-    let region = region();
-
-    // buckets existentes
     match Bucket::list_buckets(region.clone(), creds.clone()).await {
         Ok(list) => {
             let names: Vec<_> = list.buckets.bucket.iter().map(|b| b.name.clone()).collect();
@@ -47,7 +32,7 @@ async fn main() {
     }
 
     let bucket = Bucket::new(&name, region.clone(), creds.clone())
-        .expect("bucket")
+        .map_err(|_| DomainError::Infra)?
         .with_path_style();
 
     match bucket.exists().await {
@@ -56,22 +41,22 @@ async fn main() {
             println!("bucket `{name}` não existe — criando");
             match Bucket::create_with_path_style(
                 &name,
-                region.clone(),
-                creds.clone(),
-                s3::BucketConfiguration::default(),
+                region,
+                creds,
+                BucketConfiguration::default(),
             )
             .await
             {
                 Ok(r) => println!("criado: {}", r.response_text),
                 Err(e) => {
                     println!("create falhou: {e}");
-                    std::process::exit(2);
+                    return Err(DomainError::Infra);
                 }
             }
         }
         Err(e) => {
             println!("exists falhou: {e}");
-            std::process::exit(2);
+            return Err(DomainError::Infra);
         }
     }
 
@@ -81,14 +66,26 @@ async fn main() {
     bucket
         .put_object_with_content_type(key, payload, "text/plain")
         .await
-        .expect("put");
+        .map_err(|e| {
+            println!("put falhou: {e}");
+            DomainError::Infra
+        })?;
     println!("put {key} ok");
 
-    let got = bucket.get_object(key).await.expect("get");
-    assert_eq!(got.bytes(), &payload[..]);
+    let got = bucket.get_object(key).await.map_err(|e| {
+        println!("get falhou: {e}");
+        DomainError::Infra
+    })?;
+    if got.bytes() != &payload[..] {
+        println!("ERRO: conteúdo divergente no get");
+        return Err(DomainError::Infra);
+    }
     println!("get {key} ok ({} bytes)", got.bytes().len());
 
-    bucket.delete_object(key).await.expect("delete");
+    bucket.delete_object(key).await.map_err(|e| {
+        println!("delete falhou: {e}");
+        DomainError::Infra
+    })?;
     println!("delete {key} ok");
 
     match bucket.get_object(key).await {
@@ -100,7 +97,7 @@ async fn main() {
         Err(e) => println!("pós-delete get → {e} (esperado)"),
     }
 
-    // lista objetos sob prefixos da aplicação (evidência no bucket)
+    // objetos sob prefixos da aplicação (evidência no bucket)
     for prefix in ["cms/", "clientes/", "documentos/", "logo/", "_probe/"] {
         match bucket.list(prefix.to_string(), None).await {
             Ok(pages) => {
@@ -114,4 +111,5 @@ async fn main() {
         }
     }
     println!("PROBE OK");
+    Ok(())
 }

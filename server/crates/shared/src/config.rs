@@ -70,15 +70,16 @@ impl Settings {
             jwt_secret,
             jwt_ttl_secs: env_i64("JWT_TTL_SECS").unwrap_or(3600),
             refresh_ttl_secs: env_i64("REFRESH_TTL_SECS").unwrap_or(60 * 60 * 24 * 30),
-            cors_origins: env_string("CORS_ORIGINS")
-                .map(|v| {
+            cors_origins: env_string("CORS_ORIGINS").map_or_else(
+                || vec!["*".into()],
+                |v| {
                     v.split(',')
                         .map(str::trim)
                         .filter(|s| !s.is_empty())
                         .map(String::from)
                         .collect()
-                })
-                .unwrap_or_else(|| vec!["*".into()]),
+                },
+            ),
             log_filter: env_string("RUST_LOG")
                 .unwrap_or_else(|| "info,tower_http=debug,sqlx=warn".into()),
             storage_dir: env_string("STORAGE_DIR").unwrap_or_else(|| "./storage".into()),

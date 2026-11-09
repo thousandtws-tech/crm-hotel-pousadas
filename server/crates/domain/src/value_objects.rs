@@ -42,7 +42,7 @@ impl Cpf {
             return Err(DomainError::validacao("CPF inválido."));
         }
 
-        Ok(Self(digits.iter().map(|d| d.to_string()).collect()))
+        Ok(Self(digits.iter().map(ToString::to_string).collect()))
     }
 
     /// Apenas dígitos — forma canônica persistida.

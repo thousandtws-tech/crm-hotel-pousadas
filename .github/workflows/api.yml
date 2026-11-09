@@ -1,0 +1,47 @@
+name: api
+
+on:
+  push:
+    paths: ["server/crates/**", "server/migrations/**", "server/Cargo.*"]
+  pull_request:
+    paths: ["server/crates/**", "server/migrations/**", "server/Cargo.*"]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    # Postgres efêmero para os e2e `#[sqlx::test]` (fluxo crítico de
+    # reserva) — mesmo schema das migrations reais.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: clarituz
+          POSTGRES_PASSWORD: clarituz
+          POSTGRES_DB: clarituz
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U clarituz -d clarituz"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://clarituz:clarituz@localhost:5432/clarituz
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: server
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - run: cargo test --workspace
+      - uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          cwd: server

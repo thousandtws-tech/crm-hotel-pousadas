@@ -18,4 +18,6 @@ pub struct AppState {
     pub store: Arc<dyn ObjectStore>,
     /// Barramento realtime (broadcast) — assinado pelo SSE de notificações.
     pub eventos: EventBus,
+    /// Origens permitidas (env `CORS_ORIGINS`; `*` = dev aberto).
+    pub cors_origins: Vec<String>,
 }

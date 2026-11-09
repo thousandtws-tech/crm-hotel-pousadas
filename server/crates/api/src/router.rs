@@ -1,13 +1,17 @@
 //! Árvore de rotas `/api/v1` + middlewares de observabilidade e robustez.
 
+use crate::mw::{self, IpRateLimit};
 use crate::routes;
 use crate::state::AppState;
 use axum::extract::State;
+use axum::http::header;
+use axum::middleware::{from_fn, from_fn_with_state};
 use axum::routing::{delete, get, patch, post, put};
 use axum::Json;
 use axum::Router;
 use serde_json::json;
 use std::time::Duration;
+use tower_http::compression::CompressionLayer;
 use tower_http::cors::CorsLayer;
 use tower_http::request_id::{PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::timeout::TimeoutLayer;
@@ -27,12 +31,57 @@ async fn readyz(State(s): State<AppState>) -> (axum::http::StatusCode, Json<serd
     }
 }
 
+/// CORS a partir de `CORS_ORIGINS`: `*` (dev) → permissive; caso
+/// contrário a lista exata de origens com métodos/headers da API.
+/// Auth é por `Authorization` header (não cookie) — credentials off.
+fn cors_layer(origins: &[String]) -> CorsLayer {
+    if origins.iter().any(|o| o == "*") {
+        return CorsLayer::permissive();
+    }
+    let parsed: Vec<axum::http::HeaderValue> = origins
+        .iter()
+        .filter_map(|o| o.trim().parse().ok())
+        .collect();
+    CorsLayer::new()
+        .allow_origin(parsed)
+        .allow_methods([
+            axum::http::Method::GET,
+            axum::http::Method::POST,
+            axum::http::Method::PUT,
+            axum::http::Method::PATCH,
+            axum::http::Method::DELETE,
+            axum::http::Method::OPTIONS,
+        ])
+        .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE])
+        .max_age(Duration::from_secs(3600))
+}
+
 pub fn build(state: AppState) -> Router {
+    let (metric_layer, metric_handle) = axum_prometheus::PrometheusMetricLayer::pair();
     let api: Router<AppState> = Router::new()
-        // auth — login/refresh públicos
-        .route("/auth/login", post(routes::auth::login))
-        .route("/auth/register", post(routes::auth::register))
-        .route("/auth/refresh", post(routes::auth::refresh))
+        // auth — login/refresh públicos (login/register com rate limit
+        // por IP: Argon2 é CPU-bound — sem teto vira DoS + brute-force)
+        .route(
+            "/auth/login",
+            post(routes::auth::login).route_layer(from_fn_with_state(
+                IpRateLimit::novo(10, Duration::from_secs(60)),
+                IpRateLimit::middleware,
+            )),
+        )
+        .route(
+            "/auth/register",
+            post(routes::auth::register).route_layer(from_fn_with_state(
+                IpRateLimit::novo(5, Duration::from_secs(60)),
+                IpRateLimit::middleware,
+            )),
+        )
+        .route(
+            "/auth/refresh",
+            post(routes::auth::refresh).route_layer(from_fn_with_state(
+                IpRateLimit::novo(30, Duration::from_secs(60)),
+                IpRateLimit::middleware,
+            )),
+        )
         .route("/auth/logout", post(routes::auth::logout))
         .route("/auth/me", get(routes::auth::me))
         // clientes
@@ -620,6 +669,10 @@ pub fn build(state: AppState) -> Router {
             post(routes::notificacoes::ler_todas),
         )
         .route("/notificacoes/{id}/ler", post(routes::notificacoes::ler))
+        .route(
+            "/notificacoes/stream-ticket",
+            post(routes::notificacoes::stream_ticket),
+        )
         .route("/notificacoes/{id}", delete(routes::notificacoes::excluir))
         .route("/busca", get(routes::notificacoes::busca))
         // CMS de quartos (admin) — conteúdo editorial, mídia e publicação
@@ -666,15 +719,40 @@ pub fn build(state: AppState) -> Router {
         )
         .route(
             "/api/v1/publico/reservas",
-            post(routes::cms::publico_criar_reserva),
+            post(routes::cms::publico_criar_reserva).route_layer(from_fn_with_state(
+                IpRateLimit::novo(8, Duration::from_secs(60)),
+                IpRateLimit::middleware,
+            )),
         )
         .route("/api/v1/midia/{id}", get(routes::cms::servir_midia))
+        // scrape Prometheus — req/s, latência e status por rota
+        .route(
+            "/metrics",
+            get(move || {
+                let handle = metric_handle.clone();
+                async move { handle.render() }
+            }),
+        )
         .nest("/api/v1", api)
-        .layer(TraceLayer::new_for_http())
+        // span registra método + path apenas — query string pode carregar
+        // credenciais (stream ticket) e filtros sensíveis; nunca vai a log.
+        .layer(
+            TraceLayer::new_for_http().make_span_with(|req: &axum::extract::Request| {
+                tracing::info_span!(
+                    "request",
+                    method = %req.method(),
+                    path = %req.uri().path(),
+                )
+            }),
+        )
         .layer(PropagateRequestIdLayer::x_request_id())
         .layer(SetRequestIdLayer::x_request_id(
             tower_http::request_id::MakeRequestUuid,
         ))
-        .layer(CorsLayer::permissive())
+        // DefaultPredicate já exclui text/event-stream — SSE não é comprimido.
+        .layer(CompressionLayer::new())
+        .layer(from_fn(mw::security_headers))
+        .layer(cors_layer(&state.cors_origins))
+        .layer(metric_layer)
         .with_state(state)
 }

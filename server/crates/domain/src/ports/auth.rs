@@ -17,6 +17,10 @@ pub struct TokenClaims {
     pub exp: i64,
     pub iat: i64,
     pub iss: String,
+    /// `Some("sse")` nos stream tickets de vida curta — ausente nos access
+    /// tokens; permite escopo de uso sem um segundo issuer.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub aud: Option<String>,
 }
 
 #[async_trait]

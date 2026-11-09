@@ -4,24 +4,21 @@
 //! clarituz-api serve                       # sobe a API (default)
 //! clarituz-api migrate                     # aplica migrations e sai
 //! clarituz-api create-admin --login admin --nome "Admin" --senha <s>
+//! clarituz-api s3-probe                    # diagnóstico do object store S3/MinIO
 //! ```
 
 mod error;
 mod extract;
+mod mw;
 mod router;
 mod routes;
 mod state;
 
+use axum_prometheus::metrics;
 use clap::{Parser, Subcommand};
-use clarituz_application::services::*;
-use clarituz_application::Services;
 use clarituz_domain::entities::NovoLog;
-use clarituz_domain::ports::{
-    EventoPublisher, FuncionarioRepository, NovoFuncionario, PasswordHasher,
-};
-use clarituz_infrastructure::{
-    repositories, spawn_aviso_persister, spawn_pg_relay, Argon2Hasher, EventBus, JwtIssuer,
-};
+use clarituz_domain::ports::{FuncionarioRepository, NovoFuncionario, PasswordHasher};
+use clarituz_infrastructure::{repositories, spawn_pg_relay, Argon2Hasher, EventBus};
 use clarituz_shared::Settings;
 use state::AppState;
 use std::sync::Arc;
@@ -51,6 +48,9 @@ enum Cmd {
         #[arg(long, default_value_t = 1)]
         nivel: i16,
     },
+    /// Diagnóstico do object store — lista buckets, garante o bucket de
+    /// mídia e exercita put/get/delete. Não usa o banco (roda com o PG fora).
+    S3Probe,
 }
 
 #[tokio::main]
@@ -75,6 +75,14 @@ fn init_tracing() {
 async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
     let settings = Settings::load()?;
+
+    // S3Probe não toca no banco — útil justamente para isolar falhas de S3.
+    if matches!(cli.cmd, Some(Cmd::S3Probe)) {
+        return clarituz_infrastructure::s3_probe::run(&settings)
+            .await
+            .map_err(Into::into);
+    }
+
     let pool =
         clarituz_infrastructure::connect(&settings.database_url, settings.db_max_connections)
             .await?;
@@ -92,6 +100,7 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
             nivel,
         } => create_admin(&pool, &login, &nome, &senha, nivel).await,
         Cmd::Serve => serve(settings, pool).await,
+        Cmd::S3Probe => unreachable!("s3-probe retorna antes de conectar ao banco"),
     }
 }
 
@@ -135,141 +144,22 @@ async fn create_admin(
     Ok(())
 }
 
-/// Monta o grafo de dependências (composition root).
-fn build_services(
-    settings: &Settings,
-    pool: &sqlx::PgPool,
-    eventos: EventBus,
-) -> (AppState, Arc<AuthService>) {
-    use repositories::*;
-
-    let funcionarios: Arc<dyn clarituz_domain::ports::FuncionarioRepository> =
-        Arc::new(PgFuncionarioRepository::new(pool.clone()));
-    let sessoes = Arc::new(PgSessaoRepository::new(pool.clone()));
-    let acessos = Arc::new(PgLogAcessoRepository::new(pool.clone()));
-    let logs = Arc::new(PgLogRepository::new(pool.clone()));
-    let hasher: Arc<dyn PasswordHasher> = Arc::new(Argon2Hasher::new());
-    let issuer: Arc<dyn clarituz_domain::ports::TokenIssuer> =
-        Arc::new(JwtIssuer::new(&settings.jwt_secret));
-
-    let auth = Arc::new(AuthService::new(
-        funcionarios.clone(),
-        sessoes,
-        acessos,
-        logs.clone(),
-        hasher.clone(),
-        issuer.clone(),
-        settings.jwt_ttl_secs,
-        settings.refresh_ttl_secs,
-    ));
-
-    let clientes_repo = Arc::new(PgClienteRepository::new(pool.clone()));
-    let acom_repo = Arc::new(PgAcomodacaoRepository::new(pool.clone()));
-    let pag_repo = Arc::new(PgFormaPagamentoRepository::new(pool.clone()));
-    let reserva_repo = Arc::new(PgReservaRepository::new(pool.clone()));
-    let impressora_repo = Arc::new(PgImpressoraRepository::new(pool.clone()));
-    let impressora_gw: Arc<dyn clarituz_domain::ports::ImpressoraGateway> = Arc::new(
-        clarituz_infrastructure::escpos::SpoolImpressora::new(pool.clone()),
-    );
-    let publisher: Arc<dyn EventoPublisher> = Arc::new(eventos.clone());
-    // consumer do bus → histórico persistido (inbox/badges)
-    let notif_repo = Arc::new(repositories::PgNotificacaoRepository::new(pool.clone()));
-    spawn_aviso_persister(eventos.clone(), notif_repo.clone());
-
-    let services = Services {
-        auth: auth.clone(),
-        clientes: Arc::new(ClienteService::new(clientes_repo.clone())),
-        documentos: Arc::new(DocumentoService::new(
-            Arc::new(PgDocumentoRepository::new(pool.clone())),
-            clientes_repo.clone(),
-        )),
-        acomodacoes: Arc::new(AcomodacaoService::new(
-            acom_repo.clone(),
-            Arc::new(PgTipoAcomodacaoRepository::new(pool.clone())),
-            Arc::new(PgQuartoRepository::new(pool.clone())),
-        )),
-        cms: Arc::new(CmsService::new(
-            Arc::new(PgCmsRepository::new(pool.clone())),
-            acom_repo.clone(),
-        )),
-        reservas: Arc::new(ReservaService::new(ReservaDeps {
-            reservas: reserva_repo.clone(),
-            acomodacoes: acom_repo.clone(),
-            clientes: clientes_repo,
-            pagamentos: pag_repo.clone(),
-            estabelecimentos: Arc::new(PgEstabelecimentoRepository::new(pool.clone())),
-            impressoras: impressora_repo.clone(),
-            impressora: impressora_gw.clone(),
-            auth: auth.clone(),
-            eventos: publisher,
-            acompanhantes: reserva_repo.clone(),
-            fnrh: reserva_repo,
-        })),
-        estoque: Arc::new(
-            EstoqueService::new(Arc::new(PgEstoqueRepository::new(pool.clone())))
-                .com_etiquetas(impressora_repo.clone(), impressora_gw.clone()),
-        ),
-        frigobar: Arc::new(FrigobarService::new(
-            Arc::new(PgFrigobarRepository::new(pool.clone())),
-            acom_repo,
-        )),
-        estacionamento: Arc::new(EstacionamentoService::new(Arc::new(
-            PgEstacionamentoRepository::new(pool.clone()),
-        ))),
-        pagamentos: Arc::new(PagamentoService::new(pag_repo)),
-        funcionarios: Arc::new(FuncionarioService::new(funcionarios, hasher)),
-        estabelecimento: Arc::new(EstabelecimentoService::new(Arc::new(
-            PgEstabelecimentoRepository::new(pool.clone()),
-        ))),
-        impressoras: Arc::new(ImpressoraService::new(impressora_repo, impressora_gw)),
-        financeiro: Arc::new(FinanceiroService::new(Arc::new(
-            PgFinanceiroRepository::new(pool.clone()),
-        ))),
-        dashboard: Arc::new(DashboardService::new(Arc::new(PgDashboardRepository::new(
-            pool.clone(),
-        )))),
-        auditoria: Arc::new(AuditoriaService::new(logs)),
-        notificacoes: Arc::new(NotificacaoService::new(notif_repo)),
-        busca: Arc::new(BuscaService::new(Arc::new(PgBuscaRepository::new(
-            pool.clone(),
-        )))),
-        tesouraria: Arc::new(TesourariaService::new(Arc::new(
-            PgTesourariaRepository::new(pool.clone()),
-        ))),
-        caixa: Arc::new(CaixaService::new(Arc::new(PgCaixaRepository::new(
-            pool.clone(),
-        )))),
-        pdv: Arc::new(PdvService::new(Arc::new(PgPdvRepository::new(
-            pool.clone(),
-        )))),
-        cafe: Arc::new(CafeService::new(Arc::new(PgCafeRepository::new(
-            pool.clone(),
-        )))),
-        compras: Arc::new(ComprasService::new(
-            Arc::new(PgComprasRepository::new(pool.clone())),
-            Arc::new(PgEstoqueRepository::new(pool.clone())),
-        )),
-    };
-
-    (
-        AppState {
-            services: Arc::new(services),
-            issuer,
-            pool: pool.clone(),
-            storage_dir: settings.storage_dir.clone(),
-            store: clarituz_infrastructure::build_store(&settings)
-                .expect("object store inválido: confira as variáveis S3_*"),
-            eventos,
-        },
-        auth,
-    )
-}
-
 async fn serve(settings: Settings, pool: sqlx::PgPool) -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all(&settings.storage_dir).ok();
     let eventos = EventBus::new();
     spawn_pg_relay(pool.clone(), eventos.clone());
-    let (state, _auth) = build_services(&settings, &pool, eventos);
+    let built = clarituz_infrastructure::build_services(&settings, &pool, &eventos);
+    let state = AppState {
+        services: Arc::new(built.services),
+        issuer: built.issuer,
+        pool: pool.clone(),
+        storage_dir: settings.storage_dir.clone(),
+        store: clarituz_infrastructure::build_store(&settings)
+            .expect("object store inválido: confira as variáveis S3_*"),
+        eventos,
+        cors_origins: settings.cors_origins.clone(),
+    };
+    spawn_metricas_saturacao(pool.clone(), state.eventos.clone());
     let app = router::build(state);
 
     let listener = tokio::net::TcpListener::bind(&settings.http_addr).await?;
@@ -283,7 +173,45 @@ async fn serve(settings: Settings, pool: sqlx::PgPool) -> Result<(), Box<dyn std
     Ok(())
 }
 
+/// Gauges de saturação a cada 10 s, exportados no `/metrics`:
+/// pool do Postgres (size/idle) e assinantes do bus (≈ conexões SSE
+/// abertas na réplica). `idle → 0` sustentado = hora de subir réplica
+/// ou `DB_MAX_CONNECTIONS`.
+fn spawn_metricas_saturacao(pool: sqlx::PgPool, eventos: EventBus) {
+    tokio::spawn(async move {
+        let mut tick = tokio::time::interval(std::time::Duration::from_secs(10));
+        loop {
+            tick.tick().await;
+            metrics::gauge!("clarituz_db_pool_connections").set(pool.size() as f64);
+            metrics::gauge!("clarituz_db_pool_idle").set(pool.num_idle() as f64);
+            metrics::gauge!("clarituz_sse_subscribers").set(eventos.assinantes() as f64);
+        }
+    });
+}
+
+/// Encerra no primeiro sinal recebido: SIGINT (dev) ou SIGTERM
+/// (orquestrador — Railway/K8s mandam SIGTERM no deploy/scale-down;
+/// sem isso requests em voo e SSE morriam no hard-kill).
 async fn shutdown_signal() {
-    let _ = tokio::signal::ctrl_c().await;
-    tracing::info!("desligamento solicitado (ctrl-c)");
+    #[cfg(unix)]
+    {
+        use tokio::signal::unix::{signal, SignalKind};
+        let mut sigterm = match signal(SignalKind::terminate()) {
+            Ok(s) => s,
+            Err(e) => {
+                tracing::warn!(erro = %e, "falha ao registrar SIGTERM; usando só ctrl-c");
+                let _ = tokio::signal::ctrl_c().await;
+                return;
+            }
+        };
+        tokio::select! {
+            _ = tokio::signal::ctrl_c() => tracing::info!("desligamento solicitado (SIGINT)"),
+            _ = sigterm.recv() => tracing::info!("desligamento solicitado (SIGTERM)"),
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = tokio::signal::ctrl_c().await;
+        tracing::info!("desligamento solicitado (ctrl-c)");
+    }
 }

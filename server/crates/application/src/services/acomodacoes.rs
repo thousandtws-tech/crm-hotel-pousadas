@@ -106,7 +106,7 @@ impl AcomodacaoService {
     }
 
     pub async fn criar(&self, ator: &Ator, input: AcomodacaoInput) -> AppResult<Acomodacao> {
-        let nova = self.validar(input)?;
+        let nova = Self::validar(input)?;
         if self.acomodacoes.numero_em_uso(nova.numero, 0).await? {
             return Err(DomainError::conflito("Número já cadastrado anteriormente.").into());
         }
@@ -129,7 +129,7 @@ impl AcomodacaoService {
     ) -> AppResult<Acomodacao> {
         let atual = self.buscar(id).await?;
         let version = input.version;
-        let nova = self.validar(input)?;
+        let nova = Self::validar(input)?;
         if self.acomodacoes.numero_em_uso(nova.numero, id).await? {
             return Err(DomainError::conflito("Número já cadastrado anteriormente.").into());
         }
@@ -269,7 +269,7 @@ impl AcomodacaoService {
 
     // -- internos --------------------------------------------------------------
 
-    fn validar(&self, input: AcomodacaoInput) -> AppResult<NovaAcomodacao> {
+    fn validar(input: AcomodacaoInput) -> AppResult<NovaAcomodacao> {
         let nome = validar_nome(&input.nome)?;
         if input.numero <= 0 {
             return Err(DomainError::validacao("Número inválido.").into());

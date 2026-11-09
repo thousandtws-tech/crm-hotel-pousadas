@@ -1,9 +1,3 @@
-//! Parser de extratos bancários: OFX (v1 SGML e v2 XML) e CSV BR.
-//!
-//! Funções puras — sem I/O, sem banco. O resultado é normalizado em
-//! `TransacaoExtrato` e o dedup fica por conta do repositório
-//! (`UNIQUE (conta, fit_id)`).
-
 use chrono::NaiveDate;
 use clarituz_domain::DomainError;
 use rust_decimal::Decimal;
@@ -11,14 +5,12 @@ use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::str::FromStr;
 
-/// Linha de extrato normalizada — `valor` com sinal (+crédito / −débito).
 #[derive(Debug, Clone, PartialEq)]
 pub struct TransacaoExtrato {
     pub data: NaiveDate,
     pub descricao: String,
     pub documento: Option<String>,
     pub valor: Decimal,
-    /// Chave de deduplicação: FITID do OFX ou hash do conteúdo (CSV).
     pub fit_id: String,
 }
 
@@ -28,7 +20,6 @@ enum Formato {
     Csv,
 }
 
-/// Detecta o formato pelo conteúdo e delega ao parser correto.
 pub fn parse_extrato(conteudo: &str) -> Result<Vec<TransacaoExtrato>, DomainError> {
     let cabeca = &conteudo[..conteudo.len().min(4096)];
     let formato = if cabeca.contains("OFXHEADER") || cabeca.contains("<OFX>") {
@@ -42,11 +33,6 @@ pub fn parse_extrato(conteudo: &str) -> Result<Vec<TransacaoExtrato>, DomainErro
     }
 }
 
-// ---------------------------------------------------------------------------
-// OFX
-// ---------------------------------------------------------------------------
-
-/// Extrai o valor de uma tag folha `<TAG>valor` — OFX v1 não fecha tags.
 fn tag<'a>(bloco: &'a str, nome: &str) -> Option<&'a str> {
     let abre = format!("<{nome}>");
     let ini = bloco.find(&abre)? + abre.len();
@@ -59,7 +45,6 @@ fn tag<'a>(bloco: &'a str, nome: &str) -> Option<&'a str> {
     (!v.is_empty()).then_some(v)
 }
 
-/// `YYYYMMDDHHMMSS[-3:BRT]` ou `YYYYMMDD` → `NaiveDate`.
 fn parse_data_ofx(raw: &str) -> Option<NaiveDate> {
     let d = raw.trim();
     if d.len() < 8 {
@@ -84,7 +69,6 @@ fn parse_ofx(conteudo: &str) -> Result<Vec<TransacaoExtrato>, DomainError> {
     while let Some(ini) = resto.find("<STMTTRN>") {
         let bloco = match resto[ini..].find("</STMTTRN>") {
             Some(f) => &resto[ini..ini + f],
-            // bloco sem fechamento: recorta até o próximo <STMTTRN> ou fim
             None => &resto[ini..],
         };
         resto = &resto[ini + bloco.len().max(9)..];
@@ -102,9 +86,10 @@ fn parse_ofx(conteudo: &str) -> Result<Vec<TransacaoExtrato>, DomainError> {
         let documento = tag(bloco, "CHECKNUM")
             .or_else(|| tag(bloco, "REFNUM"))
             .map(str::to_string);
-        let fit_id = tag(bloco, "FITID")
-            .map(str::to_string)
-            .unwrap_or_else(|| hash_fit(&[&data.to_string(), &descricao, &valor.to_string()]));
+        let fit_id = tag(bloco, "FITID").map_or_else(
+            || hash_fit(&[&data.to_string(), &descricao, &valor.to_string()]),
+            str::to_string,
+        );
 
         itens.push(TransacaoExtrato {
             data,
@@ -123,11 +108,6 @@ fn parse_ofx(conteudo: &str) -> Result<Vec<TransacaoExtrato>, DomainError> {
     Ok(itens)
 }
 
-// ---------------------------------------------------------------------------
-// CSV
-// ---------------------------------------------------------------------------
-
-/// Aceita `dd/mm/yyyy`, `dd-mm-yyyy` ou ISO `yyyy-mm-dd`.
 fn parse_data_csv(raw: &str) -> Option<NaiveDate> {
     let d = raw.trim().trim_matches('"');
     for fmt in ["%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d"] {
@@ -138,13 +118,12 @@ fn parse_data_csv(raw: &str) -> Option<NaiveDate> {
     None
 }
 
-/// `"1.234,56"`, `1234.56`, `-50,00` → `Decimal`.
 fn parse_valor_csv(raw: &str) -> Option<Decimal> {
     let s = raw
         .trim()
         .trim_matches('"')
         .replace("R$", "")
-        .replace('\u{00a0}', "") // NBSP de alguns exports
+        .replace('\u{00a0}', "")
         .trim()
         .to_string();
     if s.is_empty() {
@@ -168,14 +147,13 @@ fn parse_csv(conteudo: &str) -> Result<Vec<TransacaoExtrato>, DomainError> {
         return Err(DomainError::validacao("Arquivo CSV vazio."));
     };
 
-    // separador: ';' é o padrão BR (',' é o separador decimal)
     let sep = [';', ',', '\t']
         .into_iter()
         .max_by_key(|s| primeira.matches(*s).count())
         .unwrap_or(';');
 
-    // primeira linha é cabeçalho quando a 1ª célula não é data
     let cells: Vec<String> = primeira.split(sep).map(normalizar).collect();
+    #[allow(clippy::type_complexity)]
     let (mapa, resto): (
         Option<HashMap<String, usize>>,
         Box<dyn Iterator<Item = &str>>,
@@ -274,7 +252,7 @@ mod tests {
     use super::*;
     use rust_decimal_macros::dec;
 
-    const OFX_V1: &str = r#"OFXHEADER:100
+    const OFX_V1: &str = r"OFXHEADER:100
 DATA:OFXSGML
 VERSION:102
 <OFX>
@@ -308,7 +286,7 @@ VERSION:102
 </STMTRS>
 </STMTTRNRS>
 </BANKMSGSRSV1>
-</OFX>"#;
+</OFX>";
 
     #[test]
     fn ofx_v1_duas_transacoes() {

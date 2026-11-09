@@ -26,8 +26,7 @@ const TIMEOUT: Duration = Duration::from_secs(5);
 fn cp1252(s: &str) -> Vec<u8> {
     s.chars()
         .map(|c| match c as u32 {
-            0x00..=0x7F => c as u8,
-            0xA0..=0xFF => c as u8,
+            0x00..=0x7F | 0xA0..=0xFF => c as u8,
             // tipográficos comuns caem para o equivalente ASCII
             0x2018 | 0x2019 => b'\'',
             0x201C | 0x201D => b'"',

@@ -8,6 +8,9 @@ license.workspace = true
 name = "clarituz-agente"
 path = "src/main.rs"
 
+[lints]
+workspace = true
+
 [dependencies]
 tokio = { workspace = true, features = ["full"] }
 serde = { workspace = true }

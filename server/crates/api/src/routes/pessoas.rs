@@ -119,8 +119,7 @@ pub async fn upload_foto_cliente(
 
     let ext = content_type
         .strip_prefix("image/")
-        .map(|e| e.replace("jpeg", "jpg"))
-        .unwrap_or_else(|| "bin".into());
+        .map_or_else(|| "bin".into(), |e| e.replace("jpeg", "jpg"));
     let key = format!("clientes/{id}.{ext}");
     s.store.put(&key, &body, content_type).await?;
 
@@ -146,7 +145,7 @@ pub async fn foto_cliente(
         })?;
     let mime = match caminho.rsplit('.').next() {
         Some("png") => "image/png",
-        Some("jpg") | Some("jpeg") => "image/jpeg",
+        Some("jpg" | "jpeg") => "image/jpeg",
         Some("webp") => "image/webp",
         _ => "application/octet-stream",
     };
@@ -238,8 +237,7 @@ pub async fn upload_scan_documento(
     let anterior = s.services.documentos.scan_caminho(id).await?;
     let ext = content_type
         .strip_prefix("image/")
-        .map(|e| e.replace("jpeg", "jpg"))
-        .unwrap_or_else(|| "bin".into());
+        .map_or_else(|| "bin".into(), |e| e.replace("jpeg", "jpg"));
     let key = format!("documentos/{id}.{ext}");
     s.store.put(&key, &body, content_type).await?;
 
@@ -265,7 +263,7 @@ pub async fn scan_documento(
         })?;
     let mime = match caminho.rsplit('.').next() {
         Some("png") => "image/png",
-        Some("jpg") | Some("jpeg") => "image/jpeg",
+        Some("jpg" | "jpeg") => "image/jpeg",
         Some("webp") => "image/webp",
         _ => "application/octet-stream",
     };

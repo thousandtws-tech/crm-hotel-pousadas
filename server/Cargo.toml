@@ -72,6 +72,27 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 clap = { version = "4", features = ["derive"] }
 dotenvy = { version = "0.15" }
 
+# Gate de qualidade permanente — `cargo clippy -D warnings` (CI) falha em
+# qualquer violação. Pedantic ligado menos o ruído que não compra qualidade
+# real neste codebase (casts Decimal↔int, formalismos de doc, wildcards
+# deliberados em ports/services).
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+cast_precision_loss = "allow"
+cast_possible_truncation = "allow"
+cast_possible_wrap = "allow"
+cast_sign_loss = "allow"
+cast_lossless = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+must_use_candidate = "allow"
+module_name_repetitions = "allow"
+doc_markdown = "allow"
+similar_names = "allow"
+too_many_lines = "allow"
+wildcard_imports = "allow"
+uninlined_format_args = "allow"
+
 [profile.release]
 lto = "thin"
 codegen-units = 1

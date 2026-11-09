@@ -277,6 +277,33 @@ pub struct ReservaInput {
     pub valordiaria: Option<Decimal>,
 }
 
+/// Reserva online vinda do site público — sem autenticação; o serviço
+/// registra o cliente (find-or-create por e-mail/CPF) e cria reserva
+/// pendente, ou registra consulta quando o período está ocupado.
+#[derive(Debug, Deserialize)]
+pub struct ReservaPublicaInput {
+    pub slug: Option<String>,
+    pub idacomodacao: Option<i64>,
+    pub check_in: NaiveDate,
+    pub check_out: NaiveDate,
+    pub hospedes: i32,
+    pub nome: String,
+    pub email: String,
+    pub telefone: String,
+    pub cpf: Option<String>,
+    pub observacoes: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ReservaPublicaOutput {
+    pub ok: bool,
+    /// `"reserva_criada"` ou `"consulta_registrada"` (período ocupado).
+    pub status: &'static str,
+    pub idreserva: Option<i64>,
+    pub idcliente: i64,
+    pub mensagem: String,
+}
+
 #[derive(Debug, Deserialize, Default)]
 pub struct CheckinRequest {
     /// Data do check-in — default: hoje (fuso da pousada).

@@ -36,6 +36,7 @@ impl EstoqueService {
         }
     }
 
+    #[must_use]
     pub fn com_etiquetas(
         mut self,
         impressoras: Arc<dyn clarituz_domain::ports::ImpressoraRepository>,
@@ -685,8 +686,8 @@ fn parse_nfe(xml: &str) -> Result<ParsedNfe, DomainError> {
                 let path: Vec<&str> = stack.iter().map(String::as_str).collect();
                 match path.as_slice() {
                     [.., "ide", "nNF"] => nfe.numero = Some(v),
-                    [.., "ide", "dhEmi"] | [.., "ide", "dEmi"] => {
-                        nfe.emissao = Some(v[..10.min(v.len())].to_string())
+                    [.., "ide", "dhEmi" | "dEmi"] => {
+                        nfe.emissao = Some(v[..10.min(v.len())].to_string());
                     }
                     [.., "emit", "CNPJ"] => nfe.cnpj = Some(v),
                     [.., "emit", "xNome"] => nfe.emitente = Some(v),

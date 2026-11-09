@@ -146,14 +146,7 @@ impl PdvService {
             PdvComandaTipo::Quarto if input.idquarto.is_none() => {
                 return Err(DomainError::validacao("Comanda de quarto exige um quarto.").into())
             }
-            PdvComandaTipo::Balcao
-                if input
-                    .rotulo
-                    .as_deref()
-                    .map(str::trim)
-                    .unwrap_or("")
-                    .is_empty() =>
-            {
+            PdvComandaTipo::Balcao if input.rotulo.as_deref().map_or("", str::trim).is_empty() => {
                 return Err(DomainError::validacao(
                     "Comanda de balcão exige um rótulo (ex.: nome do cliente).",
                 )

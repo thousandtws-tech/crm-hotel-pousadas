@@ -160,6 +160,28 @@ impl AcomodacaoRepository for PgAcomodacaoRepository {
         .map_err(map_db_err)
     }
 
+    async fn buscar_ativa_por_slug(&self, slug: &str) -> Result<Option<Acomodacao>, DomainError> {
+        // `a.*` resolve a ambiguidade com `acomodacao_cms.id` no JOIN.
+        sqlx::query_as::<_, Acomodacao>(
+            "SELECT a.* FROM acomodacao a
+             JOIN acomodacao_cms c ON c.idacomodacao = a.id
+             WHERE c.slug = $1 AND a.ativo LIMIT 1",
+        )
+        .bind(slug)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn primeira_ativa(&self) -> Result<Option<Acomodacao>, DomainError> {
+        sqlx::query_as::<_, Acomodacao>(&format!(
+            "SELECT {ACOMODACAO_COLS} FROM acomodacao WHERE ativo ORDER BY numero LIMIT 1"
+        ))
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
     async fn listar(
         &self,
         apenas_ativas: bool,

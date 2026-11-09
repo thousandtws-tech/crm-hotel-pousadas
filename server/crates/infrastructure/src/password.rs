@@ -1,5 +1,3 @@
-//! Argon2id — hashing de senha memória-hard (OWASP-recomendado).
-
 use argon2::password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher as _, SaltString};
 use argon2::{Argon2, PasswordVerifier};
 use clarituz_domain::ports::PasswordHasher;

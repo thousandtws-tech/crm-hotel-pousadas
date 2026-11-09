@@ -10,8 +10,8 @@ where
     E: sqlx::PgExecutor<'e>,
 {
     sqlx::query(
-        r#"INSERT INTO log (idfuncionario, acao, obs, tabela, idtabela, dados)
-           VALUES ($1, $2, $3, $4, $5, $6)"#,
+        r"INSERT INTO log (idfuncionario, acao, obs, tabela, idtabela, dados)
+           VALUES ($1, $2, $3, $4, $5, $6)",
     )
     .bind(log.idfuncionario)
     .bind(&log.acao)

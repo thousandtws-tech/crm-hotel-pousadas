@@ -103,8 +103,19 @@ Códigos: `VALIDACAO` (400), `NAO_AUTENTICADO` (401), `PROIBIDO` (403),
 ```powershell
 cargo fmt --all -- --check
 cargo check --workspace
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+```
+
+Testes unitários rodam sem banco. Os e2e `#[sqlx::test]` dos fluxos
+críticos — reserva (`tests/fluxo_reserva.rs`) e operação PDV/caixa/
+estoque/autorização (`tests/fluxo_operacao.rs`, fixtures em
+`tests/common/`) — precisam de um Postgres local. `#[sqlx::test]` cria
+e dropa um database por caso:
+
+```powershell
+docker compose up -d postgres
+$env:DATABASE_URL = "postgres://clarituz:clarituz@localhost:5432/clarituz"
 cargo test --workspace
-cargo clippy --workspace --all-targets -- -D warnings
 ```
 
 ## Rodar server 

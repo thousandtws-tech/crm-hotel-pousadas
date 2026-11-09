@@ -69,6 +69,11 @@ pub struct AtualizaAcomodacao {
 #[async_trait]
 pub trait AcomodacaoRepository: Send + Sync {
     async fn buscar(&self, id: i64) -> Result<Option<Acomodacao>, DomainError>;
+    /// Acomodação ativa publicada sob o slug do CMS — link direto do site.
+    async fn buscar_ativa_por_slug(&self, slug: &str) -> Result<Option<Acomodacao>, DomainError>;
+    /// Primeira acomodação ativa por número — fallback do site quando o
+    /// visitante não escolheu quarto.
+    async fn primeira_ativa(&self) -> Result<Option<Acomodacao>, DomainError>;
     async fn listar(
         &self,
         apenas_ativas: bool,

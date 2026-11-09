@@ -1,15 +1,3 @@
-//! Agente local de impressão — roda em qualquer máquina da rede do hotel.
-//!
-//! Descobre impressoras **de rede** (portas RAW 9100, IPP 631, LPD 515) e
-//! **USB** (filas instaladas no SO — qualquer modelo/driver) e reporta à
-//! API via `POST /impressoras/descobertas`. O administrador confirma cada
-//! dispositivo na tela de impressoras — nada é registrado automaticamente.
-//!
-//! Uso:
-//!   clarituz-agente --api https://API/api/v1 --login USUARIO --senha SENHA
-//!                   [--intervalo 300]   # 0 = uma varredura só
-//!   (ou variáveis: AGENTE_API, AGENTE_LOGIN, AGENTE_SENHA, AGENTE_INTERVALO)
-
 use serde::{Deserialize, Serialize};
 use std::net::Ipv4Addr;
 use std::sync::Arc;
@@ -41,9 +29,7 @@ struct Job {
     id: i64,
     host: String,
     porta: i32,
-    /// ESC/POS serializado como array de bytes.
     payload: Vec<u8>,
-    /// 'escpos' = bytes RAW diretos; 'texto' = renderizado pelo driver do SO.
     #[serde(default = "modo_escpos")]
     modo: String,
 }
@@ -64,13 +50,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .timeout(Duration::from_secs(15))
         .build()?;
 
-    let token = match &cfg.token {
-        Some(t) => t.clone(),
-        None => {
-            let t = login(&client, &api, &cfg).await?;
-            tracing::info!("autenticado em {api}");
-            t
-        }
+    let token = if let Some(t) = &cfg.token {
+        t.clone()
+    } else {
+        let t = login(&client, &api, &cfg).await?;
+        tracing::info!("autenticado em {api}");
+        t
     };
 
     if cfg.intervalo == 0 {
@@ -78,7 +63,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         processar_jobs(&client, &api, &token).await;
         return Ok(());
     }
-    // daemon: varredura a cada `intervalo`; fila de impressão a cada 2s
     loop {
         ciclo_descoberta(&client, &api, &token).await;
         let fim = tokio::time::Instant::now() + Duration::from_secs(cfg.intervalo);
@@ -93,7 +77,6 @@ struct Cfg {
     api: String,
     login: String,
     senha: String,
-    /// JWT pronto — quando informado, pula o login.
     token: Option<String>,
     intervalo: u64,
 }
@@ -146,14 +129,14 @@ async fn push(
     token: &str,
     desc: &[Descoberta],
 ) -> Result<usize, Box<dyn std::error::Error>> {
-    let host = hostname::get()
-        .ok()
-        .and_then(|h| h.into_string().ok())
-        .unwrap_or_else(|| "agente".into());
     #[derive(Deserialize)]
     struct R {
         registradas: usize,
     }
+    let host = hostname::get()
+        .ok()
+        .and_then(|h| h.into_string().ok())
+        .unwrap_or_else(|| "agente".into());
     let r: R = client
         .post(format!("{api}/impressoras/descobertas"))
         .bearer_auth(token)
@@ -176,7 +159,6 @@ async fn ciclo_descoberta(client: &reqwest::Client, api: &str, token: &str) {
     }
 }
 
-/// Consome a fila de impressão — TCP para `host:porta`, RAW spooler para `usb:`.
 async fn processar_jobs(client: &reqwest::Client, api: &str, token: &str) {
     let jobs: Vec<Job> = match client
         .get(format!("{api}/impressoras/jobs/pendentes"))
@@ -217,6 +199,8 @@ async fn processar_jobs(client: &reqwest::Client, api: &str, token: &str) {
 }
 
 async fn entregar(j: &Job) -> Result<(), Box<dyn std::error::Error>> {
+    use tokio::io::AsyncWriteExt;
+
     if let Some(fila) = j.host.strip_prefix("usb:") {
         if j.modo == "texto" {
             return imprimir_texto(fila, &j.payload);
@@ -228,13 +212,11 @@ async fn entregar(j: &Job) -> Result<(), Box<dyn std::error::Error>> {
         TcpStream::connect((j.host.as_str(), j.porta as u16)),
     )
     .await??;
-    use tokio::io::AsyncWriteExt;
     s.write_all(&j.payload).await?;
     s.flush().await?;
     Ok(())
 }
 
-/// Entrega RAW na fila do SO — ESC/POS passa intacto, sem renderização do driver.
 #[cfg(windows)]
 fn imprimir_usb(fila: &str, dados: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
     use std::ffi::OsStr;
@@ -245,25 +227,25 @@ fn imprimir_usb(fila: &str, dados: &[u8]) -> Result<(), Box<dyn std::error::Erro
     }
     unsafe {
         let mut h = std::mem::zeroed();
-        if OpenPrinterW(wide(fila).as_ptr() as *mut u16, &mut h, std::ptr::null()) == 0 {
+        if OpenPrinterW(wide(fila).as_ptr().cast_mut(), &raw mut h, std::ptr::null()) == 0 {
             return Err(format!("fila '{fila}' não encontrada/acessível").into());
         }
         let nome = wide("clarituz job");
         let raw = wide("RAW");
         let info = DOC_INFO_1W {
-            pDocName: nome.as_ptr() as *mut u16,
+            pDocName: nome.as_ptr().cast_mut(),
             pOutputFile: std::ptr::null_mut(),
-            pDatatype: raw.as_ptr() as *mut u16,
+            pDatatype: raw.as_ptr().cast_mut(),
         };
-        let doc = StartDocPrinterW(h, 1, &info as *const _ as *mut _);
+        let doc = StartDocPrinterW(h, 1, std::ptr::from_ref(&info).cast_mut());
         let mut escrito = 0u32;
         let ok = doc != 0
             && StartPagePrinter(h) != 0
             && WritePrinter(
                 h,
-                dados.as_ptr() as *mut _,
+                dados.as_ptr().cast(),
                 dados.len() as u32,
-                &mut escrito,
+                &raw mut escrito,
             ) != 0
             && EndPagePrinter(h) != 0
             && EndDocPrinter(h) != 0;
@@ -297,14 +279,11 @@ fn imprimir_usb(fila: &str, dados: &[u8]) -> Result<(), Box<dyn std::error::Erro
     }
 }
 
-/// Texto → driver do SO (o driver renderiza no protocolo da impressora —
-/// Brother raster, Zebra ZPL, laser GDI, etc.).
 #[cfg(windows)]
 fn imprimir_texto(fila: &str, dados: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
     let txt = std::env::temp_dir().join(format!("clarituz-etq-{}.txt", std::process::id()));
     std::fs::write(&txt, dados)?;
-    // DrawString via GDI → driver renderiza no formato nativo da impressora.
-    let script = r#"
+    let script = r"
 Add-Type -AssemblyName System.Drawing
 $p = $args[0]; $t = [IO.File]::ReadAllText($args[1])
 $doc = New-Object System.Drawing.Printing.PrintDocument
@@ -315,7 +294,7 @@ $doc.add_PrintPage({ param($s,$e)
   $e.HasMorePages = $false
 })
 $doc.Print()
-"#;
+";
     let ps = std::env::temp_dir().join(format!("clarituz-etq-{}.ps1", std::process::id()));
     std::fs::write(&ps, script)?;
     let st = std::process::Command::new("powershell")
@@ -338,7 +317,6 @@ fn imprimir_texto(fila: &str, dados: &[u8]) -> Result<(), Box<dyn std::error::Er
     use std::io::Write;
     let tmp = std::env::temp_dir().join(format!("clarituz-etq-{}.txt", std::process::id()));
     std::fs::File::create(&tmp)?.write_all(dados)?;
-    // Sem -o raw → CUPS aplica os filtros do driver (text→raster/PCL/etc.).
     let st = std::process::Command::new("lp")
         .args(["-d", fila])
         .arg(&tmp)
@@ -351,8 +329,6 @@ fn imprimir_texto(fila: &str, dados: &[u8]) -> Result<(), Box<dyn std::error::Er
     }
 }
 
-/// Varre os /24 de cada interface local nas portas de impressão e tenta
-/// identificar o modelo via banner HTTP (painel web da impressora).
 async fn descobrir_rede() -> Vec<Descoberta> {
     let mut redes: Vec<Ipv4Addr> = Vec::new();
     if let Ok(addrs) = if_addrs::get_if_addrs() {
@@ -398,7 +374,6 @@ async fn descobrir_rede() -> Vec<Descoberta> {
     hits.sort();
     hits.dedup();
 
-    // modelo via banner HTTP (80) ou página IPP/CUPS (631)
     let mut out = Vec::with_capacity(hits.len());
     for (ip, porta) in hits {
         let modelo = modelo_http(ip).await;
@@ -417,16 +392,15 @@ fn base24(ip: Ipv4Addr) -> [u8; 3] {
     [o[0], o[1], o[2]]
 }
 
-/// Sonda HTTP simples — impressoras de rede expõem painel web com o
-/// modelo no <title> ou no header Server (Epson, Star, Elgin, HP, Zebra…).
 async fn modelo_http(ip: Ipv4Addr) -> Option<String> {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
     for porta in [80u16, 631] {
         let s = timeout(TIMEOUT_HTTP, TcpStream::connect((ip, porta)))
             .await
             .ok()?
             .ok();
         let Some(mut s) = s else { continue };
-        use tokio::io::{AsyncReadExt, AsyncWriteExt};
         let req = format!("GET / HTTP/1.0\r\nHost: {ip}\r\n\r\n");
         if s.write_all(req.as_bytes()).await.is_err() {
             continue;
@@ -442,15 +416,13 @@ async fn modelo_http(ip: Ipv4Addr) -> Option<String> {
 }
 
 fn extrair_modelo(http: &str) -> Option<String> {
-    // <title>EPSON TM-T20</title> ou "Server: Bematech MP-4200"
     let low = http.to_lowercase();
     for tag in ["<title>", "server:"] {
         if let Some(i) = low.find(tag) {
             let ini = i + tag.len();
             let fim = low[ini..]
-                .find(|c| c == '<' || c == '\r' || c == '\n')
-                .map(|f| ini + f)
-                .unwrap_or(http.len().min(ini + 60));
+                .find(['<', '\r', '\n'])
+                .map_or(http.len().min(ini + 60), |f| ini + f);
             let t = http[ini..fim].trim().trim_end_matches("</title>");
             if t.len() >= 3 && t.len() <= 60 {
                 return Some(t.to_string());
@@ -460,8 +432,6 @@ fn extrair_modelo(http: &str) -> Option<String> {
     None
 }
 
-/// Impressoras instaladas no SO do host (USB ou qualquer conexão local).
-/// Windows → `Get-Printer` (todas as filas); Unix → `lpstat -v`.
 fn descobrir_usb() -> Vec<Descoberta> {
     let nomes: Vec<String> = if cfg!(windows) {
         std::process::Command::new("powershell")
@@ -489,7 +459,6 @@ fn descobrir_usb() -> Vec<Descoberta> {
                 String::from_utf8_lossy(&o.stdout)
                     .lines()
                     .filter_map(|l| {
-                        // "device for EPSON_TM: usb://..."
                         l.strip_prefix("device for ")
                             .and_then(|r| r.split(':').next())
                             .map(|n| n.trim().to_string())

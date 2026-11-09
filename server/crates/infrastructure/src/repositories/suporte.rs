@@ -244,7 +244,7 @@ impl FinanceiroRepository for PgFinanceiroRepository {
         .fetch_one(&self.pool)
         .await
         .map_err(map_db_err)
-        .map(|r| r.into())
+        .map(Into::into)
     }
 
     async fn serie_recebido(

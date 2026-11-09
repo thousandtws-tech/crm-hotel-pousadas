@@ -39,7 +39,7 @@ impl DocumentoService {
         input: DocumentoInput,
     ) -> AppResult<ClienteDocumento> {
         self.exigir_cliente(idcliente).await?;
-        let novo = self.validar(input, idcliente)?;
+        let novo = Self::validar(input, idcliente)?;
         let log = ator.log(
             "cadastro",
             format!(
@@ -60,7 +60,7 @@ impl DocumentoService {
         input: DocumentoInput,
     ) -> AppResult<ClienteDocumento> {
         let atual = self.buscar(id).await?;
-        let dados = self.validar(input, atual.idcliente)?;
+        let dados = Self::validar(input, atual.idcliente)?;
         let log = ator.log(
             "edição",
             format!("Editou o documento Nº{id} do cliente Nº{}", atual.idcliente),
@@ -138,7 +138,7 @@ impl DocumentoService {
         Ok(())
     }
 
-    fn validar(&self, input: DocumentoInput, idcliente: i64) -> AppResult<NovoDocumento> {
+    fn validar(input: DocumentoInput, idcliente: i64) -> AppResult<NovoDocumento> {
         let tipo = input.tipo.trim().to_lowercase();
         if !TIPOS_DOCUMENTO.contains(&tipo.as_str()) {
             return Err(

@@ -61,17 +61,20 @@ impl Aviso {
         }
     }
 
+    #[must_use]
     pub fn de_ator(mut self, id: i64, nome: &str) -> Self {
         self.autor_id = Some(id);
         self.autor_nome = Some(nome.to_string());
         self
     }
 
+    #[must_use]
     pub fn so_admin(mut self) -> Self {
         self.ate_nivel = 1;
         self
     }
 
+    #[must_use]
     pub fn dados(mut self, dados: JsonValue) -> Self {
         self.dados = Some(dados);
         self
@@ -82,5 +85,13 @@ impl Aviso {
 #[derive(Debug, Clone)]
 pub enum EventoApp {
     Delta(Delta),
+    /// Aviso publicado localmente por um service — entrada do persister.
+    /// Não vai direto ao SSE: a entrega aos clientes acontece quando o
+    /// `INSERT` em `notificacao` dispara `clarituz_aviso` e o relay PG
+    /// republica como `AvisoPropagado` — assim todas as réplicas da API
+    /// entregam o aviso exatamente uma vez.
     Aviso(Aviso),
+    /// Aviso já persistido, vindo do relay `LISTEN clarituz_aviso` —
+    /// só entrega realtime (SSE); nunca é repersistido.
+    AvisoPropagado(Aviso),
 }

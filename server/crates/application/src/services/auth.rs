@@ -60,15 +60,14 @@ impl AuthService {
         senha: &str,
         ctx: &RequestCtx,
     ) -> AppResult<TokenResponse> {
-        let funcionario = self.funcionarios.buscar_por_login(login).await?;
-
         // hash dummy: equaliza o tempo de resposta quando o login não existe
         const DUMMY_HASH: &str = "$argon2id$v=19$m=19456,t=2,p=1$\
             c29tZXNhbHRmb3JkdW1teQ$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
+        let funcionario = self.funcionarios.buscar_por_login(login).await?;
         let hash = funcionario
             .as_ref()
-            .map(|f| f.senha_hash.as_str())
-            .unwrap_or(DUMMY_HASH);
+            .map_or(DUMMY_HASH, |f| f.senha_hash.as_str());
         let ok = self.hasher.verify(senha, hash)?;
 
         let f = match (funcionario, ok) {
@@ -160,6 +159,7 @@ impl AuthService {
             iat: now.timestamp(),
             exp: (now + Duration::seconds(self.access_ttl_secs)).timestamp(),
             iss: "clarituz-api".into(),
+            aud: None,
         };
         let access_token = self.issuer.emitir(&claims)?;
 
