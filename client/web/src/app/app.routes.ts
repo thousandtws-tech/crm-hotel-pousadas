@@ -51,6 +51,18 @@ export const routes: Routes = [
         loadComponent: () => import('./features/booking/payment-status.component').then((m) => m.PaymentStatusComponent)
       },
       {
+        path: 'fnrh/:token',
+        loadComponent: () => import('./features/guest/fnrh-form.component').then((m) => m.FnrhFormComponent)
+      },
+      {
+        path: 'avaliacao/:token',
+        loadComponent: () => import('./features/guest/avaliacao-form.component').then((m) => m.AvaliacaoFormComponent)
+      },
+      {
+        path: 'checkout-online/:token',
+        loadComponent: () => import('./features/guest/checkout-online.component').then((m) => m.CheckoutOnlineComponent)
+      },
+      {
         path: 'privacidade',
         loadComponent: () => import('./features/privacy/privacy.component').then((m) => m.PrivacyComponent)
       },
