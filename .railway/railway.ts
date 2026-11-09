@@ -133,7 +133,32 @@ export default defineRailway(() => {
   });
   const Observabilidade = group("Observabilidade", [prometheus, grafana, pgExporter]);
 
+  // ---------------------------------------------------------------- CI/CD
+  const jenkinsVolume = volume("jenkins-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "ams", sizeMB: 2000 });
+  const jenkins = service("jenkins", {
+    // Deploy via `railway up` a partir de ci/jenkins — JCasC provisiona
+    // admin, credenciais (env) e o job clarituz-deploy sem setup manual.
+    healthcheck: "/login",
+    replicas: { "ams": 1 },
+    networking: { privateNetworkEndpoint: "jenkins" },
+    deploy: {
+      limitOverride: { containers: { cpu: 1, memoryBytes: 2147483648 } },
+      restartPolicyMaxRetries: 5,
+    },
+    volumeMounts: { "/var/jenkins_home": jenkinsVolume },
+    env: {
+      PORT: "8080",
+      JENKINS_ADMIN_USER: preserve(),
+      JENKINS_ADMIN_PASSWORD: preserve(),
+      JENKINS_URL: preserve(),
+      RAILWAY_TOKEN: preserve(),
+      GITHUB_USER: preserve(),
+      GITHUB_TOKEN: preserve(),
+    },
+  });
+  const CI = group("CI", [jenkins]);
+
   return project("projeto-espirito-do-mar", {
-    resources: [admin, maria, realtime, Postgres, web, api, bucketVolume, mariaVolume, postgresVolume, apiVolume, prometheusVolume, grafanaVolume, MinIO, Observabilidade],
+    resources: [admin, maria, realtime, Postgres, web, api, bucketVolume, mariaVolume, postgresVolume, apiVolume, prometheusVolume, grafanaVolume, jenkinsVolume, MinIO, Observabilidade, CI],
   });
 });
