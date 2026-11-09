@@ -91,8 +91,10 @@ export default defineRailway(() => {
     volumeMounts: { "/prometheus": prometheusVolume },
     env: {
       PORT: "9090",
-      API_SCRAPE: "${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}",
-      MARIA_SCRAPE: "${{maria.RAILWAY_PRIVATE_DOMAIN}}:${{maria.PORT}}",
+      // ${{service.PORT}} não resolve — PORT é injetada em runtime e não é
+      // variável declarada. api e maria escutam :8080 na rede privada.
+      API_SCRAPE: "api.railway.internal:8080",
+      MARIA_SCRAPE: "maria.railway.internal:8080",
     },
   });
   const grafana = service("grafana", {
