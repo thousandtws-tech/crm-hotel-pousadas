@@ -893,6 +893,22 @@ pub fn build(state: AppState) -> Router {
             "/api/v1/webhooks/resend",
             post(routes::comunicacao::webhook_resend),
         )
+        // webhook WhatsApp — verify handshake (GET) + mensagens inbound
+        // (POST assinado com X-Hub-Signature-256). Origem = Meta.
+        .route(
+            "/api/v1/webhooks/whatsapp",
+            get(routes::comunicacao::whatsapp_verify).post(routes::comunicacao::whatsapp_inbound),
+        )
+        // Inná Concierge — chat do hóspede no portal, escopo = token opaco.
+        .route(
+            "/api/v1/publico/concierge/{token}",
+            get(routes::comunicacao::concierge_get)
+                .post(routes::comunicacao::concierge_post)
+                .route_layer(from_fn_with_state(
+                    IpRateLimit::novo(20, Duration::from_secs(60)),
+                    IpRateLimit::middleware,
+                )),
+        )
         // pré-ficha FNRH pública — link único por reserva (token opaco)
         .route(
             "/api/v1/publico/fnrh/{token}",

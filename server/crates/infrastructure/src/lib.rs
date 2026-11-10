@@ -6,6 +6,7 @@ pub mod db;
 pub mod escpos;
 pub mod eventos;
 pub mod jwt;
+pub mod maria;
 pub mod object_store;
 pub mod ofx;
 pub mod password;

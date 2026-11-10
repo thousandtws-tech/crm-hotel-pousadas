@@ -415,6 +415,12 @@ export interface Estabelecimento {
   celular: string | null;
   taxa_early?: number;
   taxa_late?: number;
+  wifi_nome?: string | null;
+  wifi_senha?: string | null;
+  horario_checkin?: string | null;
+  horario_checkout?: string | null;
+  horario_cafe?: string | null;
+  info_servicos?: string | null;
   version?: number;
 }
 

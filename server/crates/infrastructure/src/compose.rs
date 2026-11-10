@@ -100,6 +100,37 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
     let fila_envio_repo2 = fila_envio_repo.clone();
     let avaliacao_repo = Arc::new(PgAvaliacaoRepository::new(pool.clone()));
     let fidelidade_repo = Arc::new(PgFidelidadeRepository::new(pool.clone()));
+    let automacao_repo = Arc::new(PgAutomacaoRepository::new(pool.clone()));
+
+    // Inná Concierge — cliente HTTP do serviço Python só entra com
+    // MARIA_URL + INNA_INTERNAL_KEY; sem eles o concierge responde o
+    // fallback seguro e escala pra recepção (degradação controlada).
+    let maria_ia: Option<Arc<dyn clarituz_domain::ports::ConciergeIa>> = settings
+        .maria_url
+        .as_ref()
+        .zip(settings.inna_internal_key.as_ref())
+        .map(|(u, k)| Arc::new(crate::maria::MariaClient::new(u, k.clone())) as _);
+
+    let comunicacao_svc = Arc::new(ComunicacaoService::new(
+        fila_envio_repo.clone(),
+        Arc::new(PgPushRepository::new(pool.clone())),
+        avaliacao_repo.clone(),
+        automacao_repo.clone(),
+        emissores,
+        publisher.clone(),
+        &settings.site_base,
+        settings.pousada_nome.clone(),
+    ));
+    let concierge_svc = Arc::new(ConciergeService::new(
+        automacao_repo,
+        Arc::new(PgInnaRepository::new(pool.clone())),
+        Arc::new(PgEstabelecimentoRepository::new(pool.clone())),
+        fila_envio_repo.clone(),
+        comunicacao_svc.clone(),
+        maria_ia,
+        settings.whatsapp_verify_token.clone(),
+        settings.whatsapp_app_secret.clone(),
+    ));
 
     let services = Services {
         auth: auth.clone(),
@@ -185,16 +216,8 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             Arc::new(PgComprasRepository::new(pool.clone())),
             Arc::new(PgEstoqueRepository::new(pool.clone())),
         )),
-        comunicacao: Arc::new(ComunicacaoService::new(
-            fila_envio_repo,
-            Arc::new(PgPushRepository::new(pool.clone())),
-            avaliacao_repo.clone(),
-            Arc::new(PgAutomacaoRepository::new(pool.clone())),
-            emissores,
-            publisher.clone(),
-            &settings.site_base,
-            settings.pousada_nome.clone(),
-        )),
+        comunicacao: comunicacao_svc,
+        concierge: concierge_svc,
         avaliacoes: Arc::new(AvaliacoesService::new(avaliacao_repo)),
         fidelidade: Arc::new(FidelidadeService::new(fidelidade_repo)),
         manutencao: Arc::new(ManutencaoService::new(

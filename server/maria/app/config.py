@@ -10,6 +10,9 @@ class Settings(BaseSettings):
 
     # API do sistema (backend Rust)
     api_base: str = "http://localhost:8080/api/v1"
+    # Chave compartilhada api↔maria p/ endpoints internos (concierge do
+    # hóspede). O token público da reserva nunca chega aqui — só contexto.
+    inna_internal_key: str = ""
 
     # Mesmo JWT_SECRET do backend — valida o token do usuário
     jwt_secret: str = ""

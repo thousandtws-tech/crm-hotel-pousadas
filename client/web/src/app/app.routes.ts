@@ -63,6 +63,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/guest/checkout-online.component').then((m) => m.CheckoutOnlineComponent)
       },
       {
+        path: 'portal/:token',
+        loadComponent: () => import('./features/guest/portal.component').then((m) => m.PortalComponent)
+      },
+      {
         path: 'privacidade',
         loadComponent: () => import('./features/privacy/privacy.component').then((m) => m.PrivacyComponent)
       },

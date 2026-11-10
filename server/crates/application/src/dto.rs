@@ -586,6 +586,13 @@ pub struct EstabelecimentoInput {
     pub taxa_early: Option<Decimal>,
     #[serde(default, deserialize_with = "de_decimal_opt")]
     pub taxa_late: Option<Decimal>,
+    /// Dados factuais do concierge Inná (Wi-Fi, horários, serviços).
+    pub wifi_nome: Option<String>,
+    pub wifi_senha: Option<String>,
+    pub horario_checkin: Option<String>,
+    pub horario_checkout: Option<String>,
+    pub horario_cafe: Option<String>,
+    pub info_servicos: Option<String>,
     /// Concorrência otimista.
     pub version: Option<i64>,
 }

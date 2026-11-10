@@ -66,6 +66,14 @@ pub struct Settings {
     /// Meta Cloud API — token de acesso permanente + Phone Number ID.
     pub whatsapp_token: Option<String>,
     pub whatsapp_phone_id: Option<String>,
+    /// Webhook inbound — `hub.verify_token` do handshake GET e segredo
+    /// da app Meta para validar X-Hub-Signature-256 no POST.
+    pub whatsapp_verify_token: Option<String>,
+    pub whatsapp_app_secret: Option<String>,
+    /// Serviço Inná (FastAPI) — base URL + chave interna compartilhada.
+    /// Ausentes → concierge degrada com resposta de fallback + escalada.
+    pub maria_url: Option<String>,
+    pub inna_internal_key: Option<String>,
     /// VAPID — PEM da chave privada P-256 + pública base64url pro PWA.
     pub vapid_private_pem: Option<String>,
     pub vapid_public_b64: Option<String>,
@@ -132,6 +140,10 @@ impl Settings {
             }),
             whatsapp_token: env_string("WHATSAPP_TOKEN"),
             whatsapp_phone_id: env_string("WHATSAPP_PHONE_ID"),
+            whatsapp_verify_token: env_string("WHATSAPP_VERIFY_TOKEN"),
+            whatsapp_app_secret: env_string("WHATSAPP_APP_SECRET"),
+            maria_url: env_string("MARIA_URL"),
+            inna_internal_key: env_string("INNA_INTERNAL_KEY"),
             vapid_private_pem: env_string("VAPID_PRIVATE_PEM"),
             vapid_public_b64: env_string("VAPID_PUBLIC_B64"),
             vapid_contato: env_string("VAPID_CONTATO")

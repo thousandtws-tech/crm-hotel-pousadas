@@ -118,6 +118,37 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                 <input class="input-inn" type="number" min="0" step="0.01" formControlName="taxa_late" placeholder="0,00" />
               </label>
             </div>
+            <fieldset class="concierge-fields">
+              <legend>Concierge Inná — o que a IA pode responder ao hóspede</legend>
+              <div class="duo">
+                <label class="lbl">
+                  Rede Wi-Fi
+                  <input class="input-inn" type="text" formControlName="wifi_nome" placeholder="Pousada-Guest" />
+                </label>
+                <label class="lbl">
+                  Senha Wi-Fi
+                  <input class="input-inn" type="text" formControlName="wifi_senha" placeholder="bemvindo2026" />
+                </label>
+              </div>
+              <div class="duo">
+                <label class="lbl">
+                  Horário de check-in
+                  <input class="input-inn" type="text" formControlName="horario_checkin" placeholder="a partir das 14h" />
+                </label>
+                <label class="lbl">
+                  Horário de check-out
+                  <input class="input-inn" type="text" formControlName="horario_checkout" placeholder="até as 12h" />
+                </label>
+              </div>
+              <label class="lbl">
+                Horário do café da manhã
+                <input class="input-inn" type="text" formControlName="horario_cafe" placeholder="7h às 10h no salão principal" />
+              </label>
+              <label class="lbl">
+                Serviços e informações (piscina, estacionamento, passeios…)
+                <textarea class="input-inn" rows="3" formControlName="info_servicos" placeholder="Piscina das 8h às 20h; estacionamento gratuito;…"></textarea>
+              </label>
+            </fieldset>
             <div class="end">
               <button class="btn-dark-blue" type="button" (click)="salvarDados()" [disabled]="salvando()">
                 <mat-icon>save</mat-icon> {{ salvando() ? 'Salvando…' : 'Gravar dados' }}
@@ -447,6 +478,14 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
     .est-sub { margin: 2px 0 0; font-size: 0.82rem; color: #7d97a1; }
     .est-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
     .est-acoes button { display: inline-flex; align-items: center; gap: 6px; }
+    .concierge-fields {
+      border: 1px dashed #cfd9df; border-radius: 8px;
+      padding: 12px 14px 14px; margin: 4px 0 0;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .concierge-fields legend {
+      font-size: 0.78rem; font-weight: 600; color: #5d6d7e; padding: 0 6px;
+    }
     .btn-tour {
       display: inline-flex; align-items: center; gap: 6px;
       border: 1.5px solid #d7e0e6; background: #fff;
@@ -699,6 +738,12 @@ export class EstabelecimentoComponent implements OnInit {
     impressora_ativa: [false],
     taxa_early: [0],
     taxa_late: [0],
+    wifi_nome: [''],
+    wifi_senha: [''],
+    horario_checkin: [''],
+    horario_checkout: [''],
+    horario_cafe: [''],
+    info_servicos: [''],
   });
   private readonly dadosVersion = signal<number | undefined>(undefined);
   private readonly endVersion = signal<number | undefined>(undefined);
@@ -759,6 +804,12 @@ export class EstabelecimentoComponent implements OnInit {
           impressora_ativa: e.impressora_ativa ?? false,
           taxa_early: Number(e.taxa_early ?? 0),
           taxa_late: Number(e.taxa_late ?? 0),
+          wifi_nome: e.wifi_nome ?? '',
+          wifi_senha: e.wifi_senha ?? '',
+          horario_checkin: e.horario_checkin ?? '',
+          horario_checkout: e.horario_checkout ?? '',
+          horario_cafe: e.horario_cafe ?? '',
+          info_servicos: e.info_servicos ?? '',
         });
       },
       error: () => undefined,
@@ -807,6 +858,12 @@ export class EstabelecimentoComponent implements OnInit {
         impressora_ativa: v.impressora_ativa,
         taxa_early: Number(v.taxa_early) || 0,
         taxa_late: Number(v.taxa_late) || 0,
+        wifi_nome: empty(v.wifi_nome),
+        wifi_senha: empty(v.wifi_senha),
+        horario_checkin: empty(v.horario_checkin),
+        horario_checkout: empty(v.horario_checkout),
+        horario_cafe: empty(v.horario_cafe),
+        info_servicos: empty(v.info_servicos),
         version: this.dadosVersion(),
       })
       .subscribe({

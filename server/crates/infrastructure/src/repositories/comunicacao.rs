@@ -680,4 +680,84 @@ impl AutomacaoRepository for PgAutomacaoRepository {
         }
         Ok(())
     }
+
+    async fn reserva_por_telefone(&self, finais: &str) -> Result<Option<ReservaAuto>, DomainError> {
+        // Compara só dígitos: o `from` da Meta chega "5581..." e o cadastro
+        // pode estar "(81) 9...". Sufixo de 8+ dígitos cobre o 9º dígito.
+        sqlx::query_as::<_, ReservaAuto>(&format!(
+            "SELECT {AUTO_COLS} {AUTO_FROM}
+             WHERE r.status IN ('pendente','iniciada')
+               AND right(regexp_replace(coalesce(c.celular, c.telefone, ''), '\\\\D', '', 'g'), 8)
+                   = right($1, 8)
+             ORDER BY CASE WHEN r.status = 'iniciada' THEN 0 ELSE 1 END,
+                      abs(r.entradaprevista - CURRENT_DATE)
+             LIMIT 1"
+        ))
+        .bind(finais)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Inná — histórico de conversa hóspede↔IA (portal + WhatsApp)
+// ---------------------------------------------------------------------------
+
+pub struct PgInnaRepository {
+    pool: PgPool,
+}
+
+impl PgInnaRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl InnaRepository for PgInnaRepository {
+    async fn gravar_mensagem(
+        &self,
+        idreserva: i64,
+        canal: &str,
+        origem: &str,
+        texto: &str,
+        provider_id: Option<&str>,
+    ) -> Result<Option<i64>, DomainError> {
+        // ON CONFLICT no provider_id → webhook Meta reentrega a mesma
+        // mensagem; devolve None e o chamador ignora (dedup inbound).
+        sqlx::query_scalar::<_, i64>(
+            "INSERT INTO inna_mensagem (idreserva, canal, origem, texto, provider_id)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (provider_id) WHERE provider_id IS NOT NULL DO NOTHING
+             RETURNING id",
+        )
+        .bind(idreserva)
+        .bind(canal)
+        .bind(origem)
+        .bind(texto)
+        .bind(provider_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn historico(
+        &self,
+        idreserva: i64,
+        limite: i64,
+    ) -> Result<Vec<InnaMensagem>, DomainError> {
+        sqlx::query_as::<_, InnaMensagem>(
+            "SELECT id, idreserva, canal, origem, texto, criado_em
+             FROM (SELECT * FROM inna_mensagem
+                   WHERE idreserva = $1
+                   ORDER BY criado_em DESC LIMIT $2) t
+             ORDER BY t.criado_em",
+        )
+        .bind(idreserva)
+        .bind(limite)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
 }

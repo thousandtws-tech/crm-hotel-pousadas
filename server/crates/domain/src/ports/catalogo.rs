@@ -256,6 +256,13 @@ pub struct DadosEstabelecimento {
     /// Taxas early check-in / late checkout (R$) — entram no total do sinal.
     pub taxa_early: Decimal,
     pub taxa_late: Decimal,
+    /// Dados factuais do concierge Inná (Wi-Fi, horários, serviços).
+    pub wifi_nome: Option<String>,
+    pub wifi_senha: Option<String>,
+    pub horario_checkin: Option<String>,
+    pub horario_checkout: Option<String>,
+    pub horario_cafe: Option<String>,
+    pub info_servicos: Option<String>,
     /// Concorrência otimista — divergência → 409.
     pub version: Option<i64>,
 }

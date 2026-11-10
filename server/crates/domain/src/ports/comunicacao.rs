@@ -147,6 +147,10 @@ pub trait AutomacaoRepository: Send + Sync {
         &self,
         token: uuid::Uuid,
     ) -> Result<Option<ReservaAuto>, DomainError>;
+    /// Reserva ativa do hóspede identificado por telefone (WhatsApp inbound)
+    /// — `finais` são os últimos dígitos do número que chegou; o SQL
+    /// normaliza os telefones gravados e compara pelo sufixo.
+    async fn reserva_por_telefone(&self, finais: &str) -> Result<Option<ReservaAuto>, DomainError>;
     /// Pré-ficha enviada pelo hóspede via link público.
     async fn gravar_pre_ficha(
         &self,
@@ -167,4 +171,62 @@ pub struct ReservaAuto {
     pub saidaprevista: chrono::NaiveDate,
     pub acomodacao_nome: Option<String>,
     pub token_publico: Option<uuid::Uuid>,
+}
+
+// ---------------------------------------------------------------------------
+// Inná Concierge — histórico hóspede↔IA e a chamada ao serviço de LLM
+// ---------------------------------------------------------------------------
+
+/// Mensagem trocada entre hóspede e Inná (portal ou WhatsApp) — vive no
+/// banco pra contexto de conversa e auditoria do que a IA respondeu.
+#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize)]
+pub struct InnaMensagem {
+    pub id: i64,
+    pub idreserva: i64,
+    /// `portal` | `whatsapp`
+    pub canal: String,
+    /// `hospede` | `inna`
+    pub origem: String,
+    pub texto: String,
+    pub criado_em: DateTime<Utc>,
+}
+
+#[async_trait]
+pub trait InnaRepository: Send + Sync {
+    /// Grava mensagem; `provider_id` (wamid Meta) deduplica o webhook —
+    /// devolve `None` quando o id já existia (mensagem repetida).
+    async fn gravar_mensagem(
+        &self,
+        idreserva: i64,
+        canal: &str,
+        origem: &str,
+        texto: &str,
+        provider_id: Option<&str>,
+    ) -> Result<Option<i64>, DomainError>;
+    /// Últimas mensagens da reserva, mais antiga → mais nova.
+    async fn historico(
+        &self,
+        idreserva: i64,
+        limite: i64,
+    ) -> Result<Vec<InnaMensagem>, DomainError>;
+}
+
+/// Resposta do serviço de IA — `escalar` sinaliza que um humano deve
+/// assumir (pedido fora do escopo, reclamação grave, solicitação explícita).
+pub struct ConciergeResposta {
+    pub texto: String,
+    pub escalar: bool,
+    pub motivo: Option<String>,
+}
+
+/// Port do serviço Inná (HTTP) — a aplicação monta o contexto seguro da
+/// reserva e recebe texto + flag de escalada. Ausente → degradação segura.
+#[async_trait]
+pub trait ConciergeIa: Send + Sync {
+    async fn responder(
+        &self,
+        contexto: &serde_json::Value,
+        mensagem: &str,
+        historico: &[InnaMensagem],
+    ) -> Result<ConciergeResposta, DomainError>;
 }

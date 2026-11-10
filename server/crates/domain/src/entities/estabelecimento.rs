@@ -22,6 +22,14 @@ pub struct Estabelecimento {
     pub taxa_early: Decimal,
     /// Taxa de saída estendida — idem.
     pub taxa_late: Decimal,
+    /// Dados factuais exibidos pelo concierge Inná — só o que estiver
+    /// cadastrado aqui é respondido ao hóspede (nada é inventado).
+    pub wifi_nome: Option<String>,
+    pub wifi_senha: Option<String>,
+    pub horario_checkin: Option<String>,
+    pub horario_checkout: Option<String>,
+    pub horario_cafe: Option<String>,
+    pub info_servicos: Option<String>,
     pub version: i64,
     pub criado_em: DateTime<Utc>,
     pub atualizado_em: DateTime<Utc>,

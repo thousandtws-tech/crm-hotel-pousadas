@@ -45,6 +45,12 @@ impl EstabelecimentoService {
             impressora_ativa: input.impressora_ativa.unwrap_or(false),
             taxa_early: input.taxa_early.unwrap_or_default(),
             taxa_late: input.taxa_late.unwrap_or_default(),
+            wifi_nome: input.wifi_nome,
+            wifi_senha: input.wifi_senha,
+            horario_checkin: input.horario_checkin,
+            horario_checkout: input.horario_checkout,
+            horario_cafe: input.horario_cafe,
+            info_servicos: input.info_servicos,
             version: input.version,
         };
         let log = ator.log(

@@ -78,6 +78,129 @@ pub async fn avaliacao_post(
 }
 
 // ---------------------------------------------------------------------------
+// público — Inná Concierge (portal do hóspede, escopo = token da reserva)
+// ---------------------------------------------------------------------------
+
+pub async fn concierge_get(
+    State(st): State<AppState>,
+    Path(token): Path<uuid::Uuid>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    Ok(Json(st.services.concierge.abrir_portal(token).await?))
+}
+
+#[derive(Deserialize)]
+pub struct MensagemConcierge {
+    pub mensagem: String,
+}
+
+pub async fn concierge_post(
+    State(st): State<AppState>,
+    Path(token): Path<uuid::Uuid>,
+    Json(body): Json<MensagemConcierge>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let texto = body.mensagem.trim();
+    if texto.is_empty() || texto.chars().count() > 1000 {
+        return Err(DomainError::validacao("mensagem inválida").into());
+    }
+    Ok(Json(
+        st.services.concierge.mensagem_portal(token, texto).await?,
+    ))
+}
+
+// ---------------------------------------------------------------------------
+// webhook WhatsApp (Meta Cloud API) — verify GET + mensagens inbound POST
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+pub struct WaVerify {
+    #[serde(rename = "hub.mode")]
+    mode: String,
+    #[serde(rename = "hub.verify_token")]
+    token: String,
+    #[serde(rename = "hub.challenge")]
+    challenge: String,
+}
+
+/// Handshake da Meta: devolve o challenge quando o verify_token confere.
+pub async fn whatsapp_verify(
+    State(st): State<AppState>,
+    Query(q): Query<WaVerify>,
+) -> Result<String, StatusCode> {
+    st.services
+        .concierge
+        .whatsapp_challenge(&q.mode, &q.token, &q.challenge)
+        .ok_or(StatusCode::FORBIDDEN)
+}
+
+/// Mensagens inbound. A Meta reentrega até receber 200 — o processamento
+/// (LLM + envio da resposta) roda em background e a dedup por wamid
+/// descarta reentregas.
+pub async fn whatsapp_inbound(
+    State(st): State<AppState>,
+    headers: axum::http::HeaderMap,
+    body: axum::body::Bytes,
+) -> StatusCode {
+    // X-Hub-Signature-256 = "sha256=" + HMAC_SHA256(app_secret, corpo).
+    if let Some(secret) = st.services.concierge.whatsapp_app_secret() {
+        use hmac::{Hmac, Mac};
+        use sha2::Sha256;
+        let assinatura = headers
+            .get("x-hub-signature-256")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| v.strip_prefix("sha256="))
+            .and_then(|v| hex::decode(v).ok());
+        let Ok(mut mac) = Hmac::<Sha256>::new_from_slice(secret.as_bytes()) else {
+            return StatusCode::INTERNAL_SERVER_ERROR;
+        };
+        mac.update(&body);
+        let Some(esperado) = assinatura else {
+            return StatusCode::UNAUTHORIZED;
+        };
+        if mac.verify_slice(&esperado).is_err() {
+            return StatusCode::UNAUTHORIZED;
+        }
+    } else {
+        tracing::warn!("whatsapp webhook: WHATSAPP_APP_SECRET ausente — assinatura não validada");
+    }
+
+    let Ok(payload) = serde_json::from_slice::<serde_json::Value>(&body) else {
+        return StatusCode::OK; // corpo ilegível não deve gerar reentrega
+    };
+    // Estrutura Meta: entry[].changes[].value.messages[] — só texto vira
+    // conversa; status/read receipts não têm `messages`.
+    let mensagens: Vec<(String, Option<String>, String)> = payload["entry"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .flat_map(|e| e["changes"].as_array().into_iter().flatten())
+        .flat_map(|c| c["value"]["messages"].as_array().into_iter().flatten())
+        .filter_map(|m| {
+            let de = m["from"].as_str()?.to_string();
+            let wamid = m["id"].as_str().map(str::to_string);
+            let texto = match m["type"].as_str() {
+                Some("text") => m["text"]["body"].as_str().unwrap_or_default().to_string(),
+                _ => format!("[{}]", m["type"].as_str().unwrap_or("mensagem")),
+            };
+            Some((de, wamid, texto))
+        })
+        .collect();
+
+    tokio::spawn(async move {
+        for (de, wamid, texto) in mensagens {
+            if let Err(e) = st
+                .services
+                .concierge
+                .whatsapp_inbound(&de, wamid.as_deref(), &texto)
+                .await
+            {
+                tracing::warn!(erro = %e, "whatsapp inbound: falha ao processar");
+            }
+        }
+    });
+    StatusCode::OK
+}
+
+// ---------------------------------------------------------------------------
 // webhook Resend — bounces/complaints viram supressão imediata
 // ---------------------------------------------------------------------------
 

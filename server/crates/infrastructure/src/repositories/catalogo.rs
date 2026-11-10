@@ -1076,7 +1076,9 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
     async fn obter(&self) -> Result<Option<Estabelecimento>, DomainError> {
         sqlx::query_as::<_, Estabelecimento>(
             "SELECT id, cnpj, razao_social, site, email, telefone, celular,
-                    impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late, version, criado_em, atualizado_em
+                    impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late,
+                    wifi_nome, wifi_senha, horario_checkin, horario_checkout, horario_cafe, info_servicos,
+                    version, criado_em, atualizado_em
              FROM estabelecimento ORDER BY id LIMIT 1",
         )
         .fetch_optional(&self.pool)
@@ -1103,11 +1105,14 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
         let e = sqlx::query_as::<_, Estabelecimento>(
             "INSERT INTO estabelecimento
                 (cnpj, razao_social, site, email, telefone, celular,
-                 impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                 impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late,
+                 wifi_nome, wifi_senha, horario_checkin, horario_checkout, horario_cafe, info_servicos)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
              ON CONFLICT (id) DO NOTHING
              RETURNING id, cnpj, razao_social, site, email, telefone, celular,
-                       impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late, version, criado_em, atualizado_em",
+                       impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late,
+                       wifi_nome, wifi_senha, horario_checkin, horario_checkout, horario_cafe, info_servicos,
+                       version, criado_em, atualizado_em",
         )
         .bind(&d.cnpj)
         .bind(&d.razao_social)
@@ -1120,6 +1125,12 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
         .bind(d.impressora_ativa)
         .bind(d.taxa_early)
         .bind(d.taxa_late)
+        .bind(&d.wifi_nome)
+        .bind(&d.wifi_senha)
+        .bind(&d.horario_checkin)
+        .bind(&d.horario_checkout)
+        .bind(&d.horario_cafe)
+        .bind(&d.info_servicos)
         .fetch_optional(&mut *tx)
         .await
         .map_err(map_db_err)?;
@@ -1133,11 +1144,15 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
                         telefone = $6, celular = $7,
                         impressora_ip = $8, impressora_porta = $9, impressora_ativa = $10,
                         taxa_early = $11, taxa_late = $12,
+                        wifi_nome = $14, wifi_senha = $15, horario_checkin = $16,
+                        horario_checkout = $17, horario_cafe = $18, info_servicos = $19,
                         atualizado_em = now()
                      WHERE id = (SELECT id FROM estabelecimento ORDER BY id LIMIT 1)
                        AND ($13::bigint IS NULL OR version = $13)
                      RETURNING id, cnpj, razao_social, site, email, telefone, celular,
-                               impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late, version, criado_em, atualizado_em",
+                               impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late,
+                               wifi_nome, wifi_senha, horario_checkin, horario_checkout, horario_cafe, info_servicos,
+                               version, criado_em, atualizado_em",
                 )
                 .bind(&d.cnpj)
                 .bind(&d.razao_social)
@@ -1151,6 +1166,12 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
                 .bind(d.taxa_early)
                 .bind(d.taxa_late)
                 .bind(d.version)
+                .bind(&d.wifi_nome)
+                .bind(&d.wifi_senha)
+                .bind(&d.horario_checkin)
+                .bind(&d.horario_checkout)
+                .bind(&d.horario_cafe)
+                .bind(&d.info_servicos)
                 .fetch_optional(&mut *tx)
                 .await
                 .map_err(map_db_err)?
