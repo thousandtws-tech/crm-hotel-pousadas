@@ -18,13 +18,6 @@ interface NavItem {
   filhos?: NavItem[];
 }
 
-/** Seção rotulada da sidebar — agrupamento por área da operação hoteleira. */
-interface NavSecao {
-  rotulo: string;
-  admin?: boolean;
-  itens: NavItem[];
-}
-
 /** Rótulo de cada grupo do dropdown de busca. */
 const GRUPOS: Record<ItemBusca['tipo'], { rotulo: string; icone: string }> = {
   cliente: { rotulo: 'Clientes', icone: 'person' },
@@ -34,77 +27,68 @@ const GRUPOS: Record<ItemBusca['tipo'], { rotulo: string; icone: string }> = {
   estoque: { rotulo: 'Estoque', icone: 'inventory_2' },
 };
 
-const NAV: NavSecao[] = [
+const NAV: NavItem[] = [
+  { rota: '/dashboard', rotulo: 'Home', icone: 'grid_view' },
+  { rota: '/reservas', rotulo: 'Reservas', icone: 'calendar_month' },
+  { rota: '/clientes', rotulo: 'Clientes', icone: 'person' },
+  { rota: '/acomodacoes', rotulo: 'Acomodações', icone: 'hotel' },
+  { rota: '/estacionamento', rotulo: 'Estacionamento', icone: 'directions_car' },
   {
-    rotulo: 'Recepção',
-    itens: [
-      { rota: '/dashboard', rotulo: 'Home', icone: 'grid_view' },
-      { rota: '/reservas', rotulo: 'Reservas', icone: 'calendar_month' },
-      { rota: '/clientes', rotulo: 'Clientes', icone: 'person' },
-      { rota: '/acomodacoes', rotulo: 'Acomodações', icone: 'hotel' },
-      { rota: '/estacionamento', rotulo: 'Estacionamento', icone: 'directions_car' },
+    rota: '/pdv',
+    rotulo: 'Restaurante',
+    icone: 'restaurant',
+    filhos: [
+      { rota: '/pdv', rotulo: 'PDV & Comandas', icone: 'point_of_sale' },
+      { rota: '/cozinha', rotulo: 'Cozinha (KDS)', icone: 'soup_kitchen' },
+      { rota: '/cafe', rotulo: 'Café da Manhã', icone: 'free_breakfast' },
     ],
   },
+  { rota: '/frigobares', rotulo: 'Frigobar', icone: 'kitchen' },
   {
-    rotulo: 'Alimentos & Bebidas',
-    itens: [
-      {
-        rota: '/pdv',
-        rotulo: 'Restaurante',
-        icone: 'restaurant',
-        filhos: [
-          { rota: '/pdv', rotulo: 'PDV & Comandas', icone: 'point_of_sale' },
-          { rota: '/cozinha', rotulo: 'Cozinha (KDS)', icone: 'soup_kitchen' },
-          { rota: '/cafe', rotulo: 'Café da Manhã', icone: 'free_breakfast' },
-        ],
-      },
-      { rota: '/frigobares', rotulo: 'Frigobar', icone: 'kitchen' },
-    ],
-  },
-  {
+    rota: '/operacao',
     rotulo: 'Operação',
+    icone: 'engineering',
     admin: true,
-    itens: [
+    filhos: [
       { rota: '/operacao/governanca', rotulo: 'Governança', icone: 'cleaning_services' },
       { rota: '/operacao/manutencao', rotulo: 'Manutenção & PMOC', icone: 'build' },
       { rota: '/operacao/escalas', rotulo: 'Escalas & CLT', icone: 'schedule' },
-      { rota: '/comunicacao', rotulo: 'Comunicação', icone: 'forum' },
     ],
   },
   {
+    rota: '/suprimentos',
     rotulo: 'Suprimentos',
-    itens: [
+    icone: 'inventory_2',
+    filhos: [
       { rota: '/estoque', rotulo: 'Estoque', icone: 'inventory_2' },
       { rota: '/insumos', rotulo: 'Insumos', icone: 'science' },
       { rota: '/compras', rotulo: 'Compras', icone: 'shopping_cart' },
     ],
   },
+  { rota: '/pagamentos', rotulo: 'Pagamentos', icone: 'credit_card', admin: true },
   {
+    rota: '/financeiro',
     rotulo: 'Financeiro',
+    icone: 'payments',
     admin: true,
-    itens: [
-      { rota: '/pagamentos', rotulo: 'Pagamentos', icone: 'credit_card' },
-      {
-        rota: '/financeiro',
-        rotulo: 'Financeiro',
-        icone: 'payments',
-        filhos: [
-          { rota: '/financeiro', rotulo: 'Visão Geral', icone: 'dashboard' },
-          { rota: '/financeiro/pagamentos-online', rotulo: 'Pagamentos Online', icone: 'credit_card' },
-          { rota: '/financeiro/contas', rotulo: 'Contas', icone: 'account_balance' },
-          { rota: '/financeiro/fluxo-caixa', rotulo: 'Fluxo de Caixa', icone: 'swap_vert' },
-          { rota: '/financeiro/dre', rotulo: 'DRE', icone: 'monitoring' },
-          { rota: '/financeiro/conciliacao', rotulo: 'Conciliação', icone: 'compare_arrows' },
-          { rota: '/financeiro/split', rotulo: 'Split', icone: 'call_split' },
-          { rota: '/financeiro/caixa', rotulo: 'Caixa', icone: 'point_of_sale' },
-        ],
-      },
+    filhos: [
+      { rota: '/financeiro', rotulo: 'Visão Geral', icone: 'dashboard' },
+      { rota: '/financeiro/pagamentos-online', rotulo: 'Pagamentos Online', icone: 'credit_card' },
+      { rota: '/financeiro/contas', rotulo: 'Contas', icone: 'account_balance' },
+      { rota: '/financeiro/fluxo-caixa', rotulo: 'Fluxo de Caixa', icone: 'swap_vert' },
+      { rota: '/financeiro/dre', rotulo: 'DRE', icone: 'monitoring' },
+      { rota: '/financeiro/conciliacao', rotulo: 'Conciliação', icone: 'compare_arrows' },
+      { rota: '/financeiro/split', rotulo: 'Split', icone: 'call_split' },
+      { rota: '/financeiro/caixa', rotulo: 'Caixa', icone: 'point_of_sale' },
     ],
   },
+  { rota: '/comunicacao', rotulo: 'Comunicação', icone: 'forum', admin: true },
   {
-    rotulo: 'Administração',
+    rota: '/configuracoes',
+    rotulo: 'Configurações',
+    icone: 'settings',
     admin: true,
-    itens: [
+    filhos: [
       { rota: '/cms', rotulo: 'Site / Quartos', icone: 'web' },
       { rota: '/estabelecimento', rotulo: 'Pousada / Hotel', icone: 'home' },
       { rota: '/funcionarios', rotulo: 'Administrador', icone: 'lock_open' },
@@ -258,52 +242,49 @@ const NAV: NavSecao[] = [
             <img src="logo.svg" alt="INNJOY" />
           </a>
 
-          @for (sec of nav(); track sec.rotulo) {
-            <p class="nav_secao">{{ sec.rotulo }}</p>
-            @for (item of sec.itens; track item.rotulo) {
-              @if (item.filhos) {
-                <div class="nav_group" [class.aberto]="grupoAberto() === item.rotulo">
-                  <button
-                    type="button"
-                    class="nav_link nav_group-btn"
-                    [class.active]="grupoAtivo(item)"
-                    [title]="item.rotulo"
-                    [attr.aria-expanded]="grupoAberto() === item.rotulo"
-                    (click)="alternarGrupo(item)"
-                  >
-                    <mat-icon class="nav_icon">{{ item.icone }}</mat-icon>
-                    <span class="nav_name">{{ item.rotulo }}</span>
-                    <mat-icon class="nav_arrow">expand_more</mat-icon>
-                  </button>
-                  <div class="nav_filhos">
-                    <div class="nav_filhos-in">
-                      @for (f of item.filhos; track f.rota) {
-                        <a
-                          class="nav_link nav_sub"
-                          [routerLink]="f.rota"
-                          routerLinkActive="active"
-                          [title]="f.rotulo"
-                          (click)="clicouNav()"
-                        >
-                          <mat-icon class="nav_icon">{{ f.icone }}</mat-icon>
-                          <span class="nav_name">{{ f.rotulo }}</span>
-                        </a>
-                      }
-                    </div>
-                  </div>
-                </div>
-              } @else {
-                <a
-                  class="nav_link"
-                  [routerLink]="item.rota"
-                  routerLinkActive="active"
+          @for (item of nav(); track item.rotulo) {
+            @if (item.filhos) {
+              <div class="nav_group" [class.aberto]="grupoAberto() === item.rotulo">
+                <button
+                  type="button"
+                  class="nav_link nav_group-btn"
+                  [class.active]="grupoAtivo(item)"
                   [title]="item.rotulo"
-                  (click)="clicouNav()"
+                  [attr.aria-expanded]="grupoAberto() === item.rotulo"
+                  (click)="alternarGrupo(item)"
                 >
                   <mat-icon class="nav_icon">{{ item.icone }}</mat-icon>
                   <span class="nav_name">{{ item.rotulo }}</span>
-                </a>
-              }
+                  <mat-icon class="nav_arrow">chevron_left</mat-icon>
+                </button>
+                <div class="nav_filhos">
+                  <div class="nav_filhos-in">
+                    @for (f of item.filhos; track f.rota) {
+                      <a
+                        class="nav_link nav_sub"
+                        [routerLink]="f.rota"
+                        routerLinkActive="active"
+                        [title]="f.rotulo"
+                        (click)="clicouNav()"
+                      >
+                        <span class="nav_bullet" aria-hidden="true"></span>
+                        <span class="nav_name">{{ f.rotulo }}</span>
+                      </a>
+                    }
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <a
+                class="nav_link"
+                [routerLink]="item.rota"
+                routerLinkActive="active"
+                [title]="item.rotulo"
+                (click)="clicouNav()"
+              >
+                <mat-icon class="nav_icon">{{ item.icone }}</mat-icon>
+                <span class="nav_name">{{ item.rotulo }}</span>
+              </a>
             }
           }
         </div>
@@ -387,10 +368,6 @@ const NAV: NavSecao[] = [
       .l-navbar:not(.expanded):hover { width: var(--nav-width-open); }
       .l-navbar:not(.expanded):hover .nav_name,
       .l-navbar:not(.expanded):hover .nav_arrow { display: block; }
-      .l-navbar:not(.expanded):hover .nav_secao {
-        height: auto; margin: 0.9rem 0 0.3rem; padding: 0 0 0 1.5rem;
-        border-top: 0; color: rgba(169, 196, 207, 0.55);
-      }
       .l-navbar:not(.expanded):hover .nav_group-btn { grid-template-columns: max-content 1fr max-content; }
       .l-navbar:not(.expanded):hover .nav_group.aberto .nav_filhos { grid-template-rows: 1fr; }
       .l-navbar:not(.expanded):hover .nav_sub { padding-left: 2.6rem; }
@@ -416,24 +393,6 @@ const NAV: NavSecao[] = [
       transition: width 0.25s ease;
     }
     .l-navbar:not(.expanded) .nav_logo img { width: 46px; }
-
-    /* ===== rótulos de seção ===== */
-    .nav_secao {
-      margin: 0.9rem 0 0.3rem;
-      padding: 0 0 0 1.5rem;
-      font-size: 0.62rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: rgba(169, 196, 207, 0.55);
-      white-space: nowrap;
-    }
-    .l-navbar:not(.expanded) .nav_secao {
-      height: 0; margin: 0.55rem 0.8rem 0.35rem; padding: 0;
-      border-top: 1px solid rgba(169, 196, 207, 0.15);
-      color: transparent;
-      overflow: hidden;
-    }
 
     /* ===== links ===== */
     .nav_link {
@@ -479,7 +438,8 @@ const NAV: NavSecao[] = [
       transition: transform 0.25s;
       color: var(--inn-link);
     }
-    .nav_group.aberto .nav_arrow { transform: rotate(180deg); }
+    /* padrão AdminLTE: angle-left gira para baixo quando aberto */
+    .nav_group.aberto .nav_arrow { transform: rotate(-90deg); }
     .nav_filhos {
       display: grid;
       grid-template-rows: 0fr;
@@ -487,7 +447,15 @@ const NAV: NavSecao[] = [
     }
     .nav_filhos-in { overflow: hidden; }
     .nav_group.aberto .nav_filhos { grid-template-rows: 1fr; }
-    .nav_sub { padding-left: 2.6rem; font-size: 84%; }
+    .nav_sub { padding-left: 2.35rem; font-size: 84%; }
+    /* fa-circle-o do AdminLTE — bolinha vazada nos subitens */
+    .nav_bullet {
+      width: 7px; height: 7px;
+      border: 1.5px solid currentColor;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-right: 0.15rem;
+    }
 
     /* rail colapsada: sem texto, sem seta, sem filhos empilhados */
     .l-navbar:not(.expanded) .nav_name,
@@ -551,11 +519,9 @@ export class ShellComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   protected readonly aberta = signal(window.innerWidth > 768);
 
-  /** Seções visíveis — filtra por permissão e remove seções vazias. */
+  /** Itens visíveis — filtra por permissão. */
   protected readonly nav = computed(() =>
-    NAV.filter((s) => !s.admin || this.auth.isAdmin())
-      .map((s) => ({ ...s, itens: s.itens.filter((i) => !i.admin || this.auth.isAdmin()) }))
-      .filter((s) => s.itens.length > 0),
+    NAV.filter((i) => !i.admin || this.auth.isAdmin()),
   );
 
   /** Rótulo do grupo aberto no dropdown — null = todos fechados. */
@@ -602,7 +568,7 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   /** Todos os itens achatados — p/ resolver grupo ativo pela rota. */
   private todosItens(): NavItem[] {
-    return NAV.flatMap((s) => s.itens);
+    return NAV;
   }
 
   /** Rota atual dentro de um grupo → mantém ele aberto. */
