@@ -86,6 +86,49 @@ type Estado = 'carregando' | 'ok' | 'erro';
               </button>
             </form>
           </section>
+
+          <section aria-label="Seus dados e privacidade" class="mt-8 rounded-xl border border-gray-200 p-5">
+            <h2 class="text-sm font-semibold text-[#032B38]">Seus dados — LGPD</h2>
+            <p class="mt-1 text-xs text-gray-500">
+              Você pode baixar todos os seus dados ou pedir acesso, correção,
+              eliminação, portabilidade ou revogar consentimentos.
+              Respondemos em até 15 dias.
+            </p>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button type="button" (click)="baixarDados()" [disabled]="baixando()"
+                      class="rounded-full border border-[#032B38] px-4 py-1.5 text-xs font-medium text-[#032B38]">
+                {{ baixando() ? 'Gerando…' : 'Baixar meus dados (JSON)' }}
+              </button>
+            </div>
+            @if (protocolo(); as p) {
+              <p class="mt-3 rounded-lg bg-green-50 border border-green-200 p-3 text-xs text-green-800">
+                Solicitação registrada — protocolo <strong>#{{ p.protocolo }}</strong>.
+                Nossa equipe responde em até {{ p.prazo_dias }} dias.
+              </p>
+            } @else {
+              <form (ngSubmit)="solicitar()" class="mt-3 flex flex-col gap-2">
+                <div class="flex flex-wrap gap-2">
+                  <label for="tipo-lgpd" class="sr-only">Tipo de solicitação</label>
+                  <select id="tipo-lgpd" name="tipo-lgpd" [(ngModel)]="tipoLgpd"
+                          class="rounded-full border border-gray-300 px-3 py-1.5 text-xs">
+                    <option value="acesso">Confirmar/acessar meus dados</option>
+                    <option value="retificacao">Corrigir meus dados</option>
+                    <option value="eliminacao">Eliminar meus dados pessoais</option>
+                    <option value="portabilidade">Portar meus dados</option>
+                    <option value="revogacao">Revogar consentimentos</option>
+                  </select>
+                  <button type="submit" [disabled]="solicitando()"
+                          class="rounded-full bg-[#032B38] px-4 py-1.5 text-xs font-medium text-white disabled:opacity-40">
+                    {{ solicitando() ? 'Enviando…' : 'Solicitar' }}
+                  </button>
+                </div>
+                <label for="detalhe-lgpd" class="sr-only">Detalhe (opcional)</label>
+                <input id="detalhe-lgpd" name="detalhe-lgpd" [(ngModel)]="detalheLgpd" maxlength="500"
+                       placeholder="Detalhe do pedido (opcional)"
+                       class="rounded-full border border-gray-300 px-4 py-1.5 text-xs focus:border-[#032B38] focus:outline-none" />
+              </form>
+            }
+          </section>
         }
       }
     </main>
@@ -101,7 +144,12 @@ export class PortalComponent implements OnInit {
   readonly info = signal<PortalInfo | null>(null);
   readonly mensagens = signal<MensagemChat[]>([]);
   readonly enviando = signal(false);
+  readonly baixando = signal(false);
+  readonly solicitando = signal(false);
+  readonly protocolo = signal<{ protocolo: number; prazo_dias: number } | null>(null);
   rascunho = '';
+  tipoLgpd = 'acesso';
+  detalheLgpd = '';
   private token = '';
 
   ngOnInit(): void {
@@ -136,6 +184,38 @@ export class PortalComponent implements OnInit {
         ]);
         this.enviando.set(false);
       },
+    });
+  }
+
+  /** LGPD art. 18 — baixa o JSON com todos os dados pessoais do titular. */
+  baixarDados(): void {
+    if (this.baixando()) return;
+    this.baixando.set(true);
+    this.guest.exportarDados(this.token).subscribe({
+      next: (dados) => {
+        const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'meus-dados.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        this.baixando.set(false);
+      },
+      error: () => this.baixando.set(false),
+    });
+  }
+
+  /** LGPD — abre solicitação com protocolo (resposta em até 15 dias). */
+  solicitar(): void {
+    if (this.solicitando()) return;
+    this.solicitando.set(true);
+    this.guest.solicitarLgpd(this.token, this.tipoLgpd, this.detalheLgpd.trim() || undefined).subscribe({
+      next: (p) => {
+        this.protocolo.set(p);
+        this.solicitando.set(false);
+      },
+      error: () => this.solicitando.set(false),
     });
   }
 }

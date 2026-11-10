@@ -310,6 +310,15 @@ const LADO_FOTO = 640;
                       </button>
                       <button
                         type="button"
+                        class="badge-acao bg-purple"
+                        title="Anonimizar dados (LGPD — direito de eliminação)"
+                        aria-label="Anonimizar dados do cliente"
+                        (click)="anonimizar(c)"
+                      >
+                        <mat-icon>privacy_tip</mat-icon>
+                      </button>
+                      <button
+                        type="button"
                         class="badge-acao bg-dark-blue"
                         title="Excluir"
                         aria-label="Excluir cliente"
@@ -1123,6 +1132,25 @@ export class ClientesComponent implements OnInit, OnDestroy {
       next: (novo) => {
         this.items.update((xs) => xs.map((x) => (x.id === novo.id ? novo : x)));
         this.notify.ok(ativo ? 'Cliente ativado.' : 'Cliente desativado.');
+      },
+      error: (e) => this.notify.erro(e),
+    });
+  }
+
+  /** LGPD art. 18 — eliminação: apaga PII mantendo a trilha fiscal/FNRH
+   *  que a lei obriga a reter (admin/gerente, confirmado em duas etapas). */
+  async anonimizar(c: Cliente): Promise<void> {
+    const ok = await this.confirm.perguntar(
+      `Anonimizar ${c.nome}? Nome, CPF, contatos e documentos viram dados \
+irreversíveis — reservas e FNRH ficam preservadas por obrigação legal. \
+Use para pedidos de eliminação do titular.`,
+      { titulo: 'Anonimizar titular (LGPD)', confirmar: 'Anonimizar' },
+    );
+    if (!ok) return;
+    this.api.anonimizarCliente(c.id).subscribe({
+      next: () => {
+        this.notify.ok('Titular anonimizado — dados pessoais removidos.');
+        this.carregar();
       },
       error: (e) => this.notify.erro(e),
     });

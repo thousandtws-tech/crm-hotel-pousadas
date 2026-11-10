@@ -439,6 +439,23 @@ export interface EnderecoEstabelecimento {
   version?: number;
 }
 
+// -- LGPD ----------------------------------------------------------------------
+
+export interface LgpdSolicitacao {
+  id: number;
+  idcliente: number | null;
+  idreserva: number | null;
+  tipo: string;
+  detalhe: string | null;
+  canal: string;
+  status: 'aberta' | 'respondida' | 'executada';
+  resposta: string | null;
+  respondida_em: string | null;
+  respondida_por: number | null;
+  criado_em: string;
+  atualizado_em: string;
+}
+
 // -- reservas ------------------------------------------------------------------
 
 export interface Reserva {

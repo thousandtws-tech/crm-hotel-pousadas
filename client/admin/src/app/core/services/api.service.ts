@@ -958,6 +958,22 @@ export class ApiService {
   fidelidadeNiveis() {
     return this.get<M.NivelFidelidade[]>('/fidelidade/niveis');
   }
+  // -- LGPD ---------------------------------------------------------------------
+  lgpdSolicitacoes(status?: string) {
+    return this.get<M.LgpdSolicitacao[]>('/lgpd/solicitacoes', { status });
+  }
+  lgpdResponder(id: number, resposta: string) {
+    return this.post<void>(`/lgpd/solicitacoes/${id}/responder`, { resposta });
+  }
+  lgpdExportarCliente(idcliente: number) {
+    return this.get<unknown>(`/clientes/${idcliente}/lgpd-export`);
+  }
+  anonimizarCliente(idcliente: number) {
+    return this.post<void>(`/clientes/${idcliente}/anonimizar`, {});
+  }
+  autorizacaoMenor(idreserva: number, documento: string) {
+    return this.post<void>(`/reservas/${idreserva}/autorizacao-menor`, { documento });
+  }
   pushVapidKey() {
     return this.get<{ publica: string }>('/push/vapid-key');
   }

@@ -6,10 +6,10 @@ import { AuthStore } from '@core/services/auth.store';
 import { Notify } from '@core/services/notify.service';
 import { environment } from '../../../environments/environment';
 import {
-  Avaliacao, AvaliacoesDash, CanalEnvio, ItemFila, RegraMatriz,
+  Avaliacao, AvaliacoesDash, CanalEnvio, ItemFila, LgpdSolicitacao, RegraMatriz,
 } from '@core/models/api.models';
 
-type Aba = 'avaliacoes' | 'fila' | 'matriz';
+type Aba = 'avaliacoes' | 'fila' | 'matriz' | 'lgpd';
 const CANAIS: CanalEnvio[] = ['inbox', 'push', 'email', 'whatsapp'];
 const PAPEIS = [1, 2, 3];
 const PAPEL_ROTULO: Record<number, string> = { 1: 'Admin', 2: 'Gerente', 3: 'Todos' };
@@ -139,6 +139,60 @@ const PAPEL_ROTULO: Record<number, string> = { 1: 'Admin', 2: 'Gerente', 3: 'Tod
         </div>
       }
 
+      @if (aba() === 'lgpd') {
+        <div class="bloco">
+          <h3>Solicitações do titular (LGPD art. 18) — responder em até 15 dias
+            <button class="btn-mini" (click)="carregarLgpd()">Atualizar</button></h3>
+          <table>
+            <thead><tr>
+              <th>Protocolo</th><th>Tipo</th><th>Cliente</th><th>Reserva</th>
+              <th>Detalhe</th><th>Canal</th><th>Aberta em</th><th>Status</th><th></th>
+            </tr></thead>
+            <tbody>
+              @for (s of lgpd(); track s.id) {
+                <tr>
+                  <td>#{{ s.id }}</td>
+                  <td>{{ tipoLgpd(s.tipo) }}</td>
+                  <td>{{ s.idcliente ? '#' + s.idcliente : '—' }}</td>
+                  <td>{{ s.idreserva ? '#' + s.idreserva : '—' }}</td>
+                  <td class="coment">{{ s.detalhe ?? '—' }}
+                    @if (s.resposta) { <small class="resp">↳ {{ s.resposta }}</small> }
+                  </td>
+                  <td>{{ s.canal }}</td>
+                  <td>{{ s.criado_em | date: 'dd/MM/yy HH:mm' }}</td>
+                  <td><span class="st" [class]="stLgpd(s.status)">{{ s.status }}</span></td>
+                  <td>
+                    @if (s.status === 'aberta') {
+                      <button class="btn-mini" (click)="responderLgpd(s)">Responder</button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="9" class="vazio">Nenhuma solicitação — o hóspede abre pelo portal da reserva.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @if (modalLgpd(); as sol) {
+        <div class="overlay" (click)="modalLgpd.set(null)" (keydown.escape)="modalLgpd.set(null)">
+          <div class="modal" role="dialog" aria-modal="true" aria-label="Responder solicitação LGPD"
+            (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+            <h3>Solicitação #{{ sol.id }} — {{ tipoLgpd(sol.tipo) }}</h3>
+            <p>{{ sol.detalhe ?? 'Sem detalhe informado pelo titular.' }}</p>
+            <label>Resposta ao titular
+              <textarea [(ngModel)]="textoLgpd" rows="4"
+                placeholder="Descreva como a solicitação foi atendida…"></textarea>
+            </label>
+            <div class="acoes">
+              <button class="btn-sec" (click)="modalLgpd.set(null)">Cancelar</button>
+              <button class="btn" [disabled]="!textoLgpd.trim()" (click)="enviarRespostaLgpd()">Registrar resposta</button>
+            </div>
+          </div>
+        </div>
+      }
+
       @if (modalAv(); as av) {
         <div class="overlay" (click)="modalAv.set(null)" (keydown.escape)="modalAv.set(null)">
           <div class="modal" role="dialog" aria-modal="true" aria-label="Responder avaliação"
@@ -182,8 +236,8 @@ const PAPEL_ROTULO: Record<number, string> = { 1: 'Admin', 2: 'Gerente', 3: 'Tod
     .resp{display:block;color:var(--mut,#667)}
     .critica td{background:#fff5f5}
     .st{padding:.15rem .5rem;border-radius:999px;font-size:.7rem;font-weight:600}
-    .st-respondida,.st-enviado{background:#e4f6e8;color:#146c2e}
-    .st-pendente,.st-enviando{background:#fdf3d7;color:#8a6200}
+    .st-respondida,.st-enviado,.st-executada{background:#e4f6e8;color:#146c2e}
+    .st-pendente,.st-enviando,.st-aberta{background:#fdf3d7;color:#8a6200}
     .st-falhou,.st-expirada,.st-cancelado{background:#fde3e3;color:#a32}
     .chk{display:flex;align-items:center;gap:.25rem;font-size:.7rem;margin:.1rem 0;cursor:pointer}
     .btn-mini{font-size:.72rem;padding:.3rem .7rem;border-radius:6px;border:1px solid var(--borda,#ccd);background:#fff;cursor:pointer}
@@ -208,12 +262,16 @@ export class ComunicacaoComponent implements OnInit {
     { id: 'avaliacoes', rotulo: 'Avaliações' },
     { id: 'fila', rotulo: 'Fila de envio' },
     { id: 'matriz', rotulo: 'Matriz de alertas' },
+    { id: 'lgpd', rotulo: 'Privacidade (LGPD)' },
   ];
 
   protected readonly dash = signal<AvaliacoesDash | null>(null);
   protected readonly avaliacoes = signal<Avaliacao[]>([]);
   protected readonly fila = signal<ItemFila[]>([]);
   protected readonly matriz = signal<RegraMatriz[]>([]);
+  protected readonly lgpd = signal<LgpdSolicitacao[]>([]);
+  protected readonly modalLgpd = signal<LgpdSolicitacao | null>(null);
+  protected textoLgpd = '';
   protected readonly modalAv = signal<Avaliacao | null>(null);
   protected readonly pushAtivo = signal(false);
   protected textoResposta = '';
@@ -236,6 +294,44 @@ export class ComunicacaoComponent implements OnInit {
     this.api.avaliacoes().subscribe({ next: (a) => this.avaliacoes.set(a), error: () => undefined });
     this.api.filaEnvio().subscribe({ next: (f) => this.fila.set(f), error: () => undefined });
     this.api.matrizNotificacao().subscribe({ next: (m) => this.matriz.set(m), error: () => undefined });
+    this.carregarLgpd();
+  }
+
+  carregarLgpd(): void {
+    this.api.lgpdSolicitacoes().subscribe({ next: (s) => this.lgpd.set(s), error: () => undefined });
+  }
+
+  tipoLgpd(t: string): string {
+    const m: Record<string, string> = {
+      acesso: 'Acesso aos dados',
+      retificacao: 'Retificação',
+      eliminacao: 'Eliminação',
+      portabilidade: 'Portabilidade',
+      revogacao: 'Revogar consentimento',
+    };
+    return m[t] ?? t;
+  }
+
+  stLgpd(s: string): string {
+    return `st st-${s}`;
+  }
+
+  responderLgpd(s: LgpdSolicitacao): void {
+    this.textoLgpd = '';
+    this.modalLgpd.set(s);
+  }
+
+  enviarRespostaLgpd(): void {
+    const s = this.modalLgpd();
+    if (!s || !this.textoLgpd.trim()) return;
+    this.api.lgpdResponder(s.id, this.textoLgpd.trim()).subscribe({
+      next: () => {
+        this.notify.ok('Resposta registrada — solicitação respondida.');
+        this.modalLgpd.set(null);
+        this.carregarLgpd();
+      },
+      error: () => this.notify.erroMsg('Não foi possível registrar a resposta.'),
+    });
   }
 
   nota(v: number | null): string {

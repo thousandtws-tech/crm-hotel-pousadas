@@ -76,4 +76,14 @@ export class GuestService {
   enviarMensagem(token: string, mensagem: string): Observable<RespostaConcierge> {
     return this.http.post<RespostaConcierge>(`${this.base}/concierge/${token}`, { mensagem });
   }
+
+  /** LGPD art. 18 — todos os dados pessoais do titular (download JSON). */
+  exportarDados(token: string): Observable<unknown> {
+    return this.http.get<unknown>(`${this.base}/lgpd/${token}`);
+  }
+
+  /** LGPD — nova solicitação do titular (protocolo + prazo de 15 dias). */
+  solicitarLgpd(token: string, tipo: string, detalhe?: string): Observable<{ protocolo: number; prazo_dias: number }> {
+    return this.http.post<{ protocolo: number; prazo_dias: number }>(`${this.base}/lgpd/${token}`, { tipo, detalhe });
+  }
 }

@@ -534,15 +534,38 @@ interface AdicionalLinha {
               <small class="muted note">
                 * Apenas é possível realizar check-in manual com no máximo 1 dia de diferença
               </small>
+              @if (ecaBloqueio()) {
+                <div class="alert-eca mt">
+                  <strong>Menor desacompanhado (ECA art. 82)</strong>
+                  <p>Não há adulto nesta reserva. Registre o documento da autorização
+                    assinada pelos pais ou responsável legal para liberar o check-in.</p>
+                  <label class="lbl2">
+                    Documento de autorização (nº/órgão ou referência)
+                    <input class="input-inn" type="text" formControlName="autorizacao"
+                      placeholder="Ex.: Autorização notarial nº 2026-114 / RG do responsável" />
+                  </label>
+                </div>
+              }
               <div class="end mt">
-                <button
-                  class="btn-green"
-                  type="button"
-                  [disabled]="enviando() || checkinForm.invalid"
-                  (click)="confirmarCheckin()"
-                >
-                  Concluir Check-in
-                </button>
+                @if (ecaBloqueio()) {
+                  <button
+                    class="btn-green"
+                    type="button"
+                    [disabled]="enviando() || !checkinForm.value.autorizacao?.trim()"
+                    (click)="registrarAutorizacao()"
+                  >
+                    Registrar autorização e concluir
+                  </button>
+                } @else {
+                  <button
+                    class="btn-green"
+                    type="button"
+                    [disabled]="enviando() || checkinForm.invalid"
+                    (click)="confirmarCheckin()"
+                  >
+                    Concluir Check-in
+                  </button>
+                }
               </div>
             </form>
           </div>
@@ -900,6 +923,12 @@ interface AdicionalLinha {
       padding: 0.6rem 1rem; font-size: 0.85rem;
       animation: in 0.3s ease-out;
     }
+    .alert-eca {
+      background: #fdf1e8; border: 1px solid #f0c9a8; border-radius: 8px;
+      padding: 10px 12px; font-size: 0.82rem; color: #7a4a12;
+    }
+    .alert-eca strong { display: block; margin-bottom: 4px; }
+    .alert-eca p { margin: 0 0 8px; }
 
     .head-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
     .badges { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -1041,6 +1070,8 @@ export class ReservaDetailComponent implements OnInit {
   protected readonly modal = signal<Modal>(null);
   protected readonly enviando = signal(false);
   protected readonly checkinFake = signal(false);
+  /** ECA — check-in bloqueado aguardando autorização de menor. */
+  protected readonly ecaBloqueio = signal(false);
   protected readonly realizador = signal<string | null>(null);
   protected readonly pagamentos = signal<FormaPagamento[]>([]);
   protected readonly custosAdicionais = signal(false);
@@ -1066,6 +1097,7 @@ export class ReservaDetailComponent implements OnInit {
     modo: ['auto' as 'auto' | 'manual'],
     data: [''],
     hora: [''],
+    autorizacao: [''],
   });
   protected readonly checkoutForm = this.fb.nonNullable.group({
     idforma_pagamento: [0, Validators.min(1)],
@@ -1201,7 +1233,8 @@ export class ReservaDetailComponent implements OnInit {
       this.adminForm.reset({ login_admin: '', senha_admin: '' });
     }
     if (m === 'checkin') {
-      this.checkinForm.reset({ modo: 'auto', data: this.hoje(), hora: '' });
+      this.ecaBloqueio.set(false);
+      this.checkinForm.reset({ modo: 'auto', data: this.hoje(), hora: '', autorizacao: '' });
     }
     this.modal.set(m);
   }
@@ -1241,9 +1274,30 @@ export class ReservaDetailComponent implements OnInit {
     this.api.checkin(this.id(), data, hora).subscribe({
       next: () => {
         this.notify.ok('Check-in realizado.');
+        this.ecaBloqueio.set(false);
         this.fecharModal();
         this.recarregar();
       },
+      error: (e) => {
+        this.enviando.set(false);
+        // ECA art. 82 — menor desacompanhado pede autorização documentada.
+        const msg = String(e?.error?.erro?.mensagem ?? e?.message ?? '');
+        if (/menor|ECA|autoriza/i.test(msg)) {
+          this.ecaBloqueio.set(true);
+        } else {
+          this.notify.erro(e);
+        }
+      },
+    });
+  }
+
+  /** Registra a autorização dos pais (ECA) e refaz o check-in. */
+  registrarAutorizacao(): void {
+    const doc = this.checkinForm.value.autorizacao?.trim();
+    if (!doc) return;
+    this.enviando.set(true);
+    this.api.autorizacaoMenor(this.id(), doc).subscribe({
+      next: () => this.confirmarCheckin(),
       error: (e) => {
         this.enviando.set(false);
         this.notify.erro(e);
