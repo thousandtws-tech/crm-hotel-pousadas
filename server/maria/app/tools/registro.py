@@ -5,11 +5,11 @@ ordem das tools apresentadas ao modelo.
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from . import acoes, financeiro, nucleo, operacional, pdv, pessoal
+from . import acoes, financeiro, inteligencia, nucleo, operacional, pdv, pessoal
 
 Handler = Callable[[Any, str, dict], Awaitable[dict]]
 
-MODULOS = (nucleo, pessoal, acoes, pdv, financeiro, operacional)
+MODULOS = (nucleo, pessoal, acoes, pdv, financeiro, operacional, inteligencia)
 
 TOOLS: list[dict[str, Any]] = [
     s for m in MODULOS for s in m.SCHEMAS

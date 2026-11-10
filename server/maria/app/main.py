@@ -86,6 +86,11 @@ app.add_middleware(
 )
 
 
+from .rotas_ia import router as ia_router
+
+app.include_router(ia_router)
+
+
 @app.get("/healthz")
 async def healthz():
     from .infra.resilience import circuitos

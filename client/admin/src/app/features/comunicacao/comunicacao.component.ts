@@ -2,7 +2,9 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '@core/services/api.service';
+import { AuthStore } from '@core/services/auth.store';
 import { Notify } from '@core/services/notify.service';
+import { environment } from '../../../environments/environment';
 import {
   Avaliacao, AvaliacoesDash, CanalEnvio, ItemFila, RegraMatriz,
 } from '@core/models/api.models';
@@ -147,6 +149,9 @@ const PAPEL_ROTULO: Record<number, string> = { 1: 'Admin', 2: 'Gerente', 3: 'Tod
               <textarea [(ngModel)]="textoResposta" rows="4"></textarea>
             </label>
             <div class="acoes">
+              <button class="btn-sec" (click)="sugerirIa()" [disabled]="gerandoIa()">
+                {{ gerandoIa() ? 'Inná escrevendo…' : '✨ Sugerir com Inná' }}
+              </button>
               <button class="btn-sec" (click)="modalAv.set(null)">Cancelar</button>
               <button class="btn" [disabled]="!textoResposta.trim()" (click)="enviarResposta()">Publicar</button>
             </div>
@@ -196,6 +201,7 @@ const PAPEL_ROTULO: Record<number, string> = { 1: 'Admin', 2: 'Gerente', 3: 'Tod
 export class ComunicacaoComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly notify = inject(Notify);
+  private readonly auth = inject(AuthStore);
 
   protected readonly aba = signal<Aba>('avaliacoes');
   protected readonly abas: { id: Aba; rotulo: string }[] = [
@@ -268,6 +274,43 @@ export class ComunicacaoComponent implements OnInit {
   responder(av: Avaliacao): void {
     this.textoResposta = '';
     this.modalAv.set(av);
+  }
+
+  /** Pede à Inná (HTTP stateless no serviço Maria) uma resposta pública
+   *  sugerida — o texto cai no textarea pra revisão humana antes de publicar. */
+  protected readonly gerandoIa = signal(false);
+  async sugerirIa(): Promise<void> {
+    const av = this.modalAv();
+    const token = this.auth.accessToken();
+    if (!av || !token) return;
+    this.gerandoIa.set(true);
+    try {
+      const base = (environment as { mariaUrl?: string }).mariaUrl
+        ?.replace(/^wss:/, 'https:')
+        .replace(/\/ws\/maria.*$/, '') ?? '';
+      const res = await fetch(`${base}/ia/resposta-avaliacao`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          nota: av.nota_geral ?? 3,
+          nps: av.nps,
+          comentario: av.comentario ?? '',
+          categorias: {
+            limpeza: av.nota_limpeza ?? 0,
+            atendimento: av.nota_atendimento ?? 0,
+            custo_beneficio: av.nota_custo ?? 0,
+            localizacao: av.nota_localizacao ?? 0,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.detail ?? 'IA indisponível');
+      this.textoResposta = String(data.resposta ?? '');
+    } catch (e) {
+      this.notify.erroMsg(`Inná não respondeu: ${e instanceof Error ? e.message : e}`);
+    } finally {
+      this.gerandoIa.set(false);
+    }
   }
 
   enviarResposta(): void {

@@ -48,6 +48,8 @@ _LEITURAS_RESTRITAS = {
     "get_comissoes",
     "get_caixa_turnos",
     "get_funcionarios",
+    "get_inteligencia",
+    "get_historico_12m",
 }
 # Somente administrador.
 _ACOES_ADMIN = {
