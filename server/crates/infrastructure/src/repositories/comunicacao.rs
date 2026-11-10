@@ -505,7 +505,7 @@ impl FidelidadeRepository for PgFidelidadeRepository {
                             SELECT (co.preco * co.qtd * 100)::bigint AS total_centavos
                             FROM consumo co
                             JOIN reserva r2 ON r2.id = co.idreserva
-                            WHERE r2.idcliente = c.id AND co.status = 'fechado'
+                            WHERE r2.idcliente = c.id AND co.status = 'concluido'
                         ) ci), 0),
                     (SELECT n.id FROM fidelidade_nivel n
                       WHERE n.ativo
@@ -513,7 +513,7 @@ impl FidelidadeRepository for PgFidelidadeRepository {
                       ORDER BY n.min_diarias DESC LIMIT 1)
              FROM cliente c
              LEFT JOIN reserva r ON r.idcliente = c.id
-                AND r.status IN ('iniciada','finalizada')
+                AND r.status IN ('i','f')
              WHERE c.id = $1
              GROUP BY c.id
              ON CONFLICT (idcliente) DO UPDATE SET
@@ -532,15 +532,15 @@ impl FidelidadeRepository for PgFidelidadeRepository {
     async fn kpis_cliente(&self, idcliente: i64) -> Result<serde_json::Value, DomainError> {
         sqlx::query_scalar::<_, serde_json::Value>(
             "SELECT jsonb_build_object(
-                 'estadias', COUNT(*) FILTER (WHERE r.status IN ('iniciada','finalizada')),
+                 'estadias', COUNT(*) FILTER (WHERE r.status IN ('i','f')),
                  'diarias',  COALESCE(SUM(r.saidaprevista - r.entradaprevista)
-                              FILTER (WHERE r.status IN ('iniciada','finalizada')),0),
+                              FILTER (WHERE r.status IN ('i','f')),0),
                  'ltv_centavos', COALESCE(SUM(r.valor_total * 100)::bigint
-                              FILTER (WHERE r.status IN ('iniciada','finalizada')),0),
+                              FILTER (WHERE r.status IN ('i','f')),0),
                  'ticket_medio_centavos', COALESCE(AVG(r.valor_total * 100)::bigint
-                              FILTER (WHERE r.status IN ('iniciada','finalizada')),0),
+                              FILTER (WHERE r.status IN ('i','f')),0),
                  'ultima_estadia', MAX(r.saidaprevista)
-                              FILTER (WHERE r.status IN ('iniciada','finalizada'))
+                              FILTER (WHERE r.status IN ('i','f'))
              ) FROM reserva r WHERE r.idcliente=$1",
         )
         .bind(idcliente)
@@ -582,7 +582,7 @@ impl AutomacaoRepository for PgAutomacaoRepository {
         sqlx::query_as::<_, ReservaAuto>(&format!(
             "SELECT {AUTO_COLS} {AUTO_FROM}
              WHERE r.entradaprevista = $1
-               AND r.status IN ('pendente','iniciada')
+               AND r.status IN ('p','i')
                AND r.fnrh_preenchida_em IS NULL"
         ))
         .bind(data)
@@ -597,7 +597,7 @@ impl AutomacaoRepository for PgAutomacaoRepository {
     ) -> Result<Vec<ReservaAuto>, DomainError> {
         sqlx::query_as::<_, ReservaAuto>(&format!(
             "SELECT {AUTO_COLS} {AUTO_FROM}
-             WHERE r.saidaprevista = $1 AND r.status = 'iniciada'"
+             WHERE r.saidaprevista = $1 AND r.status = 'i'"
         ))
         .bind(data)
         .fetch_all(&self.pool)
@@ -611,7 +611,7 @@ impl AutomacaoRepository for PgAutomacaoRepository {
     ) -> Result<Vec<ReservaAuto>, DomainError> {
         sqlx::query_as::<_, ReservaAuto>(&format!(
             "SELECT {AUTO_COLS} {AUTO_FROM}
-             WHERE r.status = 'finalizada' AND r.atualizado_em >= $1
+             WHERE r.status = 'f' AND r.atualizado_em >= $1
                AND NOT EXISTS (SELECT 1 FROM avaliacao av WHERE av.idreserva = r.id)"
         ))
         .bind(desde)
@@ -686,10 +686,10 @@ impl AutomacaoRepository for PgAutomacaoRepository {
         // pode estar "(81) 9...". Sufixo de 8+ dígitos cobre o 9º dígito.
         sqlx::query_as::<_, ReservaAuto>(&format!(
             "SELECT {AUTO_COLS} {AUTO_FROM}
-             WHERE r.status IN ('pendente','iniciada')
+             WHERE r.status IN ('p','i')
                AND right(regexp_replace(coalesce(c.celular, c.telefone, ''), '\\\\D', '', 'g'), 8)
                    = right($1, 8)
-             ORDER BY CASE WHEN r.status = 'iniciada' THEN 0 ELSE 1 END,
+             ORDER BY CASE WHEN r.status = 'i' THEN 0 ELSE 1 END,
                       abs(r.entradaprevista - CURRENT_DATE)
              LIMIT 1"
         ))
