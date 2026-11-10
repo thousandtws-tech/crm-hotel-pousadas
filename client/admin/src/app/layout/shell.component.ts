@@ -142,18 +142,29 @@ const NAV: NavItem[] = [
 
       <!-- ===== busca global (Ctrl+K) ===== -->
       <div class="busca-wrap">
-        <mat-icon class="busca-icone">search</mat-icon>
-        <input
-          #buscaInput
-          class="busca-input"
-          type="search"
-          placeholder="Buscar reserva, cliente, quarto…"
-          aria-label="Busca global"
-          autocomplete="off"
-          (input)="digitar($event)"
-          (keydown)="buscaTecla($event)"
-        />
-        <kbd class="busca-kbd">Ctrl K</kbd>
+        <div class="campo" (mousedown)="focarCampo($event)">
+          <mat-icon class="campo-icone" aria-hidden="true">search</mat-icon>
+          <input
+            #buscaInput
+            class="campo-input"
+            type="text"
+            inputmode="search"
+            enterkeyhint="search"
+            placeholder="Buscar reserva, cliente, quarto…"
+            aria-label="Busca global"
+            autocomplete="off"
+            spellcheck="false"
+            (input)="digitar($event)"
+            (keydown)="buscaTecla($event)"
+          />
+          @if (termo()) {
+            <button type="button" class="campo-limpar" aria-label="Limpar busca" (click)="limparBusca()">
+              <mat-icon>close</mat-icon>
+            </button>
+          } @else {
+            <kbd class="campo-kbd">Ctrl K</kbd>
+          }
+        </div>
         @if (buscaAberta()) {
           <div class="busca-fechar" (click)="fecharBusca()" (keydown)="fecharBusca()" role="button" tabindex="-1" aria-label="Fechar busca"></div>
           <div class="busca-painel" role="listbox" aria-label="Resultados da busca">
@@ -435,27 +446,79 @@ const NAV: NavItem[] = [
     }
 
     /* busca — vidro sobre o header, vira branca no foco */
-    .header .busca-wrap { width: 100%; }
-    .header .busca-input {
-      height: 38px;
+    .header .busca-wrap { width: 100%; display: block; }
+    /* o campo é a caixa; ícone, input e atalho são itens flex — alinhados
+       na mesma linha por construção, sem posicionamento absoluto */
+    .campo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 40px;
+      padding: 0 8px 0 12px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
       border-radius: 10px;
       background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.14);
       color: #fff;
+      cursor: text;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
     }
-    .header .busca-input::placeholder { color: rgba(255, 255, 255, 0.65); }
-    .header .busca-icone { color: rgba(255, 255, 255, 0.75); }
-    .header .busca-kbd {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.2);
-      color: rgba(255, 255, 255, 0.75);
+    .campo:hover { background: rgba(255, 255, 255, 0.14); }
+    .campo:focus-within {
+      background: #fff;
+      border-color: #fff;
+      color: #1f3640;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.22);
     }
-    .header .busca-input:focus {
-      background: #fff; color: #333; border-color: #fff;
-      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+    .campo-icone {
+      flex: none;
+      font-size: 20px; width: 20px; height: 20px; line-height: 20px;
+      opacity: 0.8;
     }
-    .header .busca-input:focus::placeholder { color: #8fa3ab; }
-    .header .busca-wrap:focus-within .busca-icone { color: #7d97a1; }
+    .campo-input {
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      box-shadow: none;
+      color: inherit;
+      font: inherit;
+      font-size: 0.875rem;
+      line-height: 1.2;
+      text-overflow: ellipsis;
+    }
+    .campo-input::placeholder { color: currentColor; opacity: 0.65; }
+    .campo-kbd {
+      flex: none;
+      padding: 3px 6px;
+      border: 1px solid currentColor;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.66rem;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      opacity: 0.6;
+    }
+    .campo-limpar {
+      flex: none;
+      display: inline-grid; place-items: center;
+      width: 24px; height: 24px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: none;
+      color: inherit;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .campo-limpar:hover { opacity: 1; background: rgba(125, 151, 161, 0.25); }
+    .campo-limpar mat-icon { font-size: 16px; width: 16px; height: 16px; line-height: 16px; }
 
     .header-right {
       display: flex; align-items: center; gap: 0.75rem;
@@ -762,7 +825,7 @@ const NAV: NavItem[] = [
         padding: 0 0.6rem;
       }
       .pagina { display: none; }
-      .header .busca-kbd { display: none; }
+      .campo-kbd { display: none; }
       .header-right { gap: 0.35rem; }
 
       .l-navbar {
@@ -1002,6 +1065,27 @@ export class ShellComponent implements OnInit, OnDestroy {
   irPara(it: ItemBusca): void {
     this.fecharBusca();
     void this.router.navigateByUrl(it.rota);
+  }
+
+  /** Clique na moldura do campo (ícone, margens) leva o foco ao input. */
+  focarCampo(e: MouseEvent): void {
+    const input = this.buscaInput()?.nativeElement;
+    if (!input || e.target === input || (e.target as HTMLElement).closest('button')) return;
+    e.preventDefault();
+    input.focus();
+  }
+
+  /** Botão ✕: esvazia o campo e devolve o foco para nova busca. */
+  limparBusca(): void {
+    const input = this.buscaInput()?.nativeElement;
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+    this.termo.set('');
+    this.resultados.set([]);
+    this.buscaCarregando.set(false);
+    this.fecharBusca();
   }
 
   fecharBusca(): void {
