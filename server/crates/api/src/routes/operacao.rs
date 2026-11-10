@@ -3,7 +3,7 @@
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::Json;
-use chrono::NaiveDate;
+use chrono::{DateTime, NaiveDate, Utc};
 use clarituz_application::dto::{
     AtribuirTarefaInput, DevolverLoteInput, JornadaInput, NovaOrdemInput, NovaPmocInput,
     NovaTarefaInput, NovoLoteInput, NovoMovEnxovalInput, StatusManutInput, StatusTarefaInput,
@@ -300,6 +300,27 @@ pub async fn turno_remover(
     Path(id): Path<i64>,
 ) -> Result<StatusCode, AppError> {
     s.services.escalas.remover_turno(&ator, id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TurnoEditar {
+    inicio: DateTime<Utc>,
+    fim: DateTime<Utc>,
+    almoco_min: i16,
+}
+
+/// Edição inline do turno — frontend envia início/fim completos.
+pub async fn turno_editar(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+    Json(b): Json<TurnoEditar>,
+) -> Result<StatusCode, AppError> {
+    s.services
+        .escalas
+        .editar_turno(&ator, id, b.inicio, b.fim, b.almoco_min)
+        .await?;
     Ok(StatusCode::NO_CONTENT)
 }
 

@@ -147,6 +147,15 @@ fn settings_teste() -> Settings {
         stripe_cancel_url: "https://site.teste/cancel".into(),
         sinal_percentual: 30,
         hold_minutos: 30,
+        resend_api_key: None,
+        email_remetente: "Pousada <teste@local>".into(),
+        whatsapp_token: None,
+        whatsapp_phone_id: None,
+        vapid_private_pem: None,
+        vapid_public_b64: None,
+        vapid_contato: "mailto:teste@local".into(),
+        site_base: "https://site.teste".into(),
+        pousada_nome: "Pousada Teste".into(),
     }
 }
 

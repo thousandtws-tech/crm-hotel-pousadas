@@ -61,6 +61,17 @@ const NAV: NavItem[] = [
   { rota: '/pagamentos', rotulo: 'Pagamentos', icone: 'credit_card', admin: true },
   { rota: '/cms', rotulo: 'Site / Quartos', icone: 'web', admin: true },
   { rota: '/comunicacao', rotulo: 'Comunicação', icone: 'forum', admin: true },
+  {
+    rota: '/operacao',
+    rotulo: 'Operação',
+    icone: 'engineering',
+    admin: true,
+    filhos: [
+      { rota: '/operacao/governanca', rotulo: 'Governança', icone: 'cleaning_services' },
+      { rota: '/operacao/manutencao', rotulo: 'Manutenção & PMOC', icone: 'build' },
+      { rota: '/operacao/escalas', rotulo: 'Escalas & CLT', icone: 'schedule' },
+    ],
+  },
   { rota: '/estabelecimento', rotulo: 'Pousada / Hotel', icone: 'home', admin: true },
   { rota: '/funcionarios', rotulo: 'Administrador', icone: 'lock_open', admin: true },
 ];

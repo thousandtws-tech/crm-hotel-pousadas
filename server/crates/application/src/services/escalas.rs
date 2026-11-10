@@ -128,6 +128,28 @@ impl EscalasService {
         Ok(self.repo.remover_turno(id).await?)
     }
 
+    /// Edição inline de um turno existente — marca origem=manual.
+    pub async fn editar_turno(
+        &self,
+        ator: &Ator,
+        id: i64,
+        inicio: DateTime<Utc>,
+        fim: DateTime<Utc>,
+        almoco_min: i16,
+    ) -> AppResult<()> {
+        ator.exigir_gerencial()?;
+        if fim <= inicio {
+            return Err(DomainError::validacao("fim deve ser após o início").into());
+        }
+        if !(0..=240).contains(&almoco_min) {
+            return Err(DomainError::validacao("almoço inválido").into());
+        }
+        self.repo
+            .ajustar_turno(id, inicio, fim, almoco_min, OrigemTurno::Manual)
+            .await?;
+        Ok(())
+    }
+
     // ------------------------------------------------------------------
     // validador CLT
     // ------------------------------------------------------------------
@@ -380,7 +402,10 @@ mod tests {
 
     #[test]
     fn cinco_um_trabalha_5_folga_1() {
-        let j = j(RegimeEscala::CincoUm, NaiveDate::from_ymd_opt(2026, 11, 2).unwrap());
+        let j = j(
+            RegimeEscala::CincoUm,
+            NaiveDate::from_ymd_opt(2026, 11, 2).unwrap(),
+        );
         let trabalhados: Vec<_> = (0..6)
             .filter(|i| EscalasService::trabalha(&j, j.ancora + Duration::days(*i)))
             .collect();
@@ -390,14 +415,20 @@ mod tests {
 
     #[test]
     fn seis_um_trabalha_6_folga_1() {
-        let j = j(RegimeEscala::SeisUm, NaiveDate::from_ymd_opt(2026, 11, 2).unwrap());
+        let j = j(
+            RegimeEscala::SeisUm,
+            NaiveDate::from_ymd_opt(2026, 11, 2).unwrap(),
+        );
         assert!(!EscalasService::trabalha(&j, j.ancora + Duration::days(6)));
         assert!(EscalasService::trabalha(&j, j.ancora + Duration::days(7))); // novo ciclo
     }
 
     #[test]
     fn doze_trinta_seis_alterna_dias() {
-        let j = j(RegimeEscala::DozeTrintaSeis, NaiveDate::from_ymd_opt(2026, 11, 2).unwrap());
+        let j = j(
+            RegimeEscala::DozeTrintaSeis,
+            NaiveDate::from_ymd_opt(2026, 11, 2).unwrap(),
+        );
         let padrao: Vec<bool> = (0..6)
             .map(|i| EscalasService::trabalha(&j, j.ancora + Duration::days(i)))
             .collect();
@@ -406,17 +437,26 @@ mod tests {
 
     #[test]
     fn antes_da_ancora_nao_trabalha() {
-        let j = j(RegimeEscala::CincoUm, NaiveDate::from_ymd_opt(2026, 11, 2).unwrap());
+        let j = j(
+            RegimeEscala::CincoUm,
+            NaiveDate::from_ymd_opt(2026, 11, 2).unwrap(),
+        );
         assert!(!EscalasService::trabalha(&j, j.ancora - Duration::days(1)));
     }
 
     #[test]
     fn turno_cruza_meia_noite_quando_saida_menor() {
-        let mut j = j(RegimeEscala::DozeTrintaSeis, NaiveDate::from_ymd_opt(2026, 11, 2).unwrap());
+        let mut j = j(
+            RegimeEscala::DozeTrintaSeis,
+            NaiveDate::from_ymd_opt(2026, 11, 2).unwrap(),
+        );
         j.entrada = NaiveTime::from_hms_opt(18, 0, 0).unwrap();
         j.saida = NaiveTime::from_hms_opt(6, 0, 0).unwrap();
         let (_, fim) = EscalasService::turno_do_dia(&j, j.ancora);
         assert_eq!(fim.date_naive(), j.ancora + Duration::days(1));
-        assert_eq!((fim - EscalasService::turno_do_dia(&j, j.ancora).0).num_hours(), 12);
+        assert_eq!(
+            (fim - EscalasService::turno_do_dia(&j, j.ancora).0).num_hours(),
+            12
+        );
     }
 }

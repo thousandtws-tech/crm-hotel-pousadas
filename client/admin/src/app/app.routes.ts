@@ -122,6 +122,27 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'operacao/governanca',
+        loadComponent: () =>
+          import('./features/governanca/governanca.component').then(
+            (m) => m.GovernancaComponent,
+          ),
+      },
+      {
+        path: 'operacao/manutencao',
+        loadComponent: () =>
+          import('./features/manutencao/manutencao.component').then(
+            (m) => m.ManutencaoComponent,
+          ),
+      },
+      {
+        path: 'operacao/escalas',
+        loadComponent: () =>
+          import('./features/escalas/escalas.component').then(
+            (m) => m.EscalasComponent,
+          ),
+      },
+      {
         path: 'financeiro',
         loadComponent: () =>
           import('./features/financeiro/financeiro.component').then((m) => m.FinanceiroComponent),

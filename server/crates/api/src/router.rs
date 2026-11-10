@@ -338,7 +338,7 @@ pub fn build(state: AppState) -> Router {
         .route("/escalas/turnos", get(routes::operacao::turnos_listar))
         .route(
             "/escalas/turnos/{id}",
-            delete(routes::operacao::turno_remover),
+            delete(routes::operacao::turno_remover).put(routes::operacao::turno_editar),
         )
         .route("/escalas/clt/validar", get(routes::operacao::clt_validar))
         .route(
