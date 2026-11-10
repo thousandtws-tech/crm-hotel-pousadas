@@ -26,6 +26,9 @@ pub struct NovaReserva {
     pub valordiaria: Decimal,
     /// Valor total da estadia gravado em `consumo.valor_estadia`.
     pub valor_total: Decimal,
+    /// Entrada antecipada / saída estendida — taxas já embutidas no total.
+    pub early_checkin: bool,
+    pub late_checkout: bool,
     /// Prazo de hold da reserva online (None = recepção, sem expiração).
     pub expira_em: Option<DateTime<Utc>>,
 }

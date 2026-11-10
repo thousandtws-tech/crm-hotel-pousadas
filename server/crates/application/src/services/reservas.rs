@@ -472,6 +472,65 @@ impl ReservaService {
         })
     }
 
+    /// Taxas early check-in / late checkout: validam disponibilidade do
+    /// dia adjacente (early → véspera livre, late → dia seguinte livre) e
+    /// retornam o acréscimo a somar no total da estadia — mesma regra no
+    /// site e na operação; o sinal 30% incide sobre o total já com taxas.
+    async fn taxas_horario(
+        &self,
+        idacomodacao: i64,
+        periodo: &PeriodoEstadia,
+        early: bool,
+        late: bool,
+    ) -> AppResult<Decimal> {
+        if !early && !late {
+            return Ok(Decimal::ZERO);
+        }
+        let est = self.estabelecimentos.obter().await?.ok_or_else(|| {
+            DomainError::regra(
+                "Configure as taxas de early/late em Dados da Pousada antes de ofertar.",
+            )
+        })?;
+        let mut extra = Decimal::ZERO;
+        if early {
+            let vespera = periodo.entrada - Duration::days(1);
+            let livre = self
+                .reservas
+                .disponibilidade(
+                    PeriodoEstadia::new(vespera, vespera)?,
+                    Some(idacomodacao),
+                    None,
+                )
+                .await?;
+            if livre.is_empty() {
+                return Err(DomainError::regra(
+                    "Early check-in indisponível: acomodação ocupada na véspera da entrada.",
+                )
+                .into());
+            }
+            extra += est.taxa_early;
+        }
+        if late {
+            let depois = periodo.saida + Duration::days(1);
+            let livre = self
+                .reservas
+                .disponibilidade(
+                    PeriodoEstadia::new(depois, depois)?,
+                    Some(idacomodacao),
+                    None,
+                )
+                .await?;
+            if livre.is_empty() {
+                return Err(DomainError::regra(
+                    "Late checkout indisponível: acomodação reservada no dia seguinte.",
+                )
+                .into());
+            }
+            extra += est.taxa_late;
+        }
+        Ok(extra)
+    }
+
     /// Cria reserva em status `pendente` com conta de consumo aberta.
     ///
     /// Concorrência: a exclusão `daterange` no Postgres garante que duas
@@ -515,7 +574,12 @@ impl ReservaService {
             .filter(|v| *v > Decimal::ZERO)
             .unwrap_or(acomodacao.valor);
         let diarias = Decimal::from(time::diarias(periodo.entrada, periodo.saida));
-        let valor_total = money::round2(valordiaria * diarias);
+        let early = input.early_checkin.unwrap_or(false);
+        let late = input.late_checkout.unwrap_or(false);
+        let taxas = self
+            .taxas_horario(input.idacomodacao, &periodo, early, late)
+            .await?;
+        let valor_total = money::round2(valordiaria * diarias + taxas);
 
         let nova = NovaReserva {
             idacomodacao: input.idacomodacao,
@@ -528,6 +592,8 @@ impl ReservaService {
                 .filter(|o| !o.is_empty()),
             valordiaria: money::round2(valordiaria),
             valor_total,
+            early_checkin: early,
+            late_checkout: late,
             expira_em: None,
         };
 
@@ -640,6 +706,11 @@ impl ReservaService {
         };
         let periodo = PeriodoEstadia::new(input.check_in, input.check_out)?;
         let diarias = Decimal::from(time::diarias(periodo.entrada, periodo.saida));
+        let early = input.early_checkin.unwrap_or(false);
+        let late = input.late_checkout.unwrap_or(false);
+        let taxas = self
+            .taxas_horario(acomodacao.id, &periodo, early, late)
+            .await?;
         let nova = NovaReserva {
             idacomodacao: acomodacao.id,
             idcliente,
@@ -647,7 +718,9 @@ impl ReservaService {
             periodo,
             obs: Some(obs),
             valordiaria: money::round2(acomodacao.valor),
-            valor_total: money::round2(acomodacao.valor * diarias),
+            valor_total: money::round2(acomodacao.valor * diarias + taxas),
+            early_checkin: early,
+            late_checkout: late,
             // Reserva do site segura a acomodação por `hold_minutos`
             // aguardando o pagamento; expirada, o sweeper a cancela.
             expira_em: Some(Utc::now() + Duration::minutes(self.hold_minutos)),

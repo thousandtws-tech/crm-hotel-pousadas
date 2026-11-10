@@ -176,6 +176,17 @@ import { MotionService } from '../../core/services/motion.service';
                     />
                   </div>
 
+                  <div class="flex flex-col gap-2">
+                    <label class="flex items-center gap-2 text-sm text-[#054054] cursor-pointer">
+                      <input type="checkbox" [ngModel]="earlyCheckin()" (ngModelChange)="earlyCheckin.set($event)" name="earlyCheckin" class="accent-[#054054]" />
+                      Early check-in (entrada antecipada, sujeito à disponibilidade)
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-[#054054] cursor-pointer">
+                      <input type="checkbox" [ngModel]="lateCheckout()" (ngModelChange)="lateCheckout.set($event)" name="lateCheckout" class="accent-[#054054]" />
+                      Late checkout (saída estendida, sujeito à disponibilidade)
+                    </label>
+                  </div>
+
                   <div>
                     <label for="book-requests" class="type-eyebrow block mb-1 text-[10px]">Observações ou Preferências</label>
                     <textarea
@@ -371,6 +382,8 @@ export class BookingComponent implements OnInit {
   public readonly guestEmail = signal<string>('');
   public readonly guestPhone = signal<string>('');
   public readonly specialRequests = signal<string>('');
+  public readonly earlyCheckin = signal<boolean>(false);
+  public readonly lateCheckout = signal<boolean>(false);
   public readonly isLoading = signal<boolean>(false);
   public readonly isSuccess = signal<boolean>(false);
   public readonly serverMessage = signal<string>('');
@@ -436,6 +449,8 @@ export class BookingComponent implements OnInit {
       guestEmail: this.guestEmail(),
       guestPhone: this.guestPhone(),
       specialRequests: this.specialRequests(),
+      earlyCheckin: this.earlyCheckin(),
+      lateCheckout: this.lateCheckout(),
       totalNights: this.calculatedNights(),
       estimatedTotal: acc.price ? acc.price * this.calculatedNights() : undefined
     });

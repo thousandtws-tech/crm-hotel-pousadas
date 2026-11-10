@@ -413,6 +413,8 @@ export interface Estabelecimento {
   email: string | null;
   telefone: string | null;
   celular: string | null;
+  taxa_early?: number;
+  taxa_late?: number;
   version?: number;
 }
 
@@ -496,6 +498,8 @@ export interface ReservaInput {
   saidaprevista: string;
   obs?: string | null;
   valordiaria?: string | number | null;
+  early_checkin?: boolean;
+  late_checkout?: boolean;
 }
 
 export interface ItemConsumido {

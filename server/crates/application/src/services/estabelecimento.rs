@@ -43,6 +43,8 @@ impl EstabelecimentoService {
                 .filter(|s| !s.is_empty()),
             impressora_porta: input.impressora_porta.unwrap_or(9100),
             impressora_ativa: input.impressora_ativa.unwrap_or(false),
+            taxa_early: input.taxa_early.unwrap_or_default(),
+            taxa_late: input.taxa_late.unwrap_or_default(),
             version: input.version,
         };
         let log = ator.log(

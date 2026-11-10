@@ -253,6 +253,9 @@ pub struct DadosEstabelecimento {
     pub impressora_ip: Option<String>,
     pub impressora_porta: i32,
     pub impressora_ativa: bool,
+    /// Taxas early check-in / late checkout (R$) — entram no total do sinal.
+    pub taxa_early: Decimal,
+    pub taxa_late: Decimal,
     /// Concorrência otimista — divergência → 409.
     pub version: Option<i64>,
 }

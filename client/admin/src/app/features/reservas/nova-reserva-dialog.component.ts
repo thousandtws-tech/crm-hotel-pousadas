@@ -125,6 +125,14 @@ import { of } from 'rxjs';
                 <input id="res-val" class="input-inn" type="number" step="0.01" min="0" formControlName="valordiaria" title="Valor da diária" />
               </div>
             </div>
+            <div class="campo full" style="display:flex;gap:1.2rem;">
+              <label class="lbl" style="display:flex;align-items:center;gap:.4rem;">
+                <input type="checkbox" formControlName="early_checkin" /> Early check-in
+              </label>
+              <label class="lbl" style="display:flex;align-items:center;gap:.4rem;">
+                <input type="checkbox" formControlName="late_checkout" /> Late checkout
+              </label>
+            </div>
             <div class="campo full">
               <label class="lbl" for="res-obs"> Observações </label>
               <textarea id="res-obs" class="input-inn" rows="2" formControlName="obs" title="Observações"></textarea>
@@ -190,6 +198,8 @@ export class NovaReservaDialogComponent implements OnInit {
     idacomodacao: [0],
     hospedes: [1, [Validators.required, Validators.min(1)]],
     valordiaria: [null as number | null],
+    early_checkin: [false],
+    late_checkout: [false],
     obs: [''],
   });
 
@@ -259,6 +269,8 @@ export class NovaReservaDialogComponent implements OnInit {
       saidaprevista: v.saida,
       obs: v.obs || null,
       valordiaria: v.valordiaria ?? null,
+      early_checkin: v.early_checkin === true,
+      late_checkout: v.late_checkout === true,
     };
     this.api.criarReserva(input).subscribe({
       next: () => this.criada.emit(),

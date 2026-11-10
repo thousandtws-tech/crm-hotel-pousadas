@@ -1076,7 +1076,7 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
     async fn obter(&self) -> Result<Option<Estabelecimento>, DomainError> {
         sqlx::query_as::<_, Estabelecimento>(
             "SELECT id, cnpj, razao_social, site, email, telefone, celular,
-                    impressora_ip, impressora_porta, impressora_ativa, version, criado_em, atualizado_em
+                    impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late, version, criado_em, atualizado_em
              FROM estabelecimento ORDER BY id LIMIT 1",
         )
         .fetch_optional(&self.pool)
@@ -1103,11 +1103,11 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
         let e = sqlx::query_as::<_, Estabelecimento>(
             "INSERT INTO estabelecimento
                 (cnpj, razao_social, site, email, telefone, celular,
-                 impressora_ip, impressora_porta, impressora_ativa)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                 impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
              ON CONFLICT (id) DO NOTHING
              RETURNING id, cnpj, razao_social, site, email, telefone, celular,
-                       impressora_ip, impressora_porta, impressora_ativa, version, criado_em, atualizado_em",
+                       impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late, version, criado_em, atualizado_em",
         )
         .bind(&d.cnpj)
         .bind(&d.razao_social)
@@ -1118,6 +1118,8 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
         .bind(&d.impressora_ip)
         .bind(d.impressora_porta)
         .bind(d.impressora_ativa)
+        .bind(d.taxa_early)
+        .bind(d.taxa_late)
         .fetch_optional(&mut *tx)
         .await
         .map_err(map_db_err)?;
@@ -1130,11 +1132,12 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
                         cnpj = $2, razao_social = $3, site = $4, email = $5,
                         telefone = $6, celular = $7,
                         impressora_ip = $8, impressora_porta = $9, impressora_ativa = $10,
+                        taxa_early = $11, taxa_late = $12,
                         atualizado_em = now()
                      WHERE id = (SELECT id FROM estabelecimento ORDER BY id LIMIT 1)
-                       AND ($11::bigint IS NULL OR version = $11)
+                       AND ($13::bigint IS NULL OR version = $13)
                      RETURNING id, cnpj, razao_social, site, email, telefone, celular,
-                               impressora_ip, impressora_porta, impressora_ativa, version, criado_em, atualizado_em",
+                               impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late, version, criado_em, atualizado_em",
                 )
                 .bind(&d.cnpj)
                 .bind(&d.razao_social)
@@ -1145,6 +1148,8 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
                 .bind(&d.impressora_ip)
                 .bind(d.impressora_porta)
                 .bind(d.impressora_ativa)
+                .bind(d.taxa_early)
+                .bind(d.taxa_late)
                 .bind(d.version)
                 .fetch_optional(&mut *tx)
                 .await

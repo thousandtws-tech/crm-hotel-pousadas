@@ -67,7 +67,9 @@ export class BookingService {
           nome: submission.guestName,
           email: submission.guestEmail,
           telefone: submission.guestPhone,
-          observacoes: submission.specialRequests || null
+          observacoes: submission.specialRequests || null,
+          early_checkin: submission.earlyCheckin === true,
+          late_checkout: submission.lateCheckout === true
         })
       });
       const data = await res.json();

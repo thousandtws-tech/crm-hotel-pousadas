@@ -15,6 +15,8 @@ export interface BookingSubmission {
   guestEmail: string;
   guestPhone: string;
   specialRequests?: string;
+  earlyCheckin?: boolean;
+  lateCheckout?: boolean;
   totalNights?: number;
   estimatedTotal?: number;
 }

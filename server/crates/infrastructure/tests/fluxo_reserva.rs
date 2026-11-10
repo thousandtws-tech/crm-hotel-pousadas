@@ -193,6 +193,8 @@ async fn reserva_publica_site(pool: PgPool) {
         telefone: "(48) 99999-0000".into(),
         cpf: None,
         observacoes: None,
+        early_checkin: None,
+        late_checkout: None,
     };
 
     let out = c

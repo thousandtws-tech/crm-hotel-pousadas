@@ -108,6 +108,16 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                 <input class="input-inn" type="text" formControlName="celular" placeholder="(22) 90000-0000" />
               </label>
             </div>
+            <div class="duo">
+              <label class="lbl">
+                Taxa early check-in (R$)
+                <input class="input-inn" type="number" min="0" step="0.01" formControlName="taxa_early" placeholder="0,00" />
+              </label>
+              <label class="lbl">
+                Taxa late checkout (R$)
+                <input class="input-inn" type="number" min="0" step="0.01" formControlName="taxa_late" placeholder="0,00" />
+              </label>
+            </div>
             <div class="end">
               <button class="btn-dark-blue" type="button" (click)="salvarDados()" [disabled]="salvando()">
                 <mat-icon>save</mat-icon> {{ salvando() ? 'Salvando…' : 'Gravar dados' }}
@@ -687,6 +697,8 @@ export class EstabelecimentoComponent implements OnInit {
     impressora_ip: [''],
     impressora_porta: [9100],
     impressora_ativa: [false],
+    taxa_early: [0],
+    taxa_late: [0],
   });
   private readonly dadosVersion = signal<number | undefined>(undefined);
   private readonly endVersion = signal<number | undefined>(undefined);
@@ -745,6 +757,8 @@ export class EstabelecimentoComponent implements OnInit {
           impressora_ip: e.impressora_ip ?? '',
           impressora_porta: e.impressora_porta ?? 9100,
           impressora_ativa: e.impressora_ativa ?? false,
+          taxa_early: Number(e.taxa_early ?? 0),
+          taxa_late: Number(e.taxa_late ?? 0),
         });
       },
       error: () => undefined,
@@ -791,6 +805,8 @@ export class EstabelecimentoComponent implements OnInit {
         impressora_ip: empty(v.impressora_ip),
         impressora_porta: v.impressora_porta || 9100,
         impressora_ativa: v.impressora_ativa,
+        taxa_early: Number(v.taxa_early) || 0,
+        taxa_late: Number(v.taxa_late) || 0,
         version: this.dadosVersion(),
       })
       .subscribe({

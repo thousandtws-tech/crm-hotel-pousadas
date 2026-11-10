@@ -32,6 +32,10 @@ pub struct Reserva {
     /// Identificador opaco para o fluxo público (checkout/status) —
     /// impede enumeração de reservas pelo id sequencial.
     pub token_publico: Uuid,
+    /// Entrada antecipada contratada — taxa entra no total do sinal.
+    pub early_checkin: bool,
+    /// Saída estendida contratada — idem.
+    pub late_checkout: bool,
     pub criado_em: DateTime<Utc>,
     pub atualizado_em: DateTime<Utc>,
 }

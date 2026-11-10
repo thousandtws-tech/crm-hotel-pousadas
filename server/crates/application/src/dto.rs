@@ -278,6 +278,10 @@ pub struct ReservaInput {
     /// Opcional: quando ausente usa a tarifa vigente da acomodação.
     #[serde(default, deserialize_with = "de_decimal_opt")]
     pub valordiaria: Option<Decimal>,
+    /// Entrada antecipada — sujeita à disponibilidade, taxa somada ao total.
+    pub early_checkin: Option<bool>,
+    /// Saída estendida — idem.
+    pub late_checkout: Option<bool>,
 }
 
 /// Reserva online vinda do site público — sem autenticação; o serviço
@@ -295,6 +299,9 @@ pub struct ReservaPublicaInput {
     pub telefone: String,
     pub cpf: Option<String>,
     pub observacoes: Option<String>,
+    /// Early check-in / late checkout — mesma regra de cobrança da operação.
+    pub early_checkin: Option<bool>,
+    pub late_checkout: Option<bool>,
 }
 
 #[derive(Debug, Serialize)]
@@ -574,6 +581,11 @@ pub struct EstabelecimentoInput {
     pub impressora_ip: Option<String>,
     pub impressora_porta: Option<i32>,
     pub impressora_ativa: Option<bool>,
+    /// Taxas early/late em R$ — entram no total usado no cálculo do sinal.
+    #[serde(default, deserialize_with = "de_decimal_opt")]
+    pub taxa_early: Option<Decimal>,
+    #[serde(default, deserialize_with = "de_decimal_opt")]
+    pub taxa_late: Option<Decimal>,
     /// Concorrência otimista.
     pub version: Option<i64>,
 }
