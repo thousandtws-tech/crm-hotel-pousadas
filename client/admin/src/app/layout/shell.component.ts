@@ -18,6 +18,13 @@ interface NavItem {
   filhos?: NavItem[];
 }
 
+/** Seção rotulada da sidebar — agrupamento por área da operação hoteleira. */
+interface NavSecao {
+  rotulo: string;
+  admin?: boolean;
+  itens: NavItem[];
+}
+
 /** Rótulo de cada grupo do dropdown de busca. */
 const GRUPOS: Record<ItemBusca['tipo'], { rotulo: string; icone: string }> = {
   cliente: { rotulo: 'Clientes', icone: 'person' },
@@ -27,53 +34,83 @@ const GRUPOS: Record<ItemBusca['tipo'], { rotulo: string; icone: string }> = {
   estoque: { rotulo: 'Estoque', icone: 'inventory_2' },
 };
 
-const NAV: NavItem[] = [
-  { rota: '/dashboard', rotulo: 'Home', icone: 'grid_view' },
-  { rota: '/clientes', rotulo: 'Clientes', icone: 'person' },
-  { rota: '/estacionamento', rotulo: 'Estacionamento', icone: 'directions_car' },
-  { rota: '/acomodacoes', rotulo: 'Acomodações', icone: 'hotel' },
-  { rota: '/estoque', rotulo: 'Estoque', icone: 'inventory_2' },
-  { rota: '/compras', rotulo: 'Compras', icone: 'shopping_cart' },
-  { rota: '/frigobares', rotulo: 'Frigobar', icone: 'kitchen' },
-  { rota: '/reservas', rotulo: 'Reservas', icone: 'calendar_month' },
+const NAV: NavSecao[] = [
   {
-    rota: '/pdv',
-    rotulo: 'Restaurante',
-    icone: 'restaurant',
-    filhos: [
-      { rota: '/pdv', rotulo: 'PDV & Comandas', icone: 'point_of_sale' },
-      { rota: '/cozinha', rotulo: 'Cozinha (KDS)', icone: 'soup_kitchen' },
-      { rota: '/cafe', rotulo: 'Café da Manhã', icone: 'free_breakfast' },
+    rotulo: 'Recepção',
+    itens: [
+      { rota: '/dashboard', rotulo: 'Home', icone: 'grid_view' },
+      { rota: '/reservas', rotulo: 'Reservas', icone: 'calendar_month' },
+      { rota: '/clientes', rotulo: 'Clientes', icone: 'person' },
+      { rota: '/acomodacoes', rotulo: 'Acomodações', icone: 'hotel' },
+      { rota: '/estacionamento', rotulo: 'Estacionamento', icone: 'directions_car' },
     ],
   },
   {
-    rota: '/financeiro',
-    rotulo: 'Financeiro',
-    icone: 'payments',
-    admin: true,
-    filhos: [
-      { rota: '/financeiro', rotulo: 'Visão Geral', icone: 'dashboard' },
-      { rota: '/financeiro/pagamentos-online', rotulo: 'Pagamentos Online', icone: 'credit_card' },
-      { rota: '/financeiro/contas', rotulo: 'Contas', icone: 'account_balance' },
-      { rota: '/financeiro/fluxo-caixa', rotulo: 'Fluxo de Caixa', icone: 'swap_vert' },
+    rotulo: 'Alimentos & Bebidas',
+    itens: [
+      {
+        rota: '/pdv',
+        rotulo: 'Restaurante',
+        icone: 'restaurant',
+        filhos: [
+          { rota: '/pdv', rotulo: 'PDV & Comandas', icone: 'point_of_sale' },
+          { rota: '/cozinha', rotulo: 'Cozinha (KDS)', icone: 'soup_kitchen' },
+          { rota: '/cafe', rotulo: 'Café da Manhã', icone: 'free_breakfast' },
+        ],
+      },
+      { rota: '/frigobares', rotulo: 'Frigobar', icone: 'kitchen' },
     ],
   },
-  { rota: '/pagamentos', rotulo: 'Pagamentos', icone: 'credit_card', admin: true },
-  { rota: '/cms', rotulo: 'Site / Quartos', icone: 'web', admin: true },
-  { rota: '/comunicacao', rotulo: 'Comunicação', icone: 'forum', admin: true },
   {
-    rota: '/operacao',
     rotulo: 'Operação',
-    icone: 'engineering',
     admin: true,
-    filhos: [
+    itens: [
       { rota: '/operacao/governanca', rotulo: 'Governança', icone: 'cleaning_services' },
       { rota: '/operacao/manutencao', rotulo: 'Manutenção & PMOC', icone: 'build' },
       { rota: '/operacao/escalas', rotulo: 'Escalas & CLT', icone: 'schedule' },
+      { rota: '/comunicacao', rotulo: 'Comunicação', icone: 'forum' },
     ],
   },
-  { rota: '/estabelecimento', rotulo: 'Pousada / Hotel', icone: 'home', admin: true },
-  { rota: '/funcionarios', rotulo: 'Administrador', icone: 'lock_open', admin: true },
+  {
+    rotulo: 'Suprimentos',
+    itens: [
+      { rota: '/estoque', rotulo: 'Estoque', icone: 'inventory_2' },
+      { rota: '/insumos', rotulo: 'Insumos', icone: 'science' },
+      { rota: '/compras', rotulo: 'Compras', icone: 'shopping_cart' },
+    ],
+  },
+  {
+    rotulo: 'Financeiro',
+    admin: true,
+    itens: [
+      { rota: '/pagamentos', rotulo: 'Pagamentos', icone: 'credit_card' },
+      {
+        rota: '/financeiro',
+        rotulo: 'Financeiro',
+        icone: 'payments',
+        filhos: [
+          { rota: '/financeiro', rotulo: 'Visão Geral', icone: 'dashboard' },
+          { rota: '/financeiro/pagamentos-online', rotulo: 'Pagamentos Online', icone: 'credit_card' },
+          { rota: '/financeiro/contas', rotulo: 'Contas', icone: 'account_balance' },
+          { rota: '/financeiro/fluxo-caixa', rotulo: 'Fluxo de Caixa', icone: 'swap_vert' },
+          { rota: '/financeiro/dre', rotulo: 'DRE', icone: 'monitoring' },
+          { rota: '/financeiro/conciliacao', rotulo: 'Conciliação', icone: 'compare_arrows' },
+          { rota: '/financeiro/split', rotulo: 'Split', icone: 'call_split' },
+          { rota: '/financeiro/caixa', rotulo: 'Caixa', icone: 'point_of_sale' },
+        ],
+      },
+    ],
+  },
+  {
+    rotulo: 'Administração',
+    admin: true,
+    itens: [
+      { rota: '/cms', rotulo: 'Site / Quartos', icone: 'web' },
+      { rota: '/estabelecimento', rotulo: 'Pousada / Hotel', icone: 'home' },
+      { rota: '/funcionarios', rotulo: 'Administrador', icone: 'lock_open' },
+      { rota: '/auditoria', rotulo: 'Auditoria', icone: 'fact_check' },
+    ],
+  },
 ];
 
 @Component({
@@ -81,20 +118,33 @@ const NAV: NavItem[] = [
   host: { '(document:keydown.control.k)': 'focarBusca($event)' },
   imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule, MariaWidgetComponent],
   template: `
-    <header class="header" [class.header-open]="aberta()">
+    <header class="header">
       <button
         class="header_toggle"
         type="button"
-        (click)="aberta.set(!aberta())"
+        (click)="alternar()"
         aria-label="Alternar menu"
+        [attr.aria-expanded]="aberta()"
       >
         <mat-icon>{{ aberta() ? 'close' : 'menu' }}</mat-icon>
       </button>
 
       <!-- ===== busca global (padrão Salesforce/HubSpot: Ctrl+K) ===== -->
       <div class="busca-wrap">
+        <mat-icon class="busca-icone">search</mat-icon>
+        <input
+          #buscaInput
+          class="busca-input"
+          type="search"
+          placeholder="Buscar reserva, cliente, quarto…"
+          aria-label="Busca global"
+          autocomplete="off"
+          (input)="digitar($event)"
+          (keydown)="buscaTecla($event)"
+        />
+        <kbd class="busca-kbd">Ctrl K</kbd>
         @if (buscaAberta()) {
-          <div class="busca-fechar" (click)="fecharBusca()"></div>
+          <div class="busca-fechar" (click)="fecharBusca()" (keydown)="fecharBusca()" role="button" tabindex="-1" aria-label="Fechar busca"></div>
           <div class="busca-painel" role="listbox" aria-label="Resultados da busca">
             @if (buscaCarregando()) {
               <p class="busca-vazio">Buscando…</p>
@@ -144,7 +194,7 @@ const NAV: NavItem[] = [
           </button>
 
           @if (notifs.aberto()) {
-            <div class="sino-fechar" (click)="notifs.fecharPainel()"></div>
+            <div class="sino-fechar" (click)="notifs.fecharPainel()" (keydown)="notifs.fecharPainel()" role="button" tabindex="-1" aria-label="Fechar"></div>
             <div class="sino-painel" role="dialog" aria-label="Histórico de notificações">
               <div class="sino-head">
                 <strong>Notificações</strong>
@@ -198,58 +248,67 @@ const NAV: NavItem[] = [
       </div>
     </header>
 
-    <div class="l-navbar" [class.expanded]="aberta()">
+    <!-- backdrop mobile — toque fora fecha o menu -->
+    <div class="scrim" [class.scrim-visivel]="aberta()" (click)="aberta.set(false)" (keydown)="aberta.set(false)" role="button" tabindex="-1" aria-label="Fechar menu"></div>
+
+    <aside class="l-navbar" [class.expanded]="aberta()" aria-label="Navegação principal">
       <nav class="nav">
-        <div>
+        <div class="nav-inner">
           <a class="nav_logo" routerLink="/dashboard" aria-label="INNJOY">
             <img src="logo.svg" alt="INNJOY" />
           </a>
-          @for (item of nav(); track item.rotulo) {
-            @if (item.filhos) {
-              <div class="nav_group" [class.aberto]="grupoAberto() === item.rotulo">
-                <button
-                  type="button"
-                  class="nav_link nav_group-btn"
-                  [class.active]="grupoAtivo(item)"
+
+          @for (sec of nav(); track sec.rotulo) {
+            <p class="nav_secao">{{ sec.rotulo }}</p>
+            @for (item of sec.itens; track item.rotulo) {
+              @if (item.filhos) {
+                <div class="nav_group" [class.aberto]="grupoAberto() === item.rotulo">
+                  <button
+                    type="button"
+                    class="nav_link nav_group-btn"
+                    [class.active]="grupoAtivo(item)"
+                    [title]="item.rotulo"
+                    [attr.aria-expanded]="grupoAberto() === item.rotulo"
+                    (click)="alternarGrupo(item)"
+                  >
+                    <mat-icon class="nav_icon">{{ item.icone }}</mat-icon>
+                    <span class="nav_name">{{ item.rotulo }}</span>
+                    <mat-icon class="nav_arrow">expand_more</mat-icon>
+                  </button>
+                  <div class="nav_filhos">
+                    <div class="nav_filhos-in">
+                      @for (f of item.filhos; track f.rota) {
+                        <a
+                          class="nav_link nav_sub"
+                          [routerLink]="f.rota"
+                          routerLinkActive="active"
+                          [title]="f.rotulo"
+                          (click)="clicouNav()"
+                        >
+                          <mat-icon class="nav_icon">{{ f.icone }}</mat-icon>
+                          <span class="nav_name">{{ f.rotulo }}</span>
+                        </a>
+                      }
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                <a
+                  class="nav_link"
+                  [routerLink]="item.rota"
+                  routerLinkActive="active"
                   [title]="item.rotulo"
-                  [attr.aria-expanded]="grupoAberto() === item.rotulo"
-                  (click)="alternarGrupo(item)"
+                  (click)="clicouNav()"
                 >
                   <mat-icon class="nav_icon">{{ item.icone }}</mat-icon>
                   <span class="nav_name">{{ item.rotulo }}</span>
-                  <mat-icon class="nav_arrow">expand_more</mat-icon>
-                </button>
-                <div class="nav_filhos">
-                  <div class="nav_filhos-in">
-                    @for (f of item.filhos; track f.rota) {
-                      <a
-                        class="nav_link nav_sub"
-                        [routerLink]="f.rota"
-                        routerLinkActive="active"
-                        [title]="f.rotulo"
-                      >
-                        <mat-icon class="nav_icon">{{ f.icone }}</mat-icon>
-                        <span class="nav_name">{{ f.rotulo }}</span>
-                      </a>
-                    }
-                  </div>
-                </div>
-              </div>
-            } @else {
-              <a
-                class="nav_link"
-                [routerLink]="item.rota"
-                routerLinkActive="active"
-                [title]="item.rotulo"
-              >
-                <mat-icon class="nav_icon">{{ item.icone }}</mat-icon>
-                <span class="nav_name">{{ item.rotulo }}</span>
-              </a>
+                </a>
+              }
             }
           }
         </div>
       </nav>
-    </div>
+    </aside>
 
     <main class="content" [class.content-open]="aberta()">
       <router-outlet />
@@ -260,7 +319,7 @@ const NAV: NavItem[] = [
     }
   `,
   styles: `
-    /* ===== header fixo verde (AdminLTE skin-green .main-header) ===== */
+    /* ===== header fixo ===== */
     .header {
       width: 100%;
       height: calc(var(--header-height) + 1rem);
@@ -268,15 +327,15 @@ const NAV: NavItem[] = [
       top: 0;
       left: 0;
       display: grid;
-      grid-template-columns: 1fr auto 1fr;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 1rem;
       align-items: center;
-      padding: 0 1rem 0 calc(var(--nav-width) + 1rem);
+      padding: 0 1rem;
       background-color: var(--inn-navbar);
       z-index: 100;
       transition: 0.25s ease;
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
     }
-    .header-open { padding-left: calc(var(--nav-width-open) + 1rem); }
     .header-right {
       display: flex; align-items: center; gap: 1rem;
       justify-self: end;
@@ -296,52 +355,101 @@ const NAV: NavItem[] = [
     }
     .header_toggle:hover { background: rgba(0, 0, 0, 0.1); }
 
-    /* ===== navbar lateral escura ===== */
+    /* ===== backdrop — só visível em mobile via media query ===== */
+    .scrim {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 18, 24, 0.55);
+      z-index: 105;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .scrim-visivel { opacity: 1; }
+
+    /* ===== sidebar — rail 68px ↔ 230px ===== */
     .l-navbar {
       position: fixed;
       top: 0;
       left: 0;
       width: var(--nav-width);
-      min-height: 100vh;
+      height: 100vh;
+      height: 100dvh;
       background-color: var(--inn-first);
-      padding: 1rem 1rem 0 0;
-      transition: 0.25s ease;
-      z-index: 100;
+      transition: width 0.25s ease;
+      z-index: 110;
       overflow: hidden;
     }
     .l-navbar.expanded { width: var(--nav-width-open); }
 
-    .nav { display: flex; overflow-y: auto; overflow-x: hidden; height: 100%; }
+    /* desktop: rail com hover-expand (padrão AdminLTE sidebar-mini) */
+    @media (min-width: 769px) {
+      .l-navbar:not(.expanded):hover { width: var(--nav-width-open); }
+      .l-navbar:not(.expanded):hover .nav_name,
+      .l-navbar:not(.expanded):hover .nav_arrow { display: block; }
+      .l-navbar:not(.expanded):hover .nav_secao {
+        height: auto; margin: 0.9rem 0 0.3rem; padding: 0 0 0 1.5rem;
+        border-top: 0; color: rgba(169, 196, 207, 0.55);
+      }
+      .l-navbar:not(.expanded):hover .nav_group-btn { grid-template-columns: max-content 1fr max-content; }
+      .l-navbar:not(.expanded):hover .nav_group.aberto .nav_filhos { grid-template-rows: 1fr; }
+      .l-navbar:not(.expanded):hover .nav_sub { padding-left: 2.6rem; }
+      .l-navbar:not(.expanded):hover .nav_link { padding-left: 1.5rem; }
+      .l-navbar:not(.expanded):hover .nav_logo img { width: 130px; }
+    }
 
-    /* ===== logo sobre a sidebar (sem faixa de fundo) ===== */
+    .nav { height: 100%; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; }
+    .nav-inner { display: flex; flex-direction: column; min-height: 100%; padding-bottom: 1rem; }
+
+    /* ===== logo ===== */
     .nav_logo {
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0.5rem 0 0.75rem;
-      padding: 0.5rem 0.5rem;
+      margin: 0.5rem 0 0.25rem;
+      padding: 0.5rem;
       cursor: pointer;
-      transition: 0.5s;
     }
     .nav_logo img {
       width: 130px; height: auto; object-fit: contain;
       filter: brightness(0) invert(1);
+      transition: width 0.25s ease;
     }
     .l-navbar:not(.expanded) .nav_logo img { width: 46px; }
 
-    /* ===== links — padrão AdminLTE .sidebar-menu ===== */
+    /* ===== rótulos de seção ===== */
+    .nav_secao {
+      margin: 0.9rem 0 0.3rem;
+      padding: 0 0 0 1.5rem;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(169, 196, 207, 0.55);
+      white-space: nowrap;
+    }
+    .l-navbar:not(.expanded) .nav_secao {
+      height: 0; margin: 0.55rem 0.8rem 0.35rem; padding: 0;
+      border-top: 1px solid rgba(169, 196, 207, 0.15);
+      color: transparent;
+      overflow: hidden;
+    }
+
+    /* ===== links ===== */
     .nav_link {
       position: relative;
       display: grid;
-      grid-template-columns: max-content max-content;
+      grid-template-columns: max-content 1fr;
       align-items: center;
       column-gap: 1rem;
       padding: 0.55rem 0 0.55rem 1.5rem;
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.15rem;
       color: var(--inn-link);
       font-size: 90%;
       border-left: 3px solid transparent;
-      transition: 0.2s;
+      transition: background 0.15s, color 0.15s;
+      text-decoration: none;
+      min-width: var(--nav-width-open);
     }
     .nav_link:hover {
       color: #fff;
@@ -352,10 +460,10 @@ const NAV: NavItem[] = [
       background: var(--inn-navlink-hover);
       border-left-color: var(--inn-gold);
     }
-    .nav_icon { font-size: 1.1rem; width: 20px; height: 20px; }
-    .nav_name { white-space: nowrap; }
+    .nav_icon { font-size: 1.15rem; width: 20px; height: 20px; }
+    .nav_name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* ===== grupo expansível (dropdown) ===== */
+    /* ===== grupo expansível ===== */
     .nav_group-btn {
       width: 100%;
       border: 0;
@@ -372,8 +480,6 @@ const NAV: NavItem[] = [
       color: var(--inn-link);
     }
     .nav_group.aberto .nav_arrow { transform: rotate(180deg); }
-    /* colapsada: sem texto, a seta some (o grupo abre ao clicar e expandir) */
-    .l-navbar:not(.expanded) .nav_arrow { display: none; }
     .nav_filhos {
       display: grid;
       grid-template-rows: 0fr;
@@ -381,41 +487,15 @@ const NAV: NavItem[] = [
     }
     .nav_filhos-in { overflow: hidden; }
     .nav_group.aberto .nav_filhos { grid-template-rows: 1fr; }
-    /* colapsada: filhos sempre visíveis como ícones (mesmo padrão dos demais) */
-    .l-navbar:not(.expanded) .nav_filhos { grid-template-rows: 1fr; }
     .nav_sub { padding-left: 2.6rem; font-size: 84%; }
-    .l-navbar:not(.expanded) .nav_sub { padding-left: 1.5rem; }
-    .l-navbar:not(.expanded) .nav_name { display: none; }
+
+    /* rail colapsada: sem texto, sem seta, sem filhos empilhados */
+    .l-navbar:not(.expanded) .nav_name,
+    .l-navbar:not(.expanded) .nav_arrow { display: none; }
+    .l-navbar:not(.expanded) .nav_filhos { grid-template-rows: 0fr; }
     .l-navbar:not(.expanded) .nav_link { padding-left: 1.35rem; }
 
-    /* ===== indicador realtime (sobre navbar verde) ===== */
-    .rt {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.75rem;
-      color: rgba(255, 255, 255, 0.75);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .rt-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.4);
-      transition: background 0.3s;
-    }
-    .rt-on { color: #fff; }
-    .rt-on .rt-dot {
-      background: #fff;
-      animation: rt-pulse 1.6s ease-in-out infinite;
-    }
-    @keyframes rt-pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.45); }
-      50% { box-shadow: 0 0 0 5px rgba(255, 255, 255, 0); }
-    }
-
-    /* ===== botão sair — flat sobre navbar verde (AdminLTE) ===== */
+    /* ===== botão sair ===== */
     .header .btn-dark-blue {
       background: rgba(0, 0, 0, 0.18);
       border-radius: 3px;
@@ -433,16 +513,33 @@ const NAV: NavItem[] = [
       margin-left: calc(var(--nav-width) + 1rem);
       padding: 0 1rem 2rem 0;
       min-height: calc(100vh - var(--header-height) - 3rem);
-      transition: 0.25s ease;
+      transition: margin-left 0.25s ease;
     }
     .content-open { margin-left: calc(var(--nav-width-open) + 1rem); }
 
+    /* ===== mobile: sidebar off-canvas ===== */
     @media (max-width: 768px) {
-      .l-navbar { width: 50px; }
-      .l-navbar.expanded { width: var(--nav-width-open); }
-      .header { padding-left: calc(50px + 1rem); }
-      .content { margin-left: calc(50px + 0.5rem); padding-right: 0.5rem; }
-      .content-open { margin-left: calc(50px + 0.5rem); }
+      .l-navbar {
+        left: calc(-1 * var(--nav-width-open) - 8px);
+        width: var(--nav-width-open);
+        box-shadow: none;
+        transition: left 0.25s ease;
+      }
+      .l-navbar.expanded {
+        left: 0;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+      }
+      .scrim { display: block; pointer-events: none; }
+      .scrim-visivel { pointer-events: auto; }
+
+      .content, .content-open {
+        margin-left: 0.5rem;
+        margin-right: 0;
+        padding-right: 0.5rem;
+      }
+      .header { grid-template-columns: auto 1fr auto; gap: 0.5rem; padding: 0 0.6rem; }
+      .busca-kbd { display: none; }
+      .header .btn-dark-blue span { display: none; }
     }
   `,
 })
@@ -453,8 +550,12 @@ export class ShellComponent implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   protected readonly aberta = signal(window.innerWidth > 768);
+
+  /** Seções visíveis — filtra por permissão e remove seções vazias. */
   protected readonly nav = computed(() =>
-    NAV.filter((i) => !i.admin || this.auth.isAdmin()),
+    NAV.filter((s) => !s.admin || this.auth.isAdmin())
+      .map((s) => ({ ...s, itens: s.itens.filter((i) => !i.admin || this.auth.isAdmin()) }))
+      .filter((s) => s.itens.length > 0),
   );
 
   /** Rótulo do grupo aberto no dropdown — null = todos fechados. */
@@ -499,20 +600,37 @@ export class ShellComponent implements OnInit, OnDestroy {
       .subscribe(() => this.sincronizarGrupoComRota());
   }
 
+  /** Todos os itens achatados — p/ resolver grupo ativo pela rota. */
+  private todosItens(): NavItem[] {
+    return NAV.flatMap((s) => s.itens);
+  }
+
   /** Rota atual dentro de um grupo → mantém ele aberto. */
   private sincronizarGrupoComRota(): void {
-    const grupo = NAV.find((i) => this.grupoAtivo(i));
+    const grupo = this.todosItens().find((i) => this.grupoAtivo(i));
     if (grupo) this.grupoAberto.set(grupo.rotulo);
   }
 
   protected grupoAtivo(item: NavItem): boolean {
-    return !!item.filhos?.some((f) => this.router.url.startsWith(f.rota));
+    return !!item.filhos?.some((f) =>
+      f.rota === this.router.url || this.router.url.startsWith(f.rota + '/'),
+    );
+  }
+
+  /** Hamburger: desktop alterna rail↔full; mobile abre/fecha overlay. */
+  protected alternar(): void {
+    this.aberta.update((v) => !v);
   }
 
   protected alternarGrupo(item: NavItem): void {
-    // sidebar recolhida: expande e já abre o grupo (ícones sem texto não servem)
-    if (!this.aberta()) this.aberta.set(true);
+    // sidebar recolhida (desktop): expande e já abre o grupo
+    if (window.innerWidth > 768 && !this.aberta()) this.aberta.set(true);
     this.grupoAberto.update((g) => (g === item.rotulo ? null : item.rotulo));
+  }
+
+  /** Fecha a overlay após navegar — só em viewport mobile. */
+  protected clicouNav(): void {
+    if (window.innerWidth <= 768) this.aberta.set(false);
   }
 
   ngOnInit(): void {
