@@ -1,13 +1,12 @@
-import { Component, computed, inject, signal, viewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { IsActiveMatchOptions, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthStore } from '@core/services/auth.store';
 import { Realtime } from '@core/services/realtime.service';
 import { Notificacoes } from '@core/services/notificacoes.service';
-import { ApiService } from '@core/services/api.service';
 import { MariaWidgetComponent } from '@features/maria/maria-widget.component';
-import { ItemBusca, Notificacao } from '@core/models/api.models';
-import { Subject, debounceTime, distinctUntilChanged, filter } from 'rxjs';
+import { Notificacao } from '@core/models/api.models';
+import { filter } from 'rxjs';
 
 interface NavItem {
   rota: string;
@@ -17,15 +16,6 @@ interface NavItem {
   /** Subitens — o item vira um grupo expansível (o `rota` serve só de chave). */
   filhos?: NavItem[];
 }
-
-/** Rótulo de cada grupo do dropdown de busca. */
-const GRUPOS: Record<ItemBusca['tipo'], { rotulo: string; icone: string }> = {
-  cliente: { rotulo: 'Clientes', icone: 'person' },
-  reserva: { rotulo: 'Reservas', icone: 'calendar_month' },
-  acomodacao: { rotulo: 'Acomodações', icone: 'hotel' },
-  funcionario: { rotulo: 'Funcionários', icone: 'badge' },
-  estoque: { rotulo: 'Estoque', icone: 'inventory_2' },
-};
 
 const ATIVO_EXATO: IsActiveMatchOptions = {
   paths: 'exact', queryParams: 'ignored', matrixParams: 'ignored', fragment: 'ignored',
@@ -118,7 +108,6 @@ const NAV: NavItem[] = [
 
 @Component({
   selector: 'app-shell',
-  host: { '(document:keydown.control.k)': 'focarBusca($event)' },
   imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule, MariaWidgetComponent],
   template: `
     <header class="header" [class.header-open]="aberta()">
@@ -138,64 +127,6 @@ const NAV: NavItem[] = [
           }
           <h1 class="pagina-titulo">{{ pagina().titulo }}</h1>
         </div>
-      </div>
-
-      <!-- ===== busca global (Ctrl+K) ===== -->
-      <div class="busca-wrap">
-        <div class="campo" (mousedown)="focarCampo($event)">
-          <mat-icon class="campo-icone" aria-hidden="true">search</mat-icon>
-          <input
-            #buscaInput
-            class="campo-input"
-            type="text"
-            inputmode="search"
-            enterkeyhint="search"
-            placeholder="Buscar reserva, cliente, quarto…"
-            aria-label="Busca global"
-            autocomplete="off"
-            spellcheck="false"
-            (input)="digitar($event)"
-            (keydown)="buscaTecla($event)"
-          />
-          @if (termo()) {
-            <button type="button" class="campo-limpar" aria-label="Limpar busca" (click)="limparBusca()">
-              <mat-icon>close</mat-icon>
-            </button>
-          } @else {
-            <kbd class="campo-kbd">Ctrl K</kbd>
-          }
-        </div>
-        @if (buscaAberta()) {
-          <div class="busca-fechar" (click)="fecharBusca()" (keydown)="fecharBusca()" role="button" tabindex="-1" aria-label="Fechar busca"></div>
-          <div class="busca-painel" role="listbox" aria-label="Resultados da busca">
-            @if (buscaCarregando()) {
-              <p class="busca-vazio">Buscando…</p>
-            } @else if (!resultados().length) {
-              <p class="busca-vazio">Nenhum resultado para "{{ termo() }}".</p>
-            } @else {
-              @for (g of grupos(); track g.tipo) {
-                <p class="busca-grupo">
-                  <mat-icon>{{ g.icone }}</mat-icon> {{ g.rotulo }}
-                </p>
-                @for (it of g.itens; track it.item.tipo + it.item.id) {
-                  <button
-                    type="button"
-                    class="busca-item"
-                    id="busca-item-{{ it.idx }}"
-                    role="option"
-                    [class.busca-ativa]="it.idx === buscaAtiva()"
-                    [attr.aria-selected]="it.idx === buscaAtiva()"
-                    (click)="irPara(it.item)"
-                    (mouseenter)="buscaAtiva.set(it.idx)"
-                  >
-                    <span class="busca-tit">{{ it.item.titulo }}</span>
-                    @if (it.item.sub) { <span class="busca-sub">{{ it.item.sub }}</span> }
-                  </button>
-                }
-              }
-            }
-          </div>
-        }
       </div>
 
       <div class="header-right">
@@ -400,7 +331,7 @@ const NAV: NavItem[] = [
       left: var(--nav-width);
       height: var(--shell-h);
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 440px) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: 1.25rem;
       align-items: center;
       padding: 0 1.25rem 0 0.75rem;
@@ -444,81 +375,6 @@ const NAV: NavItem[] = [
       color: #fff;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-
-    /* busca — vidro sobre o header, vira branca no foco */
-    .header .busca-wrap { width: 100%; display: block; }
-    /* o campo é a caixa; ícone, input e atalho são itens flex — alinhados
-       na mesma linha por construção, sem posicionamento absoluto */
-    .campo {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      height: 40px;
-      padding: 0 8px 0 12px;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
-      cursor: text;
-      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
-    }
-    .campo:hover { background: rgba(255, 255, 255, 0.14); }
-    .campo:focus-within {
-      background: #fff;
-      border-color: #fff;
-      color: #1f3640;
-      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.22);
-    }
-    .campo-icone {
-      flex: none;
-      font-size: 20px; width: 20px; height: 20px; line-height: 20px;
-      opacity: 0.8;
-    }
-    .campo-input {
-      flex: 1;
-      min-width: 0;
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      border: 0;
-      outline: 0;
-      background: transparent;
-      box-shadow: none;
-      color: inherit;
-      font: inherit;
-      font-size: 0.875rem;
-      line-height: 1.2;
-      text-overflow: ellipsis;
-    }
-    .campo-input::placeholder { color: currentColor; opacity: 0.65; }
-    .campo-kbd {
-      flex: none;
-      padding: 3px 6px;
-      border: 1px solid currentColor;
-      border-radius: 6px;
-      font-family: inherit;
-      font-size: 0.66rem;
-      font-weight: 600;
-      line-height: 1;
-      letter-spacing: 0.02em;
-      white-space: nowrap;
-      opacity: 0.6;
-    }
-    .campo-limpar {
-      flex: none;
-      display: inline-grid; place-items: center;
-      width: 24px; height: 24px;
-      padding: 0;
-      border: 0;
-      border-radius: 50%;
-      background: none;
-      color: inherit;
-      cursor: pointer;
-      opacity: 0.7;
-      transition: background 0.15s, opacity 0.15s;
-    }
-    .campo-limpar:hover { opacity: 1; background: rgba(125, 151, 161, 0.25); }
-    .campo-limpar mat-icon { font-size: 16px; width: 16px; height: 16px; line-height: 16px; }
 
     .header-right {
       display: flex; align-items: center; gap: 0.75rem;
@@ -825,7 +681,6 @@ const NAV: NavItem[] = [
         padding: 0 0.6rem;
       }
       .pagina { display: none; }
-      .campo-kbd { display: none; }
       .header-right { gap: 0.35rem; }
 
       .l-navbar {
@@ -858,7 +713,6 @@ export class ShellComponent implements OnInit, OnDestroy {
   protected readonly auth = inject(AuthStore);
   protected readonly rt = inject(Realtime);
   protected readonly notifs = inject(Notificacoes);
-  private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   protected readonly aberta = signal(window.innerWidth > 768);
 
@@ -911,38 +765,7 @@ export class ShellComponent implements OnInit, OnDestroy {
     month: 'short',
   }).format(new Date());
 
-  // -- busca global ------------------------------------------------------------
-  protected readonly termo = signal('');
-  protected readonly resultados = signal<ItemBusca[]>([]);
-  protected readonly buscaAberta = signal(false);
-  protected readonly buscaCarregando = signal(false);
-  /** Índice do item ativo na lista achatada (navegação ↑↓). */
-  protected readonly buscaAtiva = signal(-1);
-  private readonly buscaInput = viewChild<ElementRef<HTMLInputElement>>('buscaInput');
-  private readonly termo$ = new Subject<string>();
-
-  /** Lista achatada — ordem de exibição = ordem do teclado. */
-  protected readonly plano = computed(() => this.resultados());
-
-  /** Agrupa por `tipo` na ordem fixa de GRUPOS, preservando índice global. */
-  protected readonly grupos = computed(() => {
-    const itens = this.plano();
-    const mapa = new Map<string, { item: ItemBusca; idx: number }[]>();
-    itens.forEach((it, i) => {
-      const g = mapa.get(it.tipo) ?? [];
-      g.push({ item: it, idx: i });
-      mapa.set(it.tipo, g);
-    });
-    return (Object.keys(GRUPOS) as ItemBusca['tipo'][])
-      .filter((t) => mapa.has(t))
-      .map((t) => ({ tipo: t, ...GRUPOS[t], itens: mapa.get(t)! }));
-  });
-
   constructor() {
-    this.termo$
-      .pipe(debounceTime(250), distinctUntilChanged())
-      .subscribe((t) => this.executarBusca(t));
-
     // abre o grupo da rota atual ao carregar e a cada navegação
     this.sincronizarGrupoComRota();
     this.router.events
@@ -1003,94 +826,6 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.rt.parar();
-    this.termo$.complete();
-  }
-
-  // -- busca global ------------------------------------------------------------
-
-  /** Ctrl+K foca o input (atalho global, padrão dos command palettes). */
-  focarBusca(e: Event): void {
-    e.preventDefault();
-    this.buscaInput()?.nativeElement.focus();
-  }
-
-  digitar(e: Event): void {
-    const t = (e.target as HTMLInputElement).value;
-    this.termo.set(t);
-    this.buscaAtiva.set(-1);
-    if (t.trim().length < 2) {
-      this.resultados.set([]);
-      this.buscaAberta.set(false);
-      this.buscaCarregando.set(false);
-      return;
-    }
-    this.buscaAberta.set(true);
-    this.buscaCarregando.set(true);
-    this.termo$.next(t.trim());
-  }
-
-  private executarBusca(t: string): void {
-    this.api.buscaGlobal(t).subscribe({
-      next: (r) => {
-        this.resultados.set(r);
-        this.buscaCarregando.set(false);
-      },
-      error: () => {
-        this.resultados.set([]);
-        this.buscaCarregando.set(false);
-      },
-    });
-  }
-
-  /** ↑↓ percorrem, Enter navega, Esc fecha — padrão command palette. */
-  buscaTecla(e: KeyboardEvent): void {
-    const n = this.plano().length;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      this.buscaAtiva.update((i) => (n ? (i + 1) % n : -1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      this.buscaAtiva.update((i) => (n ? (i - 1 + n) % n : -1));
-    } else if (e.key === 'Enter') {
-      const it = this.plano()[this.buscaAtiva()];
-      if (it) {
-        e.preventDefault();
-        this.irPara(it);
-      }
-    } else if (e.key === 'Escape') {
-      this.fecharBusca();
-    }
-  }
-
-  irPara(it: ItemBusca): void {
-    this.fecharBusca();
-    void this.router.navigateByUrl(it.rota);
-  }
-
-  /** Clique na moldura do campo (ícone, margens) leva o foco ao input. */
-  focarCampo(e: MouseEvent): void {
-    const input = this.buscaInput()?.nativeElement;
-    if (!input || e.target === input || (e.target as HTMLElement).closest('button')) return;
-    e.preventDefault();
-    input.focus();
-  }
-
-  /** Botão ✕: esvazia o campo e devolve o foco para nova busca. */
-  limparBusca(): void {
-    const input = this.buscaInput()?.nativeElement;
-    if (input) {
-      input.value = '';
-      input.focus();
-    }
-    this.termo.set('');
-    this.resultados.set([]);
-    this.buscaCarregando.set(false);
-    this.fecharBusca();
-  }
-
-  fecharBusca(): void {
-    this.buscaAberta.set(false);
-    this.buscaAtiva.set(-1);
   }
 
   /** Clica numa notificação: marca como lida e navega ao contexto. */
