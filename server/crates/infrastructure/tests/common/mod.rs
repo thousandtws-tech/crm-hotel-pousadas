@@ -162,6 +162,7 @@ fn settings_teste() -> Settings {
         vapid_public_b64: None,
         vapid_contato: "mailto:teste@local".into(),
         site_base: "https://site.teste".into(),
+        public_api_url: Some("https://api.teste".into()),
         pousada_nome: "Pousada Teste".into(),
     }
 }

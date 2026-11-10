@@ -17,6 +17,8 @@ export interface BookingSubmission {
   specialRequests?: string;
   earlyCheckin?: boolean;
   lateCheckout?: boolean;
+  aceitoTermos?: boolean;
+  aceitoMarketing?: boolean;
   totalNights?: number;
   estimatedTotal?: number;
 }

@@ -159,6 +159,7 @@ async fn serve(settings: Settings, pool: sqlx::PgPool) -> Result<(), Box<dyn std
         eventos,
         cors_origins: settings.cors_origins.clone(),
         stripe_webhook_secret: settings.stripe_webhook_secret.clone(),
+        link_secret: settings.jwt_secret.clone(),
         vapid_public_b64: settings.vapid_public_b64.clone(),
     };
     // Sweeper de conciliação: holds expirados, webhooks falhos e
@@ -207,12 +208,27 @@ async fn serve(settings: Settings, pool: sqlx::PgPool) -> Result<(), Box<dyn std
         // rodar em todas as réplicas.
         let gov = state.services.governanca.clone();
         let manut = state.services.manutencao.clone();
+        let lgpd = state.services.lgpd.clone();
+        let estab = state.services.estabelecimento.clone();
         tokio::spawn(async move {
             let mut tick = tokio::time::interval(std::time::Duration::from_secs(600));
             tick.tick().await;
             loop {
                 tick.tick().await;
                 let agora = chrono::Utc::now();
+                // LGPD art. 16 — retenção diária: anonimiza titulares sem
+                // estadia há `retencao_dados_anos` (default 5a). Idempotente.
+                if chrono::Timelike::hour(&agora) == 4 {
+                    let anos = estab
+                        .obter()
+                        .await
+                        .ok()
+                        .flatten()
+                        .map_or(5, |e| e.retencao_dados_anos);
+                    if let Err(e) = lgpd.anonimizar_vencidos(anos).await {
+                        tracing::warn!(erro = %e, "lgpd: retenção falhou");
+                    }
+                }
                 if chrono::Timelike::hour(&agora) == 22 {
                     match gov.gerar_d1().await {
                         Ok(n) if n > 0 => {

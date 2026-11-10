@@ -69,7 +69,9 @@ export class BookingService {
           telefone: submission.guestPhone,
           observacoes: submission.specialRequests || null,
           early_checkin: submission.earlyCheckin === true,
-          late_checkout: submission.lateCheckout === true
+          late_checkout: submission.lateCheckout === true,
+          aceito_termos: submission.aceitoTermos === true,
+          aceito_marketing: submission.aceitoMarketing === true
         })
       });
       const data = await res.json();

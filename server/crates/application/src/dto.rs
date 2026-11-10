@@ -302,6 +302,13 @@ pub struct ReservaPublicaInput {
     /// Early check-in / late checkout — mesma regra de cobrança da operação.
     pub early_checkin: Option<bool>,
     pub late_checkout: Option<bool>,
+    /// CDC + LGPD — hóspede marcou que leu política de cancelamento e
+    /// privacidade. Obrigatório: o aceite (data+IP) fica na reserva.
+    #[serde(default)]
+    pub aceito_termos: bool,
+    /// Consentimento de marketing (opcional, checkbox separada — LGPD art. 8º).
+    #[serde(default)]
+    pub aceito_marketing: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -593,6 +600,15 @@ pub struct EstabelecimentoInput {
     pub horario_checkout: Option<String>,
     pub horario_cafe: Option<String>,
     pub info_servicos: Option<String>,
+    /// MTur/Cadastur — exibido no site e nas comunicações.
+    pub cadastur: Option<String>,
+    /// CDC: faixas escalonadas `[{"ate_dias":15,"pct":100},…]` — ordenadas
+    /// do prazo mais distante ao mais próximo do check-in.
+    pub politica_cancelamento: Option<serde_json::Value>,
+    /// LGPD: anos de guarda pós check-out antes de anonimizar.
+    pub retencao_dados_anos: Option<i32>,
+    /// LGPD: e-mail do encarregado (DPO) na política de privacidade.
+    pub dpo_email: Option<String>,
     /// Concorrência otimista.
     pub version: Option<i64>,
 }

@@ -31,6 +31,7 @@ pub struct ConciergeService {
     verify_token: Option<String>,
     /// Segredo da app Meta p/ assinatura X-Hub-Signature-256.
     app_secret: Option<String>,
+    lgpd: Arc<dyn LgpdRepository>,
 }
 
 impl ConciergeService {
@@ -44,6 +45,7 @@ impl ConciergeService {
         ia: Option<Arc<dyn ConciergeIa>>,
         verify_token: Option<String>,
         app_secret: Option<String>,
+        lgpd: Arc<dyn LgpdRepository>,
     ) -> Self {
         Self {
             automacao,
@@ -54,6 +56,7 @@ impl ConciergeService {
             ia,
             verify_token,
             app_secret,
+            lgpd,
         }
     }
 
@@ -113,6 +116,26 @@ impl ConciergeService {
         texto: &str,
     ) -> AppResult<()> {
         let digitos: String = de.chars().filter(char::is_ascii_digit).collect();
+        // LGPD — "sair"/"parar"/"stop" descadastra sem depender de reserva.
+        if crate::services::lgpd::LgpdService::eh_opt_out(texto) {
+            let n = self.lgpd.opt_out_telefone(&digitos, "whatsapp").await?;
+            tracing::info!(atualizados = n, "whatsapp: opt-out registrado");
+            self.fila
+                .enfileirar(NovoEnvio {
+                    canal: clarituz_domain::enums::CanalEnvio::Whatsapp,
+                    destino: digitos,
+                    template: "inna_concierge".into(),
+                    payload: serde_json::json!({"tipo": "texto", "texto":
+                        "Pronto — você não receberá mais mensagens promocionais. \
+                         Comunicações sobre sua estadia seguem ativas."}),
+                    idreserva: None,
+                    idcliente: None,
+                    idfuncionario: None,
+                    agendado_para: Utc::now(),
+                })
+                .await?;
+            return Ok(());
+        }
         let Some(r) = self.automacao.reserva_por_telefone(&digitos).await? else {
             // Telefone sem reserva ativa — dedup antes de qualquer saída.
             tracing::info!(finais = %right8(&digitos), "whatsapp inbound: sem reserva");

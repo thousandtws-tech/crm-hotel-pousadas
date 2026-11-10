@@ -230,3 +230,73 @@ pub trait ConciergeIa: Send + Sync {
         historico: &[InnaMensagem],
     ) -> Result<ConciergeResposta, DomainError>;
 }
+
+// ---------------------------------------------------------------------------
+// LGPD — solicitações do titular, opt-out, anonimização e aceite de termos.
+// Campos do cliente vivem aqui (repo dedicado) para não inflar o entity
+// `Cliente` usado em dezenas de consultas.
+// ---------------------------------------------------------------------------
+
+/// Solicitação do titular (LGPD art. 18) — aberta pelo portal do hóspede
+/// ou registrada pela recepção; ciclo aberta → respondida → executada.
+#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize)]
+pub struct LgpdSolicitacao {
+    pub id: i64,
+    pub idcliente: Option<i64>,
+    pub idreserva: Option<i64>,
+    pub tipo: String,
+    pub detalhe: Option<String>,
+    pub canal: String,
+    pub status: String,
+    pub resposta: Option<String>,
+    pub respondida_em: Option<chrono::DateTime<chrono::Utc>>,
+    pub respondida_por: Option<i64>,
+    pub criado_em: chrono::DateTime<chrono::Utc>,
+    pub atualizado_em: chrono::DateTime<chrono::Utc>,
+}
+
+#[async_trait]
+pub trait LgpdRepository: Send + Sync {
+    /// Marca opt-out por telefone (comando "sair" no bot) ou por idcliente
+    /// (link descadastrar). Retorna quantos clientes foram atualizados.
+    async fn opt_out_telefone(
+        &self,
+        telefone_digitos: &str,
+        canal: &str,
+    ) -> Result<u64, DomainError>;
+    async fn opt_out_cliente(&self, idcliente: i64, canal: &str) -> Result<(), DomainError>;
+    /// true → não enviar mensagens não-transacionais a este cliente.
+    async fn cliente_opt_out(&self, idcliente: i64) -> Result<bool, DomainError>;
+    /// Registra consentimento de marketing (checkbox no FNRH/site).
+    async fn registrar_consent(&self, idcliente: i64) -> Result<(), DomainError>;
+    /// Aceite CDC/LGPD na reserva — data + IP do titular.
+    async fn marcar_termos(&self, idreserva: i64, ip: &str) -> Result<(), DomainError>;
+    /// ECA: referência da autorização dos pais p/ menor desacompanhado.
+    async fn marcar_autorizacao_menor(&self, idreserva: i64, doc: &str) -> Result<(), DomainError>;
+    async fn autorizacao_menor(&self, idreserva: i64) -> Result<Option<String>, DomainError>;
+    /// Todos os dados pessoais do cliente (LGPD art. 18, acesso).
+    async fn exportar_cliente(&self, idcliente: i64) -> Result<serde_json::Value, DomainError>;
+    /// Apaga PII mantendo trilha fiscal/FNRH exigida por lei.
+    async fn anonimizar_cliente(&self, idcliente: i64) -> Result<(), DomainError>;
+    /// Retenção — anonimiza clientes cujo último check-out supera o prazo.
+    async fn anonimizar_vencidos(&self, anos: i32) -> Result<u64, DomainError>;
+
+    async fn criar_solicitacao(
+        &self,
+        idcliente: Option<i64>,
+        idreserva: Option<i64>,
+        tipo: &str,
+        detalhe: Option<&str>,
+        canal: &str,
+    ) -> Result<i64, DomainError>;
+    async fn listar_solicitacoes(
+        &self,
+        status: Option<&str>,
+    ) -> Result<Vec<LgpdSolicitacao>, DomainError>;
+    async fn responder_solicitacao(
+        &self,
+        id: i64,
+        resposta: &str,
+        idfuncionario: i64,
+    ) -> Result<(), DomainError>;
+}

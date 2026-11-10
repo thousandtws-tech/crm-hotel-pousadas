@@ -21,6 +21,7 @@ thiserror.workspace = true
 tracing.workspace = true
 metrics = "0.24"
 sha2.workspace = true
+hmac.workspace = true
 hex.workspace = true
 tokio = { workspace = true, features = ["macros"] }
 quick-xml.workspace = true

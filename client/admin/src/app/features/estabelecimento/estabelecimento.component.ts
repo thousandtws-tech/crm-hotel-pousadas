@@ -149,6 +149,46 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                 <textarea class="input-inn" rows="3" formControlName="info_servicos" placeholder="Piscina das 8h às 20h; estacionamento gratuito;…"></textarea>
               </label>
             </fieldset>
+            <fieldset class="fld">
+              <legend>Conformidade legal — CDC, LGPD e MTur</legend>
+              <label class="lbl">
+                Cadastur (MTur)
+                <input class="input-inn" type="text" formControlName="cadastur" placeholder="Nº do cadastro no Ministério do Turismo" />
+              </label>
+              <label class="lbl">
+                E-mail do encarregado de dados (DPO — LGPD)
+                <input class="input-inn" type="email" formControlName="dpo_email" placeholder="privacidade@pousada.com.br" />
+              </label>
+              <label class="lbl">
+                Retenção de dados do hóspede (anos)
+                <input class="input-inn" type="number" min="1" max="30" formControlName="retencao_dados_anos" />
+              </label>
+              <div class="grid-3">
+                <label class="lbl">
+                  Reembolso integral até (dias antes)
+                  <input class="input-inn" type="number" min="0" formControlName="pol1_dias" />
+                </label>
+                <label class="lbl">
+                  Reembolso parcial até (dias antes)
+                  <input class="input-inn" type="number" min="0" formControlName="pol2_dias" />
+                </label>
+                <label class="lbl">
+                  Reembolso final (%)
+                  <input class="input-inn" type="number" min="0" max="100" formControlName="pol3_pct" />
+                </label>
+              </div>
+              <div class="grid-3">
+                <label class="lbl">
+                  % reembolso integral
+                  <input class="input-inn" type="number" min="0" max="100" formControlName="pol1_pct" />
+                </label>
+                <label class="lbl">
+                  % reembolso parcial
+                  <input class="input-inn" type="number" min="0" max="100" formControlName="pol2_pct" />
+                </label>
+                <span class="hint">Faixas por proximidade do check-in (CDC art. 49).</span>
+              </div>
+            </fieldset>
             <div class="end">
               <button class="btn-dark-blue" type="button" (click)="salvarDados()" [disabled]="salvando()">
                 <mat-icon>save</mat-icon> {{ salvando() ? 'Salvando…' : 'Gravar dados' }}
@@ -554,6 +594,8 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
     .f-lbl { font-size: 0.82rem; font-weight: 600; color: #40525d; }
     .f-mat { width: 100%; }
     .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .hint { font-size: 0.73rem; color: #8a99a4; font-weight: 400; align-self: end; padding-bottom: 10px; }
     .porta-inn { margin-top: 20px; }
     .num-comp { display: grid; grid-template-columns: 120px 1fr; gap: 10px; }
     .end { display: flex; justify-content: flex-end; }
@@ -744,6 +786,15 @@ export class EstabelecimentoComponent implements OnInit {
     horario_checkout: [''],
     horario_cafe: [''],
     info_servicos: [''],
+    cadastur: [''],
+    dpo_email: [''],
+    retencao_dados_anos: [5],
+    // CDC — faixas escalonadas: reembolso integral, parcial e nenhum.
+    pol1_dias: [15],
+    pol1_pct: [100],
+    pol2_dias: [7],
+    pol2_pct: [50],
+    pol3_pct: [0],
   });
   private readonly dadosVersion = signal<number | undefined>(undefined);
   private readonly endVersion = signal<number | undefined>(undefined);
@@ -792,6 +843,8 @@ export class EstabelecimentoComponent implements OnInit {
     this.api.obterEstabelecimento().subscribe({
       next: (e) => {
         this.dadosVersion.set(e.version);
+        const faixas = (e.politica_cancelamento as { faixas?: { ate_dias: number; pct: number }[] } | null)?.faixas;
+        const fx = (i: number) => faixas?.[i];
         this.dados.patchValue({
           cnpj: e.cnpj ?? '',
           razao_social: e.razao_social ?? '',
@@ -810,6 +863,14 @@ export class EstabelecimentoComponent implements OnInit {
           horario_checkout: e.horario_checkout ?? '',
           horario_cafe: e.horario_cafe ?? '',
           info_servicos: e.info_servicos ?? '',
+          cadastur: e.cadastur ?? '',
+          dpo_email: e.dpo_email ?? '',
+          retencao_dados_anos: e.retencao_dados_anos ?? 5,
+          pol1_dias: fx(0)?.ate_dias ?? 15,
+          pol1_pct: fx(0)?.pct ?? 100,
+          pol2_dias: fx(1)?.ate_dias ?? 7,
+          pol2_pct: fx(1)?.pct ?? 50,
+          pol3_pct: fx(2)?.pct ?? 0,
         });
       },
       error: () => undefined,
@@ -864,6 +925,16 @@ export class EstabelecimentoComponent implements OnInit {
         horario_checkout: empty(v.horario_checkout),
         horario_cafe: empty(v.horario_cafe),
         info_servicos: empty(v.info_servicos),
+        cadastur: empty(v.cadastur),
+        dpo_email: empty(v.dpo_email),
+        retencao_dados_anos: Number(v.retencao_dados_anos) || 5,
+        politica_cancelamento: {
+          faixas: [
+            { ate_dias: Number(v.pol1_dias) || 0, pct: Number(v.pol1_pct) || 0 },
+            { ate_dias: Number(v.pol2_dias) || 0, pct: Number(v.pol2_pct) || 0 },
+            { ate_dias: 0, pct: Number(v.pol3_pct) || 0 },
+          ],
+        },
         version: this.dadosVersion(),
       })
       .subscribe({

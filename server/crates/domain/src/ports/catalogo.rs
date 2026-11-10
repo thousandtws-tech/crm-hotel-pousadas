@@ -263,6 +263,11 @@ pub struct DadosEstabelecimento {
     pub horario_checkout: Option<String>,
     pub horario_cafe: Option<String>,
     pub info_servicos: Option<String>,
+    /// MTur/Cadastur, política CDC escalonada, retenção LGPD e DPO.
+    pub cadastur: Option<String>,
+    pub politica_cancelamento: Option<serde_json::Value>,
+    pub retencao_dados_anos: Option<i32>,
+    pub dpo_email: Option<String>,
     /// Concorrência otimista — divergência → 409.
     pub version: Option<i64>,
 }

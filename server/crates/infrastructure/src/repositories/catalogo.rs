@@ -1078,6 +1078,7 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
             "SELECT id, cnpj, razao_social, site, email, telefone, celular,
                     impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late,
                     wifi_nome, wifi_senha, horario_checkin, horario_checkout, horario_cafe, info_servicos,
+                    cadastur, politica_cancelamento, retencao_dados_anos, dpo_email,
                     version, criado_em, atualizado_em
              FROM estabelecimento ORDER BY id LIMIT 1",
         )
@@ -1106,12 +1107,15 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
             "INSERT INTO estabelecimento
                 (cnpj, razao_social, site, email, telefone, celular,
                  impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late,
-                 wifi_nome, wifi_senha, horario_checkin, horario_checkout, horario_cafe, info_servicos)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                 wifi_nome, wifi_senha, horario_checkin, horario_checkout, horario_cafe, info_servicos,
+                 cadastur, politica_cancelamento, retencao_dados_anos, dpo_email)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
+                     $18, $19, $20, $21)
              ON CONFLICT (id) DO NOTHING
              RETURNING id, cnpj, razao_social, site, email, telefone, celular,
                        impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late,
                        wifi_nome, wifi_senha, horario_checkin, horario_checkout, horario_cafe, info_servicos,
+                       cadastur, politica_cancelamento, retencao_dados_anos, dpo_email,
                        version, criado_em, atualizado_em",
         )
         .bind(&d.cnpj)
@@ -1131,6 +1135,10 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
         .bind(&d.horario_checkout)
         .bind(&d.horario_cafe)
         .bind(&d.info_servicos)
+        .bind(&d.cadastur)
+        .bind(&d.politica_cancelamento)
+        .bind(d.retencao_dados_anos)
+        .bind(&d.dpo_email)
         .fetch_optional(&mut *tx)
         .await
         .map_err(map_db_err)?;
@@ -1140,18 +1148,22 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
             None => {
                 sqlx::query_as::<_, Estabelecimento>(
                     "UPDATE estabelecimento SET
-                        cnpj = $2, razao_social = $3, site = $4, email = $5,
-                        telefone = $6, celular = $7,
-                        impressora_ip = $8, impressora_porta = $9, impressora_ativa = $10,
-                        taxa_early = $11, taxa_late = $12,
-                        wifi_nome = $14, wifi_senha = $15, horario_checkin = $16,
-                        horario_checkout = $17, horario_cafe = $18, info_servicos = $19,
+                        cnpj = $1, razao_social = $2, site = $3, email = $4,
+                        telefone = $5, celular = $6,
+                        impressora_ip = $7, impressora_porta = $8, impressora_ativa = $9,
+                        taxa_early = $10, taxa_late = $11,
+                        wifi_nome = $13, wifi_senha = $14, horario_checkin = $15,
+                        horario_checkout = $16, horario_cafe = $17, info_servicos = $18,
+                        cadastur = $19, politica_cancelamento = $20,
+                        retencao_dados_anos = $21, dpo_email = $22,
+                        version = version + 1,
                         atualizado_em = now()
                      WHERE id = (SELECT id FROM estabelecimento ORDER BY id LIMIT 1)
-                       AND ($13::bigint IS NULL OR version = $13)
+                       AND ($12::bigint IS NULL OR version = $12)
                      RETURNING id, cnpj, razao_social, site, email, telefone, celular,
                                impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late,
                                wifi_nome, wifi_senha, horario_checkin, horario_checkout, horario_cafe, info_servicos,
+                               cadastur, politica_cancelamento, retencao_dados_anos, dpo_email,
                                version, criado_em, atualizado_em",
                 )
                 .bind(&d.cnpj)
@@ -1172,6 +1184,10 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
                 .bind(&d.horario_checkout)
                 .bind(&d.horario_cafe)
                 .bind(&d.info_servicos)
+                .bind(&d.cadastur)
+                .bind(&d.politica_cancelamento)
+                .bind(d.retencao_dados_anos)
+                .bind(&d.dpo_email)
                 .fetch_optional(&mut *tx)
                 .await
                 .map_err(map_db_err)?

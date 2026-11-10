@@ -195,12 +195,14 @@ async fn reserva_publica_site(pool: PgPool) {
         observacoes: None,
         early_checkin: None,
         late_checkout: None,
+        aceito_termos: true,
+        aceito_marketing: false,
     };
 
     let out = c
         .services
         .reservas
-        .criar_reserva_site(input_site(entrada, saida))
+        .criar_reserva_site(input_site(entrada, saida), None)
         .await
         .expect("reserva do site");
     assert_eq!(out.status, "reserva_criada");
@@ -218,7 +220,7 @@ async fn reserva_publica_site(pool: PgPool) {
     let out = c
         .services
         .reservas
-        .criar_reserva_site(input_site(entrada, saida))
+        .criar_reserva_site(input_site(entrada, saida), None)
         .await
         .expect("período ocupado vira consulta");
     assert_eq!(out.status, "consulta_registrada");

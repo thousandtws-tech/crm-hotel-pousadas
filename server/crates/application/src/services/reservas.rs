@@ -15,15 +15,15 @@ use crate::error::AppResult;
 use crate::services::AuthService;
 use chrono::{Duration, Utc};
 use clarituz_domain::entities::{
-    Acompanhante, AdicionalConsumo, Consumo, Fnrh, ItemConsumido, NovoLog, Reserva,
+    Acompanhante, AdicionalConsumo, Cliente, Consumo, Fnrh, ItemConsumido, NovoLog, Reserva,
 };
 use clarituz_domain::enums::StatusReserva;
 use clarituz_domain::events::{Aviso, TipoAviso};
 use clarituz_domain::ports::{
     AcomodacaoRepository, AcompanhanteRepository, ClienteRepository, ComandoCheckout,
     EstabelecimentoRepository, EventoPublisher, FiltroReserva, FnrhRepository,
-    FormaPagamentoRepository, ImpressoraGateway, ImpressoraRepository, LinhaRecibo, NovaFnrh,
-    NovaReserva, NovoAcompanhante, NovoAdicional, NovoClienteSite, NovoItemConsumido,
+    FormaPagamentoRepository, ImpressoraGateway, ImpressoraRepository, LgpdRepository, LinhaRecibo,
+    NovaFnrh, NovaReserva, NovoAcompanhante, NovoAdicional, NovoClienteSite, NovoItemConsumido,
     ReservaRepository,
 };
 use clarituz_domain::queries::{ComprovanteResumo, ReservaDetalhe, ReservaResumo};
@@ -50,6 +50,8 @@ pub struct ReservaDeps {
     pub eventos: Arc<dyn EventoPublisher>,
     pub acompanhantes: Arc<dyn AcompanhanteRepository>,
     pub fnrh: Arc<dyn FnrhRepository>,
+    /// ECA/LGPD — autorização de menor + aceite de termos.
+    pub lgpd: Arc<dyn LgpdRepository>,
     /// Minutos do hold de pagamento nas reservas criadas pelo site.
     pub hold_minutos: i64,
 }
@@ -66,6 +68,7 @@ pub struct ReservaService {
     eventos: Arc<dyn EventoPublisher>,
     acompanhantes: Arc<dyn AcompanhanteRepository>,
     fnrh: Arc<dyn FnrhRepository>,
+    lgpd: Arc<dyn LgpdRepository>,
     hold_minutos: i64,
 }
 
@@ -83,6 +86,7 @@ impl ReservaService {
             auth: d.auth,
             acompanhantes: d.acompanhantes,
             fnrh: d.fnrh,
+            lgpd: d.lgpd,
             hold_minutos: d.hold_minutos,
         }
     }
@@ -637,12 +641,20 @@ impl ReservaService {
     pub async fn criar_reserva_site(
         &self,
         input: ReservaPublicaInput,
+        ip: Option<&str>,
     ) -> AppResult<ReservaPublicaOutput> {
         let nome = input.nome.trim().to_string();
         let email = input.email.trim().to_lowercase();
         let telefone = input.telefone.trim().to_string();
         if nome.is_empty() || email.is_empty() || telefone.is_empty() {
             return Err(DomainError::validacao("Informe nome, e-mail e telefone.").into());
+        }
+        // CDC — a política de cancelamento precisa de aceite registrado.
+        if !input.aceito_termos {
+            return Err(DomainError::validacao(
+                "É preciso aceitar a política de cancelamento e a política de privacidade.",
+            )
+            .into());
         }
         if input.check_out < input.check_in {
             return Err(DomainError::validacao(
@@ -740,6 +752,13 @@ impl ReservaService {
 
         match self.reservas.criar(&nova, log).await {
             Ok(reserva) => {
+                // CDC/LGPD — aceite com IP; consentimento de marketing separado.
+                self.lgpd
+                    .marcar_termos(reserva.id, ip.unwrap_or("desconhecido"))
+                    .await?;
+                if input.aceito_marketing {
+                    let _ = self.lgpd.registrar_consent(idcliente).await;
+                }
                 self.eventos.avisar(
                     Aviso::novo(
                         TipoAviso::Sucesso,
@@ -820,6 +839,37 @@ impl ReservaService {
             id,
             Some(serde_json::json!({"idreserva": id, "acao": "check-in"})),
         );
+        // ECA (art. 82): menor só se hospeda acompanhado dos pais/responsável
+        // ou com autorização documentada. Sem adulto na reserva e sem
+        // autorização registrada → check-in bloqueado.
+        let reserva_atual = self.buscar(id).await?;
+        let hoje = em.date_naive();
+        let titular_adulto = self
+            .clientes
+            .buscar(reserva_atual.idcliente)
+            .await?
+            .is_none_or(|c| Cliente::maior_de_idade(c.data_nascimento, hoje));
+        let acompanhantes = self.acompanhantes.listar(id).await?;
+        let adulto_acomp = acompanhantes.iter().any(|a| {
+            a.data_nascimento
+                .is_none_or(|d| Cliente::maior_de_idade(d, hoje))
+        });
+        let tem_menor = !titular_adulto
+            || acompanhantes.iter().any(|a| {
+                a.data_nascimento
+                    .is_some_and(|d| !Cliente::maior_de_idade(d, hoje))
+            });
+        if tem_menor && !titular_adulto && !adulto_acomp {
+            let aut = self.lgpd.autorizacao_menor(id).await?;
+            if aut.as_deref().map(str::trim).unwrap_or_default().is_empty() {
+                return Err(DomainError::regra(
+                    "Menor desacompanhado (ECA art. 82): registre a autorização \
+                     dos pais ou responsável legal antes do check-in.",
+                )
+                .into());
+            }
+        }
+
         let reserva = self.reservas.checkin(id, em, log).await?;
         self.eventos.avisar(
             Aviso::novo(

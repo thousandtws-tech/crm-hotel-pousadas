@@ -421,6 +421,10 @@ export interface Estabelecimento {
   horario_checkout?: string | null;
   horario_cafe?: string | null;
   info_servicos?: string | null;
+  cadastur?: string | null;
+  politica_cancelamento?: unknown;
+  retencao_dados_anos?: number;
+  dpo_email?: string | null;
   version?: number;
 }
 

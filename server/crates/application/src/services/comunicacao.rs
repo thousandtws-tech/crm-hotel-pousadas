@@ -30,7 +30,11 @@ pub struct ComunicacaoService {
     eventos: Arc<dyn EventoPublisher>,
     /// Base pública dos links de hóspede — ex.: https://espiritodomar.com.br
     site_base: String,
+    /// URL pública da API + segredo do link de descadastro (art. 8º LGPD).
+    api_base: Option<String>,
+    link_secret: String,
     pousada: String,
+    lgpd: Arc<dyn LgpdRepository>,
 }
 
 impl ComunicacaoService {
@@ -43,7 +47,10 @@ impl ComunicacaoService {
         emissores: Vec<Arc<dyn Emissor>>,
         eventos: Arc<dyn EventoPublisher>,
         site_base: &str,
+        api_base: Option<String>,
+        link_secret: String,
         pousada: String,
+        lgpd: Arc<dyn LgpdRepository>,
     ) -> Self {
         Self {
             fila,
@@ -53,7 +60,10 @@ impl ComunicacaoService {
             emissores,
             eventos,
             site_base: site_base.trim_end_matches('/').into(),
+            api_base: api_base.map(|u| u.trim_end_matches('/').to_string()),
+            link_secret,
             pousada,
+            lgpd,
         }
     }
 
@@ -146,14 +156,47 @@ impl ComunicacaoService {
         if item.canal == CanalEnvio::Email && self.fila.email_suprimido(&item.destino).await? {
             return Err(DomainError::regra("destino suprimido (bounce/complaint)"));
         }
+        // LGPD: opt-out suprime templates não-transacionais (pesquisa,
+        // campanhas) — o operacional da estadia continua.
+        let mut payload = item.payload.clone();
+        if let Some(idc) = item.idcliente {
+            if crate::services::lgpd::TEMPLATES_SUPRIMIVEIS.contains(&item.template.as_str()) {
+                if self.lgpd.cliente_opt_out(idc).await? {
+                    return Err(DomainError::regra("suprimido: opt-out LGPD"));
+                }
+                // Todo e-mail suprimível carrega o link de descadastro
+                // assinado (art. 8º — revogação tão fácil quanto o consent).
+                if let Some(f) = self.footer_descadastro(idc) {
+                    if let Some(html) = payload.get_mut("html").and_then(|h| h.as_str()) {
+                        payload["html"] = serde_json::Value::String(format!("{html}{f}"));
+                    }
+                }
+            }
+        }
         let emissor = self
             .emissores
             .iter()
             .find(|e| e.canal() == item.canal)
             .ok_or_else(|| DomainError::regra("canal sem emissor configurado"))?;
         emissor
-            .enviar(&item.destino, &item.template, &item.payload)
+            .enviar(&item.destino, &item.template, &payload)
             .await
+    }
+
+    /// Rodapé LGPD com link de descadastro assinado (HMAC `lgpd:{id}`).
+    fn footer_descadastro(&self, idcliente: i64) -> Option<String> {
+        use hmac::{Hmac, Mac};
+        use sha2::Sha256;
+        let base = self.api_base.as_deref()?;
+        let mut mac = Hmac::<Sha256>::new_from_slice(self.link_secret.as_bytes()).ok()?;
+        mac.update(format!("lgpd:{idcliente}").as_bytes());
+        let sig = hex::encode(mac.finalize().into_bytes());
+        Some(format!(
+            "<hr style='margin-top:24px;border:none;border-top:1px solid #eee'>\
+             <p style='font-size:11px;color:#999'>Não quer mais receber estas \
+             mensagens? <a href='{base}/api/v1/publico/lgpd/descadastrar?c={idcliente}&s={sig}'>\
+             Descadastrar</a></p>"
+        ))
     }
 
     // ------------------------------------------------------------------

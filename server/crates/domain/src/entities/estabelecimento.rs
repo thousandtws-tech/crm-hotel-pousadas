@@ -30,6 +30,15 @@ pub struct Estabelecimento {
     pub horario_checkout: Option<String>,
     pub horario_cafe: Option<String>,
     pub info_servicos: Option<String>,
+    /// Registro Cadastur/MTur — exibido em comunicações e no site.
+    pub cadastur: Option<String>,
+    /// CDC: política de cancelamento escalonada —
+    /// `{"faixas":[{"ate_dias":15,"pct":100},{"ate_dias":7,"pct":50},{"ate_dias":0,"pct":0}]}`.
+    pub politica_cancelamento: serde_json::Value,
+    /// LGPD: anos de guarda após o check-out antes de anonimizar (art. 16).
+    pub retencao_dados_anos: i32,
+    /// LGPD: contato do encarregado (DPO) publicado na política de privacidade.
+    pub dpo_email: Option<String>,
     pub version: i64,
     pub criado_em: DateTime<Utc>,
     pub atualizado_em: DateTime<Utc>,

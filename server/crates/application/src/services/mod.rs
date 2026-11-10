@@ -23,6 +23,7 @@ pub mod frigobar;
 pub mod funcionarios;
 pub mod governanca;
 pub mod impressoras;
+pub mod lgpd;
 pub mod manutencao;
 pub mod notificacoes;
 pub mod pagamentos;
@@ -54,6 +55,7 @@ pub use frigobar::FrigobarService;
 pub use funcionarios::FuncionarioService;
 pub use governanca::GovernancaService;
 pub use impressoras::ImpressoraService;
+pub use lgpd::LgpdService;
 pub use manutencao::ManutencaoService;
 pub use notificacoes::NotificacaoService;
 pub use pagamentos::PagamentoService;
@@ -94,6 +96,7 @@ pub struct Services {
     pub compras: Arc<ComprasService>,
     pub comunicacao: Arc<ComunicacaoService>,
     pub concierge: Arc<ConciergeService>,
+    pub lgpd: Arc<LgpdService>,
     pub avaliacoes: Arc<AvaliacoesService>,
     pub fidelidade: Arc<FidelidadeService>,
     pub manutencao: Arc<ManutencaoService>,

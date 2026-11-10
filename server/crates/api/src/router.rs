@@ -280,6 +280,24 @@ pub fn build(state: AppState) -> Router {
             "/clientes/{id}/perfil360",
             get(routes::comunicacao::cliente_perfil360),
         )
+        // LGPD — solicitações do titular, export, anonimização, ECA
+        .route("/lgpd/solicitacoes", get(routes::comunicacao::lgpd_listar))
+        .route(
+            "/lgpd/solicitacoes/{id}/responder",
+            post(routes::comunicacao::lgpd_responder),
+        )
+        .route(
+            "/clientes/{id}/lgpd-export",
+            get(routes::comunicacao::lgpd_exportar_admin),
+        )
+        .route(
+            "/clientes/{id}/anonimizar",
+            post(routes::comunicacao::lgpd_anonimizar),
+        )
+        .route(
+            "/reservas/{id}/autorizacao-menor",
+            post(routes::comunicacao::reserva_autorizacao_menor),
+        )
         // operação — manutenção & PMOC
         .route(
             "/manutencao/ordens",
@@ -926,6 +944,21 @@ pub fn build(state: AppState) -> Router {
                 .post(routes::comunicacao::avaliacao_post)
                 .route_layer(from_fn_with_state(
                     IpRateLimit::novo(20, Duration::from_secs(60)),
+                    IpRateLimit::middleware,
+                )),
+        )
+        // LGPD público — descadastrar (link assinado) e direitos do titular
+        // pelo token opaco da reserva.
+        .route(
+            "/api/v1/publico/lgpd/descadastrar",
+            get(routes::comunicacao::lgpd_descadastrar),
+        )
+        .route(
+            "/api/v1/publico/lgpd/{token}",
+            get(routes::comunicacao::lgpd_exportar_publico)
+                .post(routes::comunicacao::lgpd_solicitar)
+                .route_layer(from_fn_with_state(
+                    IpRateLimit::novo(10, Duration::from_secs(60)),
                     IpRateLimit::middleware,
                 )),
         )

@@ -258,10 +258,16 @@ pub async fn publico_stream(
 /// `ReservaService::criar_reserva_site`; a rota só mapeia o resultado.
 pub async fn publico_criar_reserva(
     State(s): State<AppState>,
+    ctx: clarituz_application::actor::RequestCtx,
     Json(input): Json<ReservaPublicaInput>,
 ) -> Result<(StatusCode, Json<ReservaPublicaOutput>), AppError> {
     Ok((
         StatusCode::CREATED,
-        Json(s.services.reservas.criar_reserva_site(input).await?),
+        Json(
+            s.services
+                .reservas
+                .criar_reserva_site(input, ctx.ip.as_deref())
+                .await?,
+        ),
     ))
 }

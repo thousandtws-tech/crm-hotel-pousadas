@@ -122,6 +122,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         .zip(settings.inna_internal_key.as_ref())
         .map(|(u, k)| Arc::new(crate::maria::MariaClient::new(u, k.clone())) as _);
 
+    let lgpd_repo = Arc::new(PgLgpdRepository::new(pool.clone()));
     let comunicacao_svc = Arc::new(ComunicacaoService::new(
         fila_envio_repo.clone(),
         Arc::new(PgPushRepository::new(pool.clone())),
@@ -130,7 +131,10 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         emissores,
         publisher.clone(),
         &settings.site_base,
+        settings.public_api_url.clone(),
+        settings.jwt_secret.clone(),
         settings.pousada_nome.clone(),
+        lgpd_repo.clone(),
     ));
     let concierge_svc = Arc::new(ConciergeService::new(
         automacao_repo,
@@ -141,7 +145,9 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         maria_ia,
         settings.whatsapp_verify_token.clone(),
         settings.whatsapp_app_secret.clone(),
+        lgpd_repo.clone(),
     ));
+    let lgpd_svc = Arc::new(LgpdService::new(lgpd_repo.clone(), publisher.clone()));
 
     let services = Services {
         auth: auth.clone(),
@@ -171,6 +177,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             eventos: publisher.clone(),
             acompanhantes: reserva_repo.clone(),
             fnrh: reserva_repo.clone(),
+            lgpd: lgpd_repo.clone(),
             hold_minutos: settings.hold_minutos,
         })),
         pagamentos_online: Arc::new(PagamentosOnlineService::new(
@@ -229,6 +236,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         )),
         comunicacao: comunicacao_svc,
         concierge: concierge_svc,
+        lgpd: lgpd_svc,
         avaliacoes: Arc::new(AvaliacoesService::new(avaliacao_repo)),
         fidelidade: Arc::new(FidelidadeService::new(fidelidade_repo)),
         manutencao: Arc::new(ManutencaoService::new(

@@ -51,6 +51,32 @@ impl EstabelecimentoService {
             horario_checkout: input.horario_checkout,
             horario_cafe: input.horario_cafe,
             info_servicos: input.info_servicos,
+            cadastur: input
+                .cadastur
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty()),
+            politica_cancelamento: input.politica_cancelamento.map(|p| {
+                // Sanitiza: só faixas {ate_dias, pct} em 0–100 — nada de
+                // campos arbitrários vindos do cliente.
+                let faixas: Vec<serde_json::Value> = p["faixas"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|f| {
+                        let dias = f["ate_dias"].as_i64()?;
+                        let pct = f["pct"].as_i64()?;
+                        (0..=100)
+                            .contains(&pct)
+                            .then(|| serde_json::json!({"ate_dias": dias.max(0), "pct": pct}))
+                    })
+                    .collect();
+                serde_json::json!({"faixas": faixas})
+            }),
+            retencao_dados_anos: input.retencao_dados_anos.map(|a| a.clamp(1, 30)),
+            dpo_email: input
+                .dpo_email
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty()),
             version: input.version,
         };
         let log = ator.log(

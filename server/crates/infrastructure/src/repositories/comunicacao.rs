@@ -687,7 +687,7 @@ impl AutomacaoRepository for PgAutomacaoRepository {
         sqlx::query_as::<_, ReservaAuto>(&format!(
             "SELECT {AUTO_COLS} {AUTO_FROM}
              WHERE r.status IN ('p','i')
-               AND right(regexp_replace(coalesce(c.celular, c.telefone, ''), '\\\\D', '', 'g'), 8)
+               AND right(regexp_replace(coalesce(c.telefone, ''), '\\\\D', '', 'g'), 8)
                    = right($1, 8)
              ORDER BY CASE WHEN r.status = 'i' THEN 0 ELSE 1 END,
                       abs(r.entradaprevista - CURRENT_DATE)
@@ -697,6 +697,237 @@ impl AutomacaoRepository for PgAutomacaoRepository {
         .fetch_optional(&self.pool)
         .await
         .map_err(map_db_err)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// LGPD — opt-out, consentimento, solicitações do titular e anonimização.
+// ---------------------------------------------------------------------------
+
+pub struct PgLgpdRepository {
+    pool: PgPool,
+}
+
+impl PgLgpdRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl LgpdRepository for PgLgpdRepository {
+    async fn opt_out_telefone(
+        &self,
+        telefone_digitos: &str,
+        canal: &str,
+    ) -> Result<u64, DomainError> {
+        let r = sqlx::query(
+            "UPDATE cliente SET lgpd_opt_out = true, lgpd_opt_out_em = now(),
+                    lgpd_opt_out_canal = $2, atualizado_em = now()
+             WHERE right(regexp_replace(coalesce(telefone, ''), '\\\\D', '', 'g'), 8)
+                   = right($1, 8)",
+        )
+        .bind(telefone_digitos)
+        .bind(canal)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(r.rows_affected())
+    }
+
+    async fn opt_out_cliente(&self, idcliente: i64, canal: &str) -> Result<(), DomainError> {
+        sqlx::query(
+            "UPDATE cliente SET lgpd_opt_out = true, lgpd_opt_out_em = now(),
+                    lgpd_opt_out_canal = $2, atualizado_em = now()
+             WHERE id = $1",
+        )
+        .bind(idcliente)
+        .bind(canal)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    async fn cliente_opt_out(&self, idcliente: i64) -> Result<bool, DomainError> {
+        sqlx::query_scalar::<_, bool>(
+            "SELECT coalesce(lgpd_opt_out, false) FROM cliente WHERE id = $1",
+        )
+        .bind(idcliente)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn registrar_consent(&self, idcliente: i64) -> Result<(), DomainError> {
+        sqlx::query(
+            "UPDATE cliente SET consent_marketing = true, consent_em = now(),
+                    atualizado_em = now()
+             WHERE id = $1",
+        )
+        .bind(idcliente)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    async fn marcar_termos(&self, idreserva: i64, ip: &str) -> Result<(), DomainError> {
+        sqlx::query(
+            "UPDATE reserva SET termos_aceitos_em = coalesce(termos_aceitos_em, now()),
+                    termos_aceitos_ip = coalesce(termos_aceitos_ip, $2)
+             WHERE id = $1",
+        )
+        .bind(idreserva)
+        .bind(ip)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    async fn marcar_autorizacao_menor(&self, idreserva: i64, doc: &str) -> Result<(), DomainError> {
+        sqlx::query("UPDATE reserva SET autorizacao_menor = $2 WHERE id = $1")
+            .bind(idreserva)
+            .bind(doc)
+            .execute(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    async fn autorizacao_menor(&self, idreserva: i64) -> Result<Option<String>, DomainError> {
+        sqlx::query_scalar::<_, Option<String>>(
+            "SELECT autorizacao_menor FROM reserva WHERE id = $1",
+        )
+        .bind(idreserva)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn exportar_cliente(&self, idcliente: i64) -> Result<serde_json::Value, DomainError> {
+        // Todos os dados pessoais — cliente + reservas + FNRH + avaliações.
+        sqlx::query_scalar::<_, serde_json::Value>(
+            "SELECT jsonb_build_object(
+                'cliente', (SELECT to_jsonb(c) FROM cliente c WHERE c.id = $1),
+                'reservas', (SELECT coalesce(jsonb_agg(to_jsonb(r)), '[]')
+                             FROM reserva r WHERE r.idcliente = $1),
+                'fnrh', (SELECT coalesce(jsonb_agg(to_jsonb(f)), '[]')
+                         FROM fnrh f WHERE f.idcliente = $1),
+                'avaliacoes', (SELECT coalesce(jsonb_agg(to_jsonb(a)), '[]')
+                               FROM avaliacao a WHERE a.idcliente = $1),
+                'solicitacoes', (SELECT coalesce(jsonb_agg(to_jsonb(s)), '[]')
+                                 FROM lgpd_solicitacao s WHERE s.idcliente = $1),
+                'exportado_em', now()
+            )",
+        )
+        .bind(idcliente)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn anonimizar_cliente(&self, idcliente: i64) -> Result<(), DomainError> {
+        // Art. 16 LGPD — trilha fiscal/FNRH (obrigação legal) é preservada;
+        // o que some é a identificação pessoal do titular. cpf/data_nascimento
+        // são NOT NULL → placeholders determinísticos.
+        sqlx::query(
+            "UPDATE cliente SET
+                nome = 'Titular anonimizado', email = NULL, telefone = NULL,
+                cpf = 'LGPD-' || id, data_nascimento = '1900-01-01',
+                nacionalidade = NULL, naturalidade = NULL, profissao = NULL,
+                logradouro = NULL, numero = NULL, complemento = NULL,
+                bairro = NULL, cidade = NULL, estado = NULL, cep = NULL,
+                pais = NULL, foto = NULL, preferencias = '{}',
+                observacoes = NULL, anonimizado_em = now(), atualizado_em = now()
+             WHERE id = $1 AND anonimizado_em IS NULL",
+        )
+        .bind(idcliente)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        sqlx::query("DELETE FROM cliente_documento WHERE idcliente = $1")
+            .bind(idcliente)
+            .execute(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    async fn anonimizar_vencidos(&self, anos: i32) -> Result<u64, DomainError> {
+        let ids = sqlx::query_scalar::<_, i64>(
+            "SELECT id FROM cliente WHERE anonimizado_em IS NULL
+               AND NOT EXISTS (
+                   SELECT 1 FROM reserva r
+                   WHERE r.idcliente = cliente.id
+                     AND r.saidaprevista > CURRENT_DATE - make_interval(years => $1))",
+        )
+        .bind(anos)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        for id in &ids {
+            self.anonimizar_cliente(*id).await?;
+        }
+        Ok(ids.len() as u64)
+    }
+
+    async fn criar_solicitacao(
+        &self,
+        idcliente: Option<i64>,
+        idreserva: Option<i64>,
+        tipo: &str,
+        detalhe: Option<&str>,
+        canal: &str,
+    ) -> Result<i64, DomainError> {
+        sqlx::query_scalar::<_, i64>(
+            "INSERT INTO lgpd_solicitacao (idcliente, idreserva, tipo, detalhe, canal)
+             VALUES ($1, $2, $3, $4, $5) RETURNING id",
+        )
+        .bind(idcliente)
+        .bind(idreserva)
+        .bind(tipo)
+        .bind(detalhe)
+        .bind(canal)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn listar_solicitacoes(
+        &self,
+        status: Option<&str>,
+    ) -> Result<Vec<LgpdSolicitacao>, DomainError> {
+        sqlx::query_as::<_, LgpdSolicitacao>(
+            "SELECT * FROM lgpd_solicitacao
+             WHERE ($1::text IS NULL OR status = $1)
+             ORDER BY criado_em DESC LIMIT 200",
+        )
+        .bind(status)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn responder_solicitacao(
+        &self,
+        id: i64,
+        resposta: &str,
+        idfuncionario: i64,
+    ) -> Result<(), DomainError> {
+        sqlx::query(
+            "UPDATE lgpd_solicitacao SET status = 'respondida', resposta = $2,
+                    respondida_em = now(), respondida_por = $3, atualizado_em = now()
+             WHERE id = $1",
+        )
+        .bind(id)
+        .bind(resposta)
+        .bind(idfuncionario)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(())
     }
 }
 

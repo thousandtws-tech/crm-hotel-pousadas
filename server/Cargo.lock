@@ -535,6 +535,7 @@ dependencies = [
  "clarituz-domain",
  "clarituz-shared",
  "hex",
+ "hmac",
  "metrics",
  "quick-xml",
  "rust_decimal",

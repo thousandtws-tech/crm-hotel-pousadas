@@ -87,6 +87,9 @@ pub struct Settings {
     pub vapid_contato: String,
     /// Base pública dos links de hóspede (ficha, avaliação, checkout).
     pub site_base: String,
+    /// URL pública desta API — usada em links assinados que batem na API
+    /// direto (descadastro LGPD no rodapé de e-mails). `None` = sem footer.
+    pub public_api_url: Option<String>,
     /// Nome exibido nas mensagens ao hóspede.
     pub pousada_nome: String,
 }
@@ -159,6 +162,7 @@ impl Settings {
                 .unwrap_or_else(|| "mailto:contato@espiritodomar.com.br".into()),
             site_base: env_string("SITE_BASE")
                 .unwrap_or_else(|| "https://espiritodomar.com.br".into()),
+            public_api_url: env_string("PUBLIC_API_URL"),
             pousada_nome: env_string("POUSADA_NOME")
                 .unwrap_or_else(|| "Pousada Espírito do Mar".into()),
         })

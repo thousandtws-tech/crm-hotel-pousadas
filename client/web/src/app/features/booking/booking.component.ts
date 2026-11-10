@@ -200,6 +200,25 @@ import { MotionService } from '../../core/services/motion.service';
                     ></textarea>
                   </div>
 
+                  <div>
+                    <label class="flex items-start gap-2 cursor-pointer text-xs text-[#536B73]">
+                      <input type="checkbox" [ngModel]="aceiteTermos()" (ngModelChange)="aceiteTermos.set($event)" name="aceiteTermos" required class="accent-[#054054] mt-0.5" />
+                      <span>
+                        Li e aceito a <a routerLink="/privacidade" target="_blank" class="underline text-[#054054]">Política de Privacidade</a>
+                        e os <a routerLink="/termos-de-reserva" target="_blank" class="underline text-[#054054]">Termos de Reserva</a>,
+                        incluindo a política de cancelamento. Autorizo o tratamento dos meus dados
+                        para a execução da hospedagem (LGPD 13.709/18).
+                      </span>
+                    </label>
+                    <label class="flex items-start gap-2 cursor-pointer text-xs text-[#536B73] mt-2">
+                      <input type="checkbox" [ngModel]="aceiteMarketing()" (ngModelChange)="aceiteMarketing.set($event)" name="aceiteMarketing" class="accent-[#054054] mt-0.5" />
+                      <span>
+                        Aceito receber ofertas e novidades da pousada por e-mail e WhatsApp
+                        (opcional — posso descadastrar a qualquer momento).
+                      </span>
+                    </label>
+                  </div>
+
                   @if (errorMessage()) {
                     <div class="p-3 bg-red-50 border border-red-200 text-red-700 text-xs">
                       {{ errorMessage() }}
@@ -208,7 +227,7 @@ import { MotionService } from '../../core/services/motion.service';
 
                   <button
                     type="submit"
-                    [disabled]="isLoading()"
+                    [disabled]="isLoading() || !aceiteTermos()"
                     class="btn-primary w-full mt-2 cursor-pointer"
                   >
                     @if (isLoading()) {
@@ -384,6 +403,8 @@ export class BookingComponent implements OnInit {
   public readonly specialRequests = signal<string>('');
   public readonly earlyCheckin = signal<boolean>(false);
   public readonly lateCheckout = signal<boolean>(false);
+  public readonly aceiteTermos = signal<boolean>(false);
+  public readonly aceiteMarketing = signal<boolean>(false);
   public readonly isLoading = signal<boolean>(false);
   public readonly isSuccess = signal<boolean>(false);
   public readonly serverMessage = signal<string>('');
@@ -451,6 +472,8 @@ export class BookingComponent implements OnInit {
       specialRequests: this.specialRequests(),
       earlyCheckin: this.earlyCheckin(),
       lateCheckout: this.lateCheckout(),
+      aceitoTermos: this.aceiteTermos(),
+      aceitoMarketing: this.aceiteMarketing(),
       totalNights: this.calculatedNights(),
       estimatedTotal: acc.price ? acc.price * this.calculatedNights() : undefined
     });

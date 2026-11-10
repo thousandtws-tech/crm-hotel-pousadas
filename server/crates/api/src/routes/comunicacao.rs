@@ -14,6 +14,7 @@ use clarituz_domain::error::DomainError;
 use crate::error::ApiError;
 use crate::state::AppState;
 use clarituz_application::actor::Ator;
+use clarituz_application::actor::RequestCtx;
 
 // ---------------------------------------------------------------------------
 // público — pré-ficha FNRH (token da reserva, anti-enumeração)
@@ -38,6 +39,7 @@ pub async fn pre_ficha_get(
 pub async fn pre_ficha_post(
     State(st): State<AppState>,
     Path(token): Path<uuid::Uuid>,
+    ctx: RequestCtx,
     Json(dados): Json<serde_json::Value>,
 ) -> Result<StatusCode, ApiError> {
     // Aceita o json do formulário tal qual — imutável após preenchida.
@@ -45,6 +47,14 @@ pub async fn pre_ficha_post(
         .comunicacao
         .gravar_pre_ficha(token, &dados)
         .await?;
+    // CDC/LGPD — a ficha também marca o aceite dos termos (data + IP).
+    if let Ok(Some(r)) = st.services.comunicacao.pre_ficha(token).await {
+        let _ = st
+            .services
+            .lgpd
+            .marcar_termos(r.idreserva, ctx.ip.as_deref().unwrap_or("desconhecido"))
+            .await;
+    }
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -105,6 +115,174 @@ pub async fn concierge_post(
     Ok(Json(
         st.services.concierge.mensagem_portal(token, texto).await?,
     ))
+}
+
+// ---------------------------------------------------------------------------
+// público — LGPD (art. 18): descadastrar, dados do titular, solicitações
+// ---------------------------------------------------------------------------
+
+/// Link "descadastrar" dos e-mails — `s` = HMAC_SHA256(secret, "lgpd:{id}").
+/// GET pra funcionar no clique do leitor de e-mail; idempotente.
+pub async fn lgpd_descadastrar(
+    State(st): State<AppState>,
+    Query(q): Query<std::collections::HashMap<String, String>>,
+) -> axum::response::Html<&'static str> {
+    use hmac::{Hmac, Mac};
+    use sha2::Sha256;
+    let (Some(c), Some(s)) = (q.get("c"), q.get("s")) else {
+        return axum::response::Html("<h2>Link inválido.</h2>");
+    };
+    let Ok(idcliente) = c.parse::<i64>() else {
+        return axum::response::Html("<h2>Link inválido.</h2>");
+    };
+    let Ok(mut mac) = Hmac::<Sha256>::new_from_slice(st.link_secret.as_bytes()) else {
+        return axum::response::Html("<h2>Indisponível no momento.</h2>");
+    };
+    mac.update(format!("lgpd:{idcliente}").as_bytes());
+    let Some(esperado) = hex::decode(s).ok() else {
+        return axum::response::Html("<h2>Link inválido.</h2>");
+    };
+    if mac.verify_slice(&esperado).is_err() {
+        return axum::response::Html("<h2>Link inválido.</h2>");
+    }
+    let _ = st.services.lgpd.opt_out_cliente(idcliente, "email").await;
+    axum::response::Html(
+        "<h2>Pronto — você foi descadastrado.</h2>\
+         <p>Não enviaremos mais mensagens promocionais. Comunicações sobre \
+         suas estadias seguem ativas.</p>",
+    )
+}
+
+#[derive(Deserialize)]
+pub struct SolicitacaoLgpd {
+    pub tipo: String,
+    pub detalhe: Option<String>,
+}
+
+/// Titular abre solicitação pelo portal da reserva (token identifica).
+pub async fn lgpd_solicitar(
+    State(st): State<AppState>,
+    Path(token): Path<uuid::Uuid>,
+    Json(body): Json<SolicitacaoLgpd>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let r = st
+        .services
+        .comunicacao
+        .pre_ficha(token)
+        .await?
+        .ok_or_else(|| DomainError::nao_encontrado("reserva não encontrada"))?;
+    let id = st
+        .services
+        .lgpd
+        .solicitar(
+            Some(r.idcliente),
+            Some(r.idreserva),
+            body.tipo.trim(),
+            body.detalhe
+                .as_deref()
+                .map(str::trim)
+                .filter(|d| !d.is_empty()),
+            "portal",
+        )
+        .await?;
+    Ok(Json(serde_json::json!({"protocolo": id, "prazo_dias": 15})))
+}
+
+/// Titular baixa todos os seus dados (acesso — art. 18, II).
+pub async fn lgpd_exportar_publico(
+    State(st): State<AppState>,
+    Path(token): Path<uuid::Uuid>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let r = st
+        .services
+        .comunicacao
+        .pre_ficha(token)
+        .await?
+        .ok_or_else(|| DomainError::nao_encontrado("reserva não encontrada"))?;
+    Ok(Json(st.services.lgpd.exportar_cliente(r.idcliente).await?))
+}
+
+// ---------------------------------------------------------------------------
+// admin — LGPD: fila de solicitações, export, anonimização, autorização ECA
+// ---------------------------------------------------------------------------
+
+pub async fn lgpd_listar(
+    State(st): State<AppState>,
+    ator: Ator,
+    Query(q): Query<std::collections::HashMap<String, String>>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let _ = &ator;
+    let itens = st
+        .services
+        .lgpd
+        .listar_solicitacoes(q.get("status").map(String::as_str))
+        .await?;
+    Ok(Json(serde_json::json!(itens)))
+}
+
+#[derive(Deserialize)]
+pub struct RespostaLgpd {
+    pub resposta: String,
+}
+
+pub async fn lgpd_responder(
+    State(st): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+    Json(body): Json<RespostaLgpd>,
+) -> Result<StatusCode, ApiError> {
+    st.services
+        .lgpd
+        .responder_solicitacao(&ator, id, &body.resposta)
+        .await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// Eliminação do titular — anonimiza preservando trilha fiscal/FNRH.
+pub async fn lgpd_anonimizar(
+    State(st): State<AppState>,
+    ator: Ator,
+    Path(idcliente): Path<i64>,
+) -> Result<StatusCode, ApiError> {
+    ator.exigir_gerencial()?;
+    st.services
+        .lgpd
+        .anonimizar_cliente(&ator, idcliente)
+        .await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// Acesso do titular via admin — export completo (recepção entrega).
+pub async fn lgpd_exportar_admin(
+    State(st): State<AppState>,
+    ator: Ator,
+    Path(idcliente): Path<i64>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let _ = &ator;
+    Ok(Json(st.services.lgpd.exportar_cliente(idcliente).await?))
+}
+
+#[derive(Deserialize)]
+pub struct AutorizacaoMenor {
+    pub documento: String,
+}
+
+/// ECA — registra a autorização dos pais p/ menor desacompanhado.
+pub async fn reserva_autorizacao_menor(
+    State(st): State<AppState>,
+    ator: Ator,
+    Path(idreserva): Path<i64>,
+    Json(body): Json<AutorizacaoMenor>,
+) -> Result<StatusCode, ApiError> {
+    let _ = &ator;
+    if body.documento.trim().is_empty() {
+        return Err(DomainError::validacao("Informe o documento da autorização.").into());
+    }
+    st.services
+        .lgpd
+        .marcar_autorizacao_menor(idreserva, body.documento.trim())
+        .await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 // ---------------------------------------------------------------------------
