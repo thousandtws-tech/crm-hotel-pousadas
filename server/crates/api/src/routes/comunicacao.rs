@@ -140,12 +140,14 @@ pub async fn whatsapp_inbound(
     headers: axum::http::HeaderMap,
     body: axum::body::Bytes,
 ) -> StatusCode {
-    // X-Hub-Signature-256 = "sha256=" + HMAC_SHA256(app_secret, corpo).
+    // Assinatura HMAC — Meta usa `x-hub-signature-256`, o gateway WA-AKG
+    // usa `x-webhook-signature`; ambos "sha256=" + hex(HMAC(secret, corpo)).
     if let Some(secret) = st.services.concierge.whatsapp_app_secret() {
         use hmac::{Hmac, Mac};
         use sha2::Sha256;
-        let assinatura = headers
-            .get("x-hub-signature-256")
+        let assinatura = ["x-hub-signature-256", "x-webhook-signature"]
+            .iter()
+            .find_map(|h| headers.get(*h))
             .and_then(|v| v.to_str().ok())
             .and_then(|v| v.strip_prefix("sha256="))
             .and_then(|v| hex::decode(v).ok());
@@ -166,9 +168,8 @@ pub async fn whatsapp_inbound(
     let Ok(payload) = serde_json::from_slice::<serde_json::Value>(&body) else {
         return StatusCode::OK; // corpo ilegível não deve gerar reentrega
     };
-    // Estrutura Meta: entry[].changes[].value.messages[] — só texto vira
-    // conversa; status/read receipts não têm `messages`.
-    let mensagens: Vec<(String, Option<String>, String)> = payload["entry"]
+    // Meta Cloud API: entry[].changes[].value.messages[].
+    let mut mensagens: Vec<(String, Option<String>, String)> = payload["entry"]
         .as_array()
         .into_iter()
         .flatten()
@@ -184,6 +185,41 @@ pub async fn whatsapp_inbound(
             Some((de, wamid, texto))
         })
         .collect();
+    // WA-AKG (Baileys): {event:"message.received", data:{messages:[…]}}
+    // — data também pode ser a própria mensagem; ignora `fromMe` e grupos.
+    if payload["event"].as_str() == Some("message.received") {
+        let data = &payload["data"];
+        let lista: Vec<&serde_json::Value> = match data["messages"].as_array() {
+            Some(a) => a.iter().collect(),
+            None => vec![data],
+        };
+        for m in lista {
+            let key = &m["key"];
+            if key["fromMe"].as_bool().unwrap_or(false) {
+                continue;
+            }
+            let jid = key["remoteJid"]
+                .as_str()
+                .or_else(|| m["remoteJid"].as_str())
+                .unwrap_or_default();
+            if jid.is_empty() || jid.ends_with("@g.us") || jid == "status@broadcast" {
+                continue; // grupos e broadcast não viram conversa
+            }
+            let msg = &m["message"];
+            let texto = msg["conversation"]
+                .as_str()
+                .or_else(|| msg["extendedTextMessage"]["text"].as_str())
+                .or_else(|| {
+                    msg["ephemeralMessage"]["message"]["extendedTextMessage"]["text"].as_str()
+                })
+                .map_or_else(|| "[mídia]".into(), str::to_string);
+            mensagens.push((
+                jid.split('@').next().unwrap_or_default().to_string(),
+                key["id"].as_str().map(str::to_string),
+                texto,
+            ));
+        }
+    }
 
     tokio::spawn(async move {
         for (de, wamid, texto) in mensagens {

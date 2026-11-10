@@ -168,6 +168,73 @@ impl Emissor for MetaWaEmissor {
 }
 
 // ---------------------------------------------------------------------------
+// WhatsApp — gateway WA-AKG (self-hosted, Baileys). Sem janela de 24h nem
+// templates: tudo sai como texto livre; payload["texto"] é o conteúdo.
+// ---------------------------------------------------------------------------
+
+pub struct WaAkgEmissor {
+    http: Client,
+    /// Base do gateway — ex.: https://wa-akg.exemplo.net
+    url: String,
+    api_key: String,
+    /// uuid da sessão conectada (path /api/messages/{sessionId}/…).
+    session: String,
+}
+
+impl WaAkgEmissor {
+    pub fn new(url: &str, api_key: String, session: String) -> Self {
+        Self {
+            http: http(),
+            url: url.trim_end_matches('/').into(),
+            api_key,
+            session,
+        }
+    }
+}
+
+#[async_trait]
+impl Emissor for WaAkgEmissor {
+    fn canal(&self) -> CanalEnvio {
+        CanalEnvio::Whatsapp
+    }
+
+    async fn enviar(
+        &self,
+        destino: &str,
+        _template: &str,
+        payload: &serde_json::Value,
+    ) -> Result<Option<String>, DomainError> {
+        let digitos: String = destino.chars().filter(char::is_ascii_digit).collect();
+        if digitos.len() < 8 {
+            return Err(DomainError::validacao("telefone inválido"));
+        }
+        let url = format!(
+            "{}/api/messages/{}/{}@s.whatsapp.net/send",
+            self.url, self.session, digitos
+        );
+        let corpo = serde_json::json!({
+            "message": {"text": payload["texto"].as_str().unwrap_or("")}
+        });
+        let r = self
+            .http
+            .post(&url)
+            .header("x-api-key", &self.api_key)
+            .json(&corpo)
+            .send()
+            .await
+            .map_err(|e| erro_http("waakg.send", &e))?;
+        if !r.status().is_success() {
+            return Err(erro_status("waakg.send", r).await);
+        }
+        let resp: serde_json::Value = r.json().await.map_err(|e| erro_http("waakg.parse", &e))?;
+        Ok(resp["data"]["key"]["id"]
+            .as_str()
+            .or_else(|| resp["data"]["id"].as_str())
+            .map(str::to_string))
+    }
+}
+
+// ---------------------------------------------------------------------------
 // push â€” VAPID tickle (JWT ES256, sem payload criptografado)
 // ---------------------------------------------------------------------------
 

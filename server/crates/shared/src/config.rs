@@ -67,9 +67,15 @@ pub struct Settings {
     pub whatsapp_token: Option<String>,
     pub whatsapp_phone_id: Option<String>,
     /// Webhook inbound — `hub.verify_token` do handshake GET e segredo
-    /// da app Meta para validar X-Hub-Signature-256 no POST.
+    /// para validar a assinatura HMAC do POST (X-Hub-Signature-256 Meta
+    /// ou X-Webhook-Signature WA-AKG).
     pub whatsapp_verify_token: Option<String>,
     pub whatsapp_app_secret: Option<String>,
+    /// Gateway WA-AKG (WhatsApp self-hosted) — base URL, X-Api-Key e
+    /// uuid da sessão conectada. Os três juntos ativam o sender.
+    pub waakg_url: Option<String>,
+    pub waakg_api_key: Option<String>,
+    pub waakg_session_id: Option<String>,
     /// Serviço Inná (FastAPI) — base URL + chave interna compartilhada.
     /// Ausentes → concierge degrada com resposta de fallback + escalada.
     pub maria_url: Option<String>,
@@ -142,6 +148,9 @@ impl Settings {
             whatsapp_phone_id: env_string("WHATSAPP_PHONE_ID"),
             whatsapp_verify_token: env_string("WHATSAPP_VERIFY_TOKEN"),
             whatsapp_app_secret: env_string("WHATSAPP_APP_SECRET"),
+            waakg_url: env_string("WAAKG_URL"),
+            waakg_api_key: env_string("WAAKG_API_KEY"),
+            waakg_session_id: env_string("WAAKG_SESSION_ID"),
             maria_url: env_string("MARIA_URL"),
             inna_internal_key: env_string("INNA_INTERNAL_KEY"),
             vapid_private_pem: env_string("VAPID_PRIVATE_PEM"),
