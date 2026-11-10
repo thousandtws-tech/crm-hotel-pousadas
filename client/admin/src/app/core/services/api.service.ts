@@ -1048,6 +1048,35 @@ export class ApiService {
     return this.post<void>('/escalas/clt/corrigir', correcao);
   }
 
+  // ---- inteligência preditiva (/ia/*) ----
+  iaResumo() {
+    return this.get<M.IaResumo>('/ia/resumo');
+  }
+  iaOcupacao() {
+    return this.get<M.IaOcupacaoDia[]>('/ia/ocupacao-14d');
+  }
+  iaHistorico() {
+    return this.get<M.IaMesHistorico[]>('/ia/historico-12m');
+  }
+  iaRiscos() {
+    return this.get<M.IaRisco[]>('/ia/risco-cancelamentos');
+  }
+  iaPerfis() {
+    return this.get<M.IaPerfil[]>('/ia/perfis-hospedes');
+  }
+  iaEscala() {
+    return this.get<M.IaEscalaDia[]>('/ia/escala-ideal');
+  }
+  iaUpsell() {
+    return this.get<M.IaUpsell[]>('/ia/upsell');
+  }
+  iaEstoque() {
+    return this.get<M.IaEstoquePrev[]>('/ia/estoque-previsto');
+  }
+  iaManutencao() {
+    return this.get<M.IaRiscoQuarto[]>('/ia/manutencao-preventiva');
+  }
+
   resumoComissoes(inicio?: string | null, fim?: string | null) {
     return this.get<M.ComissaoResumo[]>('/pdv/comissoes/resumo', { inicio, fim });
   }

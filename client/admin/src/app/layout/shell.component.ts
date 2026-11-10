@@ -92,6 +92,7 @@ const NAV: NavItem[] = [
     ],
   },
   { rota: '/comunicacao', rotulo: 'Comunicação', icone: 'forum', admin: true },
+  { rota: '/inteligencia', rotulo: 'Inteligência', icone: 'psychology', admin: true },
   {
     rota: '/configuracoes',
     rotulo: 'Configurações',

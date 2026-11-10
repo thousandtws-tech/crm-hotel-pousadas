@@ -122,6 +122,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'inteligencia',
+        loadComponent: () =>
+          import('./features/inteligencia/inteligencia.component').then(
+            (m) => m.InteligenciaComponent,
+          ),
+      },
+      {
         path: 'operacao/governanca',
         loadComponent: () =>
           import('./features/governanca/governanca.component').then(
