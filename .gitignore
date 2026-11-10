@@ -38,3 +38,4 @@ __pycache__/
 
 # PostgreSQL local data
 .pgdata/
+wa-docs.json
