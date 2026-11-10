@@ -992,3 +992,63 @@ impl InnaRepository for PgInnaRepository {
         .map_err(map_db_err)
     }
 }
+
+// ---------------------------------------------------------------------------
+// Pré-reserva via WhatsApp — máquina de estados por telefone.
+// ---------------------------------------------------------------------------
+
+pub struct PgPreReservaRepository {
+    pool: PgPool,
+}
+
+impl PgPreReservaRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl PreReservaRepository for PgPreReservaRepository {
+    async fn pre_reserva_obter(&self, telefone: &str) -> Result<Option<PreReserva>, DomainError> {
+        sqlx::query_as::<_, PreReserva>(
+            "SELECT telefone, etapa, dados, expira_em FROM pre_reserva
+             WHERE telefone = $1 AND expira_em > now()",
+        )
+        .bind(telefone)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn pre_reserva_salvar(
+        &self,
+        telefone: &str,
+        etapa: &str,
+        dados: &serde_json::Value,
+        expira_em: DateTime<Utc>,
+    ) -> Result<(), DomainError> {
+        sqlx::query(
+            "INSERT INTO pre_reserva (telefone, etapa, dados, expira_em)
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (telefone) DO UPDATE
+             SET etapa = $2, dados = $3, expira_em = $4",
+        )
+        .bind(telefone)
+        .bind(etapa)
+        .bind(dados)
+        .bind(expira_em)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    async fn pre_reserva_remover(&self, telefone: &str) -> Result<(), DomainError> {
+        sqlx::query("DELETE FROM pre_reserva WHERE telefone = $1")
+            .bind(telefone)
+            .execute(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+        Ok(())
+    }
+}

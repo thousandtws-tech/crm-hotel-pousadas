@@ -32,6 +32,9 @@ pub struct ConciergeService {
     /// Segredo da app Meta p/ assinatura X-Hub-Signature-256.
     app_secret: Option<String>,
     lgpd: Arc<dyn LgpdRepository>,
+    /// Pré-reserva determinística — intercepta intenção de reserva antes
+    /// da Inná responder (IA nunca toca em datas/dinheiro).
+    pre_reserva: Arc<crate::services::PreReservaService>,
 }
 
 impl ConciergeService {
@@ -46,6 +49,7 @@ impl ConciergeService {
         verify_token: Option<String>,
         app_secret: Option<String>,
         lgpd: Arc<dyn LgpdRepository>,
+        pre_reserva: Arc<crate::services::PreReservaService>,
     ) -> Self {
         Self {
             automacao,
@@ -57,6 +61,7 @@ impl ConciergeService {
             verify_token,
             app_secret,
             lgpd,
+            pre_reserva,
         }
     }
 
@@ -128,6 +133,24 @@ impl ConciergeService {
                     payload: serde_json::json!({"tipo": "texto", "texto":
                         "Pronto — você não receberá mais mensagens promocionais. \
                          Comunicações sobre sua estadia seguem ativas."}),
+                    idreserva: None,
+                    idcliente: None,
+                    idfuncionario: None,
+                    agendado_para: Utc::now(),
+                })
+                .await?;
+            return Ok(());
+        }
+        // Pré-reserva — fluxo determinístico por telefone; funciona sem
+        // reserva ativa (é justamente pra criar uma). Se a mensagem não é
+        // do fluxo, segue pro caminho normal (reserva → Inná).
+        if let Some(resp) = self.pre_reserva.processar(&digitos, texto).await? {
+            self.fila
+                .enfileirar(NovoEnvio {
+                    canal: clarituz_domain::enums::CanalEnvio::Whatsapp,
+                    destino: digitos,
+                    template: "pre_reserva".into(),
+                    payload: serde_json::json!({"tipo": "texto", "texto": resp}),
                     idreserva: None,
                     idcliente: None,
                     idfuncionario: None,

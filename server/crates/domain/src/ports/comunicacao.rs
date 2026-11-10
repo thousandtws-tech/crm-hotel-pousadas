@@ -300,3 +300,31 @@ pub trait LgpdRepository: Send + Sync {
         idfuncionario: i64,
     ) -> Result<(), DomainError>;
 }
+
+// ---------------------------------------------------------------------------
+// Pré-reserva via WhatsApp — máquina de estados por telefone.
+// ---------------------------------------------------------------------------
+
+/// Estado da conversa de pré-reserva — expira sozinho.
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct PreReserva {
+    pub telefone: String,
+    /// 'datas' → 'nome' → 'confirmacao'.
+    pub etapa: String,
+    pub dados: serde_json::Value,
+    pub expira_em: chrono::DateTime<chrono::Utc>,
+}
+
+#[async_trait]
+pub trait PreReservaRepository: Send + Sync {
+    /// Estado vigente (não expirado) do telefone.
+    async fn pre_reserva_obter(&self, telefone: &str) -> Result<Option<PreReserva>, DomainError>;
+    async fn pre_reserva_salvar(
+        &self,
+        telefone: &str,
+        etapa: &str,
+        dados: &serde_json::Value,
+        expira_em: chrono::DateTime<chrono::Utc>,
+    ) -> Result<(), DomainError>;
+    async fn pre_reserva_remover(&self, telefone: &str) -> Result<(), DomainError>;
+}

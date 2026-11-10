@@ -32,7 +32,7 @@ pub use cms::PgCmsRepository;
 pub use compras::PgComprasRepository;
 pub use comunicacao::{
     PgAutomacaoRepository, PgAvaliacaoRepository, PgFidelidadeRepository, PgFilaEnvio,
-    PgInnaRepository, PgLgpdRepository, PgPushRepository,
+    PgInnaRepository, PgLgpdRepository, PgPreReservaRepository, PgPushRepository,
 };
 pub use estoque::PgEstoqueRepository;
 pub use impressora::PgImpressoraRepository;

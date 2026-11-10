@@ -136,6 +136,43 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         settings.pousada_nome.clone(),
         lgpd_repo.clone(),
     ));
+    // Reservas + pagamentos online sobem antes do concierge: a
+    // pré-reserva por WhatsApp (fluxo determinístico, sem LLM) consome
+    // os dois — cria o hold via `criar_reserva_site` e o link de sinal
+    // via `criar_checkout_publico`.
+    let reservas_svc = Arc::new(ReservaService::new(ReservaDeps {
+        reservas: reserva_repo.clone(),
+        acomodacoes: acom_repo.clone(),
+        clientes: clientes_repo.clone(),
+        pagamentos: pag_repo.clone(),
+        estabelecimentos: Arc::new(PgEstabelecimentoRepository::new(pool.clone())),
+        impressoras: impressora_repo.clone(),
+        impressora: impressora_gw.clone(),
+        auth: auth.clone(),
+        eventos: publisher.clone(),
+        acompanhantes: reserva_repo.clone(),
+        fnrh: reserva_repo.clone(),
+        lgpd: lgpd_repo.clone(),
+        hold_minutos: settings.hold_minutos,
+    }));
+    let pagamentos_online_svc = Arc::new(PagamentosOnlineService::new(
+        pag_online_repo,
+        reserva_repo.clone(),
+        gateway,
+        publisher.clone(),
+        settings.sinal_percentual,
+        settings.hold_minutos,
+        settings.stripe_success_url.clone(),
+        settings.stripe_cancel_url.clone(),
+    ));
+    let pre_reserva_svc = Arc::new(PreReservaService::new(
+        Arc::new(PgPreReservaRepository::new(pool.clone())),
+        reserva_repo,
+        reservas_svc.clone(),
+        pagamentos_online_svc.clone(),
+        comunicacao_svc.clone(),
+        settings.sinal_percentual,
+    ));
     let concierge_svc = Arc::new(ConciergeService::new(
         automacao_repo,
         Arc::new(PgInnaRepository::new(pool.clone())),
@@ -146,6 +183,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         settings.whatsapp_verify_token.clone(),
         settings.whatsapp_app_secret.clone(),
         lgpd_repo.clone(),
+        pre_reserva_svc,
     ));
     let lgpd_svc = Arc::new(LgpdService::new(lgpd_repo.clone(), publisher.clone()));
 
@@ -165,31 +203,8 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             Arc::new(PgCmsRepository::new(pool.clone())),
             acom_repo.clone(),
         )),
-        reservas: Arc::new(ReservaService::new(ReservaDeps {
-            reservas: reserva_repo.clone(),
-            acomodacoes: acom_repo.clone(),
-            clientes: clientes_repo,
-            pagamentos: pag_repo.clone(),
-            estabelecimentos: Arc::new(PgEstabelecimentoRepository::new(pool.clone())),
-            impressoras: impressora_repo.clone(),
-            impressora: impressora_gw.clone(),
-            auth: auth.clone(),
-            eventos: publisher.clone(),
-            acompanhantes: reserva_repo.clone(),
-            fnrh: reserva_repo.clone(),
-            lgpd: lgpd_repo.clone(),
-            hold_minutos: settings.hold_minutos,
-        })),
-        pagamentos_online: Arc::new(PagamentosOnlineService::new(
-            pag_online_repo,
-            reserva_repo,
-            gateway,
-            publisher.clone(),
-            settings.sinal_percentual,
-            settings.hold_minutos,
-            settings.stripe_success_url.clone(),
-            settings.stripe_cancel_url.clone(),
-        )),
+        reservas: reservas_svc,
+        pagamentos_online: pagamentos_online_svc,
         estoque: Arc::new(
             EstoqueService::new(Arc::new(PgEstoqueRepository::new(pool.clone())))
                 .com_etiquetas(impressora_repo.clone(), impressora_gw.clone()),
