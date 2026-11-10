@@ -12,6 +12,7 @@ pub mod operacao;
 pub mod pagamentos_online;
 pub mod pdv;
 pub mod pessoas;
+pub mod preditivo;
 pub mod relatorios;
 pub mod reservas;
 pub mod tesouraria;

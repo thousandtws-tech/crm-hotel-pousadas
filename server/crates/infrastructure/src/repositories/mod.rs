@@ -15,6 +15,7 @@ pub mod operacao;
 pub mod pagamento;
 pub mod pdv;
 pub mod pessoas;
+pub mod preditivo;
 pub mod reserva;
 pub mod suporte;
 pub mod tesouraria;
@@ -43,6 +44,7 @@ pub use pessoas::{
     PgClienteRepository, PgDocumentoRepository, PgFuncionarioRepository, PgLogAcessoRepository,
     PgSessaoRepository,
 };
+pub use preditivo::PgPreditivoRepository;
 pub use reserva::PgReservaRepository;
 pub use suporte::{PgDashboardRepository, PgFinanceiroRepository, PgLogRepository};
 pub use tesouraria::PgTesourariaRepository;

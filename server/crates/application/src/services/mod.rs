@@ -27,6 +27,7 @@ pub mod notificacoes;
 pub mod pagamentos;
 pub mod pagamentos_online;
 pub mod pdv;
+pub mod preditivo;
 pub mod reservas;
 pub mod tesouraria;
 
@@ -56,6 +57,7 @@ pub use notificacoes::NotificacaoService;
 pub use pagamentos::PagamentoService;
 pub use pagamentos_online::PagamentosOnlineService;
 pub use pdv::PdvService;
+pub use preditivo::PreditivoService;
 pub use reservas::{ReservaDeps, ReservaService};
 pub use tesouraria::TesourariaService;
 
@@ -94,4 +96,5 @@ pub struct Services {
     pub manutencao: Arc<ManutencaoService>,
     pub governanca: Arc<GovernancaService>,
     pub escalas: Arc<EscalasService>,
+    pub preditivo: Arc<PreditivoService>,
 }

@@ -18,6 +18,7 @@ pub mod operacao;
 pub mod pagamentos;
 pub mod pdv;
 pub mod pessoas;
+pub mod preditivo;
 pub mod reserva;
 pub mod storage;
 pub mod suporte;

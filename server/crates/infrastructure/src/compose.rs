@@ -9,7 +9,9 @@ use crate::password::Argon2Hasher;
 use crate::repositories::*;
 
 use clarituz_application::services::*;
-use clarituz_application::services::{EscalasService, GovernancaService, ManutencaoService};
+use clarituz_application::services::{
+    EscalasService, GovernancaService, ManutencaoService, PreditivoService,
+};
 use clarituz_application::Services;
 use clarituz_domain::ports::{
     EventoPublisher, FuncionarioRepository, ImpressoraGateway, PasswordHasher, TokenIssuer,
@@ -205,6 +207,9 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             publisher.clone(),
         )),
         escalas: Arc::new(EscalasService::new(Arc::new(PgEscalaRepository::new(
+            pool.clone(),
+        )))),
+        preditivo: Arc::new(PreditivoService::new(Arc::new(PgPreditivoRepository::new(
             pool.clone(),
         )))),
     };

@@ -345,6 +345,22 @@ pub fn build(state: AppState) -> Router {
             "/escalas/clt/corrigir",
             post(routes::operacao::clt_corrigir),
         )
+        // inteligência preditiva (Inná) — leitura analítica
+        .route("/ia/resumo", get(routes::preditivo::ia_resumo))
+        .route("/ia/ocupacao-14d", get(routes::preditivo::ia_ocupacao))
+        .route("/ia/receita-4sem", get(routes::preditivo::ia_receita))
+        .route("/ia/fluxo-caixa-30d", get(routes::preditivo::ia_fluxo))
+        .route("/ia/risco-cancelamentos", get(routes::preditivo::ia_riscos))
+        .route("/ia/perfis-hospedes", get(routes::preditivo::ia_perfis))
+        .route("/ia/pace", get(routes::preditivo::ia_pace))
+        .route("/ia/escala-ideal", get(routes::preditivo::ia_escala))
+        .route("/ia/upsell", get(routes::preditivo::ia_upsell))
+        .route("/ia/estoque-previsto", get(routes::preditivo::ia_estoque))
+        .route(
+            "/ia/manutencao-preventiva",
+            get(routes::preditivo::ia_manutencao),
+        )
+        .route("/ia/historico-12m", get(routes::preditivo::ia_historico))
         // estoque
         .route(
             "/estoque/categorias",

@@ -21,6 +21,7 @@ pub mod notificacao;
 pub mod operacao;
 pub mod pagamento;
 pub mod pdv;
+pub mod preditivo;
 pub mod reserva;
 
 pub use acomodacao::{Acomodacao, Quarto, TarifaHistorico, TipoAcomodacao};
@@ -52,6 +53,7 @@ pub use pagamento::{
     TentativaPagamento, WebhookEvento,
 };
 pub use pdv::{PdvComanda, PdvComandaItem, PdvComissao, PdvGarcom, PdvMesa};
+pub use preditivo::*;
 pub use reserva::{
     Acompanhante, AdicionalConsumo, Consumo, Fnrh, ItemConsumido, Reembolso, Reserva,
 };
