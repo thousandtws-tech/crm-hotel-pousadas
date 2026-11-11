@@ -30,6 +30,15 @@ export class MotionService {
   constructor() {
     if (this.isBrowser) {
       this.ensurePluginRegistered();
+      // Resiliência: elementos entram em opacity:0 até o ScrollTrigger disparar.
+      // Aba em 2º plano, restore do bfcache ou retorno de suspensão podem impedir
+      // a avaliação — refresh recalcula e dispara os triggers já passados.
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) ScrollTrigger.refresh();
+      });
+      window.addEventListener('pageshow', (e) => {
+        if (e.persisted) ScrollTrigger.refresh();
+      });
     }
   }
 
