@@ -1,24 +1,32 @@
-//! `clarituz-infrastructure` — adapters concretos dos ports do domínio:
-//! PostgreSQL via sqlx, Argon2id e JWT.
+//! `clarituz-infrastructure` — adapters concretos dos ports do domínio,
+//! organizados por responsabilidade técnica:
+//!
+//! - `composition`  — composition root (fiação do grafo de dependências)
+//! - `persistence`  — pool PostgreSQL, migrations e repositories (sqlx)
+//! - `security`     — Argon2id (hash de senha) e JWT (emissor de tokens)
+//! - `messaging`    — barramento interno de eventos + relay `LISTEN/NOTIFY`
+//! - `storage`      — object store (S3/MinIO/filesystem) e probe de diagnóstico
+//! - `integrations` — gateways externos (Stripe, Maria/IA, emissores de envio)
+//! - `printing`     — adapter de impressoras térmicas (ESC/POS)
+//! - `parsing`      — parsers de formatos externos (OFX)
 
-pub mod compose;
-pub mod db;
-pub mod escpos;
-pub mod eventos;
-pub mod jwt;
-pub mod maria;
-pub mod object_store;
-pub mod ofx;
-pub mod password;
-pub mod repositories;
-pub mod s3_probe;
-pub mod senders;
-pub mod stripe;
+pub mod composition;
+pub mod integrations;
+pub mod messaging;
+pub mod parsing;
+pub mod persistence;
+pub mod printing;
+pub mod security;
+pub mod storage;
 
-pub use compose::{build_services, BuiltServices};
-pub use db::{connect, migrate};
-pub use eventos::{spawn_aviso_persister, spawn_pg_relay, EventBus};
-pub use jwt::JwtIssuer;
-pub use object_store::{build_store, FsStore, S3Store};
-pub use password::Argon2Hasher;
-pub use repositories::*;
+// Fachada estável — os consumidores (`api`, testes) usam os caminhos raiz.
+pub use composition::compose::{build_services, BuiltServices};
+pub use messaging::eventos::{spawn_aviso_persister, spawn_pg_relay, EventBus};
+pub use parsing::ofx;
+pub use persistence::db::{connect, migrate};
+pub use persistence::repositories;
+pub use persistence::repositories::*;
+pub use security::jwt::JwtIssuer;
+pub use security::password::Argon2Hasher;
+pub use storage::object_store::{build_store, FsStore, S3Store};
+pub use storage::s3_probe;

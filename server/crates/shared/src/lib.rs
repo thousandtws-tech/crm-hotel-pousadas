@@ -1,11 +1,15 @@
-//! `clarituz-shared` — kernel compartilhado: configuração, paginação e utilitários
-//! de data/dinheiro usados por todas as camadas.
+//! `clarituz-shared` — kernel compartilhado, organizado por
+//! responsabilidade:
+//!
+//! - `config`      — configuração centralizada (12-factor: tudo via ambiente)
+//! - `pagination`  — contrato de paginação limit/offset com teto rígido
+//! - `primitives`  — primitivos de negócio (ids, dinheiro `Decimal`, tempo)
 
 pub mod config;
-pub mod ids;
-pub mod money;
 pub mod pagination;
-pub mod time;
+pub mod primitives;
 
+// Fachada estável — consumidores seguem usando os caminhos raiz.
 pub use config::Settings;
 pub use pagination::{Page, PageParams};
+pub use primitives::{ids, money, time};

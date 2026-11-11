@@ -7,51 +7,13 @@
 //! clarituz-api s3-probe                    # diagnóstico do object store S3/MinIO
 //! ```
 
-mod error;
-mod extract;
-mod mw;
-mod router;
-mod routes;
-mod state;
+mod bootstrap;
+mod http;
+mod workers;
 
-use axum_prometheus::metrics;
-use clap::{Parser, Subcommand};
-use clarituz_domain::entities::NovoLog;
-use clarituz_domain::ports::{FuncionarioRepository, NovoFuncionario, PasswordHasher};
-use clarituz_infrastructure::{repositories, spawn_pg_relay, Argon2Hasher, EventBus};
-use clarituz_shared::Settings;
-use state::AppState;
-use std::sync::Arc;
+use bootstrap::cli::{Cli, Cmd};
+use clap::Parser;
 use tracing_subscriber::EnvFilter;
-
-#[derive(Parser)]
-#[command(name = "clarituz-api", about = "Backend do CRM da pousada")]
-struct Cli {
-    #[command(subcommand)]
-    cmd: Option<Cmd>,
-}
-
-#[derive(Subcommand)]
-enum Cmd {
-    /// Sobe o servidor HTTP (default).
-    Serve,
-    /// Aplica as migrations do banco e sai.
-    Migrate,
-    /// Cria um funcionário administrador (bootstrap/seed).
-    CreateAdmin {
-        #[arg(long)]
-        login: String,
-        #[arg(long)]
-        nome: String,
-        #[arg(long)]
-        senha: String,
-        #[arg(long, default_value_t = 1)]
-        nivel: i16,
-    },
-    /// Diagnóstico do object store — lista buckets, garante o bucket de
-    /// mídia e exercita put/get/delete. Não usa o banco (roda com o PG fora).
-    S3Probe,
-}
 
 #[tokio::main]
 async fn main() {
@@ -74,7 +36,7 @@ fn init_tracing() {
 
 async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
-    let settings = Settings::load()?;
+    let settings = clarituz_shared::Settings::load()?;
 
     // S3Probe não toca no banco — útil justamente para isolar falhas de S3.
     if matches!(cli.cmd, Some(Cmd::S3Probe)) {
@@ -98,223 +60,8 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
             nome,
             senha,
             nivel,
-        } => create_admin(&pool, &login, &nome, &senha, nivel).await,
-        Cmd::Serve => serve(settings, pool).await,
+        } => bootstrap::create_admin(&pool, &login, &nome, &senha, nivel).await,
+        Cmd::Serve => bootstrap::serve(settings, pool).await,
         Cmd::S3Probe => unreachable!("s3-probe retorna antes de conectar ao banco"),
-    }
-}
-
-async fn create_admin(
-    pool: &sqlx::PgPool,
-    login: &str,
-    nome: &str,
-    senha: &str,
-    nivel: i16,
-) -> Result<(), Box<dyn std::error::Error>> {
-    if senha.len() < 8 {
-        return Err("senha deve ter ao menos 8 caracteres".into());
-    }
-    let hasher = Argon2Hasher::new();
-    let repo = repositories::PgFuncionarioRepository::new(pool.clone());
-    if repo.login_em_uso(login, 0).await? {
-        return Err(format!("login '{login}' já existe").into());
-    }
-    let f = repo
-        .criar(
-            &NovoFuncionario {
-                nome: nome.to_string(),
-                login: login.to_lowercase(),
-                senha_hash: hasher.hash(senha)?,
-                cpf: None,
-                data_nascimento: None,
-                nivel,
-                ativo: true,
-            },
-            NovoLog {
-                idfuncionario: None,
-                acao: "seed".into(),
-                obs: format!("Criação inicial do administrador '{login}'"),
-                tabela: "funcionario",
-                idtabela: 0,
-                dados: None,
-            },
-        )
-        .await?;
-    tracing::info!(id = f.id, login = %f.login, "administrador criado");
-    Ok(())
-}
-
-async fn serve(settings: Settings, pool: sqlx::PgPool) -> Result<(), Box<dyn std::error::Error>> {
-    std::fs::create_dir_all(&settings.storage_dir).ok();
-    let eventos = EventBus::new();
-    spawn_pg_relay(pool.clone(), eventos.clone());
-    let built = clarituz_infrastructure::build_services(&settings, &pool, &eventos);
-    let state = AppState {
-        services: Arc::new(built.services),
-        issuer: built.issuer,
-        pool: pool.clone(),
-        storage_dir: settings.storage_dir.clone(),
-        store: clarituz_infrastructure::build_store(&settings)
-            .expect("object store inválido: confira as variáveis S3_*"),
-        eventos,
-        cors_origins: settings.cors_origins.clone(),
-        stripe_webhook_secret: settings.stripe_webhook_secret.clone(),
-        link_secret: settings.jwt_secret.clone(),
-        vapid_public_b64: settings.vapid_public_b64.clone(),
-        site_base: settings.site_base.clone(),
-    };
-    // Sweeper de conciliação: holds expirados, webhooks falhos e
-    // pagamentos pendentes consultados direto no provedor (a cada 5min).
-    if settings.stripe_secret_key.is_some() {
-        let svc = state.services.pagamentos_online.clone();
-        tokio::spawn(async move {
-            let mut tick = tokio::time::interval(std::time::Duration::from_secs(300));
-            tick.tick().await; // pula o disparo imediato do boot
-            loop {
-                tick.tick().await;
-                if let Err(e) = svc.conciliar().await {
-                    tracing::warn!(erro = %e, "conciliação de pagamentos falhou");
-                }
-            }
-        });
-    }
-    // Fila de comunicação — worker drena a outbox a cada 30s; o agendador
-    // roda lembretes/pesquisas a cada hora (dedup por reserva+template no
-    // repo garante envio único por hóspede).
-    {
-        let svc = state.services.comunicacao.clone();
-        tokio::spawn(async move {
-            let mut tick = tokio::time::interval(std::time::Duration::from_secs(30));
-            tick.tick().await;
-            loop {
-                tick.tick().await;
-                if let Err(e) = svc.drenar_fila().await {
-                    tracing::warn!(erro = %e, "fila_envio: worker falhou");
-                }
-            }
-        });
-        let svc = state.services.comunicacao.clone();
-        tokio::spawn(async move {
-            let mut tick = tokio::time::interval(std::time::Duration::from_secs(3600));
-            tick.tick().await;
-            loop {
-                tick.tick().await;
-                if let Err(e) = svc.rodar_lembretes().await {
-                    tracing::warn!(erro = %e, "lembretes: rodada falhou");
-                }
-            }
-        });
-        // Governança D-1 — às 22:00 UTC gera as tarefas de amanhã e alerta
-        // PMOC vencido. Idempotente (UNIQUE idquarto+data+tipo): seguro
-        // rodar em todas as réplicas.
-        let gov = state.services.governanca.clone();
-        // Atendimento — a cada 60s escala protocolos abertos cujo SLA de
-        // aceite venceu. Idempotente: seguro em todas as réplicas.
-        let atend = state.services.atendimento.clone();
-        tokio::spawn(async move {
-            let mut tick = tokio::time::interval(std::time::Duration::from_secs(60));
-            tick.tick().await;
-            loop {
-                tick.tick().await;
-                if let Err(e) = atend.sweep().await {
-                    tracing::warn!(erro = %e, "atendimento: sweep falhou");
-                }
-            }
-        });
-        let manut = state.services.manutencao.clone();
-        let lgpd = state.services.lgpd.clone();
-        let estab = state.services.estabelecimento.clone();
-        tokio::spawn(async move {
-            let mut tick = tokio::time::interval(std::time::Duration::from_secs(600));
-            tick.tick().await;
-            loop {
-                tick.tick().await;
-                let agora = chrono::Utc::now();
-                // LGPD art. 16 — retenção diária: anonimiza titulares sem
-                // estadia há `retencao_dados_anos` (default 5a). Idempotente.
-                if chrono::Timelike::hour(&agora) == 4 {
-                    let anos = estab
-                        .obter()
-                        .await
-                        .ok()
-                        .flatten()
-                        .map_or(5, |e| e.retencao_dados_anos);
-                    if let Err(e) = lgpd.anonimizar_vencidos(anos).await {
-                        tracing::warn!(erro = %e, "lgpd: retenção falhou");
-                    }
-                }
-                if chrono::Timelike::hour(&agora) == 22 {
-                    match gov.gerar_d1().await {
-                        Ok(n) if n > 0 => {
-                            tracing::info!(criadas = n, "governanca: tarefas D-1 geradas");
-                        }
-                        Err(e) => tracing::warn!(erro = %e, "governanca: geração D-1 falhou"),
-                        _ => {}
-                    }
-                }
-                if chrono::Timelike::hour(&agora) == 8 {
-                    if let Err(e) = manut.alertar_pmoc_vencido().await {
-                        tracing::warn!(erro = %e, "pmoc: alerta de vencimento falhou");
-                    }
-                }
-            }
-        });
-    }
-    spawn_metricas_saturacao(pool.clone(), state.eventos.clone());
-    let app = router::build(state);
-
-    let listener = tokio::net::TcpListener::bind(&settings.http_addr).await?;
-    tracing::info!(addr = %settings.http_addr, "clarituz-api ouvindo");
-    axum::serve(
-        listener,
-        app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
-    )
-    .with_graceful_shutdown(shutdown_signal())
-    .await?;
-    Ok(())
-}
-
-/// Gauges de saturação a cada 10 s, exportados no `/metrics`:
-/// pool do Postgres (size/idle) e assinantes do bus (≈ conexões SSE
-/// abertas na réplica). `idle → 0` sustentado = hora de subir réplica
-/// ou `DB_MAX_CONNECTIONS`.
-fn spawn_metricas_saturacao(pool: sqlx::PgPool, eventos: EventBus) {
-    tokio::spawn(async move {
-        let mut tick = tokio::time::interval(std::time::Duration::from_secs(10));
-        loop {
-            tick.tick().await;
-            metrics::gauge!("clarituz_db_pool_connections").set(pool.size() as f64);
-            metrics::gauge!("clarituz_db_pool_idle").set(pool.num_idle() as f64);
-            metrics::gauge!("clarituz_db_pool_max")
-                .set(pool.options().get_max_connections() as f64);
-            metrics::gauge!("clarituz_sse_subscribers").set(eventos.assinantes() as f64);
-        }
-    });
-}
-
-/// Encerra no primeiro sinal recebido: SIGINT (dev) ou SIGTERM
-/// (orquestrador — Railway/K8s mandam SIGTERM no deploy/scale-down;
-/// sem isso requests em voo e SSE morriam no hard-kill).
-async fn shutdown_signal() {
-    #[cfg(unix)]
-    {
-        use tokio::signal::unix::{signal, SignalKind};
-        let mut sigterm = match signal(SignalKind::terminate()) {
-            Ok(s) => s,
-            Err(e) => {
-                tracing::warn!(erro = %e, "falha ao registrar SIGTERM; usando só ctrl-c");
-                let _ = tokio::signal::ctrl_c().await;
-                return;
-            }
-        };
-        tokio::select! {
-            _ = tokio::signal::ctrl_c() => tracing::info!("desligamento solicitado (SIGINT)"),
-            _ = sigterm.recv() => tracing::info!("desligamento solicitado (SIGTERM)"),
-        }
-    }
-    #[cfg(not(unix))]
-    {
-        let _ = tokio::signal::ctrl_c().await;
-        tracing::info!("desligamento solicitado (ctrl-c)");
     }
 }

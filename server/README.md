@@ -6,11 +6,29 @@ Clean Architecture / Hexagonal.
 
 ```
 crates/
-├── shared/          Config, paginação, dinheiro (Decimal), tempo (America/Sao_Paulo)
-├── domain/          Entidades, enums, value objects, erros e PORTS (traits)
-├── application/     Casos de uso (services), DTOs, Ator (RBAC), AppError
-├── infrastructure/  Adapters: PostgreSQL (sqlx), Argon2id, JWT
-└── api/             Binário `clarituz-api`: axum, rotas /api/v1, CLI
+├── shared/          config/ (12-factor), pagination/, primitives/ (ids,
+│                    money Decimal, time America/Sao_Paulo)
+├── domain/          entities/, enums/, value_objects/, queries/ (read models),
+│                    events, error e ports/ (traits) — tudo por bounded context
+├── application/     services/ (casos de uso por contexto), dto/ (contratos
+│                    por contexto), actor (RBAC), AppError
+├── infrastructure/  Adapters por responsabilidade técnica:
+│                    ├── composition/   composition root (fiação do grafo DI)
+│                    ├── persistence/   pool PG, migrations, repositories/ (sqlx)
+│                    ├── security/      Argon2id (senha) + JWT (tokens)
+│                    ├── messaging/     event bus + relay LISTEN/NOTIFY
+│                    ├── storage/       object store (S3/MinIO/FS) + probe
+│                    ├── integrations/  Stripe, Maria/IA, emissores de envio
+│                    ├── printing/      ESC/POS (impressoras térmicas)
+│                    └── parsing/       OFX (extrato bancário)
+├── api/             Binário `clarituz-api`: main.rs é só o entrypoint
+│                    ├── bootstrap/     subida do processo: cli.rs (definições),
+│                    │                 commands.rs (create-admin), serve.rs
+│                    ├── workers/       tarefas de fundo por contexto: pagamentos,
+│                    │                 comunicacao, atendimento, rotinas, metricas
+│                    └── http/          adapter de entrega: router, routes/,
+│                                      middleware, extractors, state, error
+└── agente/          Agente de impressão local (binário Windows)
 ```
 
 Fluxo de dependência (setas apontam "conhece"):
@@ -117,6 +135,12 @@ docker compose up -d postgres
 $env:DATABASE_URL = "postgres://clarituz:clarituz@localhost:5432/clarituz"
 cargo test --workspace
 ```
+
+## Conformidade legal
+
+Matriz lei → implementação e registro das operações de tratamento
+(LGPD art. 37): [`docs/conformidade-legal.md`](docs/conformidade-legal.md) —
+LGPD, Marco Civil/Decreto 8.771, ECA, CDC, Lei Geral do Turismo/FNRH.
 
 ## Rodar server 
 

@@ -302,6 +302,50 @@ pub trait LgpdRepository: Send + Sync {
         resposta: &str,
         idfuncionario: i64,
     ) -> Result<(), DomainError>;
+    /// Solicitações 'aberta' há mais de `dias` — SLA legal do art. 19
+    /// (15 dias). O worker diário usa pra alertar a equipe.
+    async fn solicitacoes_vencidas(&self, dias: i32) -> Result<Vec<LgpdSolicitacao>, DomainError>;
+
+    // -- Incidentes de segurança (art. 48) ------------------------------------
+    async fn criar_incidente(
+        &self,
+        novo: &NovoIncidente,
+        criado_por: i64,
+    ) -> Result<i64, DomainError>;
+    async fn listar_incidentes(&self) -> Result<Vec<LgpdIncidente>, DomainError>;
+    /// Marca a comunicação do incidente — `destino` = 'anpd' | 'titulares'.
+    async fn marcar_comunicacao_incidente(&self, id: i64, destino: &str)
+        -> Result<(), DomainError>;
+}
+
+/// Registro de incidente de segurança — LGPD art. 48. Documenta o fato,
+/// o risco e as comunicações à ANPD e aos titulares.
+#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize)]
+pub struct LgpdIncidente {
+    pub id: i64,
+    pub descricao: String,
+    pub tipos_dados: Option<String>,
+    pub titulares_estimados: Option<i32>,
+    pub risco: String,
+    pub medidas: Option<String>,
+    pub status: String,
+    pub comunicado_anpd_em: Option<chrono::DateTime<chrono::Utc>>,
+    pub comunicado_titulares_em: Option<chrono::DateTime<chrono::Utc>>,
+    pub criado_por: Option<i64>,
+    pub criado_em: chrono::DateTime<chrono::Utc>,
+    pub atualizado_em: chrono::DateTime<chrono::Utc>,
+}
+
+/// Entrada de novo incidente — também é o DTO do POST admin
+/// (`Deserialize`) e o payload do repositório.
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct NovoIncidente {
+    pub descricao: String,
+    pub tipos_dados: Option<String>,
+    pub titulares_estimados: Option<i32>,
+    /// 'baixo' | 'medio' | 'alto' — validado no serviço.
+    pub risco: Option<String>,
+    pub medidas: Option<String>,
 }
 
 // ---------------------------------------------------------------------------

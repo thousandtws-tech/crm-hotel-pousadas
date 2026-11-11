@@ -74,6 +74,12 @@ pub trait LogAcessoRepository: Send + Sync {
         ip: Option<&str>,
         user_agent: Option<&str>,
     ) -> Result<(), DomainError>;
+
+    /// Marco Civil art. 15 — piso legal de 6 meses para registros de
+    /// acesso a aplicações; Decreto 8.771/16 art. 13 §2º — excluídos
+    /// assim que encerrado o prazo legal (minimização). Remove exatamente
+    /// o que passou do piso. Retorna as linhas removidas.
+    async fn purgar_vencidos(&self) -> Result<u64, DomainError>;
 }
 
 /// Persistência das sessões de refresh token.
@@ -97,6 +103,11 @@ pub trait SessaoRepository: Send + Sync {
     async fn revogar(&self, sessao_id: Uuid) -> Result<(), DomainError>;
     async fn revogar_por_hash(&self, token_hash: &str) -> Result<(), DomainError>;
     async fn revogar_todas_do_funcionario(&self, idfuncionario: i64) -> Result<u64, DomainError>;
+
+    /// Sessões mortas (revogadas ou expiradas) há mais de 6 meses — o
+    /// mesmo piso dos registros de acesso; além dele o IP/user-agent
+    /// guardado é dado pessoal sem finalidade legal. Retorna removidas.
+    async fn purgar_expiradas(&self) -> Result<u64, DomainError>;
 }
 
 // ---------------------------------------------------------------------------

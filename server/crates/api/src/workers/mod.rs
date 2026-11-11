@@ -1,0 +1,26 @@
+//! Tarefas de fundo do processo `serve`, organizadas por bounded context.
+//!
+//! Cada worker é idempotente e seguro para rodar em todas as réplicas:
+//! varreduras periódicas de conciliação de pagamentos, drenagem da fila
+//! de envio, lembretes/pesquisas, escalada de SLA de atendimento,
+//! governança D-1, retenção LGPD, alerta de PMOC e métricas de saturação.
+
+mod atendimento;
+mod comunicacao;
+mod metricas;
+mod pagamentos;
+mod rotinas;
+
+use crate::http::state::AppState;
+
+/// Agenda todos os workers periódicos sobre o estado já construído.
+pub fn spawn_all(state: &AppState, stripe_ativo: bool) {
+    if stripe_ativo {
+        pagamentos::spawn(state);
+    }
+    comunicacao::spawn_fila(state);
+    comunicacao::spawn_lembretes(state);
+    atendimento::spawn(state);
+    rotinas::spawn(state);
+    metricas::spawn(state.pool.clone(), state.eventos.clone());
+}

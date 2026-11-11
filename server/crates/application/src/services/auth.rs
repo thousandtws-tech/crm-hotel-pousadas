@@ -70,12 +70,27 @@ impl AuthService {
             .map_or(DUMMY_HASH, |f| f.senha_hash.as_str());
         let ok = self.hasher.verify(senha, hash)?;
 
-        let f = match (funcionario, ok) {
-            (Some(f), true) if f.ativo => f,
+        let f = match (&funcionario, ok) {
+            (Some(f), true) if f.ativo => f.clone(),
             (Some(_), true) => {
                 return Err(DomainError::proibido("Usuário desativado.").into());
             }
-            _ => return Err(DomainError::nao_autenticado("Usuário ou senha inválidos.").into()),
+            _ => {
+                // Trilha da tentativa falha — medida de segurança (LGPD
+                // art. 46) e inventário de acessos (Dec. 8.771/16 art. 13, III).
+                let _ = self
+                    .logs
+                    .inserir(NovoLog {
+                        idfuncionario: funcionario.as_ref().map(|f| f.id),
+                        acao: "login_falha".into(),
+                        obs: format!("Tentativa de login inválida para '{login}'."),
+                        tabela: "funcionario",
+                        idtabela: funcionario.as_ref().map_or(0, |f| f.id),
+                        dados: Some(serde_json::json!({"ip": ctx.ip})),
+                    })
+                    .await;
+                return Err(DomainError::nao_autenticado("Usuário ou senha inválidos.").into());
+            }
         };
 
         self.acessos
@@ -132,6 +147,23 @@ impl AuthService {
             .await?
             .ok_or_else(|| DomainError::nao_encontrado("Funcionário não encontrado."))?;
         Ok(FuncionarioView::from(&f))
+    }
+
+    /// Rotina diária — retenção legal dos registros de acesso (Marco
+    /// Civil art. 15: piso de 6 meses; Decreto 8.771/16 art. 13 §2º:
+    /// excluir encerrado o prazo) e das sessões mortas no mesmo piso.
+    /// Retorna `(acessos_removidos, sessoes_removidas)`.
+    pub async fn purgar_registros_acesso(&self) -> AppResult<(u64, u64)> {
+        let acessos = self.acessos.purgar_vencidos().await?;
+        let sessoes = self.sessoes.purgar_expiradas().await?;
+        if acessos + sessoes > 0 {
+            tracing::info!(
+                acessos,
+                sessoes,
+                "marco civil: registros de acesso purgados"
+            );
+        }
+        Ok((acessos, sessoes))
     }
 
     /// Verifica credencial de administrador — usado no cancelamento de

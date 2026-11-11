@@ -7,6 +7,7 @@
 
 use std::sync::Arc;
 
+use clarituz_domain::entities::NovoLog;
 use clarituz_domain::error::DomainError;
 use clarituz_domain::events::{Aviso, TipoAviso};
 use clarituz_domain::ports::*;
@@ -31,11 +32,20 @@ pub const OPT_OUT_PALAVRAS: &[&str] = &[
 pub struct LgpdService {
     repo: Arc<dyn LgpdRepository>,
     eventos: Arc<dyn EventoPublisher>,
+    logs: Arc<dyn LogRepository>,
 }
 
 impl LgpdService {
-    pub fn new(repo: Arc<dyn LgpdRepository>, eventos: Arc<dyn EventoPublisher>) -> Self {
-        Self { repo, eventos }
+    pub fn new(
+        repo: Arc<dyn LgpdRepository>,
+        eventos: Arc<dyn EventoPublisher>,
+        logs: Arc<dyn LogRepository>,
+    ) -> Self {
+        Self {
+            repo,
+            eventos,
+            logs,
+        }
     }
 
     /// Mensagem do bot é pedido de opt-out? ("sair", "parar", …)
@@ -78,7 +88,29 @@ impl LgpdService {
     }
 
     /// Acesso do titular — todos os dados pessoais (art. 18, II).
-    pub async fn exportar_cliente(&self, idcliente: i64) -> AppResult<serde_json::Value> {
+    /// `ator` = `Some` no caminho admin (quem exportou), `None` no
+    /// portal (o próprio titular). O acesso é inventariado na trilha —
+    /// Decreto 8.771/16, art. 13, III.
+    pub async fn exportar_cliente(
+        &self,
+        ator: Option<&Ator>,
+        idcliente: i64,
+    ) -> AppResult<serde_json::Value> {
+        self.logs
+            .inserir(NovoLog {
+                idfuncionario: ator.map(|a| a.id),
+                acao: "lgpd:exportacao".into(),
+                obs: format!(
+                    "Exportação dos dados do titular #{idcliente} ({}).",
+                    ator.map_or_else(|| "portal do titular".to_string(), |a| a.nome.clone())
+                ),
+                tabela: "cliente",
+                idtabela: idcliente,
+                dados: Some(serde_json::json!({
+                    "canal": if ator.is_some() { "admin" } else { "portal" },
+                })),
+            })
+            .await?;
         Ok(self.repo.exportar_cliente(idcliente).await?)
     }
 
@@ -86,6 +118,19 @@ impl LgpdService {
     /// Executada via solicitação do titular ou pela retenção.
     pub async fn anonimizar_cliente(&self, ator: &Ator, idcliente: i64) -> AppResult<()> {
         self.repo.anonimizar_cliente(idcliente).await?;
+        self.logs
+            .inserir(NovoLog {
+                idfuncionario: Some(ator.id),
+                acao: "lgpd:anonimizacao".into(),
+                obs: format!(
+                    "{} anonimizou o titular #{idcliente} — trilha fiscal/FNRH preservada.",
+                    ator.nome
+                ),
+                tabela: "cliente",
+                idtabela: idcliente,
+                dados: None,
+            })
+            .await?;
         self.eventos.avisar(
             Aviso::novo(
                 TipoAviso::Info,
@@ -161,5 +206,102 @@ impl LgpdService {
             .repo
             .responder_solicitacao(id, resposta, ator.id)
             .await?)
+    }
+
+    /// Rotina diária — solicitações 'aberta' além do prazo legal de
+    /// resposta (15 dias, art. 19) viram alerta para a equipe. Retorna
+    /// quantas estão vencidas.
+    pub async fn alertar_solicitacoes_vencidas(&self) -> AppResult<u64> {
+        const PRAZO_LEGAL_DIAS: i32 = 15;
+        let vencidas = self.repo.solicitacoes_vencidas(PRAZO_LEGAL_DIAS).await?;
+        if vencidas.is_empty() {
+            return Ok(0);
+        }
+        let ids: Vec<String> = vencidas.iter().map(|s| format!("#{}", s.id)).collect();
+        self.eventos.avisar(
+            Aviso::novo(
+                TipoAviso::Alerta,
+                "Solicitações LGPD vencidas",
+                format!(
+                    "{} solicitação(ões) do titular sem resposta há mais de 15 dias \
+                     (art. 19): {}.",
+                    vencidas.len(),
+                    ids.join(", ")
+                ),
+            )
+            .dados(
+                serde_json::json!({"protocolos": vencidas.iter().map(|s| s.id)
+                .collect::<Vec<_>>()}),
+            ),
+        );
+        Ok(vencidas.len() as u64)
+    }
+
+    /// Art. 48 — registro de incidente de segurança que possa acarretar
+    /// risco ou dano relevante aos titulares. Documenta o fato para a
+    /// comunicação à ANPD e aos titulares.
+    pub async fn registrar_incidente(&self, ator: &Ator, novo: NovoIncidente) -> AppResult<i64> {
+        ator.exigir_admin()?;
+        if novo.descricao.trim().is_empty() {
+            return Err(DomainError::validacao("Descreva o incidente.").into());
+        }
+        if let Some(r) = novo.risco.as_deref() {
+            if !["baixo", "medio", "alto"].contains(&r) {
+                return Err(DomainError::validacao("risco inválido: baixo|medio|alto").into());
+            }
+        }
+        let id = self.repo.criar_incidente(&novo, ator.id).await?;
+        self.logs
+            .inserir(NovoLog {
+                idfuncionario: Some(ator.id),
+                acao: "lgpd:incidente".into(),
+                obs: format!("{} registrou o incidente de segurança #{id}.", ator.nome),
+                tabela: "lgpd_incidente",
+                idtabela: id,
+                dados: None,
+            })
+            .await?;
+        self.eventos.avisar(
+            Aviso::novo(
+                TipoAviso::Alerta,
+                "Incidente de segurança (LGPD art. 48)",
+                format!(
+                    "Incidente #{id} registrado — avalie a comunicação à ANPD e aos titulares."
+                ),
+            )
+            .de_ator(ator.id, &ator.nome)
+            .dados(serde_json::json!({"lgpd_incidente": id})),
+        );
+        Ok(id)
+    }
+
+    pub async fn listar_incidentes(&self, ator: &Ator) -> AppResult<Vec<LgpdIncidente>> {
+        ator.exigir_admin()?;
+        Ok(self.repo.listar_incidentes().await?)
+    }
+
+    /// Marca a comunicação do incidente — `destino` = 'anpd' | 'titulares'.
+    pub async fn marcar_comunicacao_incidente(
+        &self,
+        ator: &Ator,
+        id: i64,
+        destino: &str,
+    ) -> AppResult<()> {
+        ator.exigir_admin()?;
+        self.repo.marcar_comunicacao_incidente(id, destino).await?;
+        self.logs
+            .inserir(NovoLog {
+                idfuncionario: Some(ator.id),
+                acao: "lgpd:incidente_comunicacao".into(),
+                obs: format!(
+                    "{} marcou a comunicação do incidente #{id} a '{destino}'.",
+                    ator.nome
+                ),
+                tabela: "lgpd_incidente",
+                idtabela: id,
+                dados: Some(serde_json::json!({"destino": destino})),
+            })
+            .await?;
+        Ok(())
     }
 }
