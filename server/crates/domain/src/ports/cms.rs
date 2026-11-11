@@ -89,11 +89,7 @@ pub trait CmsRepository: Send + Sync {
 
     /// Inscrição da newsletter do rodapé — `true` quando inseriu,
     /// `false` quando o e-mail já estava cadastrado (reativa se inativo).
-    async fn newsletter_inscrever(
-        &self,
-        email: &str,
-        origem: &str,
-    ) -> Result<bool, DomainError>;
+    async fn newsletter_inscrever(&self, email: &str, origem: &str) -> Result<bool, DomainError>;
 
     /// Cards `publicado` + acomodacao ativa — consumo do site público.
     async fn listar_publicadas(&self) -> Result<Vec<AcomodacaoPublica>, DomainError>;

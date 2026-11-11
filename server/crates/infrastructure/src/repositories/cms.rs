@@ -341,11 +341,7 @@ impl CmsRepository for PgCmsRepository {
         Ok(s)
     }
 
-    async fn newsletter_inscrever(
-        &self,
-        email: &str,
-        origem: &str,
-    ) -> Result<bool, DomainError> {
+    async fn newsletter_inscrever(&self, email: &str, origem: &str) -> Result<bool, DomainError> {
         // Conflito com ativo=true → já inscrito (false); ativo=false → reativa (true).
         let row = sqlx::query(
             "INSERT INTO newsletter_inscricao (email, origem) VALUES ($1, $2)
