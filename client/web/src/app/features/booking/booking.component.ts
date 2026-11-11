@@ -319,7 +319,7 @@ import { environment } from '../../../environments/environment';
             <span class="type-eyebrow text-[#DDA554] block mb-2">Reserva &amp; Consulta Registrada</span>
             <h2 class="font-serif text-3xl text-[#054054] mb-4">Agradecemos o seu contato</h2>
             <p class="type-body text-sm max-w-md mx-auto mb-8">
-              {{ serverMessage() || ('Registramos seu interesse na categoria ' + (selectedAccommodation()?.name || '') + '.') }}
+              {{ serverMessage() || ('Registramos seu interesse na categoria ' + (selectedAccommodation().name || '') + '.') }}
             </p>
 
             @if (reservaToken()) {
