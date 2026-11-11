@@ -6,6 +6,8 @@ import { HOTEL_CONFIG } from '../config/hotel-config';
 export interface SeoConfig {
   title: string;
   description: string;
+  keywords?: string;
+  exactTitle?: boolean;
   image?: string;
   url?: string;
   type?: 'website' | 'article';
@@ -20,13 +22,16 @@ export class SeoService {
   private readonly document = inject(DOCUMENT);
 
   public updateSeo(config: SeoConfig): void {
-    const fullTitle = config.title.includes(HOTEL_CONFIG.name)
+    const fullTitle = config.exactTitle || config.title.includes(HOTEL_CONFIG.name)
       ? config.title
       : `${config.title} | ${HOTEL_CONFIG.name}`;
 
     this.titleService.setTitle(fullTitle);
 
     this.metaService.updateTag({ name: 'description', content: config.description });
+    if (config.keywords !== undefined && config.keywords.trim() !== '') {
+      this.metaService.updateTag({ name: 'keywords', content: config.keywords });
+    }
     this.metaService.updateTag({ property: 'og:title', content: fullTitle });
     this.metaService.updateTag({ property: 'og:description', content: config.description });
     this.metaService.updateTag({ property: 'twitter:title', content: fullTitle });

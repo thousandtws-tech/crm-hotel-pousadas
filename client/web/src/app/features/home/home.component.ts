@@ -11,6 +11,12 @@ import { FaqComponent } from './components/faq/faq.component';
 import { SeoService } from '../../core/services/seo.service';
 import { SiteContentService } from '../../core/services/site-content.service';
 
+const DEFAULT_SEO_TITLE = 'Pousada Espírito do Mar | Hospedagem no Peró, Cabo Frio';
+const DEFAULT_SEO_DESC =
+  'Conheça a Pousada Espírito do Mar, no Peró, em Cabo Frio. Explore as acomodações, conheça a estrutura e consulte a disponibilidade.';
+const DEFAULT_SEO_KEYWORDS =
+  'Pousada Espírito do Mar, pousada no Peró, pousada em Cabo Frio, hospedagem perto da Praia do Peró, Cabo Frio RJ';
+
 @Component({
   selector: 'app-home',
   imports: [
@@ -47,24 +53,18 @@ export class HomeComponent implements OnInit {
     // SEO editável pelo CMS sobrescreve os valores padrão quando publicado.
     effect(() => {
       const seo = this.site.seo();
-      if (!seo) return;
       this.seoService.updateSeo({
-        title: seo.titulo || 'Pousada Espírito do Mar | Hospedagem no Peró, Cabo Frio',
-        description:
-          seo.descricao
-          || 'Conheça a Pousada Espírito do Mar, no Peró, em Cabo Frio. Explore as acomodações, conheça a estrutura e consulte a disponibilidade.',
-        url: 'https://pousadaespiritodomar.com.br/',
+        title: seo?.titulo || DEFAULT_SEO_TITLE,
+        exactTitle: Boolean(seo?.titulo),
+        description: seo?.descricao || DEFAULT_SEO_DESC,
+        keywords: seo?.keywords || DEFAULT_SEO_KEYWORDS,
+        url: 'https://espiritodomar.com.br/',
       });
     });
   }
 
   public ngOnInit(): void {
-    this.seoService.updateSeo({
-      title: 'Pousada Espírito do Mar | Hospedagem no Peró, Cabo Frio',
-      description: 'Conheça a Pousada Espírito do Mar, no Peró, em Cabo Frio. Explore as acomodações, conheça a estrutura e consulte a disponibilidade.',
-      url: 'https://pousadaespiritodomar.com.br/'
-    });
     this.seoService.setHotelStructuredData();
-    this.site.carregar();
+    void this.site.carregar();
   }
 }

@@ -259,7 +259,7 @@ pub async fn publico_stream(
         Ok(EventoApp::Delta(d))
             if matches!(
                 d.tabela.as_str(),
-                "acomodacao" | "acomodacao_cms" | "acomodacao_midia"
+                "acomodacao" | "acomodacao_cms" | "acomodacao_midia" | "cms_site"
             ) =>
         {
             Some(Ok(Event::default()

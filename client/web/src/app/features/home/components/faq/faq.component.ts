@@ -53,19 +53,21 @@ import { SiteContentService } from '../../../../core/services/site-content.servi
 export class FaqComponent {
   protected readonly site = inject(SiteContentService);
   private readonly document = inject(DOCUMENT);
-  private schemaEmitido = false;
 
   constructor() {
-    // O fetch do CMS é assíncrono — emite o schema só quando as perguntas chegam.
+    // O fetch do CMS é assíncrono — sincroniza o schema FAQPage sempre que as perguntas mudam.
     effect(() => {
       const itens = this.site.faq();
-      if (!itens.length || this.schemaEmitido) return;
-      this.schemaEmitido = true;
-      this.emitirSchema(itens);
+      this.sincronizarSchema(itens);
     });
   }
 
-  private emitirSchema(itens: { pergunta: string; resposta: string }[]): void {
+  private sincronizarSchema(itens: { pergunta: string; resposta: string }[]): void {
+    const existing = this.document.getElementById('faq-schema-jsonld');
+    if (!itens.length) {
+      existing?.remove();
+      return;
+    }
     const schema = {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
@@ -75,9 +77,10 @@ export class FaqComponent {
         acceptedAnswer: { '@type': 'Answer', text: f.resposta },
       })),
     };
-    const script = this.document.createElement('script');
+    const script = (existing as HTMLScriptElement | null) ?? this.document.createElement('script');
+    script.id = 'faq-schema-jsonld';
     script.type = 'application/ld+json';
     script.textContent = JSON.stringify(schema);
-    this.document.head.appendChild(script);
+    if (!existing) this.document.head.appendChild(script);
   }
 }

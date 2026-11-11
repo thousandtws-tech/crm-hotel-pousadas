@@ -353,14 +353,35 @@ type AbaCms = 'quartos' | 'site' | 'widget';
 
       @if (aba() === 'site') {
         <section class="cms-section" aria-label="Conteúdo institucional e SEO">
-          <form class="settings-stack" [formGroup]="siteForm" (ngSubmit)="salvarSite('hero')">
+          <div class="site-topbar">
+            <p class="settings-desc">
+              As alterações publicadas abaixo atualizam a página inicial do site em tempo real.
+            </p>
+            <div class="aside-actions">
+              @if (siteUrl()) {
+                <a class="btn-ghost btn-sm" [href]="siteUrl()" target="_blank" rel="noopener">
+                  Ver site
+                </a>
+              }
+              <button
+                type="button"
+                class="btn-primary btn-sm"
+                [disabled]="salvandoSite()"
+                (click)="salvarTudoSite()"
+              >
+                {{ salvandoSite() ? 'Salvando…' : 'Salvar todas as alterações' }}
+              </button>
+            </div>
+          </div>
+
+          <form class="settings-stack" [formGroup]="siteForm" (ngSubmit)="salvarTudoSite()">
             <div class="settings-row">
               <div class="settings-aside">
                 <h2 class="settings-tit">Primeira dobra (Hero)</h2>
                 <p class="settings-desc">
                   Título principal e subtítulo exibidos na abertura da página inicial do site institucional.
                 </p>
-                <button type="submit" class="btn-ghost btn-sm" [disabled]="salvandoSite()">
+                <button type="button" class="btn-ghost btn-sm" [disabled]="salvandoSite()" (click)="salvarSite('hero')">
                   Salvar Hero
                 </button>
               </div>
@@ -370,7 +391,7 @@ type AbaCms = 'quartos' | 'site' | 'widget';
                   <input
                     class="cms-input"
                     formControlName="hero_titulo"
-                    placeholder="Ex.: Refúgio à beira-mar com conforto e exclusividade"
+                    placeholder="Pousada Espírito do Mar: sua estadia pertinho da Praia do Peró"
                   />
                 </label>
                 <label class="field">
@@ -379,7 +400,7 @@ type AbaCms = 'quartos' | 'site' | 'widget';
                     class="cms-input"
                     formControlName="hero_subtitulo"
                     rows="3"
-                    placeholder="Ex.: Suítes preparadas para descanso, café da manhã artesanal e localização privilegiada."
+                    placeholder="Em Cabo Frio, aproveite dias de descanso em uma pousada acolhedora, com piscina e fácil acesso à Praia do Peró."
                   ></textarea>
                 </label>
               </div>
@@ -399,26 +420,26 @@ type AbaCms = 'quartos' | 'site' | 'widget';
                 <label class="field">
                   <span class="field-lbl">
                     Título da página
-                    <span class="field-hint">máx. 60 caracteres</span>
+                    <span class="field-hint">{{ siteForm.controls.seo_titulo.value.length }}/60</span>
                   </span>
                   <input
                     class="cms-input"
                     formControlName="seo_titulo"
                     maxlength="60"
-                    placeholder="Ex.: Pousada Espírito do Mar — Hospedagem à beira-mar"
+                    placeholder="Pousada Espírito do Mar | Hospedagem no Peró, Cabo Frio"
                   />
                 </label>
                 <label class="field">
                   <span class="field-lbl">
                     Descrição (meta description)
-                    <span class="field-hint">máx. 160 caracteres</span>
+                    <span class="field-hint">{{ siteForm.controls.seo_descricao.value.length }}/160</span>
                   </span>
                   <textarea
                     class="cms-input"
                     formControlName="seo_descricao"
                     rows="3"
                     maxlength="160"
-                    placeholder="Resumo objetivo exibido nos resultados de pesquisa."
+                    placeholder="Conheça a Pousada Espírito do Mar, no Peró, em Cabo Frio."
                   ></textarea>
                 </label>
                 <label class="field">
@@ -426,7 +447,7 @@ type AbaCms = 'quartos' | 'site' | 'widget';
                   <input
                     class="cms-input"
                     formControlName="seo_keywords"
-                    placeholder="pousada, hospedagem, suíte, reserva direta"
+                    placeholder="Pousada Espírito do Mar, pousada no Peró, pousada em Cabo Frio"
                   />
                 </label>
               </div>
@@ -990,6 +1011,7 @@ type AbaCms = 'quartos' | 'site' | 'widget';
     .sk-chip { width: 72px; height: 24px; border-radius: 999px; margin: 0 auto; }
     .sk-acoes { width: 84px; height: 28px; margin-left: auto; }
     .settings-row { display: grid; grid-template-columns: 260px 1fr; gap: 28px; padding: 22px 0; border-bottom: 1px solid var(--c-brd); align-items: start; }
+    .site-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-bottom: 16px; border-bottom: 1px solid var(--c-brd); }
     .settings-row:last-child { border-bottom: none; }
     .settings-aside { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
     .settings-tit { font-size: .94rem !important; }
@@ -1151,6 +1173,10 @@ export class CmsComponent implements OnInit {
   });
 
   protected readonly widget = signal<{ url: string; qr_svg: string; snippet: string } | null>(null);
+  protected readonly siteUrl = computed(() => {
+    const u = this.widget()?.url;
+    return u ? u.replace(/\/reservar\/?$/, '') : '';
+  });
   protected readonly qrSrc = computed(() => {
     const svg = this.widget()?.qr_svg;
     return svg ? `data:image/svg+xml;utf8,${encodeURIComponent(svg)}` : '';
@@ -1198,14 +1224,34 @@ export class CmsComponent implements OnInit {
     this.api.listarSiteSecoes().subscribe({
       next: (secoes) => {
         const por = new Map(secoes.map((s) => [s.secao, s.dados]));
-        const str = (d: Record<string, unknown> | undefined, k: string) =>
-          typeof d?.[k] === 'string' ? (d[k] as string) : '';
+        const str = (d: Record<string, unknown> | undefined, k: string, padrao = '') =>
+          d ? (typeof d[k] === 'string' ? (d[k] as string) : '') : padrao;
         this.siteForm.patchValue({
-          hero_titulo: str(por.get('hero'), 'titulo'),
-          hero_subtitulo: str(por.get('hero'), 'subtitulo'),
-          seo_titulo: str(por.get('seo'), 'titulo'),
-          seo_descricao: str(por.get('seo'), 'descricao'),
-          seo_keywords: str(por.get('seo'), 'keywords'),
+          hero_titulo: str(
+            por.get('hero'),
+            'titulo',
+            'Pousada Espírito do Mar: sua estadia pertinho da Praia do Peró',
+          ),
+          hero_subtitulo: str(
+            por.get('hero'),
+            'subtitulo',
+            'Em Cabo Frio, aproveite dias de descanso em uma pousada acolhedora, com piscina e fácil acesso à Praia do Peró.',
+          ),
+          seo_titulo: str(
+            por.get('seo'),
+            'titulo',
+            'Pousada Espírito do Mar | Hospedagem no Peró, Cabo Frio',
+          ),
+          seo_descricao: str(
+            por.get('seo'),
+            'descricao',
+            'Conheça a Pousada Espírito do Mar, no Peró, em Cabo Frio. Explore as acomodações, conheça a estrutura e consulte a disponibilidade.',
+          ),
+          seo_keywords: str(
+            por.get('seo'),
+            'keywords',
+            'Pousada Espírito do Mar, pousada no Peró, pousada em Cabo Frio, hospedagem perto da Praia do Peró, Cabo Frio RJ',
+          ),
         });
         const itens = por.get('faq')?.['itens'];
         if (Array.isArray(itens)) {
@@ -1223,33 +1269,53 @@ export class CmsComponent implements OnInit {
     });
   }
 
-  protected salvarSite(secao: 'hero' | 'seo' | 'faq'): void {
+  private montarDadosSite(secao: 'hero' | 'seo' | 'faq'): M.CmsSecaoDados {
     const v = this.siteForm.getRawValue();
-    const dados: M.CmsSecaoDados =
-      secao === 'hero'
-        ? { titulo: v.hero_titulo.trim(), subtitulo: v.hero_subtitulo.trim() }
-        : secao === 'seo'
-          ? {
-              titulo: v.seo_titulo.trim(),
-              descricao: v.seo_descricao.trim(),
-              keywords: v.seo_keywords.trim(),
-            }
-          : {
-              itens: this.faq()
-                .map((f) => ({ pergunta: f.pergunta.trim(), resposta: f.resposta.trim() }))
-                .filter((f) => f.pergunta && f.resposta),
-            };
+    if (secao === 'hero') {
+      return { titulo: v.hero_titulo.trim(), subtitulo: v.hero_subtitulo.trim() };
+    }
+    if (secao === 'seo') {
+      return {
+        titulo: v.seo_titulo.trim(),
+        descricao: v.seo_descricao.trim(),
+        keywords: v.seo_keywords.trim(),
+      };
+    }
+    return {
+      itens: this.faq()
+        .map((f) => ({ pergunta: f.pergunta.trim(), resposta: f.resposta.trim() }))
+        .filter((f) => f.pergunta && f.resposta),
+    };
+  }
+
+  protected salvarSite(secao: 'hero' | 'seo' | 'faq'): void {
     this.salvandoSite.set(true);
-    this.api.salvarSiteSecao(secao, dados).subscribe({
+    this.api.salvarSiteSecao(secao, this.montarDadosSite(secao)).subscribe({
       next: () => {
         this.salvandoSite.set(false);
         this.notify.ok('Seção salva — o site já reflete a mudança.');
       },
       error: (e) => {
         this.salvandoSite.set(false);
-        this.notify.erroMsg(e?.error?.erro ?? 'Falha ao salvar a seção.');
+        this.notify.erro(e);
       },
     });
+  }
+
+  protected async salvarTudoSite(): Promise<void> {
+    this.salvandoSite.set(true);
+    try {
+      await Promise.all([
+        firstValueFrom(this.api.salvarSiteSecao('hero', this.montarDadosSite('hero'))),
+        firstValueFrom(this.api.salvarSiteSecao('seo', this.montarDadosSite('seo'))),
+        firstValueFrom(this.api.salvarSiteSecao('faq', this.montarDadosSite('faq'))),
+      ]);
+      this.notify.ok('Página inicial, SEO e FAQ salvos e publicados no site.');
+    } catch (e) {
+      this.notify.erro(e);
+    } finally {
+      this.salvandoSite.set(false);
+    }
   }
 
   protected addFaq(): void {
