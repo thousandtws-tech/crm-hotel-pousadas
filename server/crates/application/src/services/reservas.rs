@@ -8,15 +8,15 @@
 use crate::actor::Ator;
 use crate::dto::{
     AcompanhanteInput, AdicionalInput, CancelamentoResponse, CancelarReservaRequest,
-    CheckoutRequest, DisponibilidadeResponse, FnrhEmitRequest, ItemConsumidoRequest, ReservaInput,
-    ReservaPublicaInput, ReservaPublicaOutput,
+    CheckoutRequest, DisponibilidadeResponse, FnrhEmitRequest, GrupoInput, ItemConsumidoRequest,
+    ReservaInput, ReservaPublicaInput, ReservaPublicaOutput,
 };
 use crate::error::AppResult;
 use crate::services::AuthService;
 use chrono::{Duration, NaiveDate, Utc};
 use clarituz_domain::entities::{
-    Acompanhante, AdicionalConsumo, Bloqueio, Cliente, Consumo, Fnrh, ItemConsumido, NovoLog,
-    Reserva,
+    Acompanhante, AdicionalConsumo, Bloqueio, Cliente, Consumo, Fnrh, Grupo, GrupoUnidadeView,
+    ItemConsumido, NovoLog, Reserva,
 };
 use clarituz_domain::enums::StatusReserva;
 use clarituz_domain::events::{Aviso, TipoAviso};
@@ -1462,6 +1462,63 @@ impl ReservaService {
 
     pub async fn desbloquear(&self, _ator: &Ator, id: i64) -> AppResult<()> {
         Ok(self.reservas.bloqueio_remover(id).await?)
+    }
+
+    // -- grupos / eventos -----------------------------------------------------
+
+    /// Cria grupo + rooming list; `bloquear=true` tira as unidades de venda
+    /// no período (visível no mapa como bloqueio 'Grupo …').
+    pub async fn criar_grupo(&self, ator: &Ator, input: GrupoInput) -> AppResult<Grupo> {
+        let nome = input.nome.trim();
+        if nome.len() < 3 {
+            return Err(DomainError::validacao("Informe o nome do grupo.").into());
+        }
+        if input.unidades.is_empty() {
+            return Err(
+                DomainError::validacao("Selecione ao menos uma unidade (rooming list).").into(),
+            );
+        }
+        PeriodoEstadia::new(input.inicio, input.fim)?;
+        Ok(self
+            .reservas
+            .grupo_criar(
+                nome,
+                opt_str(input.contato).as_deref(),
+                opt_str(input.obs).as_deref(),
+                input.inicio,
+                input.fim,
+                &input.unidades,
+                input.bloquear.unwrap_or(true),
+                ator.id,
+            )
+            .await?)
+    }
+
+    pub async fn grupos(&self) -> AppResult<Vec<Grupo>> {
+        Ok(self.reservas.grupo_listar().await?)
+    }
+
+    pub async fn grupo_unidades(&self, idgrupo: i64) -> AppResult<Vec<GrupoUnidadeView>> {
+        Ok(self.reservas.grupo_unidades(idgrupo).await?)
+    }
+
+    /// Remove o grupo — libera os bloqueios vinculados em cascata e
+    /// desvincula reservas (`ON DELETE SET NULL`); as reservas permanecem.
+    pub async fn remover_grupo(&self, _ator: &Ator, id: i64) -> AppResult<()> {
+        Ok(self.reservas.grupo_remover(id).await?)
+    }
+
+    /// Vincula/desvincula uma reserva ao grupo (rooming list mostra o hóspede).
+    pub async fn vincular_reserva_grupo(
+        &self,
+        _ator: &Ator,
+        idreserva: i64,
+        idgrupo: Option<i64>,
+    ) -> AppResult<()> {
+        Ok(self
+            .reservas
+            .reserva_vincular_grupo(idreserva, idgrupo)
+            .await?)
     }
 }
 

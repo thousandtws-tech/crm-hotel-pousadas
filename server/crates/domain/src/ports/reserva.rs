@@ -4,8 +4,8 @@
 //! entidade + consumo + ledger + auditoria, tudo ou nada.
 
 use crate::entities::{
-    Acompanhante, AdicionalConsumo, Bloqueio, Consumo, Fnrh, ItemConsumido, NovoLog, Reembolso,
-    Reserva,
+    Acompanhante, AdicionalConsumo, Bloqueio, Consumo, Fnrh, Grupo, GrupoUnidadeView,
+    ItemConsumido, NovoLog, Reembolso, Reserva,
 };
 use crate::enums::StatusReserva;
 use crate::error::DomainError;
@@ -130,6 +130,30 @@ pub trait ReservaRepository: Send + Sync {
     ) -> Result<Bloqueio, DomainError>;
     async fn bloqueio_listar(&self) -> Result<Vec<Bloqueio>, DomainError>;
     async fn bloqueio_remover(&self, id: i64) -> Result<(), DomainError>;
+
+    /// Grupo/evento — cria grupo + rooming list + (opcional) bloqueio por
+    /// unidade numa transação; remover o grupo libera tudo em cascata.
+    #[allow(clippy::too_many_arguments)]
+    async fn grupo_criar(
+        &self,
+        nome: &str,
+        contato: Option<&str>,
+        obs: Option<&str>,
+        inicio: NaiveDate,
+        fim: NaiveDate,
+        unidades: &[i64],
+        bloquear: bool,
+        criado_por: i64,
+    ) -> Result<Grupo, DomainError>;
+    async fn grupo_listar(&self) -> Result<Vec<Grupo>, DomainError>;
+    async fn grupo_unidades(&self, idgrupo: i64) -> Result<Vec<GrupoUnidadeView>, DomainError>;
+    async fn grupo_remover(&self, id: i64) -> Result<(), DomainError>;
+    /// Vincula (`Some`) ou desvincula (`None`) uma reserva ao grupo.
+    async fn reserva_vincular_grupo(
+        &self,
+        idreserva: i64,
+        idgrupo: Option<i64>,
+    ) -> Result<(), DomainError>;
 
     /// Check-in: trava a reserva `FOR UPDATE`, valida a transição
     /// `pendente → iniciada`, atribui o quarto físico livre e audita.

@@ -296,6 +296,38 @@ export interface TarifaOcupacaoInput {
   valor: number | string;
 }
 
+/** Grupo/evento — rooming list + bloqueio em massa + reservas vinculadas. */
+export interface Grupo {
+  id: number;
+  nome: string;
+  contato: string | null;
+  obs: string | null;
+  inicio: string;
+  fim: string;
+  criado_por: number | null;
+  criado_em: string;
+}
+
+export interface GrupoInput {
+  nome: string;
+  contato?: string | null;
+  obs?: string | null;
+  inicio: string;
+  fim: string;
+  unidades: number[];
+  bloquear?: boolean;
+}
+
+export interface GrupoUnidadeView {
+  id: number;
+  idacomodacao: number;
+  acomodacao_nome: string;
+  acomodacao_numero: number;
+  idreserva: number | null;
+  hospede: string | null;
+  reserva_status: string | null;
+}
+
 // ---------------------------------------------------------------------------
 // CMS — conteúdo editorial + mídia do site público
 // ---------------------------------------------------------------------------

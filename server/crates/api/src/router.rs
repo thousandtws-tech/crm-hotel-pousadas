@@ -194,6 +194,19 @@ pub fn build(state: AppState) -> Router {
         // Mapa por andar + bloqueio formal
         .route("/reservas/mapa", get(routes::reservas::mapa_quartos))
         .route("/reservas/widget", get(routes::reservas::widget_motor))
+        .route(
+            "/reservas/{id}/grupo",
+            patch(routes::reservas::vincular_grupo),
+        )
+        .route(
+            "/grupos",
+            get(routes::reservas::grupos).post(routes::reservas::criar_grupo),
+        )
+        .route(
+            "/grupos/{id}/unidades",
+            get(routes::reservas::grupo_unidades),
+        )
+        .route("/grupos/{id}", delete(routes::reservas::remover_grupo))
         .route("/bloqueios", get(routes::reservas::bloqueios))
         .route(
             "/bloqueios/{id}",

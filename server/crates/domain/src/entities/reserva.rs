@@ -205,3 +205,36 @@ pub struct Bloqueio {
     pub criado_por: Option<i64>,
     pub criado_em: DateTime<Utc>,
 }
+
+/// Grupo/evento — aloca unidades num período (rooming list) e vincula
+/// reservas. `bloquear` tira as unidades de venda até as reservas chegarem.
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct Grupo {
+    pub id: i64,
+    pub nome: String,
+    pub contato: Option<String>,
+    pub obs: Option<String>,
+    pub inicio: NaiveDate,
+    pub fim: NaiveDate,
+    pub criado_por: Option<i64>,
+    pub criado_em: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct GrupoUnidade {
+    pub id: i64,
+    pub idgrupo: i64,
+    pub idacomodacao: i64,
+}
+
+/// Visão do grupo com sua rooming list — retornado ao admin.
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct GrupoUnidadeView {
+    pub id: i64,
+    pub idacomodacao: i64,
+    pub acomodacao_nome: String,
+    pub acomodacao_numero: i32,
+    pub idreserva: Option<i64>,
+    pub hospede: Option<String>,
+    pub reserva_status: Option<String>,
+}

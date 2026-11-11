@@ -1,10 +1,10 @@
 use super::audit;
 use crate::db::map_db_err;
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use clarituz_domain::entities::{
-    Acompanhante, AdicionalConsumo, Bloqueio, Consumo, Fnrh, ItemConsumido, NovoLog, Reembolso,
-    Reserva,
+    Acompanhante, AdicionalConsumo, Bloqueio, Consumo, Fnrh, Grupo, GrupoUnidadeView,
+    ItemConsumido, NovoLog, Reembolso, Reserva,
 };
 use clarituz_domain::enums::StatusConsumo;
 use clarituz_domain::ports::{
@@ -280,6 +280,110 @@ impl ReservaRepository for PgReservaRepository {
     async fn bloqueio_remover(&self, id: i64) -> Result<(), DomainError> {
         sqlx::query("DELETE FROM bloqueio WHERE id = $1")
             .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    async fn grupo_criar(
+        &self,
+        nome: &str,
+        contato: Option<&str>,
+        obs: Option<&str>,
+        inicio: NaiveDate,
+        fim: NaiveDate,
+        unidades: &[i64],
+        bloquear: bool,
+        criado_por: i64,
+    ) -> Result<Grupo, DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        let grupo = sqlx::query_as::<_, Grupo>(
+            "INSERT INTO grupo (nome, contato, obs, inicio, fim, criado_por)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             RETURNING id, nome, contato, obs, inicio, fim, criado_por, criado_em",
+        )
+        .bind(nome)
+        .bind(contato)
+        .bind(obs)
+        .bind(inicio)
+        .bind(fim)
+        .bind(criado_por)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(map_db_err)?;
+        for ida in unidades {
+            sqlx::query("INSERT INTO grupo_unidade (idgrupo, idacomodacao) VALUES ($1, $2)")
+                .bind(grupo.id)
+                .bind(ida)
+                .execute(&mut *tx)
+                .await
+                .map_err(map_db_err)?;
+            if bloquear {
+                sqlx::query(
+                    "INSERT INTO bloqueio (idacomodacao, inicio, fim, motivo, criado_por, idgrupo)
+                     VALUES ($1, $2, $3, $4, $5, $6)",
+                )
+                .bind(ida)
+                .bind(inicio)
+                .bind(fim)
+                .bind(format!("Grupo {nome}"))
+                .bind(criado_por)
+                .bind(grupo.id)
+                .execute(&mut *tx)
+                .await
+                .map_err(map_db_err)?;
+            }
+        }
+        tx.commit().await.map_err(map_db_err)?;
+        Ok(grupo)
+    }
+
+    async fn grupo_listar(&self) -> Result<Vec<Grupo>, DomainError> {
+        sqlx::query_as::<_, Grupo>(
+            "SELECT id, nome, contato, obs, inicio, fim, criado_por, criado_em
+             FROM grupo ORDER BY inicio DESC",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn grupo_unidades(&self, idgrupo: i64) -> Result<Vec<GrupoUnidadeView>, DomainError> {
+        sqlx::query_as::<_, GrupoUnidadeView>(
+            "SELECT gu.id, gu.idacomodacao, a.nome AS acomodacao_nome, a.numero AS acomodacao_numero,
+                    r.id AS idreserva, cl.nome AS hospede, r.status::text AS reserva_status
+             FROM grupo_unidade gu
+             JOIN acomodacao a ON a.id = gu.idacomodacao
+             LEFT JOIN reserva r ON r.idgrupo = gu.idgrupo AND r.idacomodacao = gu.idacomodacao
+                AND r.status IN ('p','i')
+             LEFT JOIN cliente cl ON cl.id = r.idcliente
+             WHERE gu.idgrupo = $1
+             ORDER BY a.andar, a.numero",
+        )
+        .bind(idgrupo)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn grupo_remover(&self, id: i64) -> Result<(), DomainError> {
+        sqlx::query("DELETE FROM grupo WHERE id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    async fn reserva_vincular_grupo(
+        &self,
+        idreserva: i64,
+        idgrupo: Option<i64>,
+    ) -> Result<(), DomainError> {
+        sqlx::query("UPDATE reserva SET idgrupo = $2 WHERE id = $1")
+            .bind(idreserva)
+            .bind(idgrupo)
             .execute(&self.pool)
             .await
             .map_err(map_db_err)?;

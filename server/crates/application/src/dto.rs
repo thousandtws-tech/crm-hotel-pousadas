@@ -448,6 +448,20 @@ pub struct TarifaOcupacaoInput {
     pub valor: Decimal,
 }
 
+/// Grupo/evento — rooming list de unidades com bloqueio em massa opcional.
+#[derive(Debug, Deserialize)]
+pub struct GrupoInput {
+    pub nome: String,
+    pub contato: Option<String>,
+    pub obs: Option<String>,
+    pub inicio: NaiveDate,
+    pub fim: NaiveDate,
+    /// ids das acomodações alocadas ao grupo.
+    pub unidades: Vec<i64>,
+    /// `true` (default) tira as unidades de venda no período via bloqueio.
+    pub bloquear: Option<bool>,
+}
+
 /// Filtros de listagem de reservas — **achatado** (`#[serde(flatten)]`)
 /// dentro da query do handler, portanto inteiros chegam como string.
 #[derive(Debug, Deserialize)]

@@ -13,7 +13,15 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { ApiService, num } from '@core/services/api.service';
-import { Acomodacao, Bloqueio, MapaQuarto, ReservaResumo, StatusReserva } from '@core/models/api.models';
+import {
+  Acomodacao,
+  Bloqueio,
+  Grupo,
+  GrupoUnidadeView,
+  MapaQuarto,
+  ReservaResumo,
+  StatusReserva,
+} from '@core/models/api.models';
 import { Confirm } from '@core/services/confirm.service';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
@@ -101,6 +109,9 @@ const JANELA_DIAS = 14;
             </mat-button-toggle>
             <mat-button-toggle value="mapa">
               <mat-icon>domain</mat-icon> Mapa
+            </mat-button-toggle>
+            <mat-button-toggle value="grupos">
+              <mat-icon>groups</mat-icon> Grupos
             </mat-button-toggle>
           </mat-button-toggle-group>
 
@@ -456,6 +467,68 @@ const JANELA_DIAS = 14;
             }
           </div>
         }
+
+        @if (visao() === 'grupos') {
+          <div class="gr-wrap">
+            <div class="gr-novo">
+              <h3 class="gr-tit">Novo grupo / evento</h3>
+              <div class="gr-form">
+                <input class="inp" placeholder="Nome do grupo *" [value]="gNome" (input)="gNome=$any($event.target).value" aria-label="Nome do grupo" />
+                <input class="inp" placeholder="Contato" [value]="gContato" (input)="gContato=$any($event.target).value" aria-label="Contato" />
+                <input class="inp" type="date" [value]="gIni" (input)="gIni=$any($event.target).value" aria-label="Início" />
+                <input class="inp" type="date" [value]="gFim" (input)="gFim=$any($event.target).value" aria-label="Fim" />
+              </div>
+              <p class="gr-sub">Unidades (rooming list):</p>
+              <div class="gr-units">
+                @for (a of acomodacoes(); track a.id) {
+                  <label class="gr-unit" [class.sel]="gSel().has(a.id)">
+                    <input type="checkbox" [checked]="gSel().has(a.id)" (change)="toggleUnidade(a.id)" />
+                    {{ a.numero }} · {{ a.nome }}
+                  </label>
+                }
+              </div>
+              <label class="gr-blk">
+                <input type="checkbox" [checked]="gBloquear" (change)="gBloquear=!gBloquear" />
+                Bloquear as unidades para venda no período
+              </label>
+              <button class="mc-btn pri" [disabled]="salvandoGrupo()" (click)="criarGrupo()">
+                {{ salvandoGrupo() ? 'Salvando…' : 'Criar grupo' }}
+              </button>
+            </div>
+
+            <div class="gr-lista">
+              @for (g of grupos(); track g.id) {
+                <div class="gr-card">
+                  <div class="gr-head">
+                    <strong>{{ g.nome }}</strong>
+                    <span class="gr-datas">{{ g.inicio | date:'dd/MM' }} → {{ g.fim | date:'dd/MM' }}</span>
+                    <button class="mc-btn" (click)="toggleRooming(g.id)">{{ roomingAberto() === g.id ? 'Fechar' : 'Rooming' }}</button>
+                    <button class="mc-btn" (click)="removerGrupo(g)">Remover</button>
+                  </div>
+                  @if (g.contato) { <p class="gr-contato">{{ g.contato }}</p> }
+                  @if (roomingAberto() === g.id) {
+                    <table class="plain bordered gr-tb">
+                      <thead><tr><th>Unidade</th><th>Hóspede</th><th>Status</th></tr></thead>
+                      <tbody>
+                        @for (u of rooming(); track u.id) {
+                          <tr>
+                            <td>{{ u.acomodacao_numero }} · {{ u.acomodacao_nome }}</td>
+                            <td>{{ u.hospede ?? '—' }}</td>
+                            <td>{{ u.reserva_status === 'i' ? 'Na casa' : (u.reserva_status === 'p' ? 'Reservado' : '—') }}</td>
+                          </tr>
+                        } @empty {
+                          <tr><td colspan="3" class="muted tc">Sem unidades.</td></tr>
+                        }
+                      </tbody>
+                    </table>
+                  }
+                </div>
+              } @empty {
+                <p class="tape-vazio">Nenhum grupo cadastrado — casamentos, retiros, excursões.</p>
+              }
+            </div>
+          </div>
+        }
       </div>
     </div>
 
@@ -584,6 +657,26 @@ const JANELA_DIAS = 14;
     .dl{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:#5d6d7e}
     .inp{border:1px solid #d7e0e6;border-radius:6px;padding:7px 9px;font-size:.85rem}
     .dlg-acoes{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+
+    /* ---------- grupos / eventos ---------- */
+    .gr-wrap{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+    .gr-novo{flex:0 0 320px;background:#fff;border:1px solid #e3eaef;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px}
+    .gr-tit{margin:0;font-size:.95rem;color:#054054}
+    .gr-form{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .gr-sub{margin:6px 0 2px;font-size:.78rem;color:#5d6d7e;font-weight:600}
+    .gr-units{display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto}
+    .gr-unit{font-size:.8rem;padding:4px 8px;border:1px solid #e3eaef;border-radius:6px;cursor:pointer;display:flex;gap:6px;align-items:center}
+    .gr-unit.sel{background:#e8f4f8;border-color:#1a6f8a}
+    .gr-blk{font-size:.8rem;color:#5d6d7e;display:flex;gap:6px;align-items:center}
+    .gr-lista{flex:1;min-width:280px;display:flex;flex-direction:column;gap:8px}
+    .gr-card{background:#fff;border:1px solid #e3eaef;border-radius:10px;padding:12px}
+    .gr-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .gr-head strong{color:#054054}
+    .gr-datas{font-size:.8rem;color:#5d6d7e;flex:1}
+    .gr-contato{margin:4px 0 0;font-size:.78rem;color:#8a99a4}
+    .gr-tb{margin-top:8px;font-size:.82rem}
+    .gr-tb th{font-size:.72rem;color:#8a99a4;text-transform:uppercase}
+    .muted{color:#8a99a4}.tc{text-align:center}
 
     .rs-visao {
       flex-shrink: 0;
@@ -857,9 +950,19 @@ export class ReservasComponent implements OnInit {
   });
 
   // ---- mapa de ocupação -------------------------------------------------------
-  protected readonly visao = signal<'lista' | 'cal' | 'mapa'>('lista');
+  protected readonly visao = signal<'lista' | 'cal' | 'mapa' | 'grupos'>('lista');
   protected readonly mapa = signal<MapaQuarto[]>([]);
   protected readonly bloqueios = signal<Bloqueio[]>([]);
+  protected readonly grupos = signal<Grupo[]>([]);
+  protected readonly rooming = signal<GrupoUnidadeView[]>([]);
+  protected readonly roomingAberto = signal<number | null>(null);
+  protected readonly salvandoGrupo = signal(false);
+  protected readonly gSel = signal<Set<number>>(new Set());
+  protected gNome = '';
+  protected gContato = '';
+  protected gIni = '';
+  protected gFim = '';
+  protected gBloquear = true;
   protected readonly bloqueioAlvo = signal<MapaQuarto | null>(null);
   protected readonly salvandoBloq = signal(false);
   protected bIni = '';
@@ -945,6 +1048,7 @@ export class ReservasComponent implements OnInit {
         this.carregarKpis();
         if (this.visao() === 'cal') this.carregarEventos();
         if (this.visao() === 'mapa') this.carregarMapa();
+        if (this.visao() === 'grupos') this.carregarGrupos();
       }
     });
     this.fBusca.valueChanges
@@ -1087,6 +1191,84 @@ export class ReservasComponent implements OnInit {
     return this.bloqueios().find(
       (b) => b.idacomodacao === idacomodacao && b.inicio <= hoje && b.fim >= hoje,
     );
+  }
+
+  // ---------- grupos / eventos ----------
+  carregarGrupos(): void {
+    this.api.grupos().subscribe({ next: (g) => this.grupos.set(g), error: () => undefined });
+    if (!this.acomodacoes().length) {
+      this.api.listarAcomodacoes(1, 200, true).subscribe({
+        next: (p) => this.acomodacoes.set(p.items),
+        error: () => undefined,
+      });
+    }
+  }
+
+  toggleUnidade(id: number): void {
+    this.gSel.update((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  }
+
+  criarGrupo(): void {
+    if (!this.gNome.trim() || !this.gIni || !this.gFim || this.gSel().size === 0) {
+      this.notify.aviso('Nome, período e ao menos uma unidade são obrigatórios.');
+      return;
+    }
+    this.salvandoGrupo.set(true);
+    this.api
+      .criarGrupo({
+        nome: this.gNome.trim(),
+        contato: this.gContato.trim() || null,
+        inicio: this.gIni,
+        fim: this.gFim,
+        unidades: [...this.gSel()],
+        bloquear: this.gBloquear,
+      })
+      .subscribe({
+        next: () => {
+          this.salvandoGrupo.set(false);
+          this.gNome = '';
+          this.gContato = '';
+          this.gSel.set(new Set());
+          this.notify.ok('Grupo criado.');
+          this.carregarGrupos();
+        },
+        error: (e) => {
+          this.salvandoGrupo.set(false);
+          this.notify.erro(e);
+        },
+      });
+  }
+
+  toggleRooming(id: number): void {
+    if (this.roomingAberto() === id) {
+      this.roomingAberto.set(null);
+      return;
+    }
+    this.roomingAberto.set(id);
+    this.api.grupoUnidades(id).subscribe({
+      next: (u) => this.rooming.set(u),
+      error: () => this.rooming.set([]),
+    });
+  }
+
+  async removerGrupo(g: Grupo): Promise<void> {
+    const ok = await this.confirm.perguntar(
+      `Remover o grupo '${g.nome}'? Os bloqueios vinculados são liberados; reservas permanecem.`,
+      { titulo: 'Remover grupo', confirmar: 'Remover' },
+    );
+    if (!ok) return;
+    this.api.removerGrupo(g.id).subscribe({
+      next: () => {
+        this.notify.ok('Grupo removido.');
+        this.carregarGrupos();
+      },
+      error: (e) => this.notify.erro(e),
+    });
   }
 
   abrirBloqueio(a: MapaQuarto): void {

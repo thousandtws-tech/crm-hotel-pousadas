@@ -990,6 +990,19 @@ export class ApiService {
   bloqueios() {
     return this.get<M.Bloqueio[]>('/bloqueios');
   }
+  // -- Grupos / eventos --------------------------------------------------------
+  grupos() {
+    return this.get<M.Grupo[]>('/grupos');
+  }
+  criarGrupo(input: M.GrupoInput) {
+    return this.post<M.Grupo>('/grupos', input);
+  }
+  grupoUnidades(id: number) {
+    return this.get<M.GrupoUnidadeView[]>(`/grupos/${id}/unidades`);
+  }
+  removerGrupo(id: number) {
+    return this.del<void>(`/grupos/${id}`);
+  }
   bloquear(idacomodacao: number, inicio: string, fim: string, motivo: string) {
     return this.post<M.Bloqueio>(`/acomodacoes/${idacomodacao}/bloqueio`, { inicio, fim, motivo });
   }

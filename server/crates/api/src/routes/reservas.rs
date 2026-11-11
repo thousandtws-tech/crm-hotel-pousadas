@@ -11,7 +11,7 @@ use clarituz_application::actor::Ator;
 use clarituz_application::dto::{
     AcompanhanteInput, AdicionalInput, CancelamentoResponse, CancelarReservaRequest,
     CheckinRequest, CheckoutRequest, DisponibilidadeQuery, DisponibilidadeResponse,
-    FnrhEmitRequest, ItemConsumidoRequest, ReservaFiltroQuery, ReservaInput,
+    FnrhEmitRequest, GrupoInput, ItemConsumidoRequest, ReservaFiltroQuery, ReservaInput,
 };
 use clarituz_domain::entities::{Acompanhante, AdicionalConsumo, Fnrh, ItemConsumido, Reserva};
 use clarituz_domain::enums::StatusReserva;
@@ -422,4 +422,57 @@ pub async fn widget_motor(State(s): State<AppState>, _ator: Ator) -> Result<Json
     Ok(Json(
         json!({ "url": url, "qr_svg": svg, "snippet": snippet }),
     ))
+}
+
+// ---------------------------------------------------------------------------
+// Grupos / eventos — rooming list + bloqueio em massa + reservas vinculadas.
+// ---------------------------------------------------------------------------
+
+/// GET /grupos — todos os grupos.
+pub async fn grupos(State(s): State<AppState>, _ator: Ator) -> Result<Json<Value>, AppError> {
+    Ok(Json(json!(s.services.reservas.grupos().await?)))
+}
+
+/// POST /grupos — cria grupo + rooming list (+ bloqueio em massa opcional).
+pub async fn criar_grupo(
+    State(s): State<AppState>,
+    ator: Ator,
+    Json(input): Json<GrupoInput>,
+) -> Result<(StatusCode, Json<Value>), AppError> {
+    let g = s.services.reservas.criar_grupo(&ator, input).await?;
+    Ok((StatusCode::CREATED, Json(json!(g))))
+}
+
+/// GET /grupos/{id}/unidades — rooming list com hóspede/status por unidade.
+pub async fn grupo_unidades(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<Json<Value>, AppError> {
+    Ok(Json(json!(s.services.reservas.grupo_unidades(id).await?)))
+}
+
+/// DELETE /grupos/{id} — remove grupo; libera bloqueios, desvincula reservas.
+pub async fn remover_grupo(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<StatusCode, AppError> {
+    s.services.reservas.remover_grupo(&ator, id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// PATCH /reservas/{id}/grupo — vincula ({idgrupo: n}) ou desvincula (null).
+pub async fn vincular_grupo(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+    Json(b): Json<Value>,
+) -> Result<StatusCode, AppError> {
+    let idgrupo = b.get("idgrupo").and_then(serde_json::Value::as_i64);
+    s.services
+        .reservas
+        .vincular_reserva_grupo(&ator, id, idgrupo)
+        .await?;
+    Ok(StatusCode::NO_CONTENT)
 }
