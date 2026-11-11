@@ -57,3 +57,32 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Use the `providedIn: 'root'` option for singleton services
 - Prefer the `@Service` decorator over `@Injectable({providedIn: 'root'})` for new singleton services (Angular v22+)
 - Use the `inject()` function instead of constructor injection
+
+## Estrutura do projeto (web)
+
+```
+src/app/
+├── core/
+│   ├── services/       acesso a dados por domínio (booking, payment, guest,
+│   │                   newsletter, site-content, accommodation, blog...) —
+│   │                   HttpClient tipado; NUNCA fetch solto em componentes.
+│   ├── config/         hotel-config, modelos públicos
+│   └── models/
+├── features/<pagina>/  páginas lazy (loadComponent nas rotas)
+├── layout/             public layout (header/footer)
+└── shared/             UI genérica sem regra de negócio
+```
+
+O site é **CSR estático** (nginx) — não há SSR/hidratação; não reintroduzir
+`@angular/ssr` sem infra de servidor. PWA ativo via `@angular/service-worker`.
+
+Realtime público (Phoenix `site:deltas`): `SiteContentService` e
+`AccommodationService` recarregam após deltas; ambos têm teardown via
+`DestroyRef` (socket, canal, timers, listeners). `AccommodationService` mantém
+FALLBACK embutido só para indisponibilidade da API.
+
+Pagamento: o servidor calcula valores e confirma via webhook — a UI nunca
+declara pagamento liquidado nem aprova reserva por estado local ou URL.
+
+Comandos: `npm ci` (sem flags), `npm run build`, `npm test`, `npm run deps:check`.
+E2E de jornadas: `client/e2e` (Playwright, API mockada).

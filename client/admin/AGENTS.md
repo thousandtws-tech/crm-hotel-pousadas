@@ -57,3 +57,33 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Use the `providedIn: 'root'` option for singleton services
 - Prefer the `@Service` decorator over `@Injectable({providedIn: 'root'})` for new singleton services (Angular v22+)
 - Use the `inject()` function instead of constructor injection
+
+## Estrutura do projeto (admin)
+
+```
+src/app/
+├── core/
+│   ├── api/            clientes HTTP por domínio — <dominio>.api.ts (@Service,
+│   │                   extends ApiHttp de api-http.ts). Componentes NUNCA
+│   │                   injetam HttpClient diretamente.
+│   ├── models/         contratos da API por domínio — <dominio>.models.ts,
+│   │                   TypeScript puro (sem Angular/HTTP). index.ts re-exporta.
+│   ├── services/       auth.store, realtime (Phoenix), notify, maria, notificacoes
+│   ├── guards/         authGuard, guestGuard, adminGuard
+│   ├── interceptors/   authInterceptor (Bearer + single-flight refresh em 401)
+│   └── config/
+├── features/<dominio>/ páginas e componentes do domínio
+├── layout/             shell autenticado com navegação
+└── shared/             UI genérica sem regra de negócio
+```
+
+Fronteiras verificadas por `npm run deps:check` (dependency-cruiser): sem ciclos,
+features isoladas entre si, `core`/`shared` não dependem de features, `models`
+é puro. Quebrou o check = o import está errado — mova para `core` ou `shared`.
+
+Realtime: `Realtime.delta('tabela')`/`mudanca(...)` dentro de `effect()` para
+recarregar dados; `iniciar()`/`parar()` cuidam do ciclo de vida (não chame
+`iniciar` duas vezes). Sockets, timers e AudioContext sempre têm teardown.
+
+Comandos: `npm ci` (sem flags), `npm run build`, `npm test`, `npm run deps:check`.
+E2E de jornadas: `client/e2e` (Playwright, API mockada).

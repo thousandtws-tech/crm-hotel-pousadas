@@ -1,0 +1,66 @@
+name: client
+
+on:
+  push:
+    paths: ["client/admin/**", "client/web/**", ".github/workflows/client.yml"]
+  pull_request:
+    paths: ["client/admin/**", "client/web/**", ".github/workflows/client.yml"]
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  admin:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client/admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: client/admin/package-lock.json
+      - run: npm ci
+      - run: npm run deps:check
+      - run: npm run build
+      - run: npm test
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: client/web/package-lock.json
+      - run: npm ci
+      - run: npm run deps:check
+      - run: npm run build
+      - run: npm test
+
+  e2e:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client/e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install e2e deps
+        run: npm ci
+      - name: Install app deps
+        run: |
+          npm ci --prefix ../admin
+          npm ci --prefix ../web
+      - name: Install chromium
+        run: npx playwright install --with-deps chromium
+      - name: Jornadas (API mockada)
+        run: npx playwright test
