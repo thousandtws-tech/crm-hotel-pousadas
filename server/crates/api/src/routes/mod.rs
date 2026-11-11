@@ -9,6 +9,7 @@ pub mod estoque;
 pub mod impressoras;
 pub mod notificacoes;
 pub mod operacao;
+pub mod operadoras;
 pub mod pagamentos_online;
 pub mod pdv;
 pub mod pessoas;

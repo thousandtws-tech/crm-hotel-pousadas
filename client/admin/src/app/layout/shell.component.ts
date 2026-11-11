@@ -40,6 +40,7 @@ const NAV: NavItem[] = [
   { rota: '/dashboard', rotulo: 'Home', icone: 'grid_view' },
   { rota: '/recepcao', rotulo: 'Recepção', icone: 'concierge' },
   { rota: '/reservas', rotulo: 'Reservas', icone: 'calendar_month' },
+  { rota: '/operadoras', rotulo: 'Operadoras', icone: 'handshake' },
   { rota: '/clientes', rotulo: 'Clientes', icone: 'person' },
   { rota: '/acomodacoes', rotulo: 'Acomodações', icone: 'hotel' },
   { rota: '/estacionamento', rotulo: 'Estacionamento', icone: 'directions_car' },

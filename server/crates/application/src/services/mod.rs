@@ -27,6 +27,7 @@ pub mod impressoras;
 pub mod lgpd;
 pub mod manutencao;
 pub mod notificacoes;
+pub mod operadoras;
 pub mod pagamentos;
 pub mod pagamentos_online;
 pub mod pdv;
@@ -61,6 +62,7 @@ pub use impressoras::ImpressoraService;
 pub use lgpd::LgpdService;
 pub use manutencao::ManutencaoService;
 pub use notificacoes::NotificacaoService;
+pub use operadoras::OperadoraService;
 pub use pagamentos::PagamentoService;
 pub use pagamentos_online::PagamentosOnlineService;
 pub use pdv::PdvService;
@@ -99,6 +101,7 @@ pub struct Services {
     pub cafe: Arc<CafeService>,
     pub compras: Arc<ComprasService>,
     pub comunicacao: Arc<ComunicacaoService>,
+    pub operadoras: Arc<OperadoraService>,
     pub atendimento: Arc<AtendimentoService>,
     pub concierge: Arc<ConciergeService>,
     pub lgpd: Arc<LgpdService>,

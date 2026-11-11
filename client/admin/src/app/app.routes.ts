@@ -32,6 +32,13 @@ export const routes: Routes = [
           import('./features/reservas/reservas.component').then((m) => m.ReservasComponent),
       },
       {
+        path: 'operadoras',
+        loadComponent: () =>
+          import('./features/operadoras/operadoras.component').then(
+            (m) => m.OperadorasComponent,
+          ),
+      },
+      {
         path: 'reservas/:id',
         loadComponent: () =>
           import('./features/reservas/reserva-detail.component').then(

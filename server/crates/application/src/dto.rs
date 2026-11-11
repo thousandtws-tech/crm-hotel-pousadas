@@ -289,6 +289,8 @@ pub struct ReservaInput {
     pub early_checkin: Option<bool>,
     /// Saída estendida — idem.
     pub late_checkout: Option<bool>,
+    /// Operadora B2B de origem — a recepção pode marcar a consolidação.
+    pub idoperadora: Option<i64>,
 }
 
 /// Reserva online vinda do site público — sem autenticação; o serviço

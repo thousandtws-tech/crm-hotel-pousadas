@@ -487,7 +487,9 @@ impl ReservaService {
     /// Diária efetiva: faixa de ocupação do tipo (maior faixa <= hóspedes,
     /// senão a menor) ou o valor-base da acomodação quando o tipo não tem
     /// faixas — mesma regra no balcão, no site e na pré-reserva do WhatsApp.
-    async fn diaria_para(
+    /// Diária da acomodação para N hóspedes — faixa de ocupação por tipo
+    /// ou valor base. Pública para reuso pela extranet (tarifa net).
+    pub async fn diaria_para(
         &self,
         acomodacao: &clarituz_domain::entities::Acomodacao,
         hospedes: i32,
@@ -630,6 +632,7 @@ impl ReservaService {
             early_checkin: early,
             late_checkout: late,
             expira_em: None,
+            idoperadora: input.idoperadora,
         };
 
         let log = ator.log(
@@ -768,6 +771,7 @@ impl ReservaService {
             // Reserva do site segura a acomodação por `hold_minutos`
             // aguardando o pagamento; expirada, o sweeper a cancela.
             expira_em: Some(Utc::now() + Duration::minutes(self.hold_minutos)),
+            idoperadora: None,
         };
         let log = NovoLog {
             idfuncionario: None,

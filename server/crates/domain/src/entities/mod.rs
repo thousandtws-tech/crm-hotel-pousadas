@@ -19,6 +19,7 @@ pub mod funcionario;
 pub mod impressora;
 pub mod notificacao;
 pub mod operacao;
+pub mod operadora;
 pub mod pagamento;
 pub mod pdv;
 pub mod preditivo;
@@ -50,6 +51,7 @@ pub use funcionario::{Funcionario, LogAcesso, SessaoRefresh};
 pub use impressora::{ImpressaoJob, Impressora, ImpressoraDescoberta};
 pub use notificacao::Notificacao;
 pub use operacao::*;
+pub use operadora::*;
 pub use pagamento::{
     FormaPagamento, NovaAuditoriaPagamento, PagamentoOnline, ReembolsoPagamento,
     TentativaPagamento, WebhookEvento,

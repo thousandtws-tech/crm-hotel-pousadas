@@ -207,6 +207,33 @@ pub fn build(state: AppState) -> Router {
             get(routes::reservas::grupo_unidades),
         )
         .route("/grupos/{id}", delete(routes::reservas::remover_grupo))
+        // B2B — operadoras (admin JWT) e extranet do parceiro (token opaco).
+        .route(
+            "/operadoras",
+            get(routes::operadoras::listar).post(routes::operadoras::criar),
+        )
+        .route("/operadoras/{id}", put(routes::operadoras::atualizar))
+        .route(
+            "/operadoras/{id}/ativa",
+            patch(routes::operadoras::definir_ativa),
+        )
+        .route("/operadoras/{id}/token", get(routes::operadoras::token))
+        .route(
+            "/operadoras/{id}/token/rotacionar",
+            post(routes::operadoras::rotacionar),
+        )
+        .route(
+            "/operadoras/{id}/faturamento",
+            get(routes::operadoras::faturamento),
+        )
+        .route(
+            "/extranet/disponibilidade",
+            get(routes::operadoras::extranet_disponibilidade),
+        )
+        .route(
+            "/extranet/reservas",
+            post(routes::operadoras::extranet_reservar),
+        )
         .route("/bloqueios", get(routes::reservas::bloqueios))
         .route(
             "/bloqueios/{id}",

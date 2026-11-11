@@ -36,6 +36,8 @@ pub struct Reserva {
     pub early_checkin: bool,
     /// Saída estendida contratada — idem.
     pub late_checkout: bool,
+    /// Operadora B2B que originou a reserva (extranet) — NULL em venda direta.
+    pub idoperadora: Option<i64>,
     pub criado_em: DateTime<Utc>,
     pub atualizado_em: DateTime<Utc>,
 }

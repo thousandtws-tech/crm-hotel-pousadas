@@ -34,6 +34,8 @@ pub struct NovaReserva {
     pub late_checkout: bool,
     /// Prazo de hold da reserva online (None = recepção, sem expiração).
     pub expira_em: Option<DateTime<Utc>>,
+    /// Operadora B2B de origem (extranet) — None em venda direta.
+    pub idoperadora: Option<i64>,
 }
 
 #[derive(Debug, Clone)]

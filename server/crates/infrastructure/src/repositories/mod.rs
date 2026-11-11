@@ -12,6 +12,7 @@ pub mod estoque;
 pub mod impressora;
 pub mod notificacao;
 pub mod operacao;
+pub mod operadora;
 pub mod pagamento;
 pub mod pdv;
 pub mod pessoas;
@@ -38,6 +39,7 @@ pub use estoque::PgEstoqueRepository;
 pub use impressora::PgImpressoraRepository;
 pub use notificacao::PgNotificacaoRepository;
 pub use operacao::{PgEscalaRepository, PgGovernancaRepository, PgManutencaoRepository};
+pub use operadora::PgOperadoraRepository;
 pub use pagamento::PgPagamentoRepository;
 pub use pdv::PgPdvRepository;
 pub use pessoas::{
