@@ -28,7 +28,7 @@ defmodule Realtime.PgListener do
   # Tabelas cujos deltas são seguros de republicar para o site público —
   # mesma whitelist do SSE público (`/publico/stream` na API Rust);
   # o payload é apenas {tabela,acao,id}, nunca dado de linha.
-  @site_tables ~w[acomodacao acomodacao_cms acomodacao_midia cms_site]
+  @site_tables ~w[acomodacao acomodacao_cms acomodacao_midia cms_site site_midia]
 
   @max_backoff 30_000
 

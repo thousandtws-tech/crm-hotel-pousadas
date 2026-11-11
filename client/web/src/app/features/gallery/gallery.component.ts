@@ -4,6 +4,10 @@ import { GalleryCategory, GalleryItem } from '../../core/models/gallery-item.mod
 import { LightboxComponent } from '../../shared/components/lightbox/lightbox.component';
 import { SeoService } from '../../core/services/seo.service';
 import { MotionService } from '../../core/services/motion.service';
+import { SiteContentService, cmsStr } from '../../core/services/site-content.service';
+import { computed } from '@angular/core';
+
+const PADRAO_HEADER_IMG = 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=2200&q=85';
 
 @Component({
   selector: 'app-gallery',
@@ -13,7 +17,7 @@ import { MotionService } from '../../core/services/motion.service';
     <header class="gallery-page-header relative pt-28 pb-12 sm:pt-32 sm:pb-14 lg:pt-36 lg:pb-16 bg-[#032B38] text-white overflow-hidden">
       <div class="absolute inset-0 z-0">
         <img
-          src="https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=2200&q=85"
+          [src]="headerImg()"
           alt="Arquivo Fotográfico da Pousada Espírito do Mar"
           class="w-full h-full object-cover object-center filter brightness-[0.5]"
         />
@@ -22,10 +26,10 @@ import { MotionService } from '../../core/services/motion.service';
 
       <div class="relative z-10 container-editorial text-center flex flex-col items-center">
         <h1 class="font-serif text-4xl sm:text-6xl text-white font-normal mb-3 sm:mb-4 leading-tight">
-          Galeria de Ambientes
+          {{ headerTxt('titulo', 'Galeria de Ambientes') }}
         </h1>
         <p class="text-sm sm:text-base text-[#F7F5F0]/80 font-light max-w-xl leading-relaxed">
-          Referências visuais de acomodações, lazer e entorno da Praia do Peró, em Cabo Frio.
+          {{ headerTxt('subtitulo', 'Referências visuais de acomodações, lazer e entorno da Praia do Peró, em Cabo Frio.') }}
         </p>
       </div>
     </header>
@@ -61,12 +65,21 @@ import { MotionService } from '../../core/services/motion.service';
               [class]="getGridSpanClass(item.aspectRatio, idx)"
               (click)="openLightbox(item)"
             >
-              <img
-                [src]="item.imageUrl"
-                [alt]="item.title"
-                loading="lazy"
-                class="w-full h-full object-cover"
-              />
+              @if (item.video) {
+                <video
+                  [src]="item.imageUrl"
+                  [attr.aria-label]="item.title"
+                  muted playsinline preload="metadata"
+                  class="w-full h-full object-cover"
+                ></video>
+              } @else {
+                <img
+                  [src]="item.imageUrl"
+                  [alt]="item.title"
+                  loading="lazy"
+                  class="w-full h-full object-cover"
+                />
+              }
             </div>
           }
         </div>
@@ -93,6 +106,15 @@ export class GalleryComponent implements OnInit {
   private readonly el = inject(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly motion = inject(MotionService);
+  private readonly site = inject(SiteContentService);
+
+  private readonly header = computed(() => this.site.secao('galeria.header'));
+  protected readonly headerImg = computed(
+    () => this.site.midiaUrl(this.header()?.['imagem']) || PADRAO_HEADER_IMG
+  );
+  protected headerTxt(key: string, fallback: string): string {
+    return cmsStr(this.header(), key) || fallback;
+  }
 
   public readonly activeItem = signal<GalleryItem | null>(null);
   public readonly activeIndex = signal<number>(-1);
@@ -112,9 +134,11 @@ export class GalleryComponent implements OnInit {
   }
 
   public ngOnInit(): void {
+    const seo = this.site.seoPagina('galeria');
     this.seoService.updateSeo({
-      title: 'Galeria | Pousada Espírito do Mar no Peró, Cabo Frio',
-      description: 'Conheça os ambientes de referência da Pousada Espírito do Mar, localizada no bairro Peró, em Cabo Frio (RJ).',
+      title: seo?.titulo || 'Galeria | Pousada Espírito do Mar no Peró, Cabo Frio',
+      description: seo?.descricao || 'Conheça os ambientes de referência da Pousada Espírito do Mar, localizada no bairro Peró, em Cabo Frio (RJ).',
+      keywords: seo?.keywords,
       url: 'https://pousadaespiritodomar.com.br/galeria'
     });
   }

@@ -6,6 +6,8 @@ export interface GalleryItem {
   category: GalleryCategory;
   categoryLabel: string;
   imageUrl: string;
+  /** true quando a mídia é vídeo (renderizado com <video>). */
+  video?: boolean;
   caption?: string;
   aspectRatio: 'landscape' | 'portrait' | 'square' | 'panoramic';
 }

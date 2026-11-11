@@ -1,11 +1,22 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import { GalleryItem, GalleryCategory } from '../models/gallery-item.model';
+import { CmsDados, SiteContentService, cmsLista, cmsStr } from './site-content.service';
+
+const CATEGORIAS: GalleryCategory[] = ['suites', 'gastronomia', 'lazer-spa', 'natureza'];
+const CATEGORIA_LABEL: Record<string, string> = {
+  suites: 'Acomodações',
+  gastronomia: 'Café da Manhã',
+  'lazer-spa': 'Piscina & Lazer',
+  natureza: 'Região do Peró'
+};
 
 @Injectable({
   providedIn: 'root'
 })
 export class GalleryService {
-  private readonly itemsState = signal<GalleryItem[]>([
+  private readonly site = inject(SiteContentService);
+
+  private readonly padrao: GalleryItem[] = [
     {
       id: 'gal-1',
       title: 'Área de Piscina Externa (Imagem Ilustrativa)',
@@ -60,20 +71,47 @@ export class GalleryService {
       caption: 'Opções de quartos duplos, triplos e quádruplos para sua estadia em Cabo Frio. (Imagem ilustrativa)',
       aspectRatio: 'portrait'
     }
-  ]);
+  ];
 
   private readonly selectedCategoryState = signal<GalleryCategory>('todas');
 
-  public readonly items = this.itemsState.asReadonly();
+  /** Itens do CMS (`galeria.itens`); sem conteúdo publicado cai no acervo padrão. */
+  public readonly items = computed<GalleryItem[]>(() => {
+    const lista = cmsLista(this.site.secao('galeria.itens'), 'itens')
+      .map((i, idx) => this.paraItem(i, idx))
+      .filter((i): i is GalleryItem => i !== null);
+    return lista.length ? lista : this.padrao;
+  });
   public readonly selectedCategory = this.selectedCategoryState.asReadonly();
 
   public readonly filteredItems = computed(() => {
     const category = this.selectedCategoryState();
     if (category === 'todas') {
-      return this.itemsState();
+      return this.items();
     }
-    return this.itemsState().filter((item) => item.category === category);
+    return this.items().filter((item) => item.category === category);
   });
+
+  private paraItem(i: CmsDados, idx: number): GalleryItem | null {
+    const url = this.site.midiaUrl(i['imagem']);
+    if (!url) return null;
+    const cat = cmsStr(i, 'categoria');
+    const categoria = (CATEGORIAS as string[]).includes(cat) ? (cat as GalleryCategory) : 'natureza';
+    const fmt = cmsStr(i, 'formato');
+    const aspectRatio = (['landscape', 'portrait', 'square', 'panoramic'] as const).includes(fmt as never)
+      ? (fmt as GalleryItem['aspectRatio'])
+      : 'landscape';
+    return {
+      id: `cms-${idx}`,
+      title: cmsStr(i, 'titulo'),
+      category: categoria,
+      categoryLabel: CATEGORIA_LABEL[categoria] ?? 'Galeria',
+      imageUrl: url,
+      video: this.site.midia(i['imagem'])?.tipo === 'video',
+      caption: cmsStr(i, 'legenda') || undefined,
+      aspectRatio,
+    };
+  }
 
   public setCategory(category: GalleryCategory): void {
     this.selectedCategoryState.set(category);

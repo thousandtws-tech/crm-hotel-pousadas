@@ -403,6 +403,16 @@ export interface CmsSecao {
 
 export type CmsSecaoDados = Record<string, unknown>;
 
+/** Item da biblioteca de mídia do site institucional (`site_midia`). */
+export interface SiteMidia {
+  id: number;
+  caminho: string;
+  mime: string;
+  tipo: 'foto' | 'video';
+  nome: string;
+  criado_em: string;
+}
+
 // ---------- Operadoras B2B ----------
 
 export interface Operadora {

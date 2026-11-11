@@ -34,6 +34,7 @@ pub use caixa::{CaixaMovimento, CaixaTurno};
 pub use cliente::Cliente;
 pub use cms::{
     AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica, CmsSecao, MidiaView,
+    SiteMidia,
 };
 pub use compras::{Fornecedor, PedidoCompra, PedidoCompraItem};
 pub use comunicacao::*;

@@ -932,6 +932,17 @@ pub fn build(state: AppState) -> Router {
         // CMS de quartos (admin) — conteúdo editorial, mídia e publicação
         .route("/cms/site", get(routes::cms::site_secoes))
         .route("/cms/site/{secao}", put(routes::cms::site_salvar))
+        .route(
+            "/cms/site/{secao}/visivel",
+            patch(routes::cms::site_visivel),
+        )
+        .route("/cms/site/midia", get(routes::cms::site_midia_listar))
+        .route(
+            "/cms/site/midia",
+            post(routes::cms::site_midia_upload)
+                .route_layer(axum::extract::DefaultBodyLimit::max(80 * 1024 * 1024)),
+        )
+        .route("/cms/site/midia/{id}", delete(routes::cms::site_midia_remover))
         .route("/cms/acomodacoes", get(routes::cms::listar))
         .route("/cms/acomodacoes/{id}", put(routes::cms::salvar))
         .route("/cms/acomodacoes/{id}/status", patch(routes::cms::status))
@@ -966,6 +977,10 @@ pub fn build(state: AppState) -> Router {
         .route("/api/v1/publico/stream", get(routes::cms::publico_stream))
         // site público — só conteúdo `publicado`
         .route("/api/v1/publico/cms/site", get(routes::cms::publico_site))
+        .route(
+            "/api/v1/publico/site-midia",
+            get(routes::cms::publico_site_midia),
+        )
         .route(
             "/api/v1/publico/contrato/{codigo}",
             get(routes::operadoras::publico_contrato),
@@ -1064,6 +1079,10 @@ pub fn build(state: AppState) -> Router {
                 )),
         )
         .route("/api/v1/midia/{id}", get(routes::cms::servir_midia))
+        .route(
+            "/api/v1/site-midia/{id}",
+            get(routes::cms::servir_site_midia),
+        )
         // scrape Prometheus — req/s, latência e status por rota
         .route(
             "/metrics",

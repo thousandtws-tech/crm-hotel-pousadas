@@ -11,6 +11,7 @@ import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
 import { TourGuiado } from '@core/services/tour.service';
 import * as M from '@core/models/api.models';
+import { PaginasEditorComponent } from './paginas-editor.component';
 
 interface ComodidadeForm {
   name: string;
@@ -61,6 +62,7 @@ type AbaCms = 'quartos' | 'site' | 'widget';
     ReactiveFormsModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    PaginasEditorComponent,
   ],
   template: `
     <div class="page cms-shell">
@@ -108,7 +110,7 @@ type AbaCms = 'quartos' | 'site' | 'widget';
           [attr.aria-selected]="aba() === 'site'"
           (click)="aba.set('site')"
         >
-          Página inicial e SEO
+          Páginas e SEO
         </button>
         @if (widget()) {
           <button
@@ -352,165 +354,19 @@ type AbaCms = 'quartos' | 'site' | 'widget';
       }
 
       @if (aba() === 'site') {
-        <section class="cms-section" aria-label="Conteúdo institucional e SEO">
+        <section class="cms-section" aria-label="Páginas do site institucional">
           <div class="site-topbar">
             <p class="settings-desc">
-              As alterações publicadas abaixo atualizam a página inicial do site em tempo real.
+              Todas as páginas do site são editáveis aqui — textos, imagens, vídeos, chamadas e SEO.
+              As alterações publicadas atualizam o site em tempo real.
             </p>
-            <div class="aside-actions">
-              @if (siteUrl()) {
-                <a class="btn-ghost btn-sm" [href]="siteUrl()" target="_blank" rel="noopener">
-                  Ver site
-                </a>
-              }
-              <button
-                type="button"
-                class="btn-primary btn-sm"
-                [disabled]="salvandoSite()"
-                (click)="salvarTudoSite()"
-              >
-                {{ salvandoSite() ? 'Salvando…' : 'Salvar todas as alterações' }}
-              </button>
-            </div>
+            @if (siteUrl()) {
+              <a class="btn-ghost btn-sm" [href]="siteUrl()" target="_blank" rel="noopener">
+                Ver site
+              </a>
+            }
           </div>
-
-          <form class="settings-stack" [formGroup]="siteForm" (ngSubmit)="salvarTudoSite()">
-            <div class="settings-row">
-              <div class="settings-aside">
-                <h2 class="settings-tit">Primeira dobra (Hero)</h2>
-                <p class="settings-desc">
-                  Título principal e subtítulo exibidos na abertura da página inicial do site institucional.
-                </p>
-                <button type="button" class="btn-ghost btn-sm" [disabled]="salvandoSite()" (click)="salvarSite('hero')">
-                  Salvar Hero
-                </button>
-              </div>
-              <div class="settings-card">
-                <label class="field">
-                  <span class="field-lbl">Título principal</span>
-                  <input
-                    class="cms-input"
-                    formControlName="hero_titulo"
-                    placeholder="Pousada Espírito do Mar: sua estadia pertinho da Praia do Peró"
-                  />
-                </label>
-                <label class="field">
-                  <span class="field-lbl">Subtítulo</span>
-                  <textarea
-                    class="cms-input"
-                    formControlName="hero_subtitulo"
-                    rows="3"
-                    placeholder="Em Cabo Frio, aproveite dias de descanso em uma pousada acolhedora, com piscina e fácil acesso à Praia do Peró."
-                  ></textarea>
-                </label>
-              </div>
-            </div>
-
-            <div class="settings-row">
-              <div class="settings-aside">
-                <h2 class="settings-tit">SEO e buscadores</h2>
-                <p class="settings-desc">
-                  Metadados utilizados pelo Google e redes sociais ao indexar e compartilhar o endereço principal.
-                </p>
-                <button type="button" class="btn-ghost btn-sm" [disabled]="salvandoSite()" (click)="salvarSite('seo')">
-                  Salvar SEO
-                </button>
-              </div>
-              <div class="settings-card">
-                <label class="field">
-                  <span class="field-lbl">
-                    Título da página
-                    <span class="field-hint">{{ siteForm.controls.seo_titulo.value.length }}/60</span>
-                  </span>
-                  <input
-                    class="cms-input"
-                    formControlName="seo_titulo"
-                    maxlength="60"
-                    placeholder="Pousada Espírito do Mar | Hospedagem no Peró, Cabo Frio"
-                  />
-                </label>
-                <label class="field">
-                  <span class="field-lbl">
-                    Descrição (meta description)
-                    <span class="field-hint">{{ siteForm.controls.seo_descricao.value.length }}/160</span>
-                  </span>
-                  <textarea
-                    class="cms-input"
-                    formControlName="seo_descricao"
-                    rows="3"
-                    maxlength="160"
-                    placeholder="Conheça a Pousada Espírito do Mar, no Peró, em Cabo Frio."
-                  ></textarea>
-                </label>
-                <label class="field">
-                  <span class="field-lbl">Palavras-chave (separadas por vírgula)</span>
-                  <input
-                    class="cms-input"
-                    formControlName="seo_keywords"
-                    placeholder="Pousada Espírito do Mar, pousada no Peró, pousada em Cabo Frio"
-                  />
-                </label>
-              </div>
-            </div>
-          </form>
-
-          <div class="settings-row">
-            <div class="settings-aside">
-              <h2 class="settings-tit">Perguntas frequentes (FAQ)</h2>
-              <p class="settings-desc">
-                Dúvidas comuns exibidas na página inicial com marcação estruturada (JSON-LD) para buscadores.
-              </p>
-              <div class="aside-actions">
-                <button type="button" class="btn-ghost btn-sm" (click)="addFaq()">
-                  <mat-icon>add</mat-icon>
-                  Adicionar pergunta
-                </button>
-                <button type="button" class="btn-primary btn-sm" [disabled]="salvandoSite()" (click)="salvarSite('faq')">
-                  Salvar FAQ
-                </button>
-              </div>
-            </div>
-            <div class="settings-card">
-              @if (faq().length === 0) {
-                <div class="empty-inline">
-                  Nenhuma pergunta cadastrada. Quando vazia, a seção de FAQ fica oculta no site.
-                </div>
-              } @else {
-                <div class="faq-list">
-                  @for (f of faq(); track $index) {
-                    <div class="faq-item">
-                      <div class="faq-item-head">
-                        <span class="faq-num">Pergunta {{ $index + 1 }}</span>
-                        <button
-                          type="button"
-                          class="btn-icon-row"
-                          [attr.aria-label]="'Remover pergunta ' + ($index + 1)"
-                          (click)="delFaq($index)"
-                        >
-                          <mat-icon>close</mat-icon>
-                        </button>
-                      </div>
-                      <input
-                        class="cms-input"
-                        [value]="f.pergunta"
-                        placeholder="Digite a pergunta…"
-                        [attr.aria-label]="'Pergunta ' + ($index + 1)"
-                        (input)="setFaq($index, 'pergunta', $event)"
-                      />
-                      <textarea
-                        class="cms-input"
-                        [value]="f.resposta"
-                        rows="2"
-                        placeholder="Digite a resposta…"
-                        [attr.aria-label]="'Resposta ' + ($index + 1)"
-                        (input)="setFaq($index, 'resposta', $event)"
-                      ></textarea>
-                    </div>
-                  }
-                </div>
-              }
-            </div>
-          </div>
+          <app-paginas-editor />
         </section>
       }
 
@@ -1182,16 +1038,6 @@ export class CmsComponent implements OnInit {
     return svg ? `data:image/svg+xml;utf8,${encodeURIComponent(svg)}` : '';
   });
 
-  protected readonly siteForm = this.fb.nonNullable.group({
-    hero_titulo: [''],
-    hero_subtitulo: [''],
-    seo_titulo: [''],
-    seo_descricao: [''],
-    seo_keywords: [''],
-  });
-  protected readonly faq = signal<{ pergunta: string; resposta: string }[]>([]);
-  protected readonly salvandoSite = signal(false);
-
   private cmsVersion = 0;
   private pmsVersion = 0;
 
@@ -1217,118 +1063,6 @@ export class CmsComponent implements OnInit {
       next: (w) => this.widget.set(w),
       error: () => {},
     });
-    this.carregarSite();
-  }
-
-  private carregarSite(): void {
-    this.api.listarSiteSecoes().subscribe({
-      next: (secoes) => {
-        const por = new Map(secoes.map((s) => [s.secao, s.dados]));
-        const str = (d: Record<string, unknown> | undefined, k: string, padrao = '') =>
-          d ? (typeof d[k] === 'string' ? (d[k] as string) : '') : padrao;
-        this.siteForm.patchValue({
-          hero_titulo: str(
-            por.get('hero'),
-            'titulo',
-            'Pousada Espírito do Mar: sua estadia pertinho da Praia do Peró',
-          ),
-          hero_subtitulo: str(
-            por.get('hero'),
-            'subtitulo',
-            'Em Cabo Frio, aproveite dias de descanso em uma pousada acolhedora, com piscina e fácil acesso à Praia do Peró.',
-          ),
-          seo_titulo: str(
-            por.get('seo'),
-            'titulo',
-            'Pousada Espírito do Mar | Hospedagem no Peró, Cabo Frio',
-          ),
-          seo_descricao: str(
-            por.get('seo'),
-            'descricao',
-            'Conheça a Pousada Espírito do Mar, no Peró, em Cabo Frio. Explore as acomodações, conheça a estrutura e consulte a disponibilidade.',
-          ),
-          seo_keywords: str(
-            por.get('seo'),
-            'keywords',
-            'Pousada Espírito do Mar, pousada no Peró, pousada em Cabo Frio, hospedagem perto da Praia do Peró, Cabo Frio RJ',
-          ),
-        });
-        const itens = por.get('faq')?.['itens'];
-        if (Array.isArray(itens)) {
-          this.faq.set(
-            itens
-              .filter((i): i is Record<string, unknown> => typeof i === 'object' && i !== null)
-              .map((i) => ({
-                pergunta: typeof i['pergunta'] === 'string' ? i['pergunta'] : '',
-                resposta: typeof i['resposta'] === 'string' ? i['resposta'] : '',
-              })),
-          );
-        }
-      },
-      error: () => {},
-    });
-  }
-
-  private montarDadosSite(secao: 'hero' | 'seo' | 'faq'): M.CmsSecaoDados {
-    const v = this.siteForm.getRawValue();
-    if (secao === 'hero') {
-      return { titulo: v.hero_titulo.trim(), subtitulo: v.hero_subtitulo.trim() };
-    }
-    if (secao === 'seo') {
-      return {
-        titulo: v.seo_titulo.trim(),
-        descricao: v.seo_descricao.trim(),
-        keywords: v.seo_keywords.trim(),
-      };
-    }
-    return {
-      itens: this.faq()
-        .map((f) => ({ pergunta: f.pergunta.trim(), resposta: f.resposta.trim() }))
-        .filter((f) => f.pergunta && f.resposta),
-    };
-  }
-
-  protected salvarSite(secao: 'hero' | 'seo' | 'faq'): void {
-    this.salvandoSite.set(true);
-    this.api.salvarSiteSecao(secao, this.montarDadosSite(secao)).subscribe({
-      next: () => {
-        this.salvandoSite.set(false);
-        this.notify.ok('Seção salva — o site já reflete a mudança.');
-      },
-      error: (e) => {
-        this.salvandoSite.set(false);
-        this.notify.erro(e);
-      },
-    });
-  }
-
-  protected async salvarTudoSite(): Promise<void> {
-    this.salvandoSite.set(true);
-    try {
-      await Promise.all([
-        firstValueFrom(this.api.salvarSiteSecao('hero', this.montarDadosSite('hero'))),
-        firstValueFrom(this.api.salvarSiteSecao('seo', this.montarDadosSite('seo'))),
-        firstValueFrom(this.api.salvarSiteSecao('faq', this.montarDadosSite('faq'))),
-      ]);
-      this.notify.ok('Página inicial, SEO e FAQ salvos e publicados no site.');
-    } catch (e) {
-      this.notify.erro(e);
-    } finally {
-      this.salvandoSite.set(false);
-    }
-  }
-
-  protected addFaq(): void {
-    this.faq.update((l) => [...l, { pergunta: '', resposta: '' }]);
-  }
-
-  protected delFaq(i: number): void {
-    this.faq.update((l) => l.filter((_, j) => j !== i));
-  }
-
-  protected setFaq(i: number, campo: 'pergunta' | 'resposta', ev: Event): void {
-    const valor = (ev.target as HTMLInputElement | HTMLTextAreaElement).value;
-    this.faq.update((l) => l.map((f, j) => (j === i ? { ...f, [campo]: valor } : f)));
   }
 
   copiarWidget(texto: string): void {

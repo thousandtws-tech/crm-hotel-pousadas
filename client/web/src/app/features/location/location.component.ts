@@ -1,8 +1,12 @@
-import { Component, afterNextRender, ElementRef, inject, DestroyRef, OnInit } from '@angular/core';
+import { Component, afterNextRender, ElementRef, inject, DestroyRef, OnInit, computed } from '@angular/core';
 import { HOTEL_CONFIG } from '../../core/config/hotel-config';
 import { SeoService } from '../../core/services/seo.service';
 import { IconComponent } from '../../shared/components/icons/icon.component';
 import { MotionService } from '../../core/services/motion.service';
+import { SiteContentService, cmsLista, cmsStr } from '../../core/services/site-content.service';
+
+const PADRAO_HEADER_IMG = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2200&q=85';
+const PADRAO_FOTO = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=85';
 
 @Component({
   selector: 'app-location',
@@ -12,7 +16,7 @@ import { MotionService } from '../../core/services/motion.service';
     <header class="loc-page-header relative pt-28 pb-12 sm:pt-32 sm:pb-14 lg:pt-36 lg:pb-16 bg-[#032B38] text-white overflow-hidden">
       <div class="absolute inset-0 z-0">
         <img
-          src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2200&q=85"
+          [src]="headerImg()"
           alt="Região costeira de Cabo Frio e Praia do Peró"
           class="w-full h-full object-cover object-center filter brightness-[0.5]"
         />
@@ -21,10 +25,10 @@ import { MotionService } from '../../core/services/motion.service';
 
       <div class="relative z-10 container-editorial text-center flex flex-col items-center">
         <h1 class="font-serif text-4xl sm:text-6xl text-white font-normal mb-3 sm:mb-4 leading-tight">
-          Explore Cabo Frio a partir do Peró
+          {{ headerTxt('titulo', 'Explore Cabo Frio a partir do Peró') }}
         </h1>
         <p class="text-sm sm:text-base text-[#F7F5F0]/80 font-light max-w-xl leading-relaxed">
-          A Pousada Espírito do Mar fica no bairro Peró, em Cabo Frio, próxima à praia e a opções de comércio e gastronomia da região.
+          {{ headerTxt('subtitulo', 'A Pousada Espírito do Mar fica no bairro Peró, em Cabo Frio, próxima à praia e a opções de comércio e gastronomia da região.') }}
         </p>
       </div>
     </header>
@@ -36,15 +40,15 @@ import { MotionService } from '../../core/services/motion.service';
           
           <!-- Directions and Access (Col 1-6) -->
           <div class="loc-info-col lg:col-span-6 flex flex-col items-start">
-            <h2 class="type-title text-[#054054] mb-4">Próxima à Praia do Peró</h2>
+            <h2 class="type-title text-[#054054] mb-4">{{ conteudoTxt('titulo', 'Próxima à Praia do Peró') }}</h2>
             
             <p class="type-body mb-6">
-              Situada na Rua Anequim, no bairro Peró, em Cabo Frio (Rio de Janeiro), a Pousada Espírito do Mar oferece fácil acesso à Praia do Peró e às conveniências do bairro, facilitando o deslocamento para aproveitar o litoral da Região dos Lagos.
+              {{ conteudoTxt('texto', 'Situada na Rua Anequim, no bairro Peró, em Cabo Frio (Rio de Janeiro), a Pousada Espírito do Mar oferece fácil acesso à Praia do Peró e às conveniências do bairro, facilitando o deslocamento para aproveitar o litoral da Região dos Lagos.') }}
             </p>
 
             <!-- Nearby Points Box -->
             <div class="w-full border-t border-b border-[#DCE6EA] divide-y divide-[#DCE6EA] mb-6 text-sm">
-              @for (d of hotelConfig.nearbyPoints; track d.label) {
+              @for (d of pontos(); track d.label) {
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between py-3 gap-1">
                   <span class="font-medium text-[#054054]">{{ d.label }}</span>
                   <span class="text-[#536B73] font-light text-xs sm:text-sm">{{ d.detail }}</span>
@@ -84,7 +88,7 @@ import { MotionService } from '../../core/services/motion.service';
           <div class="loc-photo-col lg:col-span-6">
             <div class="loc-photo-frame editorial-image-container aspect-square shadow-sm">
               <img
-                src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=85"
+                [src]="fotoImg()"
                 alt="Paisagem costeira representando o litoral de Cabo Frio"
                 loading="lazy"
                 class="w-full h-full object-cover"
@@ -107,6 +111,30 @@ export class LocationComponent implements OnInit {
   private readonly el = inject(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly motion = inject(MotionService);
+  private readonly site = inject(SiteContentService);
+
+  private readonly header = computed(() => this.site.secao('localizacao.header'));
+  private readonly conteudo = computed(() => this.site.secao('localizacao.conteudo'));
+  protected readonly headerImg = computed(
+    () => this.site.midiaUrl(this.header()?.['imagem']) || PADRAO_HEADER_IMG
+  );
+  protected readonly fotoImg = computed(
+    () => this.site.midiaUrl(this.conteudo()?.['imagem']) || PADRAO_FOTO
+  );
+  /** Pontos "o que fica perto" do CMS; vazio cai na lista padrão do config. */
+  protected readonly pontos = computed(() => {
+    const itens = cmsLista(this.site.secao('localizacao.pontos'), 'itens')
+      .map((i) => ({ label: cmsStr(i, 'rotulo'), detail: cmsStr(i, 'detalhe') }))
+      .filter((p) => p.label);
+    return itens.length ? itens : this.hotelConfig.nearbyPoints;
+  });
+
+  protected headerTxt(key: string, fallback: string): string {
+    return cmsStr(this.header(), key) || fallback;
+  }
+  protected conteudoTxt(key: string, fallback: string): string {
+    return cmsStr(this.conteudo(), key) || fallback;
+  }
 
   constructor() {
     afterNextRender(() => {
@@ -115,9 +143,11 @@ export class LocationComponent implements OnInit {
   }
 
   public ngOnInit(): void {
+    const seo = this.site.seoPagina('localizacao');
     this.seoService.updateSeo({
-      title: 'Localização no Peró, Cabo Frio | Pousada Espírito do Mar',
-      description: 'Saiba onde fica a Pousada Espírito do Mar, no bairro Peró, em Cabo Frio (RJ), próxima à Praia do Peró e a opções de comércio e gastronomia.',
+      title: seo?.titulo || 'Localização no Peró, Cabo Frio | Pousada Espírito do Mar',
+      description: seo?.descricao || 'Saiba onde fica a Pousada Espírito do Mar, no bairro Peró, em Cabo Frio (RJ), próxima à Praia do Peró e a opções de comércio e gastronomia.',
+      keywords: seo?.keywords,
       url: 'https://pousadaespiritodomar.com.br/localizacao'
     });
   }

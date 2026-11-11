@@ -279,6 +279,30 @@ export class ApiService {
   salvarSiteSecao(secao: string, dados: M.CmsSecaoDados) {
     return this.put<M.CmsSecao>(`/cms/site/${secao}`, dados);
   }
+  definirSiteVisivel(secao: string, visivel: boolean) {
+    return this.patch<M.CmsSecao>(`/cms/site/${secao}/visivel`, { visivel });
+  }
+
+  // -- biblioteca de mídia do site --------------------------------------------
+
+  listarSiteMidias() {
+    return this.get<M.SiteMidia[]>('/cms/site/midia');
+  }
+  /** Upload binário direto — imagem ≤ 8 MB ou vídeo mp4/webm ≤ 80 MB. */
+  uploadSiteMidia(arquivo: File, nome = '') {
+    return this.http.post<M.SiteMidia>(
+      `${this.base}/cms/site/midia?nome=${encodeURIComponent(nome)}`,
+      arquivo,
+      { headers: { 'Content-Type': arquivo.type } }
+    );
+  }
+  removerSiteMidia(id: number) {
+    return this.del<null>(`/cms/site/midia/${id}`);
+  }
+  /** URL pública do binário (serve também o preview no admin). */
+  siteMidiaUrl(id: number) {
+    return `${this.base}/site-midia/${id}`;
+  }
 
   // -- Operadoras B2B -----------------------------------------------------------
 
