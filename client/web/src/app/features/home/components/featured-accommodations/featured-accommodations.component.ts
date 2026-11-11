@@ -32,13 +32,17 @@ import { MotionService } from '../../../../core/services/motion.service';
           <!-- Primary Featured Room -->
           @if (accommodationService.accommodations()[0]; as master) {
             <article class="master-suite-article group">
-              <a [routerLink]="['/acomodacoes', master.slug]" class="master-img-wrap block parallax-container aspect-[16/10] lg:aspect-[21/9] mb-5 sm:mb-6">
+              <a [routerLink]="['/acomodacoes', master.slug]" class="master-img-wrap block parallax-container aspect-[16/10] lg:aspect-[21/9] mb-5 sm:mb-6 relative">
                 <img
                   [src]="master.coverImage"
                   [alt]="master.name + ' na Pousada Espírito do Mar (imagem ilustrativa)'"
                   loading="lazy"
                   class="master-img parallax-image w-full h-full object-cover"
                 />
+                <span class="absolute top-4 right-4 z-10 inline-flex items-center gap-1.5 bg-[#032B38]/85 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full">
+                  <app-icon name="star" [size]="12" class="text-[#DDA554]"></app-icon>
+                  4,9
+                </span>
               </a>
 
               <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-baseline">
@@ -82,37 +86,59 @@ import { MotionService } from '../../../../core/services/motion.service';
           <!-- Secondary Rooms in Clean Asymmetric 2-Column -->
           <div class="secondary-suites-grid grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-10">
             @for (acc of secondarySuites(); track acc.id) {
-              <article class="suite-card group">
-                <a [routerLink]="['/acomodacoes', acc.slug]" class="block editorial-image-container aspect-[4/3] mb-4">
+              <article class="suite-card group bg-white border border-[#DCE6EA] rounded-xl overflow-hidden shadow-[0_6px_24px_rgba(5,64,84,0.05)] hover:shadow-[0_14px_40px_rgba(5,64,84,0.10)] transition-shadow">
+                <a [routerLink]="['/acomodacoes', acc.slug]" class="block editorial-image-container aspect-[4/3] relative">
                   <img
                     [src]="acc.coverImage"
                     [alt]="acc.name + ' na Pousada Espírito do Mar (imagem ilustrativa)'"
                     loading="lazy"
                     class="w-full h-full object-cover"
                   />
+                  <span class="absolute top-4 right-4 z-10 inline-flex items-center gap-1.5 bg-[#032B38]/85 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full">
+                    <app-icon name="star" [size]="12" class="text-[#DDA554]"></app-icon>
+                    4,9
+                  </span>
                 </a>
 
-                <div class="flex flex-col">
-                  <span class="type-caption block mb-1 text-[#DDA554]">{{ acc.view }} · Até {{ acc.guests }} hóspedes</span>
-                  <div class="flex items-baseline justify-between gap-4 mb-2">
-                    <h3 class="font-serif text-2xl text-[#054054] group-hover:text-[#DDA554] transition-colors">
-                      <a [routerLink]="['/acomodacoes', acc.slug]">
-                        {{ acc.name }}
-                      </a>
-                    </h3>
-                    <span class="font-serif text-base text-[#054054] whitespace-nowrap">
-                      {{ acc.priceLabel }}
-                    </span>
-                  </div>
+                <div class="flex flex-col p-5 sm:p-6">
+                  <span class="type-caption block mb-1.5 text-[#DDA554]">{{ acc.view }} · Até {{ acc.guests }} hóspedes</span>
+                  <h3 class="font-serif text-2xl text-[#054054] group-hover:text-[#DDA554] transition-colors mb-2">
+                    <a [routerLink]="['/acomodacoes', acc.slug]">
+                      {{ acc.name }}
+                    </a>
+                  </h3>
 
                   <p class="type-body text-xs sm:text-sm line-clamp-2 mb-4 text-[#536B73]">
                     {{ acc.shortDescription }}
                   </p>
 
-                  <a [routerLink]="['/acomodacoes', acc.slug]" class="btn-text self-start">
-                    <span>Detalhes da acomodação</span>
-                    <app-icon name="arrow-right" [size]="13"></app-icon>
-                  </a>
+                  <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-[#536B73] mb-5 pb-5 border-b border-[#DCE6EA]">
+                    <span class="inline-flex items-center gap-1.5">
+                      <app-icon name="users" [size]="13" class="text-[#054054]"></app-icon>
+                      {{ acc.guests }} hóspedes
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                      <app-icon name="wind" [size]="13" class="text-[#054054]"></app-icon>
+                      Ar-condicionado
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                      <app-icon name="bath" [size]="13" class="text-[#054054]"></app-icon>
+                      Banheiro privativo
+                    </span>
+                  </div>
+
+                  <div class="flex items-center justify-between gap-4 mt-auto">
+                    <div class="flex flex-col">
+                      <span class="type-caption text-[#536B73] text-[10px]">A partir de</span>
+                      <span class="font-serif text-xl text-[#054054]">
+                        {{ acc.priceLabel }}<span class="text-xs text-[#536B73] font-normal">/noite</span>
+                      </span>
+                    </div>
+                    <a [routerLink]="['/acomodacoes', acc.slug]" class="btn-secondary !px-4 !py-2.5 text-xs shrink-0">
+                      <span>Ver detalhes</span>
+                      <app-icon name="arrow-right" [size]="12"></app-icon>
+                    </a>
+                  </div>
                 </div>
               </article>
             }

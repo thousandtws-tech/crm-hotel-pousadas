@@ -7,6 +7,8 @@ import { FeaturedExperiencesComponent } from './components/featured-experiences/
 import { VisualBreakComponent } from './components/visual-break/visual-break.component';
 import { GalleryPreviewComponent } from './components/gallery-preview/gallery-preview.component';
 import { LocationPreviewComponent } from './components/location-preview/location-preview.component';
+import { StatsStripComponent } from './components/stats-strip/stats-strip.component';
+import { PhoneCtaComponent } from './components/phone-cta/phone-cta.component';
 import { FaqComponent } from './components/faq/faq.component';
 import { SeoService } from '../../core/services/seo.service';
 import { SiteContentService } from '../../core/services/site-content.service';
@@ -28,6 +30,8 @@ const DEFAULT_SEO_KEYWORDS =
     VisualBreakComponent,
     GalleryPreviewComponent,
     LocationPreviewComponent,
+    StatsStripComponent,
+    PhoneCtaComponent,
     FaqComponent
   ],
   template: `
@@ -39,9 +43,11 @@ const DEFAULT_SEO_KEYWORDS =
     <app-essence></app-essence>
     <app-featured-accommodations></app-featured-accommodations>
     <app-featured-experiences></app-featured-experiences>
+    <app-stats-strip></app-stats-strip>
     <app-visual-break></app-visual-break>
     <app-gallery-preview></app-gallery-preview>
     <app-location-preview></app-location-preview>
+    <app-phone-cta></app-phone-cta>
     <app-faq></app-faq>
   `
 })
