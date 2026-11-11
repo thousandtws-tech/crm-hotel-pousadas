@@ -449,6 +449,22 @@ export interface ComprovanteResumo {
   acomodacao: string;
 }
 
+export interface PendenciaReserva {
+  id: number;
+  cliente_nome: string;
+  acomodacao_nome: string;
+  entradaprevista: string;
+  saidaprevista: string;
+  dias_atraso: number;
+}
+
+export interface PendenciasFechamento {
+  no_shows: PendenciaReserva[];
+  checkouts_pendentes: PendenciaReserva[];
+  contas_abertas: number;
+  contas_total: number;
+}
+
 export interface Estabelecimento {
   id: number;
   cnpj: string | null;

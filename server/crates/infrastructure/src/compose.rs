@@ -153,6 +153,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         acompanhantes: reserva_repo.clone(),
         fnrh: reserva_repo.clone(),
         lgpd: lgpd_repo.clone(),
+        fila: fila_envio_repo.clone(),
         hold_minutos: settings.hold_minutos,
     }));
     let pagamentos_online_svc = Arc::new(PagamentosOnlineService::new(

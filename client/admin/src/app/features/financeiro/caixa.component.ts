@@ -11,18 +11,22 @@ import { ApiService, num } from '@core/services/api.service';
 import {
   ConferenciaCaixa,
   ContaFinanceira,
+  PendenciaReserva,
+  PendenciasFechamento,
   TipoMovimentoCaixa,
   TurnoView,
 } from '@core/models/api.models';
 import { Notify } from '@core/services/notify.service';
 import { FinNavComponent } from './fin-nav.component';
+import { RouterLink } from '@angular/router';
+import { DecimalPipe } from '@angular/common';
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmt = (v: string | number | null | undefined) => BRL.format(num(v));
 
 @Component({
   selector: 'app-fin-caixa',
-  imports: [FinNavComponent, DatePipe, ReactiveFormsModule, MatIconModule],
+  imports: [FinNavComponent, DatePipe, DecimalPipe, ReactiveFormsModule, MatIconModule, RouterLink],
   template: `
     <div class="page">
       <app-fin-nav />
@@ -41,6 +45,87 @@ const fmt = (v: string | number | null | undefined) => BRL.format(num(v));
           </select>
         </label>
       </div>
+
+      <!-- ======================= fechamento do dia ======================= -->
+      <section class="card fch">
+        <header class="card-head">
+          <h3><mat-icon>event_available</mat-icon> Fechamento do dia</h3>
+          <div class="fch-steps">
+            @for (s of [1,2,3]; track s) {
+              <span class="fch-step" [class.ativa]="passo() === s">{{ s }}</span>
+            }
+          </div>
+        </header>
+
+        @if (passo() === 1) {
+          <h4 class="fch-t">Pendências do dia</h4>
+          @if (fch(); as f) {
+            <p class="fch-linha">Contas abertas: <b>{{ f.contas_abertas }}</b> · total R$ {{ f.contas_total | number:'1.2-2' }}</p>
+            @if (f.checkouts_pendentes.length) {
+              <p class="fch-sub">Check-outs pendentes</p>
+              @for (c of f.checkouts_pendentes; track c.id) {
+                <div class="fch-item">
+                  <span>{{ c.acomodacao_nome }} · {{ c.cliente_nome }} · saída {{ c.saidaprevista | date:'dd/MM' }}</span>
+                  <a class="fch-link" [routerLink]="['/reservas', c.id]">abrir</a>
+                </div>
+              }
+            }
+            @if (f.no_shows.length) {
+              <p class="fch-sub">Possíveis no-shows — decisão requer PIN</p>
+              @for (n of f.no_shows; track n.id) {
+                <div class="fch-item ns">
+                  <span>{{ n.acomodacao_nome }} · {{ n.cliente_nome }} · entrada {{ n.entradaprevista | date:'dd/MM' }} ({{ n.dias_atraso }}d atraso)</span>
+                  <button class="fch-ns" type="button" (click)="pinAlvo.set(n)">No-show</button>
+                </div>
+              }
+            } @else {
+              <p class="fch-linha muted">Nenhum no-show pendente.</p>
+            }
+          } @else {
+            <p class="fch-linha muted">Carregando…</p>
+          }
+          <div class="fch-nav"><button class="btn-prim" type="button" (click)="passo.set(2)">Avançar</button></div>
+        }
+
+        @if (passo() === 2) {
+          <h4 class="fch-t">Caixa</h4>
+          <p class="fch-linha">Confira a conferência do turno abaixo na tela (esperado × contado por gaveta) antes de confirmar.</p>
+          <div class="fch-nav">
+            <button class="btn-ghost" type="button" (click)="passo.set(1)">Voltar</button>
+            <button class="btn-prim" type="button" (click)="passo.set(3)">Avançar</button>
+          </div>
+        }
+
+        @if (passo() === 3) {
+          <h4 class="fch-t">Confirmação do dia</h4>
+          @if (fch(); as f) {
+            <p class="fch-linha">
+              {{ f.contas_abertas }} conta(s) aberta(s) · {{ f.checkouts_pendentes.length }} check-out(s) pendente(s) · {{ f.no_shows.length }} no-show(s)
+            </p>
+          }
+          <p class="fch-linha muted">O relatório determinístico será enviado ao e-mail da pousada.</p>
+          <div class="fch-nav">
+            <button class="btn-ghost" type="button" (click)="passo.set(1)">Voltar</button>
+            <button class="btn-prim" type="button" [disabled]="enviandoRel()" (click)="enviarRelatorio()">
+              {{ enviandoRel() ? 'Enviando…' : 'Enviar relatório por e-mail' }}
+            </button>
+          </div>
+        }
+      </section>
+
+      @if (pinAlvo(); as alvo) {
+        <div class="ovl" (click)="pinAlvo.set(null)" (keydown.escape)="pinAlvo.set(null)">
+          <div class="dlg" role="dialog" aria-modal="true" aria-label="Autorizar no-show">
+            <h4 class="fch-t">No-show — {{ alvo.cliente_nome }}</h4>
+            <p class="fch-linha">Cancela a reserva sem reembolso. Exige o PIN gerencial.</p>
+            <label class="lbl">PIN <input class="inp" type="password" inputmode="numeric" [value]="pinVal" (input)="pinVal=$any($event.target).value" /></label>
+            <div class="fch-nav">
+              <button class="btn-ghost" type="button" (click)="pinAlvo.set(null)">Cancelar</button>
+              <button class="btn-prim" type="button" (click)="confirmarNoShow(alvo)">Autorizar</button>
+            </div>
+          </div>
+        </div>
+      }
 
       @if (!gavetaSel()) {
         <section class="card"><p class="vazio">Nenhuma conta do tipo “Caixa físico” — crie em Contas financeiras.</p></section>
@@ -253,6 +338,23 @@ const fmt = (v: string | number | null | undefined) => BRL.format(num(v));
     .card-head h3 { margin:0; font-size:.95rem; font-weight:700; color:#054054; display:flex; align-items:center; gap:7px; }
     .card-head h3 mat-icon { font-size:19px; width:19px; height:19px; }
     .card-head small { font-size:.74rem; color:#8a99a4; }
+    .fch { border-left:4px solid #054054; }
+    .fch-steps { display:flex; gap:6px; }
+    .fch-step { width:22px; height:22px; border-radius:50%; background:#e3eaef; color:#8a99a4; font-size:.75rem; font-weight:700; display:flex; align-items:center; justify-content:center; }
+    .fch-step.ativa { background:#054054; color:#fff; }
+    .fch-t { margin:0 0 8px; font-size:.88rem; color:#054054; }
+    .fch-linha { margin:4px 0; font-size:.85rem; }
+    .fch-sub { margin:10px 0 4px; font-size:.75rem; font-weight:700; color:#5d6d7e; text-transform:uppercase; }
+    .fch-item { display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid #f0f4f6; font-size:.83rem; }
+    .fch-item.ns { color:#8a4a00; }
+    .fch-link { color:#1a6f8a; font-size:.78rem; }
+    .fch-ns { background:#8a4a00; color:#fff; border:none; border-radius:6px; padding:4px 10px; font-size:.75rem; font-weight:600; cursor:pointer; }
+    .fch-nav { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
+    .muted { color:#8a99a4; }
+    .ovl { position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; z-index:50; }
+    .dlg { background:#fff; border-radius:10px; padding:18px; width:min(360px,90vw); }
+    .lbl { display:flex; flex-direction:column; gap:4px; font-size:.8rem; font-weight:600; color:#40525d; }
+    .inp { border:1px solid #d7e0e6; border-radius:7px; padding:8px 10px; font-size:.85rem; }
     .ab-form { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
     .ab-form .btn-prim { margin-bottom:1px; }
     .mv-form { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
@@ -287,6 +389,11 @@ export class FinCaixaComponent implements OnInit {
   readonly num = num;
 
   readonly gavetas = signal<ContaFinanceira[]>([]);
+  protected readonly fch = signal<PendenciasFechamento | null>(null);
+  protected readonly passo = signal(1);
+  protected readonly pinAlvo = signal<PendenciaReserva | null>(null);
+  protected readonly enviandoRel = signal(false);
+  protected pinVal = '';
   readonly gavetaSel = computed(() => Number(this.selGaveta.value) || null);
   readonly turno = signal<TurnoView | null>(null);
   readonly conferencia = signal<ConferenciaCaixa | null>(null);
@@ -331,6 +438,42 @@ export class FinCaixaComponent implements OnInit {
       error: (e) => this.notify.erro(e),
     });
     this.selGaveta.valueChanges.subscribe(() => this.carregar());
+    this.carregarPendencias();
+  }
+
+  carregarPendencias(): void {
+    this.api.pendenciasFechamento().subscribe({
+      next: (p) => this.fch.set(p),
+      error: () => undefined,
+    });
+  }
+
+  confirmarNoShow(alvo: PendenciaReserva): void {
+    if (!this.pinVal.trim()) return;
+    this.api.marcarNoShow(alvo.id, this.pinVal.trim()).subscribe({
+      next: () => {
+        this.pinAlvo.set(null);
+        this.pinVal = '';
+        this.notify.ok(`Reserva de ${alvo.cliente_nome} marcada como no-show.`);
+        this.carregarPendencias();
+      },
+      error: (e) => this.notify.erro(e),
+    });
+  }
+
+  enviarRelatorio(): void {
+    this.enviandoRel.set(true);
+    this.api.enviarRelatorioFechamento().subscribe({
+      next: () => {
+        this.enviandoRel.set(false);
+        this.notify.ok('Relatório de fechamento enfileirado para envio.');
+        this.passo.set(1);
+      },
+      error: (e) => {
+        this.enviandoRel.set(false);
+        this.notify.erro(e);
+      },
+    });
   }
 
   carregar(): void {

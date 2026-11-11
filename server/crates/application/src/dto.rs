@@ -188,6 +188,11 @@ pub struct FnrhEmitRequest {
     pub placa_veiculo: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct NoShowRequest {
+    pub pin: String,
+}
+
 // ---------------------------------------------------------------------------
 // acomodações
 // ---------------------------------------------------------------------------
@@ -637,6 +642,8 @@ pub struct EstabelecimentoInput {
     pub dpo_email: Option<String>,
     /// MTur: exige assinatura desenhada na pré-ficha pública.
     pub fnrh_assinatura: Option<bool>,
+    /// Fechamento: PIN gerencial para autorizar no-show (vazio = mantém).
+    pub pin_fechamento: Option<String>,
     /// Concorrência otimista.
     pub version: Option<i64>,
 }

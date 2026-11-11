@@ -118,6 +118,10 @@ pub trait ReservaRepository: Send + Sync {
     /// Mapa por andar — uma linha por acomodação ativa com ocupação de
     /// hoje, bloqueio vigente e pendências de limpeza/manutenção.
     async fn mapa_quartos(&self) -> Result<Vec<MapaQuarto>, DomainError>;
+    /// Pendências operacionais do fechamento do dia.
+    async fn pendencias_fechamento(
+        &self,
+    ) -> Result<crate::queries::PendenciasFechamento, DomainError>;
 
     /// Bloqueio formal — tira a unidade de toda disponibilidade.
     async fn bloqueio_criar(

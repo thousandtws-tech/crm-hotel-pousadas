@@ -78,6 +78,10 @@ impl EstabelecimentoService {
                 .map(|s| s.trim().to_string())
                 .filter(|s| !s.is_empty()),
             fnrh_assinatura: input.fnrh_assinatura.unwrap_or(false),
+            pin_fechamento: input
+                .pin_fechamento
+                .map(|s| s.trim().to_string())
+                .filter(|s| s.len() >= 4),
             version: input.version,
         };
         let log = ator.log(

@@ -250,6 +250,19 @@ pub fn build(state: AppState) -> Router {
         )
         // exportação SNE/CSV das fichas do período — envio manual ao MTur
         .route("/fnrh/exportar", get(routes::reservas::exportar_fnrh))
+        // fechamento do dia — pendências, no-show por PIN, relatório e-mail
+        .route(
+            "/fechamento/pendencias",
+            get(routes::reservas::pendencias_fechamento),
+        )
+        .route(
+            "/fechamento/relatorio",
+            post(routes::reservas::enviar_relatorio_fechamento),
+        )
+        .route(
+            "/reservas/{id}/no-show",
+            post(routes::reservas::marcar_no_show),
+        )
         // pagamentos online (Stripe) — painel financeiro
         .route(
             "/pagamentos",

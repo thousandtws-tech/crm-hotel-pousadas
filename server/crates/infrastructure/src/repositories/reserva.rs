@@ -12,8 +12,8 @@ use clarituz_domain::ports::{
     NovoAcompanhante, NovoAdicional, NovoItemConsumido, ReservaRepository, ResultadoCancelamento,
 };
 use clarituz_domain::queries::{
-    AcomodacaoDisponivel, ComprovanteResumo, ConsumoResumo, MapaQuarto, ReservaDetalhe,
-    ReservaResumo,
+    AcomodacaoDisponivel, ComprovanteResumo, ConsumoResumo, MapaQuarto, PendenciaReserva,
+    PendenciasFechamento, ReservaDetalhe, ReservaResumo,
 };
 use clarituz_domain::value_objects::PeriodoEstadia;
 use clarituz_domain::DomainError;
@@ -244,6 +244,51 @@ impl ReservaRepository for PgReservaRepository {
         .fetch_all(&self.pool)
         .await
         .map_err(map_db_err)
+    }
+
+    async fn pendencias_fechamento(&self) -> Result<PendenciasFechamento, DomainError> {
+        let no_shows = sqlx::query_as::<_, PendenciaReserva>(
+            "SELECT r.id, c.nome AS cliente_nome, a.nome AS acomodacao_nome,
+                    r.entradaprevista, r.saidaprevista,
+                    (CURRENT_DATE - r.entradaprevista)::int AS dias_atraso
+             FROM reserva r
+             JOIN cliente c ON c.id = r.idcliente
+             JOIN acomodacao a ON a.id = r.idacomodacao
+             WHERE r.status = 'p' AND r.entradaprevista < CURRENT_DATE
+             ORDER BY r.entradaprevista",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+
+        let checkouts = sqlx::query_as::<_, PendenciaReserva>(
+            "SELECT r.id, c.nome AS cliente_nome, a.nome AS acomodacao_nome,
+                    r.entradaprevista, r.saidaprevista,
+                    (CURRENT_DATE - r.saidaprevista)::int AS dias_atraso
+             FROM reserva r
+             JOIN cliente c ON c.id = r.idcliente
+             JOIN acomodacao a ON a.id = r.idacomodacao
+             WHERE r.status = 'i' AND r.saidaprevista <= CURRENT_DATE
+             ORDER BY r.saidaprevista",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+
+        let contas: (i64, rust_decimal::Decimal) = sqlx::query_as(
+            "SELECT count(*)::bigint, coalesce(sum(valor_estadia + valor_itens + valor_adicional), 0)
+             FROM consumo WHERE status = 'pendente'",
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+
+        Ok(PendenciasFechamento {
+            no_shows,
+            checkouts_pendentes: checkouts,
+            contas_abertas: contas.0,
+            contas_total: contas.1,
+        })
     }
 
     async fn bloqueio_criar(

@@ -158,6 +158,17 @@ export class ApiService {
   emitirFnrh(idreserva: number, req: { motivo_viagem?: string | null; placa_veiculo?: string | null }) {
     return this.post<M.Fnrh>(`/reservas/${idreserva}/fnrh`, req);
   }
+  /** Fechamento do dia — pendências + no-show por PIN + relatório e-mail. */
+  pendenciasFechamento() {
+    return this.get<M.PendenciasFechamento>('/fechamento/pendencias');
+  }
+  marcarNoShow(idreserva: number, pin: string) {
+    return this.post<void>(`/reservas/${idreserva}/no-show`, { pin });
+  }
+  enviarRelatorioFechamento() {
+    return this.post<void>('/fechamento/relatorio', {});
+  }
+
   /** Exportação SNE/CSV das fichas do período — envio manual ao MTur. */
   exportarFnrh(inicio: string, fim: string) {
     return this.http.get(`${this.base}/fnrh/exportar`, {

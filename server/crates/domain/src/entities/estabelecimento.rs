@@ -41,6 +41,8 @@ pub struct Estabelecimento {
     pub dpo_email: Option<String>,
     /// MTur: quando ligado, a pré-ficha pública exige assinatura desenhada.
     pub fnrh_assinatura: bool,
+    /// Fechamento: PIN gerencial que autoriza marcar no-show no fechamento.
+    pub pin_fechamento: Option<String>,
     pub version: i64,
     pub criado_em: DateTime<Utc>,
     pub atualizado_em: DateTime<Utc>,

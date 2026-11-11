@@ -12,7 +12,8 @@ use clarituz_application::actor::Ator;
 use clarituz_application::dto::{
     AcompanhanteInput, AdicionalInput, CancelamentoResponse, CancelarReservaRequest,
     CheckinRequest, CheckoutRequest, DisponibilidadeQuery, DisponibilidadeResponse,
-    FnrhEmitRequest, GrupoInput, ItemConsumidoRequest, ReservaFiltroQuery, ReservaInput,
+    FnrhEmitRequest, GrupoInput, ItemConsumidoRequest, NoShowRequest, ReservaFiltroQuery,
+    ReservaInput,
 };
 use clarituz_domain::entities::{Acompanhante, AdicionalConsumo, Fnrh, ItemConsumido, Reserva};
 use clarituz_domain::enums::StatusReserva;
@@ -344,6 +345,40 @@ pub async fn emitir_fnrh(
 ) -> Result<(StatusCode, Json<Fnrh>), AppError> {
     let f = s.services.reservas.emitir_fnrh(&ator, id, body).await?;
     Ok((StatusCode::CREATED, Json(f)))
+}
+
+/// Pendências do fechamento do dia — no-shows, check-outs e contas abertas.
+pub async fn pendencias_fechamento(
+    State(s): State<AppState>,
+    _ator: Ator,
+) -> Result<Json<clarituz_domain::queries::PendenciasFechamento>, AppError> {
+    Ok(Json(s.services.reservas.pendencias_fechamento().await?))
+}
+
+/// Marca no-show — exige PIN gerencial do estabelecimento além do login.
+pub async fn marcar_no_show(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+    Json(body): Json<NoShowRequest>,
+) -> Result<StatusCode, AppError> {
+    s.services
+        .reservas
+        .marcar_no_show(&ator, id, &body.pin)
+        .await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// Envia o relatório determinístico do fechamento por e-mail à pousada.
+pub async fn enviar_relatorio_fechamento(
+    State(s): State<AppState>,
+    ator: Ator,
+) -> Result<StatusCode, AppError> {
+    s.services
+        .reservas
+        .enviar_relatorio_fechamento(&ator)
+        .await?;
+    Ok(StatusCode::ACCEPTED)
 }
 
 /// Exportação SNE/CSV das fichas do período — envio manual ao MTur.

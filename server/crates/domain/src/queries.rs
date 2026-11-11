@@ -64,6 +64,27 @@ pub struct ReservaDetalhe {
     pub fnrh_hospede: Option<serde_json::Value>,
 }
 
+/// Pendências do fechamento do dia — reservas a decidir e contas abertas.
+#[derive(Debug, Clone, Serialize)]
+pub struct PendenciasFechamento {
+    /// Reservas confirmadas que não fizeram check-in até a data prevista.
+    pub no_shows: Vec<PendenciaReserva>,
+    /// Estadias em curso com saída prevista vencida ou vencendo hoje.
+    pub checkouts_pendentes: Vec<PendenciaReserva>,
+    pub contas_abertas: i64,
+    pub contas_total: Decimal,
+}
+
+#[derive(Debug, Clone, Serialize, FromRow)]
+pub struct PendenciaReserva {
+    pub id: i64,
+    pub cliente_nome: String,
+    pub acomodacao_nome: String,
+    pub entradaprevista: NaiveDate,
+    pub saidaprevista: NaiveDate,
+    pub dias_atraso: i32,
+}
+
 #[derive(Debug, Clone, Serialize, FromRow)]
 pub struct ConsumoResumo {
     pub id: i64,

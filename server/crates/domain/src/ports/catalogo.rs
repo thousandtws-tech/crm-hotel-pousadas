@@ -289,6 +289,8 @@ pub struct DadosEstabelecimento {
     pub dpo_email: Option<String>,
     /// MTur: assinatura desenhada obrigatória na pré-ficha pública.
     pub fnrh_assinatura: bool,
+    /// Fechamento: PIN gerencial de autorização de no-show.
+    pub pin_fechamento: Option<String>,
     /// Concorrência otimista — divergência → 409.
     pub version: Option<i64>,
 }

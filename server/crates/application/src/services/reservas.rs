@@ -22,7 +22,7 @@ use clarituz_domain::enums::StatusReserva;
 use clarituz_domain::events::{Aviso, TipoAviso};
 use clarituz_domain::ports::{
     AcomodacaoRepository, AcompanhanteRepository, ClienteRepository, ComandoCheckout,
-    EstabelecimentoRepository, EventoPublisher, FiltroReserva, FnrhRepository,
+    EstabelecimentoRepository, EventoPublisher, FilaEnvioRepository, FiltroReserva, FnrhRepository,
     FormaPagamentoRepository, ImpressoraGateway, ImpressoraRepository, LgpdRepository, LinhaRecibo,
     NovaFnrh, NovaReserva, NovoAcompanhante, NovoAdicional, NovoClienteSite, NovoItemConsumido,
     ReservaRepository,
@@ -30,6 +30,7 @@ use clarituz_domain::ports::{
 use clarituz_domain::queries::{ComprovanteResumo, MapaQuarto, ReservaDetalhe, ReservaResumo};
 use clarituz_domain::value_objects::PeriodoEstadia;
 use clarituz_domain::DomainError;
+use std::fmt::Write as _;
 use clarituz_shared::{ids, money, time, Page, PageParams};
 use rust_decimal::Decimal;
 use serde_json::json;
@@ -53,6 +54,8 @@ pub struct ReservaDeps {
     pub fnrh: Arc<dyn FnrhRepository>,
     /// ECA/LGPD — autorização de menor + aceite de termos.
     pub lgpd: Arc<dyn LgpdRepository>,
+    /// Fila de envio — relatório de fechamento por e-mail.
+    pub fila: Arc<dyn FilaEnvioRepository>,
     /// Minutos do hold de pagamento nas reservas criadas pelo site.
     pub hold_minutos: i64,
 }
@@ -70,6 +73,7 @@ pub struct ReservaService {
     acompanhantes: Arc<dyn AcompanhanteRepository>,
     fnrh: Arc<dyn FnrhRepository>,
     lgpd: Arc<dyn LgpdRepository>,
+    fila: Arc<dyn FilaEnvioRepository>,
     hold_minutos: i64,
 }
 
@@ -88,6 +92,7 @@ impl ReservaService {
             acompanhantes: d.acompanhantes,
             fnrh: d.fnrh,
             lgpd: d.lgpd,
+            fila: d.fila,
             hold_minutos: d.hold_minutos,
         }
     }
@@ -1334,7 +1339,6 @@ impl ReservaService {
         if fim < inicio {
             return Err(DomainError::validacao("Período inválido.").into());
         }
-        use std::fmt::Write as _;
         let fichas = self.fnrh.listar_periodo(inicio, fim).await?;
         let mut csv = String::from(
             "ficha;reserva;emitida_em;nome;cpf;nascimento;nacionalidade;email;telefone;cidade;uf;motivo_viagem;placa;acomodacao;entrada;saida\n",
@@ -1370,6 +1374,111 @@ impl ReservaService {
             );
         }
         Ok(csv)
+    }
+
+    // ------------------------------------------------------------------
+    // fechamento do dia — pendências, no-show autorizado por PIN, relatório
+    // ------------------------------------------------------------------
+
+    pub async fn pendencias_fechamento(
+        &self,
+    ) -> AppResult<clarituz_domain::queries::PendenciasFechamento> {
+        Ok(self.reservas.pendencias_fechamento().await?)
+    }
+
+    /// Marca a reserva como no-show (cancelamento sem reembolso) — exige o
+    /// PIN gerencial configurado no estabelecimento, além do usuário logado.
+    pub async fn marcar_no_show(&self, ator: &Ator, id: i64, pin: &str) -> AppResult<()> {
+        let e = self
+            .estabelecimentos
+            .obter()
+            .await?
+            .ok_or_else(|| DomainError::nao_encontrado("Estabelecimento não configurado."))?;
+        let esperado = e.pin_fechamento.as_deref().unwrap_or_default();
+        if esperado.is_empty() {
+            return Err(DomainError::regra(
+                "Configure o PIN de fechamento em Dados da Pousada antes de marcar no-show.",
+            )
+            .into());
+        }
+        if pin.trim() != esperado {
+            return Err(DomainError::validacao("PIN incorreto.").into());
+        }
+        let reserva = self.buscar(id).await?;
+        if reserva.status != StatusReserva::Pendente {
+            return Err(DomainError::regra(
+                "Só é possível marcar no-show em reserva confirmada ainda não iniciada.",
+            )
+            .into());
+        }
+        self.reservas
+            .cancelar(
+                id,
+                Some("no-show — decisão autorizada por PIN no fechamento"),
+                Some(ator.id),
+                ator.log(
+                    "no-show",
+                    format!("Marcou no-show da reserva Nº{id} no fechamento"),
+                    "reserva",
+                    id,
+                    None,
+                ),
+            )
+            .await?;
+        Ok(())
+    }
+
+    /// Envia o relatório determinístico do fechamento para o e-mail da pousada.
+    pub async fn enviar_relatorio_fechamento(&self, ator: &Ator) -> AppResult<()> {
+        let e = self
+            .estabelecimentos
+            .obter()
+            .await?
+            .ok_or_else(|| DomainError::nao_encontrado("Estabelecimento não configurado."))?;
+        let destino = e.email.clone().ok_or_else(|| {
+            DomainError::regra("Configure o e-mail do estabelecimento para receber o relatório.")
+        })?;
+        let p = self.reservas.pendencias_fechamento().await?;
+        let mut corpo = String::from("Fechamento do dia\n\n");
+        let _ = writeln!(
+            corpo,
+            "Contas abertas: {} (total R$ {})",
+            p.contas_abertas, p.contas_total
+        );
+        let _ = writeln!(
+            corpo,
+            "Check-outs pendentes: {}",
+            p.checkouts_pendentes.len()
+        );
+        for c in &p.checkouts_pendentes {
+            let _ = writeln!(
+                corpo,
+                "  - {} · {} · saída prevista {}",
+                c.acomodacao_nome, c.cliente_nome, c.saidaprevista
+            );
+        }
+        let _ = writeln!(corpo, "No-shows: {}", p.no_shows.len());
+        for n in &p.no_shows {
+            let _ = writeln!(
+                corpo,
+                "  - {} · {} · entrada prevista {} ({}d de atraso)",
+                n.acomodacao_nome, n.cliente_nome, n.entradaprevista, n.dias_atraso
+            );
+        }
+        let _ = writeln!(corpo, "\nGerado por {}.", ator.nome);
+        self.fila
+            .enfileirar(clarituz_domain::entities::NovoEnvio {
+                canal: clarituz_domain::enums::CanalEnvio::Email,
+                destino,
+                template: "relatorio_fechamento".into(),
+                payload: serde_json::json!({"corpo": corpo}),
+                idreserva: None,
+                idcliente: None,
+                idfuncionario: Some(ator.id),
+                agendado_para: chrono::Utc::now(),
+            })
+            .await?;
+        Ok(())
     }
 
     /// Emite a FNRH: monta o snapshot completo (cliente + reserva +
