@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
@@ -177,6 +177,20 @@ type Estado = 'carregando' | 'form' | 'enviando' | 'enviado' | 'erro';
               </div>
             </fieldset>
 
+            @if (info()?.fnrh_assinatura) {
+              <fieldset class="rounded-xl border border-gray-200 p-6">
+                <legend class="px-2 text-lg font-semibold text-[#032B38]">Assinatura do hóspede</legend>
+                <p class="text-sm text-gray-600 mt-1">Assine com o dedo ou mouse no quadro abaixo.</p>
+                <canvas #sigCanvas width="600" height="160"
+                  class="mt-2 w-full rounded-lg border border-gray-300 bg-white"
+                  style="touch-action: none; cursor: crosshair"
+                  (pointerdown)="sigDown($event)" (pointermove)="sigMove($event)"
+                  (pointerup)="sigUp()" (pointerleave)="sigUp()"></canvas>
+                <button type="button" (click)="limparAssinatura()"
+                  class="mt-2 text-sm text-[#032B38] underline">Limpar assinatura</button>
+              </fieldset>
+            }
+
             @if (erroEnvio()) {
               <p class="text-red-700 text-sm" role="alert">{{ erroEnvio() }}</p>
             }
@@ -241,12 +255,65 @@ export class FnrhFormComponent implements OnInit {
     });
   }
 
+  readonly assinatura = signal<string | null>(null);
+  readonly sigCanvas = viewChild<ElementRef<HTMLCanvasElement>>('sigCanvas');
+  private desenhando = false;
+
+  sigDown(e: PointerEvent): void {
+    const c = this.sigCanvas()?.nativeElement;
+    if (!c) return;
+    this.desenhando = true;
+    c.setPointerCapture(e.pointerId);
+    const ctx = c.getContext('2d');
+    if (!ctx) return;
+    const p = this.sigPos(c, e);
+    ctx.beginPath();
+    ctx.moveTo(p[0], p[1]);
+  }
+
+  sigMove(e: PointerEvent): void {
+    const c = this.sigCanvas()?.nativeElement;
+    const ctx = c?.getContext('2d');
+    if (!this.desenhando || !c || !ctx) return;
+    const p = this.sigPos(c, e);
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#032B38';
+    ctx.lineTo(p[0], p[1]);
+    ctx.stroke();
+  }
+
+  sigUp(): void {
+    if (!this.desenhando) return;
+    this.desenhando = false;
+    this.assinatura.set(this.sigCanvas()?.nativeElement.toDataURL('image/png') ?? null);
+  }
+
+  limparAssinatura(): void {
+    const c = this.sigCanvas()?.nativeElement;
+    c?.getContext('2d')?.clearRect(0, 0, c.width, c.height);
+    this.assinatura.set(null);
+  }
+
+  private sigPos(c: HTMLCanvasElement, e: PointerEvent): [number, number] {
+    const r = c.getBoundingClientRect();
+    return [
+      (e.clientX - r.left) * (c.width / r.width),
+      (e.clientY - r.top) * (c.height / r.height),
+    ];
+  }
+
   enviar(): void {
     if (this.form.invalid) return;
+    if (this.info()?.fnrh_assinatura && !this.assinatura()) {
+      this.erroEnvio.set('Assine a ficha no quadro antes de enviar.');
+      return;
+    }
     this.estado.set('enviando');
     this.erroEnvio.set(null);
     const token = this.route.snapshot.paramMap.get('token') ?? '';
-    this.guest.gravarPreFicha(token, this.form.getRawValue()).subscribe({
+    const payload = { ...this.form.getRawValue(), assinatura: this.assinatura() };
+    this.guest.gravarPreFicha(token, payload).subscribe({
       next: () => this.estado.set('enviado'),
       error: (e) => {
         this.estado.set('form');

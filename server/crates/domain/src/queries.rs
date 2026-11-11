@@ -59,6 +59,9 @@ pub struct ReservaDetalhe {
     /// Preenchido por segunda consulta — não vem do join principal.
     #[sqlx(skip)]
     pub consumo: Option<ConsumoResumo>,
+    /// Payload da pré-ficha pública (aceite + assinatura desenhada).
+    #[sqlx(default)]
+    pub fnrh_hospede: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, FromRow)]

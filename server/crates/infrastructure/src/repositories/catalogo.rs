@@ -1141,7 +1141,7 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
             "SELECT id, cnpj, razao_social, site, email, telefone, celular,
                     impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late,
                     wifi_nome, wifi_senha, horario_checkin, horario_checkout, horario_cafe, info_servicos,
-                    cadastur, politica_cancelamento, retencao_dados_anos, dpo_email,
+                    cadastur, politica_cancelamento, retencao_dados_anos, dpo_email, fnrh_assinatura,
                     version, criado_em, atualizado_em
              FROM estabelecimento ORDER BY id LIMIT 1",
         )
@@ -1171,14 +1171,14 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
                 (cnpj, razao_social, site, email, telefone, celular,
                  impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late,
                  wifi_nome, wifi_senha, horario_checkin, horario_checkout, horario_cafe, info_servicos,
-                 cadastur, politica_cancelamento, retencao_dados_anos, dpo_email)
+                 cadastur, politica_cancelamento, retencao_dados_anos, dpo_email, fnrh_assinatura)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
-                     $18, $19, $20, $21)
+                     $18, $19, $20, $21, $22)
              ON CONFLICT (id) DO NOTHING
              RETURNING id, cnpj, razao_social, site, email, telefone, celular,
                        impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late,
                        wifi_nome, wifi_senha, horario_checkin, horario_checkout, horario_cafe, info_servicos,
-                       cadastur, politica_cancelamento, retencao_dados_anos, dpo_email,
+                       cadastur, politica_cancelamento, retencao_dados_anos, dpo_email, fnrh_assinatura,
                        version, criado_em, atualizado_em",
         )
         .bind(&d.cnpj)
@@ -1202,6 +1202,7 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
         .bind(&d.politica_cancelamento)
         .bind(d.retencao_dados_anos)
         .bind(&d.dpo_email)
+        .bind(d.fnrh_assinatura)
         .fetch_optional(&mut *tx)
         .await
         .map_err(map_db_err)?;
@@ -1218,7 +1219,7 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
                         wifi_nome = $13, wifi_senha = $14, horario_checkin = $15,
                         horario_checkout = $16, horario_cafe = $17, info_servicos = $18,
                         cadastur = $19, politica_cancelamento = $20,
-                        retencao_dados_anos = $21, dpo_email = $22,
+                        retencao_dados_anos = $21, dpo_email = $22, fnrh_assinatura = $23,
                         version = version + 1,
                         atualizado_em = now()
                      WHERE id = (SELECT id FROM estabelecimento ORDER BY id LIMIT 1)
@@ -1226,7 +1227,7 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
                      RETURNING id, cnpj, razao_social, site, email, telefone, celular,
                                impressora_ip, impressora_porta, impressora_ativa, taxa_early, taxa_late,
                                wifi_nome, wifi_senha, horario_checkin, horario_checkout, horario_cafe, info_servicos,
-                               cadastur, politica_cancelamento, retencao_dados_anos, dpo_email,
+                               cadastur, politica_cancelamento, retencao_dados_anos, dpo_email, fnrh_assinatura,
                                version, criado_em, atualizado_em",
                 )
                 .bind(&d.cnpj)
@@ -1251,6 +1252,7 @@ impl EstabelecimentoRepository for PgEstabelecimentoRepository {
                 .bind(&d.politica_cancelamento)
                 .bind(d.retencao_dados_anos)
                 .bind(&d.dpo_email)
+                .bind(d.fnrh_assinatura)
                 .fetch_optional(&mut *tx)
                 .await
                 .map_err(map_db_err)?

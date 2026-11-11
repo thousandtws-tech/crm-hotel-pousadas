@@ -248,6 +248,8 @@ pub fn build(state: AppState) -> Router {
             "/reservas/{id}/fnrh",
             get(routes::reservas::fnrh_reserva).post(routes::reservas::emitir_fnrh),
         )
+        // exportação SNE/CSV das fichas do período — envio manual ao MTur
+        .route("/fnrh/exportar", get(routes::reservas::exportar_fnrh))
         // pagamentos online (Stripe) — painel financeiro
         .route(
             "/pagamentos",

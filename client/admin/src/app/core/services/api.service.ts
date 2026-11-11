@@ -158,6 +158,13 @@ export class ApiService {
   emitirFnrh(idreserva: number, req: { motivo_viagem?: string | null; placa_veiculo?: string | null }) {
     return this.post<M.Fnrh>(`/reservas/${idreserva}/fnrh`, req);
   }
+  /** Exportação SNE/CSV das fichas do período — envio manual ao MTur. */
+  exportarFnrh(inicio: string, fim: string) {
+    return this.http.get(`${this.base}/fnrh/exportar`, {
+      params: params({ inicio, fim }),
+      responseType: 'text',
+    });
+  }
 
   // -- tipos de acomodação ------------------------------------------------------
   listarTipos(apenasAtivos = false) {

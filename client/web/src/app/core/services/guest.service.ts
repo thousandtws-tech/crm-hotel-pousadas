@@ -8,6 +8,7 @@ export interface PreFichaInfo {
   acomodacao: string;
   entrada: string;
   saida: string;
+  fnrh_assinatura: boolean;
 }
 
 export interface AvaliacaoInfo {

@@ -163,6 +163,10 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                 Retenção de dados do hóspede (anos)
                 <input class="input-inn" type="number" min="1" max="30" formControlName="retencao_dados_anos" />
               </label>
+              <label class="lbl lbl-check">
+                <input type="checkbox" formControlName="fnrh_assinatura" />
+                Exigir assinatura desenhada do hóspede na pré-ficha (FNRH)
+              </label>
               <div class="grid-3">
                 <label class="lbl">
                   Reembolso integral até (dias antes)
@@ -590,6 +594,7 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
       font-size: 0.82rem; font-weight: 600; color: #40525d;
     }
     .lbl .req, .f-lbl .req { color: #dc3545; }
+    .lbl-check { flex-direction: row; align-items: center; gap: 8px; font-weight: 500; }
     .f-field { display: flex; flex-direction: column; gap: 4px; }
     .f-lbl { font-size: 0.82rem; font-weight: 600; color: #40525d; }
     .f-mat { width: 100%; }
@@ -789,6 +794,7 @@ export class EstabelecimentoComponent implements OnInit {
     cadastur: [''],
     dpo_email: [''],
     retencao_dados_anos: [5],
+    fnrh_assinatura: [false],
     // CDC — faixas escalonadas: reembolso integral, parcial e nenhum.
     pol1_dias: [15],
     pol1_pct: [100],
@@ -866,6 +872,7 @@ export class EstabelecimentoComponent implements OnInit {
           cadastur: e.cadastur ?? '',
           dpo_email: e.dpo_email ?? '',
           retencao_dados_anos: e.retencao_dados_anos ?? 5,
+          fnrh_assinatura: e.fnrh_assinatura ?? false,
           pol1_dias: fx(0)?.ate_dias ?? 15,
           pol1_pct: fx(0)?.pct ?? 100,
           pol2_dias: fx(1)?.ate_dias ?? 7,
@@ -928,6 +935,7 @@ export class EstabelecimentoComponent implements OnInit {
         cadastur: empty(v.cadastur),
         dpo_email: empty(v.dpo_email),
         retencao_dados_anos: Number(v.retencao_dados_anos) || 5,
+        fnrh_assinatura: !!v.fnrh_assinatura,
         politica_cancelamento: {
           faixas: [
             { ate_dias: Number(v.pol1_dias) || 0, pct: Number(v.pol1_pct) || 0 },

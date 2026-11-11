@@ -274,4 +274,10 @@ pub trait FnrhRepository: Send + Sync {
     async fn listar_por_reserva(&self, idreserva: i64) -> Result<Vec<Fnrh>, DomainError>;
     /// Arquivo digital do hóspede — todas as fichas já emitidas para ele.
     async fn listar_por_cliente(&self, idcliente: i64) -> Result<Vec<Fnrh>, DomainError>;
+    /// Fichas emitidas no período — exportação SNE/CSV para envio manual.
+    async fn listar_periodo(
+        &self,
+        inicio: chrono::NaiveDate,
+        fim: chrono::NaiveDate,
+    ) -> Result<Vec<Fnrh>, DomainError>;
 }

@@ -320,11 +320,20 @@ interface AdicionalLinha {
 
             @if (fichas().length) {
               <span class="sec2 bt"><mat-icon>description</mat-icon> Fichas FNRH emitidas</span>
+              <div class="fnrh-export">
+                <span class="fx-lbl">Exportar SNE/CSV (MTur):</span>
+                <input class="fx-inp" type="date" [value]="sneIni" (input)="sneIni=$any($event.target).value" aria-label="Início" />
+                <input class="fx-inp" type="date" [value]="sneFim" (input)="sneFim=$any($event.target).value" aria-label="Fim" />
+                <button class="badge-acao bg-dark-blue" type="button" title="Baixar CSV das fichas do período" (click)="exportarSne()">
+                  <mat-icon>download</mat-icon>
+                </button>
+              </div>
               <table class="plain bordered sm">
                 <thead>
                   <tr>
                     <th>Nº</th>
                     <th>Emitida em</th>
+                    <th>Retenção legal</th>
                     <th>Motivo da viagem</th>
                     <th></th>
                   </tr>
@@ -334,6 +343,7 @@ interface AdicionalLinha {
                     <tr>
                       <td>{{ f.id }}</td>
                       <td>{{ f.emitida_em | date: 'dd/MM/yyyy - HH:mm' }}</td>
+                      <td><span class="ret-badge" title="Guarda obrigatória — Portaria MTur 41/2025">até {{ retencaoAte(f.emitida_em) }}</span></td>
                       <td>{{ f.motivo_viagem ?? '—' }}</td>
                       <td>
                         <button
@@ -1020,6 +1030,13 @@ interface AdicionalLinha {
     }
     .admin-box h6 { margin: 0; font-size: 0.85rem; font-weight: 600; }
     table.plain td { font-size: 0.85rem; }
+    .fnrh-export { display: flex; align-items: center; gap: 6px; margin: 4px 0 8px; flex-wrap: wrap; }
+    .fx-lbl { font-size: 0.75rem; color: #5d6d7e; font-weight: 600; }
+    .fx-inp { border: 1px solid #d7e0e6; border-radius: 6px; padding: 4px 8px; font-size: 0.8rem; }
+    .ret-badge {
+      background: #eef4f6; color: #054054; border-radius: 10px;
+      padding: 2px 8px; font-size: 0.72rem; font-weight: 600;
+    }
 
     @media (max-width: 760px) {
       .c3, .c4, .c6 { grid-column: span 12; }
@@ -1081,6 +1098,9 @@ export class ReservaDetailComponent implements OnInit {
   // registro de hóspedes
   protected readonly acompanhantes = signal<Acompanhante[]>([]);
   protected readonly fichas = signal<Fnrh[]>([]);
+  protected readonly retencaoAnos = signal(5);
+  protected sneIni = '';
+  protected sneFim = '';
   protected readonly motivosViagem = MOTIVOS_VIAGEM;
   protected readonly parentescos = PARENTESCOS;
   protected readonly tiposDoc = TIPOS_DOC;
@@ -1195,6 +1215,10 @@ export class ReservaDetailComponent implements OnInit {
     });
     this.api.fnrhReserva(res.id).subscribe({
       next: (f) => this.fichas.set(f),
+      error: () => undefined,
+    });
+    this.api.obterEstabelecimento().subscribe({
+      next: (e) => this.retencaoAnos.set(e.retencao_dados_anos ?? 5),
       error: () => undefined,
     });
     if (res.status === 'i') {
@@ -1536,6 +1560,27 @@ export class ReservaDetailComponent implements OnInit {
 
   imprimirFnrh(f: Fnrh): void {
     imprimirFnrh(f);
+  }
+
+  retencaoAte(emitidaEm: string): string {
+    const d = new Date(emitidaEm);
+    d.setFullYear(d.getFullYear() + this.retencaoAnos());
+    return d.toLocaleDateString('pt-BR');
+  }
+
+  exportarSne(): void {
+    if (!this.sneIni || !this.sneFim) return;
+    this.api.exportarFnrh(this.sneIni, this.sneFim).subscribe({
+      next: (csv) => {
+        const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `fnrh-sne-${this.sneIni}_${this.sneFim}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (e) => this.notify.erro(e),
+    });
   }
 
   rotuloDoc(t: string): string {

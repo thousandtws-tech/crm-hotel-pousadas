@@ -69,7 +69,7 @@ impl ReservaRepository for PgReservaRepository {
                     r.quantidade_hospedes, r.entradaprevista, r.saidaprevista,
                     r.checkin_em, r.checkout_em, r.obs, r.status, r.valordiaria, r.criado_em,
                     a.nome AS acomodacao_nome, a.numero AS acomodacao_numero, a.valor AS acomodacao_valor,
-                    c.nome AS cliente_nome, c.cpf AS cliente_cpf, r.expira_em
+                    c.nome AS cliente_nome, c.cpf AS cliente_cpf, r.expira_em, r.fnrh_hospede
              FROM reserva r
              JOIN acomodacao a ON a.id = r.idacomodacao
              JOIN cliente c ON c.id = r.idcliente
@@ -1034,6 +1034,23 @@ impl FnrhRepository for PgReservaRepository {
             "SELECT {FNRH_COLS} FROM fnrh WHERE idcliente = $1 ORDER BY emitida_em DESC"
         ))
         .bind(idcliente)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn listar_periodo(
+        &self,
+        inicio: chrono::NaiveDate,
+        fim: chrono::NaiveDate,
+    ) -> Result<Vec<Fnrh>, DomainError> {
+        sqlx::query_as::<_, Fnrh>(&format!(
+            "SELECT {FNRH_COLS} FROM fnrh
+             WHERE emitida_em::date BETWEEN $1 AND $2
+             ORDER BY emitida_em"
+        ))
+        .bind(inicio)
+        .bind(fim)
         .fetch_all(&self.pool)
         .await
         .map_err(map_db_err)

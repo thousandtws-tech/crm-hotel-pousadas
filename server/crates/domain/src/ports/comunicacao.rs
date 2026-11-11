@@ -171,6 +171,9 @@ pub struct ReservaAuto {
     pub saidaprevista: chrono::NaiveDate,
     pub acomodacao_nome: Option<String>,
     pub token_publico: Option<uuid::Uuid>,
+    /// MTur: pousada exige assinatura desenhada na pré-ficha pública.
+    #[sqlx(default)]
+    pub fnrh_assinatura: bool,
 }
 
 // ---------------------------------------------------------------------------

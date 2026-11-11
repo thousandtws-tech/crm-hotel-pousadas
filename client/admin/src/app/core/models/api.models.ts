@@ -472,6 +472,7 @@ export interface Estabelecimento {
   politica_cancelamento?: unknown;
   retencao_dados_anos?: number;
   dpo_email?: string | null;
+  fnrh_assinatura?: boolean;
   version?: number;
 }
 

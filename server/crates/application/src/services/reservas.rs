@@ -1325,6 +1325,53 @@ impl ReservaService {
         Ok(self.fnrh.listar_por_cliente(idcliente).await?)
     }
 
+    /// Exportação SNE/CSV das fichas emitidas no período — envio manual ao MTur.
+    pub async fn exportar_fnrh_csv(
+        &self,
+        inicio: chrono::NaiveDate,
+        fim: chrono::NaiveDate,
+    ) -> AppResult<String> {
+        if fim < inicio {
+            return Err(DomainError::validacao("Período inválido.").into());
+        }
+        use std::fmt::Write as _;
+        let fichas = self.fnrh.listar_periodo(inicio, fim).await?;
+        let mut csv = String::from(
+            "ficha;reserva;emitida_em;nome;cpf;nascimento;nacionalidade;email;telefone;cidade;uf;motivo_viagem;placa;acomodacao;entrada;saida\n",
+        );
+        let cell = |v: &serde_json::Value| {
+            v.as_str()
+                .unwrap_or("")
+                .replace(';', ",")
+                .replace(['\r', '\n'], " ")
+        };
+        for f in fichas {
+            let h = &f.dados["hospede"];
+            let r = &f.dados["reserva"];
+            let _ = writeln!(
+                csv,
+                "{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                f.id,
+                f.idreserva,
+                f.emitida_em.format("%d/%m/%Y %H:%M"),
+                cell(&h["nome"]),
+                cell(&h["cpf"]),
+                cell(&h["data_nascimento"]),
+                cell(&h["nacionalidade"]),
+                cell(&h["email"]),
+                cell(&h["telefone"]),
+                cell(&h["cidade"]),
+                cell(&h["estado"]),
+                cell(&serde_json::json!(f.motivo_viagem)),
+                cell(&serde_json::json!(f.placa_veiculo)),
+                cell(&r["acomodacao"]),
+                cell(&r["entradaprevista"]),
+                cell(&r["saidaprevista"]),
+            );
+        }
+        Ok(csv)
+    }
+
     /// Emite a FNRH: monta o snapshot completo (cliente + reserva +
     /// acompanhantes + emissor) e o persiste de forma imutável.
     pub async fn emitir_fnrh(
@@ -1390,6 +1437,9 @@ impl ReservaService {
                 "quantidade_hospedes": reserva.quantidade_hospedes,
             },
             "acompanhantes": acompanhantes,
+            // Pré-ficha pública do hóspede: aceite + assinatura desenhada
+            // (quando a pousada liga `fnrh_assinatura`), integra a via oficial.
+            "pre_ficha": reserva.fnrh_hospede,
             "emitida_por": ator.nome,
         });
 

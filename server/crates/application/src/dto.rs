@@ -635,6 +635,8 @@ pub struct EstabelecimentoInput {
     pub retencao_dados_anos: Option<i32>,
     /// LGPD: e-mail do encarregado (DPO) na política de privacidade.
     pub dpo_email: Option<String>,
+    /// MTur: exige assinatura desenhada na pré-ficha pública.
+    pub fnrh_assinatura: Option<bool>,
     /// Concorrência otimista.
     pub version: Option<i64>,
 }

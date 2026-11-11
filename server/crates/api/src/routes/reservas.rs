@@ -5,6 +5,7 @@ use crate::error::ApiError as AppError;
 use crate::state::AppState;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
+use axum::response::IntoResponse;
 use axum::Json;
 use chrono::NaiveDate;
 use clarituz_application::actor::Ator;
@@ -343,6 +344,34 @@ pub async fn emitir_fnrh(
 ) -> Result<(StatusCode, Json<Fnrh>), AppError> {
     let f = s.services.reservas.emitir_fnrh(&ator, id, body).await?;
     Ok((StatusCode::CREATED, Json(f)))
+}
+
+/// Exportação SNE/CSV das fichas do período — envio manual ao MTur.
+pub async fn exportar_fnrh(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Query(q): Query<std::collections::HashMap<String, String>>,
+) -> Result<impl IntoResponse, AppError> {
+    let parse = |k: &str| -> Result<chrono::NaiveDate, AppError> {
+        chrono::NaiveDate::parse_from_str(&q[k], "%Y-%m-%d")
+            .map_err(|_| DomainError::validacao(format!("data '{k}' inválida")).into())
+    };
+    let csv = s
+        .services
+        .reservas
+        .exportar_fnrh_csv(parse("inicio")?, parse("fim")?)
+        .await?;
+    Ok((
+        StatusCode::OK,
+        [
+            (axum::http::header::CONTENT_TYPE, "text/csv; charset=utf-8"),
+            (
+                axum::http::header::CONTENT_DISPOSITION,
+                "attachment; filename=fnrh-sne.csv",
+            ),
+        ],
+        csv,
+    ))
 }
 
 // ---------------------------------------------------------------------------

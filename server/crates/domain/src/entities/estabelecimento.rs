@@ -39,6 +39,8 @@ pub struct Estabelecimento {
     pub retencao_dados_anos: i32,
     /// LGPD: contato do encarregado (DPO) publicado na política de privacidade.
     pub dpo_email: Option<String>,
+    /// MTur: quando ligado, a pré-ficha pública exige assinatura desenhada.
+    pub fnrh_assinatura: bool,
     pub version: i64,
     pub criado_em: DateTime<Utc>,
     pub atualizado_em: DateTime<Utc>,

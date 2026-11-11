@@ -567,7 +567,8 @@ impl PgAutomacaoRepository {
 const AUTO_COLS: &str = "r.id AS idreserva, r.idcliente, c.nome AS cliente_nome,
      c.email AS cliente_email, c.telefone AS cliente_telefone,
      r.entradaprevista, r.saidaprevista,
-     a.nome AS acomodacao_nome, r.token_publico";
+     a.nome AS acomodacao_nome, r.token_publico,
+     coalesce((SELECT fnrh_assinatura FROM estabelecimento ORDER BY id LIMIT 1), false) AS fnrh_assinatura";
 
 const AUTO_FROM: &str = "FROM reserva r
      JOIN cliente c ON c.id = r.idcliente

@@ -287,6 +287,8 @@ pub struct DadosEstabelecimento {
     pub politica_cancelamento: Option<serde_json::Value>,
     pub retencao_dados_anos: Option<i32>,
     pub dpo_email: Option<String>,
+    /// MTur: assinatura desenhada obrigatória na pré-ficha pública.
+    pub fnrh_assinatura: bool,
     /// Concorrência otimista — divergência → 409.
     pub version: Option<i64>,
 }
