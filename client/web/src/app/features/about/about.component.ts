@@ -30,27 +30,78 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
       </div>
     </header>
 
-    <!-- Narrative Section -->
-    <section class="about-manifesto py-14 sm:py-18 lg:py-20 bg-[#F7F5F0]">
+    <!-- Narrative Section — image collage + editorial text (padrão Luxivo) -->
+    <section class="about-manifesto py-14 sm:py-18 lg:py-24 bg-[#F7F5F0]">
       <div class="container-editorial">
-        <div class="max-w-3xl mx-auto space-y-8 sm:space-y-10">
-          
-          <div>
-            <h2 class="type-title text-[#054054]">
-              Sua estadia pertinho da Praia do Peró.
-            </h2>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+
+          <!-- Image collage -->
+          <div class="lg:col-span-6 relative pb-12 sm:pb-14 lg:pb-16">
+            <div class="editorial-image-container aspect-[4/5] shadow-[0_16px_44px_rgba(5,64,84,0.10)]">
+              <img
+                src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=85"
+                alt="Área externa e piscina da Pousada Espírito do Mar (imagem ilustrativa)"
+                loading="lazy"
+                class="w-full h-full object-cover"
+              />
+            </div>
+
+            <!-- Overlapping secondary image -->
+            <div class="absolute -bottom-2 right-4 sm:right-8 w-40 sm:w-52 lg:w-60 aspect-[4/3] rounded-xl overflow-hidden border-4 border-[#F7F5F0] shadow-[0_14px_36px_rgba(5,64,84,0.16)]">
+              <img
+                src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=800&q=85"
+                alt="Recepção e áreas comuns da pousada (imagem ilustrativa)"
+                loading="lazy"
+                class="w-full h-full object-cover"
+              />
+            </div>
+
+            <!-- Floating stat chip -->
+            <div class="absolute top-6 -left-1 sm:left-6 bg-[#032B38] text-white rounded-xl px-4 py-3 shadow-[0_10px_28px_rgba(3,43,56,0.35)]">
+              <span class="font-serif text-2xl sm:text-3xl text-[#DDA554] leading-none block">200m</span>
+              <span class="text-[10px] uppercase tracking-[0.12em] text-white/75">da Praia do Peró</span>
+            </div>
           </div>
 
-          <div class="space-y-4 sm:space-y-5 type-body text-base">
-            <p>
-              {{ hotelConfig.description }}
-            </p>
-            <p>
-              Nossa proposta é oferecer um ambiente simples, funcional e acolhedor para casais, famílias e viajantes que visitam a Região dos Lagos. Nas áreas comuns, os hóspedes contam com piscina externa, serviço de café da manhã, Wi-Fi e estacionamento no local (consulte disponibilidade de vagas e condições vigentes no ato da reserva).
-            </p>
-            <p>
-              As acomodações são equipadas com ar-condicionado, televisão e banheiro privativo, além de opções com frigobar e unidades específicas que dispõem de varanda.
-            </p>
+          <!-- Editorial column -->
+          <div class="lg:col-span-6">
+            <span class="type-eyebrow text-[#DDA554] block mb-3">Nossa história</span>
+            <h2 class="type-title text-[#054054] mb-6">
+              Sua estadia pertinho da Praia do Peró.
+            </h2>
+
+            <div class="space-y-4 sm:space-y-5 type-body text-base mb-8">
+              <p>
+                {{ hotelConfig.description }}
+              </p>
+              <p>
+                Nossa proposta é oferecer um ambiente simples, funcional e acolhedor para casais, famílias e viajantes que visitam a Região dos Lagos. Nas áreas comuns, os hóspedes contam com piscina externa, serviço de café da manhã, Wi-Fi e estacionamento no local.
+              </p>
+              <p>
+                As acomodações são equipadas com ar-condicionado, televisão e banheiro privativo, além de opções com frigobar e unidades específicas que dispõem de varanda.
+              </p>
+            </div>
+
+            <!-- Stats row -->
+            <div class="grid grid-cols-3 gap-4 sm:gap-6 py-5 border-y border-[#DCE6EA] mb-8">
+              <div>
+                <span class="font-serif text-3xl sm:text-4xl text-[#054054] leading-none block">4,9</span>
+                <span class="text-[10px] uppercase tracking-[0.12em] text-[#536B73] mt-1 block">Avaliação dos hóspedes</span>
+              </div>
+              <div>
+                <span class="font-serif text-3xl sm:text-4xl text-[#054054] leading-none block">10+</span>
+                <span class="text-[10px] uppercase tracking-[0.12em] text-[#536B73] mt-1 block">Anos de hospitalidade</span>
+              </div>
+              <div>
+                <span class="font-serif text-3xl sm:text-4xl text-[#054054] leading-none block">100%</span>
+                <span class="text-[10px] uppercase tracking-[0.12em] text-[#536B73] mt-1 block">Quartos climatizados</span>
+              </div>
+            </div>
+
+            <a routerLink="/acomodacoes" class="btn-text">
+              <span>Conheça nossas acomodações</span>
+              <app-icon name="arrow-right" [size]="13"></app-icon>
+            </a>
           </div>
 
         </div>

@@ -57,7 +57,7 @@ import { MotionService } from '../../core/services/motion.service';
         <div class="gallery-masonry-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-5 sm:gap-6 lg:gap-8">
           @for (item of galleryService.filteredItems(); track item.id; let idx = $index) {
             <div
-              class="gallery-grid-item editorial-image-container cursor-pointer shadow-sm group"
+              class="gallery-grid-item editorial-image-container cursor-pointer shadow-sm group relative overflow-hidden"
               [class]="getGridSpanClass(item.aspectRatio, idx)"
               (click)="openLightbox(item)"
             >
@@ -65,8 +65,14 @@ import { MotionService } from '../../core/services/motion.service';
                 [src]="item.imageUrl"
                 [alt]="item.title"
                 loading="lazy"
-                class="w-full h-full object-cover"
+                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
+              <div class="absolute inset-0 bg-gradient-to-t from-[#032B38]/80 via-[#032B38]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4 sm:p-5">
+                <div class="translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                  <span class="text-[10px] uppercase tracking-[0.14em] text-[#DDA554] block mb-0.5">{{ item.categoryLabel }}</span>
+                  <span class="font-serif text-base sm:text-lg text-white leading-tight block">{{ item.title }}</span>
+                </div>
+              </div>
             </div>
           }
         </div>
