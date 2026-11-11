@@ -50,3 +50,15 @@ pub struct TarifaHistorico {
     pub idfuncionario: Option<i64>,
     pub criado_em: DateTime<Utc>,
 }
+
+/// Diária por faixa de ocupação de um tipo de acomodação — substitui o
+/// `acomodacao.valor` como default quando o tipo possui faixas definidas.
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct TarifaOcupacao {
+    pub id: i64,
+    pub idtipo_acomodacao: i64,
+    pub hospedes: i32,
+    pub valor: Decimal,
+    pub criado_em: DateTime<Utc>,
+    pub atualizado_em: DateTime<Utc>,
+}

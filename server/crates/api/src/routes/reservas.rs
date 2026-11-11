@@ -98,7 +98,13 @@ pub async fn disponibilidade(
     Ok(Json(
         s.services
             .reservas
-            .disponibilidade(q.inicio, q.fim, q.idacomodacao, q.excluir_reserva)
+            .disponibilidade(
+                q.inicio,
+                q.fim,
+                q.idacomodacao,
+                q.excluir_reserva,
+                q.hospedes,
+            )
             .await?,
     ))
 }

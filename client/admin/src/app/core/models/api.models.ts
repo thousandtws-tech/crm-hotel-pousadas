@@ -283,6 +283,19 @@ export interface Quarto {
   criado_em: string;
 }
 
+/** Faixa de diária por nº de hóspedes, por tipo de acomodação. */
+export interface TarifaOcupacao {
+  id: number;
+  idtipo_acomodacao: number;
+  hospedes: number;
+  valor: string;
+}
+
+export interface TarifaOcupacaoInput {
+  hospedes: number;
+  valor: number | string;
+}
+
 // ---------------------------------------------------------------------------
 // CMS — conteúdo editorial + mídia do site público
 // ---------------------------------------------------------------------------

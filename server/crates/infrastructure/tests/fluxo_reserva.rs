@@ -231,3 +231,67 @@ async fn reserva_publica_site(pool: PgPool) {
         .unwrap();
     assert_eq!(reservas, 1, "conflito não insere segunda reserva");
 }
+
+/// Tarifa por ocupação: a faixa do tipo sobrepõe o valor-base da acomodação
+/// (maior faixa <= hóspedes); a disponibilidade reprecifica igual. Tipo sem
+/// faixa cai no valor-base — comportamento anterior preservado.
+#[sqlx::test(migrations = "../../migrations")]
+async fn tarifa_por_ocupacao(pool: PgPool) {
+    let c = cenario(pool.clone()).await;
+    let (entrada, saida) = datas();
+
+    let idtipo = sqlx::query_scalar::<_, i64>(
+        "INSERT INTO tipo_acomodacao (nome) VALUES ('Suíte Faixa') RETURNING id",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    sqlx::query("UPDATE acomodacao SET idtipo_acomodacao = $1 WHERE id = $2")
+        .bind(idtipo)
+        .bind(c.idacomodacao)
+        .execute(&pool)
+        .await
+        .unwrap();
+    for (h, v) in [(1_i32, "280.00"), (2, "410.00")] {
+        sqlx::query(
+            "INSERT INTO tarifa_ocupacao (idtipo_acomodacao, hospedes, valor)
+             VALUES ($1, $2, $3::numeric)",
+        )
+        .bind(idtipo)
+        .bind(h)
+        .bind(v)
+        .execute(&pool)
+        .await
+        .unwrap();
+    }
+
+    // reserva de 2 hóspedes → faixa de 2 (410), não o valor-base (350)
+    let reserva = c
+        .services
+        .reservas
+        .criar(&c.ator, input_reserva(&c, entrada, saida))
+        .await
+        .expect("criar reserva");
+    assert_eq!(reserva.valordiaria, dec!(410.00));
+
+    // disponibilidade reprecifica por hóspedes; sem parâmetro volta ao base
+    let datas_livres = (saida + Duration::days(30), saida + Duration::days(32));
+    for (h, esperado) in [
+        (Some(1), dec!(280.00)),
+        (Some(2), dec!(410.00)),
+        (None, dec!(350.00)),
+    ] {
+        let resp = c
+            .services
+            .reservas
+            .disponibilidade(datas_livres.0, datas_livres.1, None, None, h)
+            .await
+            .expect("disponibilidade");
+        let unit = resp
+            .acomodacoes
+            .iter()
+            .find(|a| a.id == c.idacomodacao)
+            .expect("unidade livre");
+        assert_eq!(unit.valor, esperado, "hospedes={h:?}");
+    }
+}

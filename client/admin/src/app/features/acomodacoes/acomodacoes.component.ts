@@ -12,6 +12,7 @@ import {
   AcomodacaoInput,
   Quarto,
   TarifaHistorico,
+  TarifaOcupacaoInput,
   TipoAcomodacao,
   VagaEstacionamento,
 } from '@core/models/api.models';
@@ -644,6 +645,12 @@ type Modal = 'tipos' | 'quarto' | null;
                           <mat-icon>edit</mat-icon>
                         </button>
                         <button
+                          type="button" class="badge-acao bg-green" title="Preço por ocupação"
+                          aria-label="Preço por ocupação" (click)="toggleTarifas(t)"
+                        >
+                          <mat-icon>attach_money</mat-icon>
+                        </button>
+                        <button
                           type="button" class="badge-acao bg-dark-blue" title="Excluir"
                           aria-label="Excluir tipo" (click)="excluirTipo(t)"
                         >
@@ -652,6 +659,52 @@ type Modal = 'tipos' | 'quarto' | null;
                       }
                     </td>
                   </tr>
+                  @if (tarifasTipo() === t.id) {
+                    <tr class="fx-row">
+                      <td colspan="4">
+                        <div class="fx-box">
+                          <p class="fx-tit">Diária por ocupação — {{ t.nome }}
+                            <small class="muted">(criança conta como hóspede; sem faixa, usa o valor da acomodação)</small>
+                          </p>
+                          @for (f of faixas(); track $index) {
+                            <div class="fx-linha">
+                              <label class="dl">
+                                <span>Hóspedes</span>
+                                <input
+                                  class="input-inn fx-inp" type="number" min="1" max="20"
+                                  [value]="f.hospedes" aria-label="Número de hóspedes"
+                                  (input)="faixaCampo($index, 'hospedes', $event)"
+                                />
+                              </label>
+                              <label class="dl">
+                                <span>Diária R$</span>
+                                <input
+                                  class="input-inn fx-inp" type="number" min="0" step="0.01"
+                                  [value]="f.valor" aria-label="Valor da diária"
+                                  (input)="faixaCampo($index, 'valor', $event)"
+                                />
+                              </label>
+                              <button
+                                type="button" class="badge-acao bg-gray" title="Remover faixa"
+                                (click)="remFaixa($index)"
+                              >
+                                <mat-icon>close</mat-icon>
+                              </button>
+                            </div>
+                          }
+                          <div class="fx-acoes">
+                            <button type="button" class="mc-btn" (click)="addFaixa()">+ faixa</button>
+                            <button
+                              type="button" class="btn-green" [disabled]="salvandoFaixas()"
+                              (click)="salvarFaixas(t)"
+                            >
+                              {{ salvandoFaixas() ? 'Salvando…' : 'Salvar faixas' }}
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  }
                 } @empty {
                   <tr><td colspan="4" class="muted tc">Nenhum tipo cadastrado.</td></tr>
                 }
@@ -1049,6 +1102,18 @@ type Modal = 'tipos' | 'quarto' | null;
     .input-group-inn.mb .btn-green { border-radius: 0 4px 4px 0; }
     .check-inn { display: flex; align-items: center; gap: 6px; font-size: 0.84rem; color: #40525d; }
 
+    /* tarifa por ocupação — linha expansível na tabela de tipos */
+    .fx-row td { background: #f7fafb; border-top: none; }
+    .fx-box { display: flex; flex-direction: column; gap: 8px; padding: 10px 6px; }
+    .fx-tit { margin: 0; font-size: 0.85rem; color: #054054; font-weight: 600; }
+    .fx-linha { display: flex; align-items: flex-end; gap: 10px; }
+    .fx-inp { width: 110px; }
+    .fx-acoes { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+    .bg-green { background: #1e8e5a; }
+    .dl { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: #5d6d7e; }
+    .mc-btn { font-size: 0.75rem; padding: 5px 12px; border: 1px solid #d7e0e6; border-radius: 6px; background: #fff; color: #1a6f8a; cursor: pointer; }
+    .mc-btn:hover { border-color: #1a6f8a; }
+
     .drawer-foot {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 13px 22px;
@@ -1130,6 +1195,9 @@ export class AcomodacoesComponent implements OnInit {
   protected readonly comVaga = signal(false);
   protected readonly vagasSel = signal<number[]>([]);
   protected readonly editandoTipo = signal<number | null>(null);
+  protected readonly tarifasTipo = signal<number | null>(null);
+  protected readonly faixas = signal<{ hospedes: number; valor: string }[]>([]);
+  protected readonly salvandoFaixas = signal(false);
   protected readonly novoTipo = new FormControl('', [Validators.required]);
   protected readonly tipoNomeCtrl = new FormControl('', [Validators.required]);
   protected readonly quartoNumero = new FormControl('', [Validators.required]);
@@ -1335,6 +1403,63 @@ export class AcomodacoesComponent implements OnInit {
   editarTipo(t: TipoAcomodacao): void {
     this.editandoTipo.set(t.id);
     this.tipoNomeCtrl.setValue(t.nome);
+  }
+
+  // -- tarifa por ocupação -----------------------------------------------------
+
+  toggleTarifas(t: TipoAcomodacao): void {
+    if (this.tarifasTipo() === t.id) {
+      this.tarifasTipo.set(null);
+      return;
+    }
+    this.tarifasTipo.set(t.id);
+    this.api.tarifasOcupacao(t.id).subscribe({
+      next: (lista) => {
+        // Semente: faixas 1..3 sempre visíveis (spec), mescladas com o que já existe.
+        const base = [1, 2, 3].map((h) => {
+          const ex = lista.find((x) => x.hospedes === h);
+          return { hospedes: h, valor: ex ? String(Number(ex.valor)) : '' };
+        });
+        const extras = lista
+          .filter((x) => x.hospedes > 3)
+          .map((x) => ({ hospedes: x.hospedes, valor: String(Number(x.valor)) }));
+        this.faixas.set([...base, ...extras]);
+      },
+      error: (e) => this.notify.erro(e),
+    });
+  }
+
+  faixaCampo(i: number, campo: 'hospedes' | 'valor', ev: Event): void {
+    const v = (ev.target as HTMLInputElement).value;
+    this.faixas.update((f) =>
+      f.map((x, j) => (j === i ? { ...x, [campo]: campo === 'hospedes' ? Number(v) : v } : x)),
+    );
+  }
+
+  addFaixa(): void {
+    const prox = Math.max(0, ...this.faixas().map((f) => f.hospedes)) + 1;
+    this.faixas.update((f) => [...f, { hospedes: prox, valor: '' }]);
+  }
+
+  remFaixa(i: number): void {
+    this.faixas.update((f) => f.filter((_, j) => j !== i));
+  }
+
+  salvarFaixas(t: TipoAcomodacao): void {
+    const payload: TarifaOcupacaoInput[] = this.faixas()
+      .filter((f) => f.valor !== '' && Number(f.valor) > 0)
+      .map((f) => ({ hospedes: f.hospedes, valor: Number(f.valor) }));
+    this.salvandoFaixas.set(true);
+    this.api.salvarTarifasOcupacao(t.id, payload).subscribe({
+      next: () => {
+        this.salvandoFaixas.set(false);
+        this.notify.ok(`Faixas de ocupação de '${t.nome}' salvas.`);
+      },
+      error: (e) => {
+        this.salvandoFaixas.set(false);
+        this.notify.erro(e);
+      },
+    });
   }
 
   salvarTipo(t: TipoAcomodacao): void {

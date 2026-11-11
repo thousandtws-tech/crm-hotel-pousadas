@@ -9,12 +9,12 @@ use axum::Json;
 use clarituz_application::actor::Ator;
 use clarituz_application::dto::{
     AcomodacaoInput, AtivoInput, EnderecoInput, EstabelecimentoInput, FrigobarInput,
-    ItemFrigobarInput, Mensagem, NomeInput, QuantidadeInput, QuartoInput, VagaInput,
-    VinculoAcomodacaoInput,
+    ItemFrigobarInput, Mensagem, NomeInput, QuantidadeInput, QuartoInput, TarifaOcupacaoInput,
+    VagaInput, VinculoAcomodacaoInput,
 };
 use clarituz_domain::entities::{
     Acomodacao, EnderecoEstabelecimento, Estabelecimento, FormaPagamento, Frigobar, ItemFrigobar,
-    Quarto, TarifaHistorico, TipoAcomodacao, VagaEstacionamento,
+    Quarto, TarifaHistorico, TarifaOcupacao, TipoAcomodacao, VagaEstacionamento,
 };
 use clarituz_domain::queries::ItemFrigobarView;
 use clarituz_domain::DomainError;
@@ -60,6 +60,30 @@ pub async fn atualizar_tipo(
         s.services
             .acomodacoes
             .atualizar_tipo(&ator, id, body)
+            .await?,
+    ))
+}
+
+/// Faixas de preço por ocupação do tipo — lista (qualquer autenticado).
+pub async fn tarifas_ocupacao(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<Json<Vec<TarifaOcupacao>>, AppError> {
+    Ok(Json(s.services.acomodacoes.tarifas_ocupacao(id).await?))
+}
+
+/// Substitui as faixas de preço por ocupação do tipo (admin).
+pub async fn salvar_tarifas_ocupacao(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+    Json(body): Json<Vec<TarifaOcupacaoInput>>,
+) -> Result<Json<Vec<TarifaOcupacao>>, AppError> {
+    Ok(Json(
+        s.services
+            .acomodacoes
+            .salvar_tarifas_ocupacao(&ator, id, body)
             .await?,
     ))
 }

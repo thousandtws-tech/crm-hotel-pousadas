@@ -1,9 +1,11 @@
 //! Casos de uso do catálogo de acomodações (tipos, unidades, quartos, tarifas).
 
 use crate::actor::Ator;
-use crate::dto::{AcomodacaoInput, NomeInput, QuartoInput};
+use crate::dto::{AcomodacaoInput, NomeInput, QuartoInput, TarifaOcupacaoInput};
 use crate::error::AppResult;
-use clarituz_domain::entities::{Acomodacao, Quarto, TarifaHistorico, TipoAcomodacao};
+use clarituz_domain::entities::{
+    Acomodacao, Quarto, TarifaHistorico, TarifaOcupacao, TipoAcomodacao,
+};
 use clarituz_domain::ports::{
     AcomodacaoRepository, AtualizaAcomodacao, NovaAcomodacao, QuartoRepository,
     TipoAcomodacaoRepository,
@@ -66,6 +68,54 @@ impl AcomodacaoService {
             None,
         );
         Ok(self.tipos.atualizar(id, &nome, input.version, log).await?)
+    }
+
+    /// Faixas de preço por ocupação do tipo — leitura livre à recepção.
+    pub async fn tarifas_ocupacao(&self, idtipo: i64) -> AppResult<Vec<TarifaOcupacao>> {
+        Ok(self.acomodacoes.tarifas_ocupacao(idtipo).await?)
+    }
+
+    /// Substitui as faixas do tipo (admin) — valida faixas antes de gravar.
+    pub async fn salvar_tarifas_ocupacao(
+        &self,
+        ator: &Ator,
+        idtipo: i64,
+        input: Vec<TarifaOcupacaoInput>,
+    ) -> AppResult<Vec<TarifaOcupacao>> {
+        ator.exigir_admin()?;
+        if input.len() > 20 {
+            return Err(DomainError::Validacao("Máximo de 20 faixas por tipo.".into()).into());
+        }
+        let mut vistos = std::collections::HashSet::new();
+        let mut faixas = Vec::with_capacity(input.len());
+        for f in input {
+            if !(1..=20).contains(&f.hospedes) {
+                return Err(DomainError::Validacao(format!(
+                    "Faixa de {} hóspedes inválida (1–20).",
+                    f.hospedes
+                ))
+                .into());
+            }
+            if f.valor <= Decimal::ZERO {
+                return Err(DomainError::Validacao(format!(
+                    "Valor da faixa de {} hóspedes deve ser positivo.",
+                    f.hospedes
+                ))
+                .into());
+            }
+            if !vistos.insert(f.hospedes) {
+                return Err(DomainError::Validacao(format!(
+                    "Faixa de {} hóspedes duplicada.",
+                    f.hospedes
+                ))
+                .into());
+            }
+            faixas.push((f.hospedes, f.valor));
+        }
+        self.acomodacoes
+            .salvar_tarifas_ocupacao(idtipo, &faixas)
+            .await?;
+        Ok(self.acomodacoes.tarifas_ocupacao(idtipo).await?)
     }
 
     pub async fn status_tipo(

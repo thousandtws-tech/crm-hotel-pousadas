@@ -454,17 +454,19 @@ impl ReservaService {
     }
 
     /// Consulta de disponibilidade (legado: `api/disponibilidade.php`).
+    /// `hospedes` reprecifica `valor` pela faixa de ocupação do tipo.
     pub async fn disponibilidade(
         &self,
         inicio: chrono::NaiveDate,
         fim: chrono::NaiveDate,
         idacomodacao: Option<i64>,
         excluir_reserva: Option<i64>,
+        hospedes: Option<i32>,
     ) -> AppResult<DisponibilidadeResponse> {
         let periodo = PeriodoEstadia::new(inicio, fim)?;
         let acomodacoes = self
             .reservas
-            .disponibilidade(periodo, idacomodacao, excluir_reserva)
+            .disponibilidade(periodo, hospedes, idacomodacao, excluir_reserva)
             .await?;
 
         Ok(DisponibilidadeResponse {
@@ -475,6 +477,24 @@ impl ReservaService {
             fim,
             acomodacoes,
         })
+    }
+
+    /// Diária efetiva: faixa de ocupação do tipo (maior faixa <= hóspedes,
+    /// senão a menor) ou o valor-base da acomodação quando o tipo não tem
+    /// faixas — mesma regra no balcão, no site e na pré-reserva do WhatsApp.
+    async fn diaria_para(
+        &self,
+        acomodacao: &clarituz_domain::entities::Acomodacao,
+        hospedes: i32,
+    ) -> AppResult<Decimal> {
+        match acomodacao.idtipo_acomodacao {
+            Some(tipo) => Ok(self
+                .acomodacoes
+                .diaria_para_ocupacao(tipo, hospedes)
+                .await?
+                .unwrap_or(acomodacao.valor)),
+            None => Ok(acomodacao.valor),
+        }
     }
 
     /// Taxas early check-in / late checkout: validam disponibilidade do
@@ -503,6 +523,7 @@ impl ReservaService {
                 .reservas
                 .disponibilidade(
                     PeriodoEstadia::new(vespera, vespera)?,
+                    None,
                     Some(idacomodacao),
                     None,
                 )
@@ -521,6 +542,7 @@ impl ReservaService {
                 .reservas
                 .disponibilidade(
                     PeriodoEstadia::new(depois, depois)?,
+                    None,
                     Some(idacomodacao),
                     None,
                 )
@@ -573,11 +595,14 @@ impl ReservaService {
             .into());
         }
 
-        // Diária: a informada ou a tarifa vigente da acomodação.
-        let valordiaria = input
-            .valordiaria
-            .filter(|v| *v > Decimal::ZERO)
-            .unwrap_or(acomodacao.valor);
+        // Diária: a informada, a faixa de ocupação do tipo ou a tarifa base.
+        let valordiaria = match input.valordiaria.filter(|v| *v > Decimal::ZERO) {
+            Some(v) => v,
+            None => {
+                self.diaria_para(&acomodacao, input.quantidade_hospedes)
+                    .await?
+            }
+        };
         let diarias = Decimal::from(time::diarias(periodo.entrada, periodo.saida));
         let early = input.early_checkin.unwrap_or(false);
         let late = input.late_checkout.unwrap_or(false);
@@ -724,14 +749,15 @@ impl ReservaService {
         let taxas = self
             .taxas_horario(acomodacao.id, &periodo, early, late)
             .await?;
+        let diaria = self.diaria_para(&acomodacao, hospedes).await?;
         let nova = NovaReserva {
             idacomodacao: acomodacao.id,
             idcliente,
             quantidade_hospedes: hospedes,
             periodo,
             obs: Some(obs),
-            valordiaria: money::round2(acomodacao.valor),
-            valor_total: money::round2(acomodacao.valor * diarias + taxas),
+            valordiaria: money::round2(diaria),
+            valor_total: money::round2(diaria * diarias + taxas),
             early_checkin: early,
             late_checkout: late,
             // Reserva do site segura a acomodação por `hold_minutos`

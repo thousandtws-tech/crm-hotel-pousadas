@@ -6,7 +6,7 @@ use crate::db::{map_db_err, map_del_err};
 use async_trait::async_trait;
 use clarituz_domain::entities::{
     Acomodacao, EnderecoEstabelecimento, Estabelecimento, FormaPagamento, Frigobar, ItemFrigobar,
-    NovoLog, Quarto, TarifaHistorico, TipoAcomodacao, VagaEstacionamento,
+    NovoLog, Quarto, TarifaHistorico, TarifaOcupacao, TipoAcomodacao, VagaEstacionamento,
 };
 use clarituz_domain::ports::{
     AcomodacaoRepository, AtualizaAcomodacao, DadosEndereco, DadosEstabelecimento,
@@ -16,6 +16,7 @@ use clarituz_domain::ports::{
 use clarituz_domain::queries::ItemFrigobarView;
 use clarituz_domain::DomainError;
 use clarituz_shared::{Page, PageParams};
+use rust_decimal::Decimal;
 use sqlx::PgPool;
 
 // ===========================================================================
@@ -393,6 +394,65 @@ impl AcomodacaoRepository for PgAcomodacaoRepository {
         .fetch_all(&self.pool)
         .await
         .map_err(map_db_err)
+    }
+
+    async fn tarifas_ocupacao(&self, idtipo: i64) -> Result<Vec<TarifaOcupacao>, DomainError> {
+        sqlx::query_as::<_, TarifaOcupacao>(
+            "SELECT id, idtipo_acomodacao, hospedes, valor, criado_em, atualizado_em
+             FROM tarifa_ocupacao WHERE idtipo_acomodacao = $1 ORDER BY hospedes",
+        )
+        .bind(idtipo)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn salvar_tarifas_ocupacao(
+        &self,
+        idtipo: i64,
+        faixas: &[(i32, Decimal)],
+    ) -> Result<(), DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        sqlx::query("DELETE FROM tarifa_ocupacao WHERE idtipo_acomodacao = $1")
+            .bind(idtipo)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_db_err)?;
+        for (hospedes, valor) in faixas {
+            sqlx::query(
+                "INSERT INTO tarifa_ocupacao (idtipo_acomodacao, hospedes, valor)
+                 VALUES ($1, $2, $3)",
+            )
+            .bind(idtipo)
+            .bind(hospedes)
+            .bind(valor)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_db_err)?;
+        }
+        tx.commit().await.map_err(map_db_err)
+    }
+
+    async fn diaria_para_ocupacao(
+        &self,
+        idtipo: i64,
+        hospedes: i32,
+    ) -> Result<Option<Decimal>, DomainError> {
+        sqlx::query_scalar::<_, Option<Decimal>>(
+            "SELECT COALESCE(
+                 (SELECT t.valor FROM tarifa_ocupacao t
+                   WHERE t.idtipo_acomodacao = $1 AND t.hospedes <= $2
+                   ORDER BY t.hospedes DESC LIMIT 1),
+                 (SELECT t.valor FROM tarifa_ocupacao t
+                   WHERE t.idtipo_acomodacao = $1
+                   ORDER BY t.hospedes ASC LIMIT 1))",
+        )
+        .bind(idtipo)
+        .bind(hospedes)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)
+        .map(std::option::Option::flatten)
     }
 
     async fn remover(&self, id: i64, log: NovoLog) -> Result<Vec<String>, DomainError> {

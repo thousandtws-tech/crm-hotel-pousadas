@@ -171,20 +171,27 @@ impl ReservaRepository for PgReservaRepository {
     async fn disponibilidade(
         &self,
         periodo: PeriodoEstadia,
+        hospedes: Option<i32>,
         idacomodacao: Option<i64>,
         excluir_reserva: Option<i64>,
     ) -> Result<Vec<AcomodacaoDisponivel>, DomainError> {
         sqlx::query_as::<_, AcomodacaoDisponivel>(
-            "SELECT a.id, a.nome, a.numero, a.valor, a.capacidade
+            "SELECT a.id, a.nome, a.numero,
+                    COALESCE((SELECT t.valor FROM tarifa_ocupacao t
+                               WHERE t.idtipo_acomodacao = a.idtipo_acomodacao
+                                 AND t.hospedes <= $3
+                               ORDER BY t.hospedes DESC LIMIT 1),
+                             a.valor) AS valor,
+                    a.capacidade
              FROM acomodacao a
              WHERE a.ativo
-               AND ($3::bigint IS NULL OR a.id = $3)
+               AND ($4::bigint IS NULL OR a.id = $4)
                AND NOT EXISTS (
                    SELECT 1 FROM reserva r
                    WHERE r.idacomodacao = a.id
                      AND r.status IN ('p', 'i')
                      AND r.periodo && daterange($1, $2, '[]')
-                     AND ($4::bigint IS NULL OR r.id != $4)
+                     AND ($5::bigint IS NULL OR r.id != $5)
                )
                AND NOT EXISTS (
                    SELECT 1 FROM bloqueio b
@@ -195,6 +202,7 @@ impl ReservaRepository for PgReservaRepository {
         )
         .bind(periodo.entrada)
         .bind(periodo.saida)
+        .bind(hospedes)
         .bind(idacomodacao)
         .bind(excluir_reserva)
         .fetch_all(&self.pool)

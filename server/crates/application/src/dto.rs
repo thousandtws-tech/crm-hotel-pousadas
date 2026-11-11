@@ -436,6 +436,16 @@ pub struct DisponibilidadeQuery {
     pub fim: NaiveDate,
     pub idacomodacao: Option<i64>,
     pub excluir_reserva: Option<i64>,
+    /// Reprecifica `valor` pela faixa de ocupação do tipo quando presente.
+    pub hospedes: Option<i32>,
+}
+
+/// Faixa de tarifa por ocupação (1..20 hóspedes → diária), por tipo.
+#[derive(Debug, Deserialize)]
+pub struct TarifaOcupacaoInput {
+    pub hospedes: i32,
+    #[serde(deserialize_with = "de_decimal")]
+    pub valor: Decimal,
 }
 
 /// Filtros de listagem de reservas — **achatado** (`#[serde(flatten)]`)

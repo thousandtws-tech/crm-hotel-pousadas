@@ -175,6 +175,12 @@ export class ApiService {
   excluirTipo(id: number) {
     return this.del<{ mensagem: string }>(`/tipos-acomodacao/${id}`);
   }
+  tarifasOcupacao(idtipo: number) {
+    return this.get<M.TarifaOcupacao[]>(`/tipos-acomodacao/${idtipo}/tarifas-ocupacao`);
+  }
+  salvarTarifasOcupacao(idtipo: number, faixas: M.TarifaOcupacaoInput[]) {
+    return this.put<M.TarifaOcupacao[]>(`/tipos-acomodacao/${idtipo}/tarifas-ocupacao`, faixas);
+  }
 
   // -- acomodações --------------------------------------------------------------
   listarAcomodacoes(page = 1, porPagina = 50, apenasAtivas = false) {

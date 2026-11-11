@@ -3,7 +3,7 @@
 
 use crate::entities::{
     Acomodacao, EnderecoEstabelecimento, Estabelecimento, FormaPagamento, Frigobar, ItemFrigobar,
-    NovoLog, Quarto, TarifaHistorico, TipoAcomodacao, VagaEstacionamento,
+    NovoLog, Quarto, TarifaHistorico, TarifaOcupacao, TipoAcomodacao, VagaEstacionamento,
 };
 use crate::error::DomainError;
 use crate::queries::ItemFrigobarView;
@@ -106,6 +106,22 @@ pub trait AcomodacaoRepository: Send + Sync {
     /// estacionamento. Falha (409) se houver reservas. Devolve as chaves
     /// de mídia (fotos/vídeos) para a camada de API apagar no object store.
     async fn remover(&self, id: i64, log: NovoLog) -> Result<Vec<String>, DomainError>;
+
+    /// Faixas de preço por ocupação de um tipo (ordenadas por nº de hóspedes).
+    async fn tarifas_ocupacao(&self, idtipo: i64) -> Result<Vec<TarifaOcupacao>, DomainError>;
+    /// Substitui o conjunto de faixas do tipo — transação de delete+insert.
+    async fn salvar_tarifas_ocupacao(
+        &self,
+        idtipo: i64,
+        faixas: &[(i32, Decimal)],
+    ) -> Result<(), DomainError>;
+    /// Diária para N hóspedes no tipo: maior faixa <= N, senão a menor faixa.
+    /// `None` quando o tipo não tem faixas (cai no valor da acomodação).
+    async fn diaria_para_ocupacao(
+        &self,
+        idtipo: i64,
+        hospedes: i32,
+    ) -> Result<Option<Decimal>, DomainError>;
 }
 
 // ---------------------------------------------------------------------------

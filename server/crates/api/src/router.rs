@@ -149,6 +149,10 @@ pub fn build(state: AppState) -> Router {
             "/tipos-acomodacao/{id}/status",
             patch(routes::catalogo::status_tipo),
         )
+        .route(
+            "/tipos-acomodacao/{id}/tarifas-ocupacao",
+            get(routes::catalogo::tarifas_ocupacao).put(routes::catalogo::salvar_tarifas_ocupacao),
+        )
         // acomodações
         .route(
             "/acomodacoes",

@@ -150,7 +150,7 @@ impl PreReservaService {
         let hospedes = extrair_hospedes(t).unwrap_or(2);
         let livres = self
             .reservas_repo
-            .disponibilidade(periodo, None, None)
+            .disponibilidade(periodo, Some(hospedes), None, None)
             .await?;
         let Some(a) = livres
             .iter()

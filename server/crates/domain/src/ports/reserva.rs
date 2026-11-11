@@ -98,9 +98,12 @@ pub trait ReservaRepository: Send + Sync {
     ) -> Result<Vec<ReservaResumo>, DomainError>;
 
     /// Acomodações sem reserva ocupante no período (legado: disponibilidade.php).
+    /// `hospedes` reprecifica `valor` pela tarifa de ocupação do tipo
+    /// (maior faixa <= N); `None` devolve o valor-base da acomodação.
     async fn disponibilidade(
         &self,
         periodo: PeriodoEstadia,
+        hospedes: Option<i32>,
         idacomodacao: Option<i64>,
         excluir_reserva: Option<i64>,
     ) -> Result<Vec<AcomodacaoDisponivel>, DomainError>;

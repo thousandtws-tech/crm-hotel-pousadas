@@ -24,7 +24,7 @@ pub mod pdv;
 pub mod preditivo;
 pub mod reserva;
 
-pub use acomodacao::{Acomodacao, Quarto, TarifaHistorico, TipoAcomodacao};
+pub use acomodacao::{Acomodacao, Quarto, TarifaHistorico, TarifaOcupacao, TipoAcomodacao};
 pub use auditoria::{NovoLog, RegistroLog};
 pub use busca::ItemBusca;
 pub use cafe::CafePresenca;
