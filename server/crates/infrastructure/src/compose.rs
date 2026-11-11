@@ -173,6 +173,14 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         comunicacao_svc.clone(),
         settings.sinal_percentual,
     ));
+    // Roteamento — protocolos por setor com SLA; a escalada da Inná e a
+    // tela de fila compartilham o mesmo service.
+    let atendimento_svc = Arc::new(AtendimentoService::new(
+        Arc::new(PgAtendimentoRepository::new(pool.clone())),
+        comunicacao_svc.clone(),
+        settings.atendimento_sla_aceite_min,
+        &settings.atendimento_horario,
+    ));
     let concierge_svc = Arc::new(ConciergeService::new(
         automacao_repo,
         Arc::new(PgInnaRepository::new(pool.clone())),
@@ -184,6 +192,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         settings.whatsapp_app_secret.clone(),
         lgpd_repo.clone(),
         pre_reserva_svc,
+        atendimento_svc.clone(),
     ));
     let lgpd_svc = Arc::new(LgpdService::new(lgpd_repo.clone(), publisher.clone()));
 
@@ -250,6 +259,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             Arc::new(PgEstoqueRepository::new(pool.clone())),
         )),
         comunicacao: comunicacao_svc,
+        atendimento: atendimento_svc,
         concierge: concierge_svc,
         lgpd: lgpd_svc,
         avaliacoes: Arc::new(AvaliacoesService::new(avaliacao_repo)),

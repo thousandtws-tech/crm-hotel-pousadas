@@ -328,3 +328,77 @@ pub trait PreReservaRepository: Send + Sync {
     ) -> Result<(), DomainError>;
     async fn pre_reserva_remover(&self, telefone: &str) -> Result<(), DomainError>;
 }
+
+// ---------------------------------------------------------------------------
+// Atendimento — protocolos por setor com SLA e escalonamento.
+// ---------------------------------------------------------------------------
+
+/// Protocolo de atendimento humano — aberto pela escalada da Inná ou
+/// pela recepção, roteado por setor, escalado no vencimento do SLA.
+#[derive(Debug, Clone, serde::Serialize, sqlx::FromRow)]
+pub struct Atendimento {
+    pub id: i64,
+    /// `A-000123` — referência falável pro hóspede e pro staff.
+    pub protocolo: String,
+    /// 'whatsapp' | 'portal' | 'interno'.
+    pub origem: String,
+    /// 'recepcao' | 'governanca' | 'manutencao' | 'gerencia'.
+    pub setor: String,
+    /// 'normal' | 'urgente' — urgente alerta recepção+gerência na hora.
+    pub prioridade: String,
+    /// 'aberto' | 'em_atendimento' | 'escalado' | 'resolvido' | 'encerrado'.
+    pub status: String,
+    pub telefone: Option<String>,
+    pub idreserva: Option<i64>,
+    pub idcliente: Option<i64>,
+    pub assunto: String,
+    pub ultima_msg: Option<String>,
+    pub motivo: Option<String>,
+    pub idfuncionario: Option<i64>,
+    /// SLA de aceite — worker escala quando vence.
+    pub prazo_aceite: chrono::DateTime<chrono::Utc>,
+    pub criado_em: chrono::DateTime<chrono::Utc>,
+    pub atribuido_em: Option<chrono::DateTime<chrono::Utc>>,
+    pub escalado_em: Option<chrono::DateTime<chrono::Utc>>,
+    pub resolvido_em: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+/// Campos de abertura — protocolo/status/prazos derivados pelo repo/service.
+pub struct NovoAtendimento {
+    pub origem: String,
+    pub setor: String,
+    pub prioridade: String,
+    pub telefone: Option<String>,
+    pub idreserva: Option<i64>,
+    pub idcliente: Option<i64>,
+    pub assunto: String,
+    pub ultima_msg: Option<String>,
+    pub motivo: Option<String>,
+    pub prazo_aceite: chrono::DateTime<chrono::Utc>,
+}
+
+#[async_trait]
+pub trait AtendimentoRepository: Send + Sync {
+    /// Insere e devolve o protocolo criado (sequencial `A-%06d` do id).
+    async fn atendimento_abrir(&self, a: &NovoAtendimento) -> Result<Atendimento, DomainError>;
+    /// Fila por status; `setor=None` lista tudo (gerência).
+    async fn atendimento_fila(
+        &self,
+        status: &str,
+        setor: Option<&str>,
+    ) -> Result<Vec<Atendimento>, DomainError>;
+    /// Assume o protocolo: aberto/escalado → em_atendimento.
+    async fn atendimento_aceitar(
+        &self,
+        id: i64,
+        idfuncionario: i64,
+    ) -> Result<Atendimento, DomainError>;
+    async fn atendimento_resolver(
+        &self,
+        id: i64,
+        idfuncionario: i64,
+    ) -> Result<Atendimento, DomainError>;
+    /// Abertos/escalados com prazo de aceite vencido — o worker escala.
+    async fn atendimento_vencidos(&self) -> Result<Vec<Atendimento>, DomainError>;
+    async fn atendimento_escalar(&self, id: i64) -> Result<Atendimento, DomainError>;
+}

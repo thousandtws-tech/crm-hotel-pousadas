@@ -2,6 +2,7 @@
 //! uso: valida entrada, aplica regras, orquestra ports e produz auditoria.
 
 pub mod acomodacoes;
+pub mod atendimento;
 pub mod auditoria;
 pub mod auth;
 pub mod busca;
@@ -35,6 +36,7 @@ pub mod reservas;
 pub mod tesouraria;
 
 pub use acomodacoes::AcomodacaoService;
+pub use atendimento::AtendimentoService;
 pub use auditoria::AuditoriaService;
 pub use auth::AuthService;
 pub use busca::BuscaService;
@@ -97,6 +99,7 @@ pub struct Services {
     pub cafe: Arc<CafeService>,
     pub compras: Arc<ComprasService>,
     pub comunicacao: Arc<ComunicacaoService>,
+    pub atendimento: Arc<AtendimentoService>,
     pub concierge: Arc<ConciergeService>,
     pub lgpd: Arc<LgpdService>,
     pub avaliacoes: Arc<AvaliacoesService>,

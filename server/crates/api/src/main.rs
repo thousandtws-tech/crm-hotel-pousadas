@@ -207,6 +207,19 @@ async fn serve(settings: Settings, pool: sqlx::PgPool) -> Result<(), Box<dyn std
         // PMOC vencido. Idempotente (UNIQUE idquarto+data+tipo): seguro
         // rodar em todas as réplicas.
         let gov = state.services.governanca.clone();
+        // Atendimento — a cada 60s escala protocolos abertos cujo SLA de
+        // aceite venceu. Idempotente: seguro em todas as réplicas.
+        let atend = state.services.atendimento.clone();
+        tokio::spawn(async move {
+            let mut tick = tokio::time::interval(std::time::Duration::from_secs(60));
+            tick.tick().await;
+            loop {
+                tick.tick().await;
+                if let Err(e) = atend.sweep().await {
+                    tracing::warn!(erro = %e, "atendimento: sweep falhou");
+                }
+            }
+        });
         let manut = state.services.manutencao.clone();
         let lgpd = state.services.lgpd.clone();
         let estab = state.services.estabelecimento.clone();

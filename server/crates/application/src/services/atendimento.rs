@@ -1,0 +1,318 @@
+//! Roteamento inteligente — protocolo de atendimento humano por setor.
+//!
+//! A escalada da Inná (portal ou WhatsApp) abre um protocolo `A-NNNNNN`
+//! roteado por palavra-chave: urgências alertam recepção+gerência na
+//! hora; normais vão pra fila do setor dentro do horário de atendimento;
+//! o worker (`sweep`, 60s) escala pra gerência o que vencer o SLA de
+//! aceite. Determinístico — a IA não decide setor nem prioridade.
+
+use std::sync::Arc;
+
+use chrono::{Duration, Timelike, Utc};
+use clarituz_domain::ports::*;
+
+use crate::error::AppResult;
+use crate::services::ComunicacaoService;
+
+/// Urgência física/segurança — alerta imediato em qualquer horário.
+const URGENCIA: &[&str] = &[
+    "urgente",
+    "emergencia",
+    "emergência",
+    "fogo",
+    "incendio",
+    "incêndio",
+    "vazamento de gas",
+    "vazamento de gás",
+    "fumaca",
+    "fumaça",
+    "acidente",
+    "machucad",
+    "sangr",
+    "seguranca",
+    "segurança",
+    "invad",
+    "ladrao",
+    "ladrão",
+    "sem luz",
+    "sem energia",
+    "desmai",
+    "passando mal",
+];
+/// Manutenção — estrutura/equipamentos do quarto.
+const MANUTENCAO: &[&str] = &[
+    "vazament",
+    "chuveiro",
+    "ar condicion",
+    "ar-condicion",
+    "lampada",
+    "lâmpada",
+    "televis",
+    "tomada",
+    "torneira",
+    "descarga",
+    "privada",
+    "vaso sanit",
+    "fechadura",
+    "aquecedor",
+    "infiltra",
+    "goteira",
+    "quebrad",
+    "nao funciona",
+    "não funciona",
+    "nao liga",
+    "não liga",
+    "porta emperr",
+    "barulho no ar",
+];
+/// Governança — limpeza, enxoval, amenidades, frigobar.
+const GOVERNANCA: &[&str] = &[
+    "toalha",
+    "lencol",
+    "lençol",
+    "limpeza",
+    "sujo",
+    "suja",
+    "limpar",
+    "amenit",
+    "sabonete",
+    "shampoo",
+    "travesseir",
+    "cobertor",
+    "manta",
+    "lixo",
+    "frigobar",
+    "arrumar",
+    "arrumaç",
+    "berço",
+    "berco",
+    "papel higi",
+];
+
+/// Resultado da abertura — o concierge usa pra compor a resposta ao hóspede.
+pub struct AberturaAtendimento {
+    pub protocolo: String,
+    pub setor: String,
+    pub urgente: bool,
+    /// Fora do horário e não-urgente → avisar "respondemos às HH:MM".
+    pub fora_horario: bool,
+    /// "HH:MM" de abertura (só relevante quando `fora_horario`).
+    pub abre_as: String,
+}
+
+pub struct AtendimentoService {
+    repo: Arc<dyn AtendimentoRepository>,
+    comunicacao: Arc<ComunicacaoService>,
+    sla_aceite_min: i64,
+    /// Janela local (UTC-3) de atendimento — urgências furam a fila.
+    abre: (u32, u32),
+    fecha: (u32, u32),
+}
+
+impl AtendimentoService {
+    pub fn new(
+        repo: Arc<dyn AtendimentoRepository>,
+        comunicacao: Arc<ComunicacaoService>,
+        sla_aceite_min: u32,
+        horario: &str,
+    ) -> Self {
+        let (abre, fecha) = parse_janela(horario);
+        Self {
+            repo,
+            comunicacao,
+            sla_aceite_min: sla_aceite_min as i64,
+            abre,
+            fecha,
+        }
+    }
+
+    /// Classifica, persiste e notifica. Retorna o que o concierge precisa
+    /// pra responder o hóspede ("protocolo A-123", "emergência acionada").
+    pub async fn abrir(
+        &self,
+        origem: &str,
+        r: &ReservaAuto,
+        msg: &str,
+        motivo: Option<&str>,
+    ) -> AppResult<AberturaAtendimento> {
+        let telefone = r.cliente_telefone.as_deref();
+        let (idreserva, idcliente) = (Some(r.idreserva), Some(r.idcliente));
+        let assunto = format!(
+            "Escalada Inná — {}",
+            r.cliente_nome
+                .split_whitespace()
+                .next()
+                .unwrap_or(&r.cliente_nome)
+        );
+        let (setor, prioridade) = classificar(msg);
+        let urgente = prioridade == "urgente";
+        let setor = if urgente { "recepcao" } else { setor };
+        let a = self
+            .repo
+            .atendimento_abrir(&NovoAtendimento {
+                origem: origem.to_string(),
+                setor: setor.to_string(),
+                prioridade: prioridade.to_string(),
+                telefone: telefone.map(String::from),
+                idreserva,
+                idcliente,
+                assunto: assunto.clone(),
+                ultima_msg: Some(msg.chars().take(200).collect()),
+                motivo: motivo.map(String::from),
+                prazo_aceite: Utc::now() + Duration::minutes(self.sla_aceite_min),
+            })
+            .await?;
+
+        let fora = !urgente && !self.dentro_horario();
+        let (evento, titulo) = if urgente {
+            ("atendimento.urgente", "URGENTE — atendimento imediato")
+        } else if fora {
+            ("atendimento.novo", "Atendimento fora do horário")
+        } else {
+            ("atendimento.novo", "Novo atendimento na fila")
+        };
+        let reserva_txt = idreserva
+            .map(|r| format!("reserva #{r} · "))
+            .unwrap_or_default();
+        if let Err(e) = self
+            .comunicacao
+            .avisar_equipe(
+                evento,
+                titulo,
+                &format!(
+                    "Protocolo {} · {reserva_txt}setor {setor} · {origem}: {}",
+                    a.protocolo,
+                    msg.chars().take(140).collect::<String>(),
+                ),
+                idreserva,
+            )
+            .await
+        {
+            tracing::warn!(erro = %e, "atendimento: aviso falhou");
+        }
+
+        Ok(AberturaAtendimento {
+            protocolo: a.protocolo,
+            setor: setor.to_string(),
+            urgente,
+            fora_horario: fora,
+            abre_as: format!("{:02}:{:02}", self.abre.0, self.abre.1),
+        })
+    }
+
+    /// Worker: tudo `aberto` com SLA vencido escala pra gerência.
+    /// Idempotente (`atendimento_escalar` só move `aberto`→`escalado`).
+    pub async fn sweep(&self) -> AppResult<u32> {
+        let mut n = 0;
+        for a in self.repo.atendimento_vencidos().await? {
+            self.repo.atendimento_escalar(a.id).await?;
+            n += 1;
+            if let Err(e) = self
+                .comunicacao
+                .avisar_equipe(
+                    "atendimento.escalado",
+                    "Protocolo sem aceite no SLA — escalado",
+                    &format!(
+                        "Protocolo {} (setor {}, {}) passou {}min sem aceite: {}",
+                        a.protocolo, a.setor, a.origem, self.sla_aceite_min, a.assunto,
+                    ),
+                    a.idreserva,
+                )
+                .await
+            {
+                tracing::warn!(erro = %e, "atendimento: aviso de escalada falhou");
+            }
+        }
+        Ok(n)
+    }
+
+    /// Fila para a tela admin (`status`: aberto|em_atendimento|escalado|resolvido).
+    pub async fn fila(&self, status: &str, setor: Option<&str>) -> AppResult<Vec<Atendimento>> {
+        Ok(self.repo.atendimento_fila(status, setor).await?)
+    }
+
+    /// Recepção/gerência assume o protocolo.
+    pub async fn aceitar(&self, id: i64, idfuncionario: i64) -> AppResult<Atendimento> {
+        Ok(self.repo.atendimento_aceitar(id, idfuncionario).await?)
+    }
+
+    pub async fn resolver(&self, id: i64, idfuncionario: i64) -> AppResult<Atendimento> {
+        Ok(self.repo.atendimento_resolver(id, idfuncionario).await?)
+    }
+
+    /// Janela de atendimento em horário local da pousada (UTC-3).
+    fn dentro_horario(&self) -> bool {
+        let agora = Utc::now() - Duration::hours(3);
+        let min = agora.hour() * 60 + agora.minute();
+        let (a, f) = (
+            self.abre.0 * 60 + self.abre.1,
+            self.fecha.0 * 60 + self.fecha.1,
+        );
+        if a <= f {
+            min >= a && min < f
+        } else {
+            min >= a || min < f // janela que cruza meia-noite
+        }
+    }
+}
+
+/// Palavra-chave → (setor, prioridade). Urgência vence setor.
+fn classificar(texto: &str) -> (&'static str, &'static str) {
+    let t = texto.to_lowercase();
+    if URGENCIA.iter().any(|k| t.contains(k)) {
+        return ("recepcao", "urgente");
+    }
+    if MANUTENCAO.iter().any(|k| t.contains(k)) {
+        return ("manutencao", "normal");
+    }
+    if GOVERNANCA.iter().any(|k| t.contains(k)) {
+        return ("governanca", "normal");
+    }
+    ("recepcao", "normal")
+}
+
+/// "07:00-22:30" → ((7,0),(22,30)); formato inválido cai no default.
+fn parse_janela(s: &str) -> ((u32, u32), (u32, u32)) {
+    let hm = |p: &str| -> Option<(u32, u32)> {
+        let mut it = p.trim().split(':');
+        let h: u32 = it.next()?.parse().ok()?;
+        let m: u32 = it.next().unwrap_or("0").parse().ok()?;
+        (h < 24 && m < 60).then_some((h, m))
+    };
+    s.split_once('-')
+        .and_then(|(a, b)| hm(a).zip(hm(b)))
+        .unwrap_or(((7, 0), (22, 0)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn urgencia_sempre_recepcao() {
+        assert_eq!(
+            classificar("tem vazamento de gás no quarto"),
+            ("recepcao", "urgente")
+        );
+        assert_eq!(classificar("estou passando mal"), ("recepcao", "urgente"));
+    }
+
+    #[test]
+    fn setor_por_palavra_chave() {
+        assert_eq!(
+            classificar("o chuveiro nao esquenta"),
+            ("manutencao", "normal")
+        );
+        assert_eq!(
+            classificar("preciso de mais toalhas"),
+            ("governanca", "normal")
+        );
+        assert_eq!(classificar("quero pagar o saldo"), ("recepcao", "normal"));
+    }
+
+    #[test]
+    fn janela_parsing() {
+        assert_eq!(parse_janela("07:00-22:30"), ((7, 0), (22, 30)));
+        assert_eq!(parse_janela("lixo"), ((7, 0), (22, 0)));
+    }
+}

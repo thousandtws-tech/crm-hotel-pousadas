@@ -974,6 +974,16 @@ export class ApiService {
   autorizacaoMenor(idreserva: number, documento: string) {
     return this.post<void>(`/reservas/${idreserva}/autorizacao-menor`, { documento });
   }
+  // -- Atendimento (roteamento) ------------------------------------------------
+  atendimentos(status?: string, setor?: string) {
+    return this.get<M.Atendimento[]>('/atendimentos', { status, setor });
+  }
+  atendAceitar(id: number) {
+    return this.post<M.Atendimento>(`/atendimentos/${id}/aceitar`, {});
+  }
+  atendResolver(id: number) {
+    return this.post<M.Atendimento>(`/atendimentos/${id}/resolver`, {});
+  }
   pushVapidKey() {
     return this.get<{ publica: string }>('/push/vapid-key');
   }

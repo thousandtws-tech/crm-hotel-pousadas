@@ -6,10 +6,10 @@ import { AuthStore } from '@core/services/auth.store';
 import { Notify } from '@core/services/notify.service';
 import { environment } from '../../../environments/environment';
 import {
-  Avaliacao, AvaliacoesDash, CanalEnvio, ItemFila, LgpdSolicitacao, RegraMatriz,
+  Atendimento, Avaliacao, AvaliacoesDash, CanalEnvio, ItemFila, LgpdSolicitacao, RegraMatriz,
 } from '@core/models/api.models';
 
-type Aba = 'avaliacoes' | 'fila' | 'matriz' | 'lgpd';
+type Aba = 'avaliacoes' | 'fila' | 'matriz' | 'lgpd' | 'atend';
 const CANAIS: CanalEnvio[] = ['inbox', 'push', 'email', 'whatsapp'];
 const PAPEIS = [1, 2, 3];
 const PAPEL_ROTULO: Record<number, string> = { 1: 'Admin', 2: 'Gerente', 3: 'Todos' };
@@ -175,6 +175,49 @@ const PAPEL_ROTULO: Record<number, string> = { 1: 'Admin', 2: 'Gerente', 3: 'Tod
         </div>
       }
 
+      @if (aba() === 'atend') {
+        <div class="bloco">
+          <h3>Fila de atendimento — protocolos por setor
+            <select class="sel" [ngModel]="atendFiltro()" (ngModelChange)="atendFiltro.set($event); carregarAtend()">
+              <option value="aberto">Abertos</option>
+              <option value="em_atendimento">Em atendimento</option>
+              <option value="escalado">Escalados</option>
+              <option value="resolvido">Resolvidos</option>
+            </select>
+            <button class="btn-mini" (click)="carregarAtend()">Atualizar</button></h3>
+          <table>
+            <thead><tr>
+              <th>Protocolo</th><th>Setor</th><th>Prioridade</th><th>Origem</th>
+              <th>Reserva</th><th>Assunto</th><th>Aberto em</th><th>SLA aceite</th><th></th>
+            </tr></thead>
+            <tbody>
+              @for (a of atends(); track a.id) {
+                <tr [class.linha-urgente]="a.prioridade === 'urgente'">
+                  <td><b>{{ a.protocolo }}</b></td>
+                  <td>{{ a.setor }}</td>
+                  <td><span class="st" [class]="a.prioridade === 'urgente' ? 'st st-escalado' : 'st st-resolvido'">{{ a.prioridade }}</span></td>
+                  <td>{{ a.origem }}</td>
+                  <td>{{ a.idreserva ? '#' + a.idreserva : '—' }}</td>
+                  <td class="coment">{{ a.ultima_msg ?? a.assunto }}</td>
+                  <td>{{ a.criado_em | date: 'dd/MM/yy HH:mm' }}</td>
+                  <td>{{ a.prazo_aceite | date: 'HH:mm' }}</td>
+                  <td>
+                    @if (a.status === 'aberto' || a.status === 'escalado') {
+                      <button class="btn-mini" (click)="aceitarAtend(a)">Assumir</button>
+                    }
+                    @if (a.status !== 'resolvido') {
+                      <button class="btn-mini" (click)="resolverAtend(a)">Resolver</button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="9" class="vazio">Fila vazia — escaladas da Inná e urgências caem aqui.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
       @if (modalLgpd(); as sol) {
         <div class="overlay" (click)="modalLgpd.set(null)" (keydown.escape)="modalLgpd.set(null)">
           <div class="modal" role="dialog" aria-modal="true" aria-label="Responder solicitação LGPD"
@@ -236,9 +279,11 @@ const PAPEL_ROTULO: Record<number, string> = { 1: 'Admin', 2: 'Gerente', 3: 'Tod
     .resp{display:block;color:var(--mut,#667)}
     .critica td{background:#fff5f5}
     .st{padding:.15rem .5rem;border-radius:999px;font-size:.7rem;font-weight:600}
-    .st-respondida,.st-enviado,.st-executada{background:#e4f6e8;color:#146c2e}
-    .st-pendente,.st-enviando,.st-aberta{background:#fdf3d7;color:#8a6200}
-    .st-falhou,.st-expirada,.st-cancelado{background:#fde3e3;color:#a32}
+    .st-respondida,.st-enviado,.st-executada,.st-resolvido,.st-normal{background:#e4f6e8;color:#146c2e}
+    .st-pendente,.st-enviando,.st-aberta,.st-aberto,.st-em_atendimento{background:#fdf3d7;color:#8a6200}
+    .st-falhou,.st-expirada,.st-cancelado,.st-escalado,.st-urgente{background:#fde3e3;color:#a32}
+    .linha-urgente td{background:#fff5f5}
+    .sel{margin:0 .5rem;padding:.3rem .5rem;border:1px solid #ddd;border-radius:6px;font-size:.82rem}
     .chk{display:flex;align-items:center;gap:.25rem;font-size:.7rem;margin:.1rem 0;cursor:pointer}
     .btn-mini{font-size:.72rem;padding:.3rem .7rem;border-radius:6px;border:1px solid var(--borda,#ccd);background:#fff;cursor:pointer}
     .vazio{color:var(--mut,#667);font-size:.85rem;padding:.5rem 0;text-align:center}
@@ -263,6 +308,7 @@ export class ComunicacaoComponent implements OnInit {
     { id: 'fila', rotulo: 'Fila de envio' },
     { id: 'matriz', rotulo: 'Matriz de alertas' },
     { id: 'lgpd', rotulo: 'Privacidade (LGPD)' },
+    { id: 'atend', rotulo: 'Atendimentos' },
   ];
 
   protected readonly dash = signal<AvaliacoesDash | null>(null);
@@ -270,6 +316,8 @@ export class ComunicacaoComponent implements OnInit {
   protected readonly fila = signal<ItemFila[]>([]);
   protected readonly matriz = signal<RegraMatriz[]>([]);
   protected readonly lgpd = signal<LgpdSolicitacao[]>([]);
+  protected readonly atends = signal<Atendimento[]>([]);
+  protected readonly atendFiltro = signal<string>('aberto');
   protected readonly modalLgpd = signal<LgpdSolicitacao | null>(null);
   protected textoLgpd = '';
   protected readonly modalAv = signal<Avaliacao | null>(null);
@@ -295,6 +343,31 @@ export class ComunicacaoComponent implements OnInit {
     this.api.filaEnvio().subscribe({ next: (f) => this.fila.set(f), error: () => undefined });
     this.api.matrizNotificacao().subscribe({ next: (m) => this.matriz.set(m), error: () => undefined });
     this.carregarLgpd();
+    this.carregarAtend();
+  }
+
+  carregarAtend(): void {
+    this.api.atendimentos(this.atendFiltro()).subscribe({
+      next: (a) => this.atends.set(a),
+      error: () => undefined,
+    });
+  }
+
+  aceitarAtend(a: Atendimento): void {
+    this.api.atendAceitar(a.id).subscribe({
+      next: () => this.carregarAtend(),
+      error: () => this.notify.erroMsg('Não foi possível assumir o protocolo.'),
+    });
+  }
+
+  resolverAtend(a: Atendimento): void {
+    this.api.atendResolver(a.id).subscribe({
+      next: () => {
+        this.notify.ok(`Protocolo ${a.protocolo} resolvido.`);
+        this.carregarAtend();
+      },
+      error: () => this.notify.erroMsg('Não foi possível resolver o protocolo.'),
+    });
   }
 
   carregarLgpd(): void {

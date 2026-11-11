@@ -456,6 +456,28 @@ export interface LgpdSolicitacao {
   atualizado_em: string;
 }
 
+// -- atendimento (roteamento por setor) ----------------------------------------
+export interface Atendimento {
+  id: number;
+  protocolo: string;
+  origem: string;
+  setor: string;
+  prioridade: 'normal' | 'urgente';
+  status: 'aberto' | 'em_atendimento' | 'escalado' | 'resolvido' | 'encerrado';
+  telefone: string | null;
+  idreserva: number | null;
+  idcliente: number | null;
+  assunto: string;
+  ultima_msg: string | null;
+  motivo: string | null;
+  idfuncionario: number | null;
+  prazo_aceite: string;
+  criado_em: string;
+  atribuido_em: string | null;
+  escalado_em: string | null;
+  resolvido_em: string | null;
+}
+
 // -- reservas ------------------------------------------------------------------
 
 export interface Reserva {

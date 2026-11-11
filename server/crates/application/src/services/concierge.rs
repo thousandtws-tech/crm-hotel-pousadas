@@ -35,6 +35,8 @@ pub struct ConciergeService {
     /// Pré-reserva determinística — intercepta intenção de reserva antes
     /// da Inná responder (IA nunca toca em datas/dinheiro).
     pre_reserva: Arc<crate::services::PreReservaService>,
+    /// Roteamento — escalada vira protocolo por setor com SLA.
+    atendimento: Arc<crate::services::AtendimentoService>,
 }
 
 impl ConciergeService {
@@ -50,6 +52,7 @@ impl ConciergeService {
         app_secret: Option<String>,
         lgpd: Arc<dyn LgpdRepository>,
         pre_reserva: Arc<crate::services::PreReservaService>,
+        atendimento: Arc<crate::services::AtendimentoService>,
     ) -> Self {
         Self {
             automacao,
@@ -62,6 +65,7 @@ impl ConciergeService {
             app_secret,
             lgpd,
             pre_reserva,
+            atendimento,
         }
     }
 
@@ -243,7 +247,7 @@ impl ConciergeService {
         }
         let contexto = self.contexto(r).await?;
         let historico = self.inna.historico(r.idreserva, HISTORICO_CTX).await?;
-        let resp = match &self.ia {
+        let mut resp = match &self.ia {
             Some(ia) => ia
                 .responder(&contexto, texto, &historico)
                 .await
@@ -265,24 +269,48 @@ impl ConciergeService {
             .gravar_mensagem(r.idreserva, canal, "inna", &resp.texto, None)
             .await?;
         if resp.escalar {
-            self.comunicacao
-                .avisar_equipe(
-                    "inna.escalada",
-                    "Inná pediu atendimento humano",
-                    &format!(
-                        "{} (reserva #{}, {}): {}{}",
-                        primeiro_nome(&r.cliente_nome),
-                        r.idreserva,
-                        canal,
-                        texto.chars().take(120).collect::<String>(),
-                        resp.motivo
-                            .as_deref()
-                            .map(|m| format!(" — motivo: {m}"))
-                            .unwrap_or_default(),
-                    ),
-                    Some(r.idreserva),
-                )
-                .await?;
+            // Protocolo roteado — urgência acorda recepção+gerência na
+            // hora; normal entra na fila do setor com SLA de aceite.
+            match self
+                .atendimento
+                .abrir(canal, r, texto, resp.motivo.as_deref())
+                .await
+            {
+                Ok(ab) => {
+                    resp.texto = format!(
+                        "{}\n\nProtocolo *{}* — {}",
+                        resp.texto,
+                        ab.protocolo,
+                        if ab.urgente {
+                            "a equipe foi acionada agora.".to_string()
+                        } else if ab.fora_horario {
+                            format!(
+                                "estamos fora do horário; respondemos a partir das {}.",
+                                ab.abre_as
+                            )
+                        } else {
+                            format!("já encaminhei pro setor de {}.", ab.setor)
+                        },
+                    );
+                }
+                Err(e) => {
+                    tracing::warn!(erro = %e, "concierge: abertura de protocolo falhou");
+                    self.comunicacao
+                        .avisar_equipe(
+                            "inna.escalada",
+                            "Inná pediu atendimento humano",
+                            &format!(
+                                "{} (reserva #{}, {}): {}",
+                                primeiro_nome(&r.cliente_nome),
+                                r.idreserva,
+                                canal,
+                                texto.chars().take(120).collect::<String>(),
+                            ),
+                            Some(r.idreserva),
+                        )
+                        .await?;
+                }
+            }
         }
         Ok(resp)
     }

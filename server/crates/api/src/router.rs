@@ -294,6 +294,16 @@ pub fn build(state: AppState) -> Router {
             "/clientes/{id}/anonimizar",
             post(routes::comunicacao::lgpd_anonimizar),
         )
+        // Atendimento — fila de protocolos por setor com SLA
+        .route("/atendimentos", get(routes::comunicacao::atendimentos_get))
+        .route(
+            "/atendimentos/{id}/aceitar",
+            post(routes::comunicacao::atendimento_aceitar_post),
+        )
+        .route(
+            "/atendimentos/{id}/resolver",
+            post(routes::comunicacao::atendimento_resolver_post),
+        )
         .route(
             "/reservas/{id}/autorizacao-menor",
             post(routes::comunicacao::reserva_autorizacao_menor),

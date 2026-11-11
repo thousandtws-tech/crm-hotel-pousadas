@@ -1052,3 +1052,141 @@ impl PreReservaRepository for PgPreReservaRepository {
         Ok(())
     }
 }
+
+// ---------------------------------------------------------------------------
+// Atendimento — protocolos por setor com SLA.
+// ---------------------------------------------------------------------------
+
+const ATEND_COLS: &str = "id, protocolo, origem, setor, prioridade, status, telefone,
+    idreserva, idcliente, assunto, ultima_msg, motivo, idfuncionario,
+    prazo_aceite, criado_em, atribuido_em, escalado_em, resolvido_em";
+
+pub struct PgAtendimentoRepository {
+    pool: PgPool,
+}
+
+impl PgAtendimentoRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl AtendimentoRepository for PgAtendimentoRepository {
+    async fn atendimento_abrir(&self, a: &NovoAtendimento) -> Result<Atendimento, DomainError> {
+        // Protocolo falável derivado do id em duas queries na mesma tx:
+        // INSERT com placeholder → UPDATE 'A-NNNNNN'. Sem race (id é
+        // sequencial único) e sem precisar de sequence extra.
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        let id: i64 = sqlx::query_scalar(
+            "INSERT INTO atendimento
+             (protocolo, origem, setor, prioridade, status, telefone,
+              idreserva, idcliente, assunto, ultima_msg, motivo, prazo_aceite)
+             VALUES ('-', $1, $2, $3, 'aberto', $4, $5, $6, $7, $8, $9, $10)
+             RETURNING id",
+        )
+        .bind(&a.origem)
+        .bind(&a.setor)
+        .bind(&a.prioridade)
+        .bind(&a.telefone)
+        .bind(a.idreserva)
+        .bind(a.idcliente)
+        .bind(&a.assunto)
+        .bind(&a.ultima_msg)
+        .bind(&a.motivo)
+        .bind(a.prazo_aceite)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(map_db_err)?;
+        sqlx::query(
+            "UPDATE atendimento SET protocolo = 'A-' || lpad(id::text, 6, '0') WHERE id = $1",
+        )
+        .bind(id)
+        .execute(&mut *tx)
+        .await
+        .map_err(map_db_err)?;
+        tx.commit().await.map_err(map_db_err)?;
+        sqlx::query_as::<_, Atendimento>(&format!(
+            "SELECT {ATEND_COLS} FROM atendimento WHERE id = $1"
+        ))
+        .bind(id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn atendimento_fila(
+        &self,
+        status: &str,
+        setor: Option<&str>,
+    ) -> Result<Vec<Atendimento>, DomainError> {
+        sqlx::query_as::<_, Atendimento>(&format!(
+            "SELECT {ATEND_COLS} FROM atendimento
+             WHERE status = $1 AND ($2::text IS NULL OR setor = $2)
+             ORDER BY prioridade DESC, criado_em"
+        ))
+        .bind(status)
+        .bind(setor)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn atendimento_aceitar(
+        &self,
+        id: i64,
+        idfuncionario: i64,
+    ) -> Result<Atendimento, DomainError> {
+        sqlx::query_as::<_, Atendimento>(&format!(
+            "UPDATE atendimento SET status = 'em_atendimento',
+             idfuncionario = $2, atribuido_em = now()
+             WHERE id = $1 AND status IN ('aberto','escalado')
+             RETURNING {ATEND_COLS}"
+        ))
+        .bind(id)
+        .bind(idfuncionario)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn atendimento_resolver(
+        &self,
+        id: i64,
+        idfuncionario: i64,
+    ) -> Result<Atendimento, DomainError> {
+        sqlx::query_as::<_, Atendimento>(&format!(
+            "UPDATE atendimento SET status = 'resolvido',
+             idfuncionario = $2, resolvido_em = now()
+             WHERE id = $1 AND status <> 'resolvido'
+             RETURNING {ATEND_COLS}"
+        ))
+        .bind(id)
+        .bind(idfuncionario)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn atendimento_vencidos(&self) -> Result<Vec<Atendimento>, DomainError> {
+        sqlx::query_as::<_, Atendimento>(&format!(
+            "SELECT {ATEND_COLS} FROM atendimento
+             WHERE status = 'aberto' AND prazo_aceite < now()"
+        ))
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn atendimento_escalar(&self, id: i64) -> Result<Atendimento, DomainError> {
+        sqlx::query_as::<_, Atendimento>(&format!(
+            "UPDATE atendimento SET status = 'escalado', escalado_em = now()
+             WHERE id = $1 AND status = 'aberto'
+             RETURNING {ATEND_COLS}"
+        ))
+        .bind(id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+}

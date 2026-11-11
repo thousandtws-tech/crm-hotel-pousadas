@@ -92,6 +92,11 @@ pub struct Settings {
     pub public_api_url: Option<String>,
     /// Nome exibido nas mensagens ao hóspede.
     pub pousada_nome: String,
+    /// Roteamento — minutos até um protocolo `aberto` escalar pra gerência.
+    pub atendimento_sla_aceite_min: u32,
+    /// Janela de atendimento "HH:MM-HH:MM"; fora dela urgências ainda
+    /// alertam, normais aguardam resposta na abertura.
+    pub atendimento_horario: String,
 }
 
 impl Settings {
@@ -165,6 +170,12 @@ impl Settings {
             public_api_url: env_string("PUBLIC_API_URL"),
             pousada_nome: env_string("POUSADA_NOME")
                 .unwrap_or_else(|| "Pousada Espírito do Mar".into()),
+            atendimento_sla_aceite_min: env::var("ATENDIMENTO_SLA_ACEITE_MIN")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(5),
+            atendimento_horario: env_string("ATENDIMENTO_HORARIO")
+                .unwrap_or_else(|| "07:00-22:00".into()),
         })
     }
 }

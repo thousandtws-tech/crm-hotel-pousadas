@@ -659,3 +659,47 @@ pub async fn cobranca_enviar(
         .await;
     Ok(StatusCode::NO_CONTENT)
 }
+
+// ---------------------------------------------------------------------------
+// admin — Atendimento: fila de protocolos por setor (roteamento)
+// ---------------------------------------------------------------------------
+
+/// GET /atendimentos?status=aberto&setor=recepcao
+pub async fn atendimentos_get(
+    State(st): State<AppState>,
+    ator: Ator,
+    Query(q): Query<std::collections::HashMap<String, String>>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let _ = &ator;
+    let itens = st
+        .services
+        .atendimento
+        .fila(
+            q.get("status").map_or("aberto", String::as_str),
+            q.get("setor").map(String::as_str),
+        )
+        .await?;
+    Ok(Json(serde_json::json!(itens)))
+}
+
+/// Recepção/gerência assume o protocolo (aberto/escalado → em_atendimento).
+pub async fn atendimento_aceitar_post(
+    State(st): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    Ok(Json(serde_json::json!(
+        st.services.atendimento.aceitar(id, ator.id).await?
+    )))
+}
+
+/// Encerra o protocolo como resolvido.
+pub async fn atendimento_resolver_post(
+    State(st): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    Ok(Json(serde_json::json!(
+        st.services.atendimento.resolver(id, ator.id).await?
+    )))
+}

@@ -164,6 +164,8 @@ fn settings_teste() -> Settings {
         site_base: "https://site.teste".into(),
         public_api_url: Some("https://api.teste".into()),
         pousada_nome: "Pousada Teste".into(),
+        atendimento_sla_aceite_min: 5,
+        atendimento_horario: "07:00-22:00".into(),
     }
 }
 
