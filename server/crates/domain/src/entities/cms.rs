@@ -28,6 +28,17 @@ pub struct AcomodacaoCms {
     pub atualizado_em: DateTime<Utc>,
 }
 
+/// Seção editável do site institucional (hero, seo, faq, diferenciais…).
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct CmsSecao {
+    pub id: i64,
+    pub secao: String,
+    pub dados: serde_json::Value,
+    pub ordem: i32,
+    pub visivel: bool,
+    pub atualizado_em: DateTime<Utc>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct AcomodacaoMidia {
     pub id: i64,

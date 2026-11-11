@@ -4,8 +4,8 @@ use super::audit;
 use crate::db::map_db_err;
 use async_trait::async_trait;
 use clarituz_domain::entities::{
-    Acomodacao, AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica, MidiaView,
-    NovoLog,
+    Acomodacao, AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica, CmsSecao,
+    MidiaView, NovoLog,
 };
 use clarituz_domain::ports::{CmsRepository, ConteudoCms, NovaMidia};
 use clarituz_domain::DomainError;
@@ -303,6 +303,42 @@ impl CmsRepository for PgCmsRepository {
         audit::gravar(&mut *tx, &log).await?;
         tx.commit().await.map_err(map_db_err)?;
         Ok(())
+    }
+
+    async fn site_secoes(&self) -> Result<Vec<CmsSecao>, DomainError> {
+        sqlx::query_as::<_, CmsSecao>(
+            "SELECT id, secao, dados, ordem, visivel, atualizado_em
+             FROM cms_site ORDER BY ordem, secao",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn site_salvar(
+        &self,
+        secao: &str,
+        dados: &serde_json::Value,
+        log: NovoLog,
+    ) -> Result<CmsSecao, DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        let s = sqlx::query_as::<_, CmsSecao>(
+            "INSERT INTO cms_site (secao, dados)
+             VALUES ($1, $2)
+             ON CONFLICT (secao) DO UPDATE
+                SET dados = $2, atualizado_em = now()
+             RETURNING id, secao, dados, ordem, visivel, atualizado_em",
+        )
+        .bind(secao)
+        .bind(dados)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(map_db_err)?;
+        let mut log = log;
+        log.idtabela = s.id;
+        audit::gravar(&mut *tx, &log).await?;
+        tx.commit().await.map_err(map_db_err)?;
+        Ok(s)
     }
 
     async fn listar_publicadas(&self) -> Result<Vec<AcomodacaoPublica>, DomainError> {

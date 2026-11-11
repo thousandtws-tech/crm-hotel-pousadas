@@ -271,6 +271,15 @@ export class ApiService {
     return this.http.get(`${this.base}/cms/midia/${id}/arquivo`, { responseType: 'blob' });
   }
 
+  // -- CMS site institucional (seções: hero/seo/faq/diferenciais/mapa/contato) ---
+
+  listarSiteSecoes() {
+    return this.get<M.CmsSecao[]>('/cms/site');
+  }
+  salvarSiteSecao(secao: string, dados: M.CmsSecaoDados) {
+    return this.put<M.CmsSecao>(`/cms/site/${secao}`, dados);
+  }
+
   // -- reservas -----------------------------------------------------------------
   listarReservas(f: {
     inicio?: string | null; fim?: string | null; status?: string | null;

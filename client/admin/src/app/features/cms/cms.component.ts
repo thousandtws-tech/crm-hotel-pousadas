@@ -172,6 +172,92 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
         </div>
       }
 
+      <!-- ================= Site institucional (hero / SEO / FAQ) ================= -->
+      <div class="inner-card cms-card">
+        <h3 class="wg-tit"><mat-icon>web</mat-icon> Site institucional</h3>
+        <p class="wg-sub">
+          Conteúdo da página inicial — editável sem mexer em código. Salve cada seção de forma independente.
+        </p>
+
+        <form [formGroup]="siteForm" (ngSubmit)="salvarSite('hero')">
+          <div class="site-secao">
+            <div class="site-secao-head">
+              <span class="site-secao-tit"><mat-icon>crop_landscape</mat-icon> Hero — primeira dobra</span>
+              <button type="submit" class="mc-btn" [disabled]="salvandoSite()">Salvar hero</button>
+            </div>
+            <div class="form-grid">
+              <label class="dl full">
+                <span>Título</span>
+                <input class="input-inn" formControlName="hero_titulo"
+                       placeholder="Ex.: Refúgio à beira-mar na Bahia" />
+              </label>
+              <label class="dl full">
+                <span>Subtítulo</span>
+                <textarea class="input-inn" formControlName="hero_subtitulo" rows="2"
+                          placeholder="Ex.: Acomodações aconchegantes, café da manhã regional e a melhor vista do litoral"></textarea>
+              </label>
+            </div>
+          </div>
+
+          <div class="site-secao">
+            <div class="site-secao-head">
+              <span class="site-secao-tit"><mat-icon>travel_explore</mat-icon> SEO — Google e buscadores</span>
+              <button type="button" class="mc-btn" [disabled]="salvandoSite()" (click)="salvarSite('seo')">
+                Salvar SEO
+              </button>
+            </div>
+            <div class="form-grid">
+              <label class="dl full">
+                <span>Título da página</span>
+                <input class="input-inn" formControlName="seo_titulo"
+                       placeholder="Ex.: Pousada Mar Azul — Suítes à beira-mar" maxlength="60" />
+              </label>
+              <label class="dl full">
+                <span>Descrição</span>
+                <textarea class="input-inn" formControlName="seo_descricao" rows="2" maxlength="160"
+                          placeholder="Aparece abaixo do título nos resultados de busca"></textarea>
+              </label>
+              <label class="dl full">
+                <span>Palavras-chave (separadas por vírgula)</span>
+                <input class="input-inn" formControlName="seo_keywords"
+                       placeholder="pousada, bahia, beira-mar, suíte com vista" />
+              </label>
+            </div>
+          </div>
+        </form>
+
+        <div class="site-secao">
+          <div class="site-secao-head">
+            <span class="site-secao-tit"><mat-icon>quiz</mat-icon> FAQ — dúvidas frequentes</span>
+            <div class="site-secao-acoes">
+              <button type="button" class="mc-btn" (click)="addFaq()">
+                <mat-icon>add</mat-icon> Pergunta
+              </button>
+              <button type="button" class="mc-btn" [disabled]="salvandoSite()" (click)="salvarSite('faq')">
+                Salvar FAQ
+              </button>
+            </div>
+          </div>
+          @if (faq().length === 0) {
+            <p class="site-vazio">Nenhuma pergunta cadastrada — o site não exibe FAQ.</p>
+          }
+          @for (f of faq(); track $index) {
+            <div class="faq-item">
+              <input class="input-inn" [value]="f.pergunta" placeholder="Pergunta"
+                     [attr.aria-label]="'Pergunta ' + ($index + 1)"
+                     (input)="setFaq($index, 'pergunta', $event)" />
+              <textarea class="input-inn" [value]="f.resposta" rows="2" placeholder="Resposta"
+                        [attr.aria-label]="'Resposta ' + ($index + 1)"
+                        (input)="setFaq($index, 'resposta', $event)"></textarea>
+              <button type="button" class="faq-del" [attr.aria-label]="'Remover pergunta ' + ($index + 1)"
+                      (click)="delFaq($index)">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+
       <!-- ================= Lista ================= -->
       <div class="inner-card cms-card" id="tour-tabela">
         <div class="cms-toolbar">
@@ -725,6 +811,34 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
     .dl { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: #5d6d7e; }
     .mc-btn { font-size: 0.78rem; padding: 6px 14px; border: 1px solid #d7e0e6; border-radius: 6px; background: #fff; color: #1a6f8a; cursor: pointer; text-decoration: none; }
     .mc-btn:hover { border-color: #1a6f8a; }
+    .mc-btn:disabled { opacity: 0.55; cursor: default; }
+
+    /* ---------- site institucional ---------- */
+    .site-secao { border-top: 1px solid #edf1f4; padding: 14px 0; }
+    .site-secao-head {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 10px; flex-wrap: wrap; margin-bottom: 10px;
+    }
+    .site-secao-tit {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.85rem; font-weight: 700; color: #054054;
+    }
+    .site-secao-tit mat-icon { font-size: 18px; width: 18px; height: 18px; color: #1a6f8a; }
+    .site-secao-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+    .site-secao-acoes .mc-btn { display: inline-flex; align-items: center; gap: 4px; }
+    .site-secao-acoes .mc-btn mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .site-vazio { margin: 0; font-size: 0.8rem; color: #7d97a1; }
+    .faq-item {
+      display: grid; grid-template-columns: 1fr auto; gap: 8px;
+      align-items: start; margin-bottom: 8px;
+    }
+    .faq-item textarea { grid-column: 1 / 2; resize: vertical; }
+    .faq-del {
+      grid-row: 1 / 3; align-self: center; border: none; background: none;
+      color: #b3402a; cursor: pointer; padding: 6px; border-radius: 6px;
+    }
+    .faq-del:hover { background: rgba(179, 64, 42, 0.08); }
+
     .cms-toolbar {
       display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
       padding: 4px 2px 14px;
@@ -1072,6 +1186,17 @@ export class CmsComponent implements OnInit {
     return svg ? `data:image/svg+xml;utf8,${encodeURIComponent(svg)}` : '';
   });
 
+  // ---------- site institucional (seções hero/seo/faq) ----------
+  protected readonly siteForm = this.fb.nonNullable.group({
+    hero_titulo: [''],
+    hero_subtitulo: [''],
+    seo_titulo: [''],
+    seo_descricao: [''],
+    seo_keywords: [''],
+  });
+  protected readonly faq = signal<{ pergunta: string; resposta: string }[]>([]);
+  protected readonly salvandoSite = signal(false);
+
   private cmsVersion = 0;
   private pmsVersion = 0;
 
@@ -1097,6 +1222,78 @@ export class CmsComponent implements OnInit {
       next: (w) => this.widget.set(w),
       error: () => {},
     });
+    this.carregarSite();
+  }
+
+  private carregarSite(): void {
+    this.api.listarSiteSecoes().subscribe({
+      next: (secoes) => {
+        const por = new Map(secoes.map((s) => [s.secao, s.dados]));
+        const str = (d: Record<string, unknown> | undefined, k: string) =>
+          typeof d?.[k] === 'string' ? (d[k] as string) : '';
+        this.siteForm.patchValue({
+          hero_titulo: str(por.get('hero'), 'titulo'),
+          hero_subtitulo: str(por.get('hero'), 'subtitulo'),
+          seo_titulo: str(por.get('seo'), 'titulo'),
+          seo_descricao: str(por.get('seo'), 'descricao'),
+          seo_keywords: str(por.get('seo'), 'keywords'),
+        });
+        const itens = por.get('faq')?.['itens'];
+        if (Array.isArray(itens)) {
+          this.faq.set(
+            itens
+              .filter((i): i is Record<string, unknown> => typeof i === 'object' && i !== null)
+              .map((i) => ({
+                pergunta: typeof i['pergunta'] === 'string' ? i['pergunta'] : '',
+                resposta: typeof i['resposta'] === 'string' ? i['resposta'] : '',
+              })),
+          );
+        }
+      },
+      error: () => {},
+    });
+  }
+
+  protected salvarSite(secao: 'hero' | 'seo' | 'faq'): void {
+    const v = this.siteForm.getRawValue();
+    const dados: M.CmsSecaoDados =
+      secao === 'hero'
+        ? { titulo: v.hero_titulo.trim(), subtitulo: v.hero_subtitulo.trim() }
+        : secao === 'seo'
+          ? {
+              titulo: v.seo_titulo.trim(),
+              descricao: v.seo_descricao.trim(),
+              keywords: v.seo_keywords.trim(),
+            }
+          : {
+              itens: this.faq()
+                .map((f) => ({ pergunta: f.pergunta.trim(), resposta: f.resposta.trim() }))
+                .filter((f) => f.pergunta && f.resposta),
+            };
+    this.salvandoSite.set(true);
+    this.api.salvarSiteSecao(secao, dados).subscribe({
+      next: () => {
+        this.salvandoSite.set(false);
+        this.notify.ok('Seção salva — o site já reflete a mudança.');
+      },
+      error: (e) => {
+        this.salvandoSite.set(false);
+        this.notify.erroMsg(e?.error?.erro ?? 'Falha ao salvar a seção.');
+      },
+    });
+  }
+
+  protected addFaq(): void {
+    this.faq.update((l) => [...l, { pergunta: '', resposta: '' }]);
+  }
+
+  protected delFaq(i: number): void {
+    this.faq.update((l) => l.filter((_, j) => j !== i));
+  }
+
+  protected setFaq(i: number, campo: 'pergunta' | 'resposta', ev: Event): void {
+    const valor = (ev.target as HTMLInputElement | HTMLTextAreaElement).value;
+    this.faq.update((l) => l.map((f, j) => (j === i ? { ...f, [campo]: valor } : f)));
   }
 
   copiarWidget(texto: string): void {

@@ -30,7 +30,9 @@ pub use busca::ItemBusca;
 pub use cafe::CafePresenca;
 pub use caixa::{CaixaMovimento, CaixaTurno};
 pub use cliente::Cliente;
-pub use cms::{AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica, MidiaView};
+pub use cms::{
+    AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica, CmsSecao, MidiaView,
+};
 pub use compras::{Fornecedor, PedidoCompra, PedidoCompraItem};
 pub use comunicacao::*;
 pub use documento::ClienteDocumento;

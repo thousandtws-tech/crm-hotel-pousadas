@@ -890,6 +890,8 @@ pub fn build(state: AppState) -> Router {
         .route("/notificacoes/{id}", delete(routes::notificacoes::excluir))
         .route("/busca", get(routes::notificacoes::busca))
         // CMS de quartos (admin) — conteúdo editorial, mídia e publicação
+        .route("/cms/site", get(routes::cms::site_secoes))
+        .route("/cms/site/{secao}", put(routes::cms::site_salvar))
         .route("/cms/acomodacoes", get(routes::cms::listar))
         .route("/cms/acomodacoes/{id}", put(routes::cms::salvar))
         .route("/cms/acomodacoes/{id}/status", patch(routes::cms::status))
@@ -923,6 +925,7 @@ pub fn build(state: AppState) -> Router {
         )
         .route("/api/v1/publico/stream", get(routes::cms::publico_stream))
         // site público — só conteúdo `publicado`
+        .route("/api/v1/publico/cms/site", get(routes::cms::publico_site))
         .route(
             "/api/v1/publico/acomodacoes",
             get(routes::cms::publico_listar),

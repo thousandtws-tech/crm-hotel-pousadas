@@ -1,5 +1,3 @@
-//! Café da manhã — quadro diário + presença + histórico de consumo.
-
 use axum::extract::{Path, Query, State};
 use axum::Json;
 use clarituz_application::dto::{HistoricoCafeQuery, QuadroCafeQuery, RegistrarPresencaInput};

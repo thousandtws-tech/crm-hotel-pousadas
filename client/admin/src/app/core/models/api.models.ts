@@ -391,6 +391,18 @@ export interface CmsInput {
   version?: number;
 }
 
+/** Seção editável do site institucional (`cms_site` — dados é jsonb livre). */
+export interface CmsSecao {
+  id: number;
+  secao: string;
+  dados: Record<string, unknown>;
+  ordem: number;
+  visivel: boolean;
+  atualizado_em: string;
+}
+
+export type CmsSecaoDados = Record<string, unknown>;
+
 export interface TarifaHistorico {
   id: number;
   idacomodacao: number;

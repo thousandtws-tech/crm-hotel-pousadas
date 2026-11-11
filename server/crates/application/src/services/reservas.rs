@@ -30,10 +30,10 @@ use clarituz_domain::ports::{
 use clarituz_domain::queries::{ComprovanteResumo, MapaQuarto, ReservaDetalhe, ReservaResumo};
 use clarituz_domain::value_objects::PeriodoEstadia;
 use clarituz_domain::DomainError;
-use std::fmt::Write as _;
 use clarituz_shared::{ids, money, time, Page, PageParams};
 use rust_decimal::Decimal;
 use serde_json::json;
+use std::fmt::Write as _;
 use std::sync::Arc;
 use tracing::instrument;
 

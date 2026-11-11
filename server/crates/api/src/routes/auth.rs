@@ -41,8 +41,6 @@ pub async fn logout(
     Ok(Json(Mensagem::ok("Sessão encerrada.")))
 }
 
-/// `POST /auth/register` — auto-cadastro de administrador pela tela de
-/// login; a conta nasce ativa com acesso total.
 pub async fn register(
     State(s): State<AppState>,
     Json(body): Json<RegistroInput>,

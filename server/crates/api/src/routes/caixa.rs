@@ -1,6 +1,3 @@
-//! Controle de caixa — abertura/fechamento de turno, sangrias, suprimentos
-//! e conferência automática com identificação de quebra.
-
 use crate::error::ApiError as AppError;
 use crate::state::AppState;
 use axum::extract::{Path, Query, State};
@@ -20,7 +17,6 @@ pub struct TurnoAbertoQuery {
     pub idconta_financeira: i64,
 }
 
-/// Turno aberto da gaveta (null quando não há).
 pub async fn turno_aberto(
     State(s): State<AppState>,
     _ator: Ator,

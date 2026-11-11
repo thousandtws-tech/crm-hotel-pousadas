@@ -1,7 +1,7 @@
 //! Port do CMS de quartos — conteúdo editorial e mídia do site público.
 
 use crate::entities::{
-    AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica, NovoLog,
+    AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica, CmsSecao, NovoLog,
 };
 use crate::error::DomainError;
 use async_trait::async_trait;
@@ -76,6 +76,16 @@ pub trait CmsRepository: Send + Sync {
         ordem: &[i64],
         log: NovoLog,
     ) -> Result<(), DomainError>;
+
+    /// Seções editáveis do site (hero/seo/faq…) — admin: todas.
+    async fn site_secoes(&self) -> Result<Vec<CmsSecao>, DomainError>;
+    /// Upsert de uma seção do site por nome.
+    async fn site_salvar(
+        &self,
+        secao: &str,
+        dados: &serde_json::Value,
+        log: NovoLog,
+    ) -> Result<CmsSecao, DomainError>;
 
     /// Cards `publicado` + acomodacao ativa — consumo do site público.
     async fn listar_publicadas(&self) -> Result<Vec<AcomodacaoPublica>, DomainError>;

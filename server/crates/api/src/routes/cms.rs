@@ -157,9 +157,36 @@ pub async fn ordenar_midia(
     Ok(Json(serde_json::json!({"ok": true})))
 }
 
+/// `GET /cms/site` — todas as seções editáveis (admin).
+pub async fn site_secoes(
+    State(s): State<AppState>,
+    _ator: Ator,
+) -> Result<Json<Vec<clarituz_domain::entities::CmsSecao>>, AppError> {
+    Ok(Json(s.services.cms.site_secoes().await?))
+}
+
+/// `PUT /cms/site/{secao}` — upsert de uma seção (hero/seo/faq/diferenciais/mapa/contato).
+pub async fn site_salvar(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(secao): Path<String>,
+    Json(dados): Json<serde_json::Value>,
+) -> Result<Json<clarituz_domain::entities::CmsSecao>, AppError> {
+    Ok(Json(
+        s.services.cms.salvar_secao(&ator, &secao, dados).await?,
+    ))
+}
+
 // ---------------------------------------------------------------------------
 // público — site da pousada
 // ---------------------------------------------------------------------------
+
+/// `GET /publico/cms/site` — seções visíveis do site institucional.
+pub async fn publico_site(
+    State(s): State<AppState>,
+) -> Result<Json<Vec<clarituz_domain::entities::CmsSecao>>, AppError> {
+    Ok(Json(s.services.cms.site_publico().await?))
+}
 
 /// `GET /publico/acomodacoes` — cards `publicado` + acomodação ativa.
 pub async fn publico_listar(

@@ -4,7 +4,7 @@ use crate::actor::Ator;
 use crate::dto::CmsInput;
 use crate::error::AppResult;
 use clarituz_domain::entities::{
-    AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica,
+    AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica, CmsSecao,
 };
 use clarituz_domain::ports::{AcomodacaoRepository, CmsRepository, ConteudoCms, NovaMidia};
 use clarituz_domain::DomainError;
@@ -56,6 +56,46 @@ impl CmsService {
 
     pub async fn listar(&self) -> AppResult<Vec<AcomodacaoCmsView>> {
         Ok(self.cms.listar_com_cms().await?)
+    }
+
+    /// Seções do site institucional — admin vê todas, público só `visivel`.
+    pub async fn site_secoes(&self) -> AppResult<Vec<CmsSecao>> {
+        Ok(self.cms.site_secoes().await?)
+    }
+
+    pub async fn site_publico(&self) -> AppResult<Vec<CmsSecao>> {
+        Ok(self
+            .cms
+            .site_secoes()
+            .await?
+            .into_iter()
+            .filter(|s| s.visivel)
+            .collect())
+    }
+
+    /// Upsert por nome — allowlist fecha o conjunto de seções editáveis.
+    pub async fn salvar_secao(
+        &self,
+        ator: &Ator,
+        secao: &str,
+        dados: serde_json::Value,
+    ) -> AppResult<CmsSecao> {
+        const SECOES: [&str; 6] = ["hero", "seo", "faq", "diferenciais", "mapa", "contato"];
+        let secao = secao.trim().to_lowercase();
+        if !SECOES.contains(&secao.as_str()) {
+            return Err(DomainError::validacao(format!("Seção desconhecida: '{secao}'.")).into());
+        }
+        if !dados.is_object() {
+            return Err(DomainError::validacao("Dados da seção devem ser um objeto.").into());
+        }
+        let log = ator.log(
+            "edição",
+            format!("Atualizou a seção '{secao}' do site"),
+            "cms_site",
+            0,
+            None,
+        );
+        Ok(self.cms.site_salvar(&secao, &dados, log).await?)
     }
 
     /// Cria/atualiza o conteúdo editorial de uma acomodação (admin-only).

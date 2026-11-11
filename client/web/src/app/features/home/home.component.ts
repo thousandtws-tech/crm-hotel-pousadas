@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, effect } from '@angular/core';
 import { HeroComponent } from './components/hero/hero.component';
 import { BookingBarComponent } from '../../shared/components/booking-bar/booking-bar.component';
 import { EssenceComponent } from './components/essence/essence.component';
@@ -7,7 +7,9 @@ import { FeaturedExperiencesComponent } from './components/featured-experiences/
 import { VisualBreakComponent } from './components/visual-break/visual-break.component';
 import { GalleryPreviewComponent } from './components/gallery-preview/gallery-preview.component';
 import { LocationPreviewComponent } from './components/location-preview/location-preview.component';
+import { FaqComponent } from './components/faq/faq.component';
 import { SeoService } from '../../core/services/seo.service';
+import { SiteContentService } from '../../core/services/site-content.service';
 
 @Component({
   selector: 'app-home',
@@ -19,7 +21,8 @@ import { SeoService } from '../../core/services/seo.service';
     FeaturedExperiencesComponent,
     VisualBreakComponent,
     GalleryPreviewComponent,
-    LocationPreviewComponent
+    LocationPreviewComponent,
+    FaqComponent
   ],
   template: `
     <app-hero></app-hero>
@@ -33,10 +36,27 @@ import { SeoService } from '../../core/services/seo.service';
     <app-visual-break></app-visual-break>
     <app-gallery-preview></app-gallery-preview>
     <app-location-preview></app-location-preview>
+    <app-faq></app-faq>
   `
 })
 export class HomeComponent implements OnInit {
   private readonly seoService = inject(SeoService);
+  private readonly site = inject(SiteContentService);
+
+  constructor() {
+    // SEO editável pelo CMS sobrescreve os valores padrão quando publicado.
+    effect(() => {
+      const seo = this.site.seo();
+      if (!seo) return;
+      this.seoService.updateSeo({
+        title: seo.titulo || 'Pousada Espírito do Mar | Hospedagem no Peró, Cabo Frio',
+        description:
+          seo.descricao
+          || 'Conheça a Pousada Espírito do Mar, no Peró, em Cabo Frio. Explore as acomodações, conheça a estrutura e consulte a disponibilidade.',
+        url: 'https://pousadaespiritodomar.com.br/',
+      });
+    });
+  }
 
   public ngOnInit(): void {
     this.seoService.updateSeo({
@@ -45,5 +65,6 @@ export class HomeComponent implements OnInit {
       url: 'https://pousadaespiritodomar.com.br/'
     });
     this.seoService.setHotelStructuredData();
+    this.site.carregar();
   }
 }

@@ -38,6 +38,7 @@ function casaRota(url: string, rota: string): boolean {
 
 const NAV: NavItem[] = [
   { rota: '/dashboard', rotulo: 'Home', icone: 'grid_view' },
+  { rota: '/recepcao', rotulo: 'Recepção', icone: 'concierge' },
   { rota: '/reservas', rotulo: 'Reservas', icone: 'calendar_month' },
   { rota: '/clientes', rotulo: 'Clientes', icone: 'person' },
   { rota: '/acomodacoes', rotulo: 'Acomodações', icone: 'hotel' },
