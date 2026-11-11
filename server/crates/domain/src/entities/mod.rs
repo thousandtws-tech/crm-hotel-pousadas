@@ -55,5 +55,5 @@ pub use pagamento::{
 pub use pdv::{PdvComanda, PdvComandaItem, PdvComissao, PdvGarcom, PdvMesa};
 pub use preditivo::*;
 pub use reserva::{
-    Acompanhante, AdicionalConsumo, Consumo, Fnrh, ItemConsumido, Reembolso, Reserva,
+    Acompanhante, AdicionalConsumo, Bloqueio, Consumo, Fnrh, ItemConsumido, Reembolso, Reserva,
 };

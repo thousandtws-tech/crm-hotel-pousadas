@@ -13,7 +13,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { ApiService, num } from '@core/services/api.service';
-import { Acomodacao, ReservaResumo, StatusReserva } from '@core/models/api.models';
+import { Acomodacao, Bloqueio, MapaQuarto, ReservaResumo, StatusReserva } from '@core/models/api.models';
 import { Confirm } from '@core/services/confirm.service';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
@@ -98,6 +98,9 @@ const JANELA_DIAS = 14;
             </mat-button-toggle>
             <mat-button-toggle value="cal">
               <mat-icon>calendar_view_week</mat-icon> Calendário
+            </mat-button-toggle>
+            <mat-button-toggle value="mapa">
+              <mat-icon>domain</mat-icon> Mapa
             </mat-button-toggle>
           </mat-button-toggle-group>
 
@@ -404,8 +407,74 @@ const JANELA_DIAS = 14;
             </div>
           </div>
         }
+
+        @if (visao() === 'mapa') {
+          <div class="mapa-wrap">
+            <div class="mapa-legenda">
+              <span><i class="mq mq-livre"></i> Livre</span>
+              <span><i class="mq mq-ocup"></i> Ocupado</span>
+              <span><i class="mq mq-pend"></i> Chega hoje</span>
+              <span><i class="mq mq-bloq"></i> Bloqueado</span>
+              <span><i class="mq mq-limp"></i> Limpeza pendente</span>
+              <span><i class="mq mq-man"></i> Manutenção</span>
+            </div>
+            @for (f of andares(); track f.andar) {
+              <div class="mapa-andar">
+                <h3 class="mapa-andar-tit">{{ f.andar === 0 ? 'Térreo' : f.andar + 'º andar' }} <small>({{ f.quartos.length }} quartos)</small></h3>
+                <div class="mapa-grid">
+                  @for (a of f.quartos; track a.id) {
+                    <div class="mapa-card" [class]="'mapa-card ' + statusQuarto(a)" [style.border-left-color]="a.cor || '#8fa3ab'">
+                      <div class="mc-topo">
+                        <strong>{{ a.numero }}</strong>
+                        <span class="mc-nome">{{ a.nome }}</span>
+                      </div>
+                      <div class="mc-tipo">{{ a.tipo ?? '—' }}</div>
+                      <div class="mc-status">
+                        @if (a.bloqueado) { <span class="mc-tag tg-bloq">Bloqueado</span> }
+                        @else if (a.status_hoje === 'i') { <span class="mc-tag tg-ocup">Ocupado</span> }
+                        @else if (a.status_hoje === 'p') { <span class="mc-tag tg-pend">Chega hoje</span> }
+                        @else { <span class="mc-tag tg-livre">Livre</span> }
+                        @if (a.limpeza_pendente > 0) { <span class="mc-tag tg-limp" title="Tarefas de limpeza pendentes">🧹 {{ a.limpeza_pendente }}</span> }
+                        @if (a.manut_aberta > 0) { <span class="mc-tag tg-man" title="OS de manutenção abertas">🔧 {{ a.manut_aberta }}</span> }
+                      </div>
+                      <div class="mc-acoes">
+                        @if (a.idreserva_hoje) {
+                          <a class="mc-btn" [routerLink]="['/reservas', a.idreserva_hoje]">Reserva #{{ a.idreserva_hoje }}</a>
+                        }
+                        @if (bloqueioDe(a.id); as b) {
+                          <button class="mc-btn" (click)="desbloquear(b.id)">Desbloquear</button>
+                        } @else {
+                          <button class="mc-btn" (click)="abrirBloqueio(a)">Bloquear</button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            } @empty {
+              <p class="tape-vazio">Nenhuma acomodação ativa cadastrada.</p>
+            }
+          </div>
+        }
       </div>
     </div>
+
+    @if (bloqueioAlvo(); as alvo) {
+      <div class="ovl" (click)="bloqueioAlvo.set(null)" (keydown.escape)="bloqueioAlvo.set(null)">
+        <div class="dlg" role="dialog" aria-modal="true" aria-label="Bloquear acomodação">
+          <h3>Bloquear {{ alvo.nome }} — Nº {{ alvo.numero }}</h3>
+          <label class="dl">Início <input type="date" class="inp" [value]="bIni" (input)="bIni=$any($event.target).value"></label>
+          <label class="dl">Fim <input type="date" class="inp" [value]="bFim" (input)="bFim=$any($event.target).value"></label>
+          <label class="dl">Motivo <input type="text" class="inp" placeholder="reforma, uso próprio…" [value]="bMot" (input)="bMot=$any($event.target).value"></label>
+          <div class="dlg-acoes">
+            <button class="mc-btn" (click)="bloqueioAlvo.set(null)">Cancelar</button>
+            <button class="mc-btn pri" [disabled]="salvandoBloq()" (click)="confirmarBloqueio()">
+              {{ salvandoBloq() ? 'Bloqueando…' : 'Confirmar bloqueio' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
 
     @if (modalNova()) {
       <app-nova-reserva-dialog
@@ -486,6 +555,36 @@ const JANELA_DIAS = 14;
       display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
       margin-bottom: 14px; padding: 4px 2px;
     }
+    /* ---------- mapa por andar ---------- */
+    .mapa-legenda{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;font-size:.78rem;color:#5d6d7e}
+    .mq{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+    .mq-livre{background:#2e9e5b}.mq-ocup{background:#c0392b}.mq-pend{background:#d4a017}
+    .mq-bloq{background:#555}.mq-limp{background:#7a5fb5}.mq-man{background:#e67e22}
+    .mapa-andar-tit{font-size:1rem;color:#054054;margin:16px 0 8px}
+    .mapa-andar-tit small{color:#7d97a1;font-weight:400}
+    .mapa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+    .mapa-card{background:#fff;border:1px solid #e3eaef;border-left:5px solid;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+    .mapa-card.sq-bloq{background:#f2f2f2;opacity:.9}
+    .mc-topo{display:flex;align-items:baseline;gap:8px}
+    .mc-topo strong{font-size:1.1rem;color:#054054}
+    .mc-nome{font-size:.82rem;color:#5d6d7e}
+    .mc-tipo{font-size:.72rem;color:#8fa3ab;text-transform:uppercase;letter-spacing:.04em}
+    .mc-status{display:flex;gap:6px;flex-wrap:wrap}
+    .mc-tag{font-size:.68rem;padding:2px 8px;border-radius:10px;font-weight:600}
+    .tg-livre{background:#e4f6e8;color:#146c2e}.tg-ocup{background:#fde3e3;color:#a32}
+    .tg-pend{background:#fdf3d7;color:#8a6200}.tg-bloq{background:#e4e4e4;color:#444}
+    .tg-limp{background:#efe9fa;color:#5b3fa0}.tg-man{background:#fdeadb;color:#b2560a}
+    .mc-acoes{display:flex;gap:8px;margin-top:2px}
+    .mc-btn{font-size:.75rem;padding:4px 10px;border:1px solid #d7e0e6;border-radius:6px;background:#fff;color:#1a6f8a;cursor:pointer;text-decoration:none}
+    .mc-btn:hover{border-color:#1a6f8a}
+    .mc-btn.pri{background:#1a6f8a;color:#fff;border-color:#1a6f8a}
+    .ovl{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:50}
+    .dlg{background:#fff;border-radius:12px;padding:20px;min-width:320px;display:flex;flex-direction:column;gap:10px}
+    .dlg h3{margin:0;color:#054054;font-size:1.05rem}
+    .dl{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:#5d6d7e}
+    .inp{border:1px solid #d7e0e6;border-radius:6px;padding:7px 9px;font-size:.85rem}
+    .dlg-acoes{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+
     .rs-visao {
       flex-shrink: 0;
       --mat-button-toggle-selected-state-background-color: #1a6f8a;
@@ -758,7 +857,25 @@ export class ReservasComponent implements OnInit {
   });
 
   // ---- mapa de ocupação -------------------------------------------------------
-  protected readonly visao = signal<'lista' | 'cal'>('lista');
+  protected readonly visao = signal<'lista' | 'cal' | 'mapa'>('lista');
+  protected readonly mapa = signal<MapaQuarto[]>([]);
+  protected readonly bloqueios = signal<Bloqueio[]>([]);
+  protected readonly bloqueioAlvo = signal<MapaQuarto | null>(null);
+  protected readonly salvandoBloq = signal(false);
+  protected bIni = '';
+  protected bFim = '';
+  protected bMot = '';
+  protected readonly andares = computed(() => {
+    const por = new Map<number, MapaQuarto[]>();
+    for (const q of this.mapa()) {
+      const arr = por.get(q.andar) ?? [];
+      arr.push(q);
+      por.set(q.andar, arr);
+    }
+    return [...por.entries()]
+      .sort((a, b) => b[0] - a[0])
+      .map(([andar, quartos]) => ({ andar, quartos }));
+  });
   protected readonly janelaInicio = signal<Date>(this.hoje());
   protected readonly dias = computed(() =>
     Array.from({ length: JANELA_DIAS }, (_, i) => this.addDias(this.janelaInicio(), i)),
@@ -827,6 +944,7 @@ export class ReservasComponent implements OnInit {
         this.carregar();
         this.carregarKpis();
         if (this.visao() === 'cal') this.carregarEventos();
+        if (this.visao() === 'mapa') this.carregarMapa();
       }
     });
     this.fBusca.valueChanges
@@ -950,6 +1068,51 @@ export class ReservasComponent implements OnInit {
   }
 
   // ---- KPIs / eventos ----------------------------------------------------------
+
+  // ---------- mapa por andar + bloqueio ----------
+  carregarMapa(): void {
+    this.api.mapaQuartos().subscribe({ next: (m) => this.mapa.set(m), error: () => undefined });
+    this.api.bloqueios().subscribe({ next: (b) => this.bloqueios.set(b), error: () => undefined });
+  }
+
+  statusQuarto(a: MapaQuarto): string {
+    if (a.bloqueado) return 'sq-bloq';
+    if (a.status_hoje === 'i') return 'sq-ocup';
+    if (a.status_hoje === 'p') return 'sq-pend';
+    return 'sq-livre';
+  }
+
+  bloqueioDe(idacomodacao: number): Bloqueio | undefined {
+    const hoje = new Date().toISOString().slice(0, 10);
+    return this.bloqueios().find(
+      (b) => b.idacomodacao === idacomodacao && b.inicio <= hoje && b.fim >= hoje,
+    );
+  }
+
+  abrirBloqueio(a: MapaQuarto): void {
+    this.bIni = '';
+    this.bFim = '';
+    this.bMot = '';
+    this.bloqueioAlvo.set(a);
+  }
+
+  confirmarBloqueio(): void {
+    const a = this.bloqueioAlvo();
+    if (!a || !this.bIni || !this.bFim || this.bMot.trim().length < 3) return;
+    this.salvandoBloq.set(true);
+    this.api.bloquear(a.id, this.bIni, this.bFim, this.bMot.trim()).subscribe({
+      next: () => {
+        this.salvandoBloq.set(false);
+        this.bloqueioAlvo.set(null);
+        this.carregarMapa();
+      },
+      error: () => this.salvandoBloq.set(false),
+    });
+  }
+
+  desbloquear(id: number): void {
+    this.api.desbloquear(id).subscribe({ next: () => this.carregarMapa(), error: () => undefined });
+  }
 
   carregarKpis(): void {
     this.api.eventosReserva(this.hojeIso, this.hojeIso).subscribe({

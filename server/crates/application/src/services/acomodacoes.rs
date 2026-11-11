@@ -143,6 +143,7 @@ impl AcomodacaoService {
             descricao: nova.descricao.clone(),
             cor: Some(nova.cor.clone()),
             version,
+            andar: Some(nova.andar),
         };
 
         let log = ator.log(
@@ -296,6 +297,7 @@ impl AcomodacaoService {
             idtipo_acomodacao: input.idtipo_acomodacao,
             nome,
             numero: input.numero,
+            andar: input.andar.unwrap_or(0),
             valor: money::round2(valor),
             capacidade: input.capacidade,
             descricao,

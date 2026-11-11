@@ -191,3 +191,17 @@ pub struct Fnrh {
     pub emitida_por: Option<i64>,
     pub emitida_em: DateTime<Utc>,
 }
+
+/// Bloqueio operacional de acomodação por período — manutenção programada,
+/// uso da casa, fechamento sazonal. Remove a unidade da disponibilidade sem
+/// criar reserva (não gera conta, não aparece como hóspede).
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct Bloqueio {
+    pub id: i64,
+    pub idacomodacao: i64,
+    pub inicio: NaiveDate,
+    pub fim: NaiveDate,
+    pub motivo: String,
+    pub criado_por: Option<i64>,
+    pub criado_em: DateTime<Utc>,
+}

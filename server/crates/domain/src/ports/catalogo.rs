@@ -45,6 +45,8 @@ pub struct NovaAcomodacao {
     pub idtipo_acomodacao: Option<i64>,
     pub nome: String,
     pub numero: i32,
+    /// Pavimento — 0 = térreo.
+    pub andar: i32,
     pub valor: Decimal,
     pub capacidade: i32,
     pub descricao: Option<String>,
@@ -64,6 +66,7 @@ pub struct AtualizaAcomodacao {
     pub cor: Option<String>,
     /// Concorrência otimista — divergência → 409.
     pub version: Option<i64>,
+    pub andar: Option<i32>,
 }
 
 #[async_trait]

@@ -338,3 +338,49 @@ pub async fn emitir_fnrh(
     let f = s.services.reservas.emitir_fnrh(&ator, id, body).await?;
     Ok((StatusCode::CREATED, Json(f)))
 }
+
+// ---------------------------------------------------------------------------
+// Mapa por andar + bloqueio formal
+// ---------------------------------------------------------------------------
+
+/// GET /reservas/mapa — visão por pavimento: ocupação, bloqueio, limpeza e manutenção.
+pub async fn mapa_quartos(State(s): State<AppState>, _ator: Ator) -> Result<Json<Value>, AppError> {
+    Ok(Json(json!(s.services.reservas.mapa_quartos().await?)))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BloqueioInput {
+    pub inicio: NaiveDate,
+    pub fim: NaiveDate,
+    pub motivo: String,
+}
+
+/// POST /acomodacoes/{id}/bloqueio — tira a unidade de venda no período.
+pub async fn bloquear(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(idacomodacao): Path<i64>,
+    Json(b): Json<BloqueioInput>,
+) -> Result<Json<Value>, AppError> {
+    Ok(Json(json!(
+        s.services
+            .reservas
+            .bloquear(&ator, idacomodacao, b.inicio, b.fim, &b.motivo)
+            .await?
+    )))
+}
+
+/// GET /bloqueios — bloqueios vigentes e futuros.
+pub async fn bloqueios(State(s): State<AppState>, _ator: Ator) -> Result<Json<Value>, AppError> {
+    Ok(Json(json!(s.services.reservas.bloqueios().await?)))
+}
+
+/// DELETE /bloqueios/{id} — libera a unidade.
+pub async fn desbloquear(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<StatusCode, AppError> {
+    s.services.reservas.desbloquear(&ator, id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}

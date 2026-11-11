@@ -4,11 +4,14 @@
 //! entidade + consumo + ledger + auditoria, tudo ou nada.
 
 use crate::entities::{
-    Acompanhante, AdicionalConsumo, Consumo, Fnrh, ItemConsumido, NovoLog, Reembolso, Reserva,
+    Acompanhante, AdicionalConsumo, Bloqueio, Consumo, Fnrh, ItemConsumido, NovoLog, Reembolso,
+    Reserva,
 };
 use crate::enums::StatusReserva;
 use crate::error::DomainError;
-use crate::queries::{AcomodacaoDisponivel, ComprovanteResumo, ReservaDetalhe, ReservaResumo};
+use crate::queries::{
+    AcomodacaoDisponivel, ComprovanteResumo, MapaQuarto, ReservaDetalhe, ReservaResumo,
+};
 use crate::value_objects::PeriodoEstadia;
 use async_trait::async_trait;
 use chrono::{DateTime, NaiveDate, Utc};
@@ -108,6 +111,22 @@ pub trait ReservaRepository: Send + Sync {
     /// Postgres (`daterange` + GiST) rejeita períodos sobrepostos com
     /// SQLSTATE 23P01, que a implementação traduz para `Conflito`.
     async fn criar(&self, nova: &NovaReserva, log: NovoLog) -> Result<Reserva, DomainError>;
+
+    /// Mapa por andar — uma linha por acomodação ativa com ocupação de
+    /// hoje, bloqueio vigente e pendências de limpeza/manutenção.
+    async fn mapa_quartos(&self) -> Result<Vec<MapaQuarto>, DomainError>;
+
+    /// Bloqueio formal — tira a unidade de toda disponibilidade.
+    async fn bloqueio_criar(
+        &self,
+        idacomodacao: i64,
+        inicio: NaiveDate,
+        fim: NaiveDate,
+        motivo: &str,
+        criado_por: i64,
+    ) -> Result<Bloqueio, DomainError>;
+    async fn bloqueio_listar(&self) -> Result<Vec<Bloqueio>, DomainError>;
+    async fn bloqueio_remover(&self, id: i64) -> Result<(), DomainError>;
 
     /// Check-in: trava a reserva `FOR UPDATE`, valida a transição
     /// `pendente → iniciada`, atribui o quarto físico livre e audita.

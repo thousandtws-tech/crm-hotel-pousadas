@@ -187,6 +187,17 @@ pub fn build(state: AppState) -> Router {
             get(routes::reservas::disponibilidade),
         )
         .route("/reservas/eventos", get(routes::reservas::eventos))
+        // Mapa por andar + bloqueio formal
+        .route("/reservas/mapa", get(routes::reservas::mapa_quartos))
+        .route("/bloqueios", get(routes::reservas::bloqueios))
+        .route(
+            "/bloqueios/{id}",
+            axum::routing::delete(routes::reservas::desbloquear),
+        )
+        .route(
+            "/acomodacoes/{id}/bloqueio",
+            post(routes::reservas::bloquear),
+        )
         .route(
             "/reservas/{id}",
             get(routes::reservas::buscar_reserva).delete(routes::reservas::remover_reserva),

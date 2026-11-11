@@ -251,6 +251,7 @@ export interface Acomodacao {
   idtipo_acomodacao: number | null;
   nome: string;
   numero: number;
+  andar: number;
   valor: string;
   capacidade: number;
   descricao: string | null;
@@ -265,6 +266,7 @@ export interface AcomodacaoInput {
   idtipo_acomodacao?: number | null;
   nome: string;
   numero: number;
+  andar?: number;
   valor?: string | number | null;
   capacidade: number;
   descricao?: string | null;
@@ -476,6 +478,31 @@ export interface Atendimento {
   atribuido_em: string | null;
   escalado_em: string | null;
   resolvido_em: string | null;
+}
+
+// -- mapa por andar + bloqueio ---------------------------------------------------
+export interface MapaQuarto {
+  id: number;
+  nome: string;
+  numero: number;
+  andar: number;
+  cor: string;
+  tipo: string | null;
+  idreserva_hoje: number | null;
+  status_hoje: string | null;
+  bloqueado: boolean;
+  limpeza_pendente: number;
+  manut_aberta: number;
+}
+
+export interface Bloqueio {
+  id: number;
+  idacomodacao: number;
+  inicio: string;
+  fim: string;
+  motivo: string;
+  criado_por: number | null;
+  criado_em: string;
 }
 
 // -- reservas ------------------------------------------------------------------

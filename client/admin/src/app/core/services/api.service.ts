@@ -974,6 +974,19 @@ export class ApiService {
   autorizacaoMenor(idreserva: number, documento: string) {
     return this.post<void>(`/reservas/${idreserva}/autorizacao-menor`, { documento });
   }
+  // -- Mapa por andar + bloqueio ----------------------------------------------
+  mapaQuartos() {
+    return this.get<M.MapaQuarto[]>('/reservas/mapa');
+  }
+  bloqueios() {
+    return this.get<M.Bloqueio[]>('/bloqueios');
+  }
+  bloquear(idacomodacao: number, inicio: string, fim: string, motivo: string) {
+    return this.post<M.Bloqueio>(`/acomodacoes/${idacomodacao}/bloqueio`, { inicio, fim, motivo });
+  }
+  desbloquear(id: number) {
+    return this.del<void>(`/bloqueios/${id}`);
+  }
   // -- Atendimento (roteamento) ------------------------------------------------
   atendimentos(status?: string, setor?: string) {
     return this.get<M.Atendimento[]>('/atendimentos', { status, setor });

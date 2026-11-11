@@ -216,6 +216,8 @@ pub struct AcomodacaoInput {
     pub cor: Option<String>,
     /// Concorrência otimista — só em PUT.
     pub version: Option<i64>,
+    /// Pavimento do mapa de ocupação (0 = térreo).
+    pub andar: Option<i32>,
 }
 
 #[derive(Debug, Deserialize)]

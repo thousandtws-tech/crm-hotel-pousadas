@@ -449,6 +449,13 @@ type Modal = 'tipos' | 'quarto' | null;
                     }
                   </div>
                   <div class="campo">
+                    <label class="lbl" for="ac-andar">Andar</label>
+                    <input
+                      id="ac-andar" class="input-inn" type="number" min="0" max="99"
+                      formControlName="andar" placeholder="0 = térreo"
+                    />
+                  </div>
+                  <div class="campo">
                     <label class="lbl" for="ac-tipo">Tipo <small class="req">*</small></label>
                     <mat-form-field
                       appearance="outline"
@@ -1130,6 +1137,7 @@ export class AcomodacoesComponent implements OnInit {
   protected readonly form = this.fb.nonNullable.group({
     nome: ['', Validators.required],
     numero: [0, [Validators.required, Validators.min(0)]],
+    andar: [0, [Validators.min(0), Validators.max(99)]],
     idtipo_acomodacao: [null as number | null, Validators.required],
     valor: [null as number | null],
     capacidade: [1, [Validators.required, Validators.min(1)]],
@@ -1238,6 +1246,7 @@ export class AcomodacoesComponent implements OnInit {
       this.form.patchValue({
         nome: a.nome,
         numero: a.numero,
+        andar: a.andar ?? 0,
         idtipo_acomodacao: a.idtipo_acomodacao,
         valor: a.valor !== null ? Number(a.valor) : null,
         capacidade: a.capacidade,
@@ -1248,6 +1257,7 @@ export class AcomodacoesComponent implements OnInit {
       this.form.reset({
         nome: '',
         numero: 0,
+        andar: 0,
         idtipo_acomodacao: null,
         valor: null,
         capacidade: 1,
@@ -1278,6 +1288,7 @@ export class AcomodacoesComponent implements OnInit {
     const input: AcomodacaoInput = {
       nome: v.nome,
       numero: v.numero,
+      andar: v.andar,
       idtipo_acomodacao: v.idtipo_acomodacao,
       valor: v.valor,
       capacidade: v.capacidade,

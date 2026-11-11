@@ -145,7 +145,7 @@ impl PgAcomodacaoRepository {
     }
 }
 
-const ACOMODACAO_COLS: &str = "id, idtipo_acomodacao, nome, numero, valor, capacidade,
+const ACOMODACAO_COLS: &str = "id, idtipo_acomodacao, nome, numero, andar, valor, capacidade,
     descricao, cor, ativo, version, criado_em, atualizado_em";
 
 #[async_trait]
@@ -225,13 +225,14 @@ impl AcomodacaoRepository for PgAcomodacaoRepository {
 
         let a = sqlx::query_as::<_, Acomodacao>(&format!(
             "INSERT INTO acomodacao
-                (idtipo_acomodacao, nome, numero, valor, capacidade, descricao, cor)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
+                (idtipo_acomodacao, nome, numero, andar, valor, capacidade, descricao, cor)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              RETURNING {ACOMODACAO_COLS}"
         ))
         .bind(nova.idtipo_acomodacao)
         .bind(&nova.nome)
         .bind(nova.numero)
+        .bind(nova.andar)
         .bind(nova.valor)
         .bind(nova.capacidade)
         .bind(&nova.descricao)
@@ -295,6 +296,7 @@ impl AcomodacaoRepository for PgAcomodacaoRepository {
                 capacidade = COALESCE($6, capacidade),
                 descricao = COALESCE($7, descricao),
                 cor = COALESCE($8, cor),
+                andar = COALESCE($10, andar),
                 atualizado_em = now()
              WHERE id = $1 AND ($9::bigint IS NULL OR version = $9)
              RETURNING {ACOMODACAO_COLS}"
@@ -308,6 +310,7 @@ impl AcomodacaoRepository for PgAcomodacaoRepository {
         .bind(&d.descricao)
         .bind(&d.cor)
         .bind(d.version)
+        .bind(d.andar)
         .fetch_optional(&mut *tx)
         .await
         .map_err(map_db_err)?

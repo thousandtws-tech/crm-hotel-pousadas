@@ -18,6 +18,8 @@ pub struct Acomodacao {
     pub idtipo_acomodacao: Option<i64>,
     pub nome: String,
     pub numero: i32,
+    /// Pavimento — agrupa o mapa de ocupação (0 = térreo/recepção).
+    pub andar: i32,
     pub valor: Decimal,
     pub capacidade: i32,
     pub descricao: Option<String>,

@@ -3,7 +3,8 @@ use crate::db::map_db_err;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use clarituz_domain::entities::{
-    Acompanhante, AdicionalConsumo, Consumo, Fnrh, ItemConsumido, NovoLog, Reembolso, Reserva,
+    Acompanhante, AdicionalConsumo, Bloqueio, Consumo, Fnrh, ItemConsumido, NovoLog, Reembolso,
+    Reserva,
 };
 use clarituz_domain::enums::StatusConsumo;
 use clarituz_domain::ports::{
@@ -11,7 +12,8 @@ use clarituz_domain::ports::{
     NovoAcompanhante, NovoAdicional, NovoItemConsumido, ReservaRepository, ResultadoCancelamento,
 };
 use clarituz_domain::queries::{
-    AcomodacaoDisponivel, ComprovanteResumo, ConsumoResumo, ReservaDetalhe, ReservaResumo,
+    AcomodacaoDisponivel, ComprovanteResumo, ConsumoResumo, MapaQuarto, ReservaDetalhe,
+    ReservaResumo,
 };
 use clarituz_domain::value_objects::PeriodoEstadia;
 use clarituz_domain::DomainError;
@@ -184,6 +186,11 @@ impl ReservaRepository for PgReservaRepository {
                      AND r.periodo && daterange($1, $2, '[]')
                      AND ($4::bigint IS NULL OR r.id != $4)
                )
+               AND NOT EXISTS (
+                   SELECT 1 FROM bloqueio b
+                   WHERE b.idacomodacao = a.id
+                     AND daterange(b.inicio, b.fim, '[]') && daterange($1, $2, '[]')
+               )
              ORDER BY a.nome, a.numero",
         )
         .bind(periodo.entrada)
@@ -193,6 +200,82 @@ impl ReservaRepository for PgReservaRepository {
         .fetch_all(&self.pool)
         .await
         .map_err(map_db_err)
+    }
+
+    async fn mapa_quartos(&self) -> Result<Vec<MapaQuarto>, DomainError> {
+        // Uma linha por acomodação física ativa — ocupação por reserva,
+        // limpeza/manutenção via quartos vinculados.
+        sqlx::query_as::<_, MapaQuarto>(
+            "SELECT a.id, a.nome, a.numero, a.andar, a.cor,
+                    ta.nome AS tipo,
+                    (SELECT r.id FROM reserva r
+                      WHERE r.idacomodacao = a.id AND r.status IN ('p','i')
+                        AND r.periodo && daterange(CURRENT_DATE, CURRENT_DATE + 1, '[]')
+                      LIMIT 1) AS idreserva_hoje,
+                    (SELECT r.status::text FROM reserva r
+                      WHERE r.idacomodacao = a.id AND r.status IN ('p','i')
+                        AND r.periodo && daterange(CURRENT_DATE, CURRENT_DATE + 1, '[]')
+                      LIMIT 1) AS status_hoje,
+                    EXISTS(SELECT 1 FROM bloqueio b
+                      WHERE b.idacomodacao = a.id
+                        AND daterange(b.inicio, b.fim, '[]') @> CURRENT_DATE) AS bloqueado,
+                    (SELECT count(*) FROM quarto q
+                      JOIN governanca_tarefa g ON g.idquarto = q.id
+                       AND g.data = CURRENT_DATE
+                       AND g.status IN ('pendente','em_andamento')
+                      WHERE q.idacomodacao = a.id) AS limpeza_pendente,
+                    (SELECT count(*) FROM quarto q
+                      JOIN manutencao_ordem m ON m.idquarto = q.id
+                       AND m.status IN ('aberta','em_execucao','aguardando_peca')
+                      WHERE q.idacomodacao = a.id) AS manut_aberta
+             FROM acomodacao a
+             LEFT JOIN tipo_acomodacao ta ON ta.id = a.idtipo_acomodacao
+             WHERE a.ativo
+             ORDER BY a.andar, a.numero",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn bloqueio_criar(
+        &self,
+        idacomodacao: i64,
+        inicio: chrono::NaiveDate,
+        fim: chrono::NaiveDate,
+        motivo: &str,
+        criado_por: i64,
+    ) -> Result<Bloqueio, DomainError> {
+        sqlx::query_as::<_, Bloqueio>(
+            "INSERT INTO bloqueio (idacomodacao, inicio, fim, motivo, criado_por)
+             VALUES ($1, $2, $3, $4, $5) RETURNING *",
+        )
+        .bind(idacomodacao)
+        .bind(inicio)
+        .bind(fim)
+        .bind(motivo)
+        .bind(criado_por)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn bloqueio_listar(&self) -> Result<Vec<Bloqueio>, DomainError> {
+        sqlx::query_as::<_, Bloqueio>(
+            "SELECT * FROM bloqueio WHERE fim >= CURRENT_DATE ORDER BY inicio, idacomodacao",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn bloqueio_remover(&self, id: i64) -> Result<(), DomainError> {
+        sqlx::query("DELETE FROM bloqueio WHERE id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+        Ok(())
     }
 
     async fn criar(&self, nova: &NovaReserva, log: NovoLog) -> Result<Reserva, DomainError> {

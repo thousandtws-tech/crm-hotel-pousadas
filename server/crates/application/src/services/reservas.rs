@@ -13,9 +13,10 @@ use crate::dto::{
 };
 use crate::error::AppResult;
 use crate::services::AuthService;
-use chrono::{Duration, Utc};
+use chrono::{Duration, NaiveDate, Utc};
 use clarituz_domain::entities::{
-    Acompanhante, AdicionalConsumo, Cliente, Consumo, Fnrh, ItemConsumido, NovoLog, Reserva,
+    Acompanhante, AdicionalConsumo, Bloqueio, Cliente, Consumo, Fnrh, ItemConsumido, NovoLog,
+    Reserva,
 };
 use clarituz_domain::enums::StatusReserva;
 use clarituz_domain::events::{Aviso, TipoAviso};
@@ -26,7 +27,7 @@ use clarituz_domain::ports::{
     NovaFnrh, NovaReserva, NovoAcompanhante, NovoAdicional, NovoClienteSite, NovoItemConsumido,
     ReservaRepository,
 };
-use clarituz_domain::queries::{ComprovanteResumo, ReservaDetalhe, ReservaResumo};
+use clarituz_domain::queries::{ComprovanteResumo, MapaQuarto, ReservaDetalhe, ReservaResumo};
 use clarituz_domain::value_objects::PeriodoEstadia;
 use clarituz_domain::DomainError;
 use clarituz_shared::{ids, money, time, Page, PageParams};
@@ -1396,6 +1397,45 @@ impl ReservaService {
             None,
         );
         Ok(self.reservas.remover(id, log).await?)
+    }
+
+    // ------------------------------------------------------------------
+    // mapa por andar + bloqueio formal
+    // ------------------------------------------------------------------
+
+    /// Mapa de ocupação por pavimento — recepção e governança leem a
+    /// mesma foto: reserva do dia, bloqueio, limpeza e manutenção.
+    pub async fn mapa_quartos(&self) -> AppResult<Vec<MapaQuarto>> {
+        Ok(self.reservas.mapa_quartos().await?)
+    }
+
+    /// Bloqueio formal — tira a unidade de toda disponibilidade (motor,
+    /// recepção, pré-reserva WhatsApp). Valida período e motivo.
+    pub async fn bloquear(
+        &self,
+        ator: &Ator,
+        idacomodacao: i64,
+        inicio: NaiveDate,
+        fim: NaiveDate,
+        motivo: &str,
+    ) -> AppResult<Bloqueio> {
+        let motivo = motivo.trim();
+        if motivo.len() < 3 {
+            return Err(DomainError::validacao("Informe o motivo do bloqueio.").into());
+        }
+        PeriodoEstadia::new(inicio, fim)?;
+        Ok(self
+            .reservas
+            .bloqueio_criar(idacomodacao, inicio, fim, motivo, ator.id)
+            .await?)
+    }
+
+    pub async fn bloqueios(&self) -> AppResult<Vec<Bloqueio>> {
+        Ok(self.reservas.bloqueio_listar().await?)
+    }
+
+    pub async fn desbloquear(&self, _ator: &Ator, id: i64) -> AppResult<()> {
+        Ok(self.reservas.bloqueio_remover(id).await?)
     }
 }
 
