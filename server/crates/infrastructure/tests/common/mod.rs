@@ -186,5 +186,6 @@ pub fn input_reserva(c: &Cenario, entrada: NaiveDate, saida: NaiveDate) -> Reser
         early_checkin: None,
         late_checkout: None,
         idoperadora: None,
+        idcontrato: None,
     }
 }

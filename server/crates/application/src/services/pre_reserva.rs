@@ -249,6 +249,7 @@ impl PreReservaService {
                     observacoes: Some("Pré-reserva via WhatsApp (Inná)".into()),
                     early_checkin: None,
                     late_checkout: None,
+                    codigo_corporativo: None,
                     aceito_termos: true,
                     aceito_marketing: false,
                 },

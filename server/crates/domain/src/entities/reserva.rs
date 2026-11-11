@@ -38,6 +38,8 @@ pub struct Reserva {
     pub late_checkout: bool,
     /// Operadora B2B que originou a reserva (extranet) — NULL em venda direta.
     pub idoperadora: Option<i64>,
+    /// Contrato corporativo aplicado (código digitado no motor).
+    pub idcontrato: Option<i64>,
     pub criado_em: DateTime<Utc>,
     pub atualizado_em: DateTime<Utc>,
 }

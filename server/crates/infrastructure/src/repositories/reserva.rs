@@ -35,7 +35,7 @@ impl PgReservaRepository {
 const RESERVA_COLS: &str = "id, idacomodacao, idcliente, idquarto, quantidade_hospedes,
     entradaprevista, saidaprevista, checkin_em, checkout_em, obs, status,
     valordiaria, expira_em, token_publico, early_checkin, late_checkout,
-    idoperadora, criado_em, atualizado_em";
+    idoperadora, idcontrato, criado_em, atualizado_em";
 
 const CONSUMO_COLS: &str = "id, idreserva, valor_estadia, valor_itens, valor_adicional,
     total_desconto, valor_final, idforma_pagamento, comprovante, status, fechado_em,
@@ -443,8 +443,8 @@ impl ReservaRepository for PgReservaRepository {
             "INSERT INTO reserva
                 (idacomodacao, idcliente, quantidade_hospedes, entradaprevista,
                  saidaprevista, obs, status, valordiaria, expira_em, early_checkin,
-                 late_checkout, idoperadora)
-             VALUES ($1, $2, $3, $4, $5, $6, 'p', $7, $8, $9, $10, $11)
+                 late_checkout, idoperadora, idcontrato)
+             VALUES ($1, $2, $3, $4, $5, $6, 'p', $7, $8, $9, $10, $11, $12)
              RETURNING {RESERVA_COLS}"
         ))
         .bind(nova.idacomodacao)
@@ -458,6 +458,7 @@ impl ReservaRepository for PgReservaRepository {
         .bind(nova.early_checkin)
         .bind(nova.late_checkout)
         .bind(nova.idoperadora)
+        .bind(nova.idcontrato)
         .fetch_one(&mut *tx)
         .await
         .map_err(map_db_err)?; // 23P01 → Conflito (overbooking impossível)

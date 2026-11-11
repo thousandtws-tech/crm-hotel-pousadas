@@ -304,6 +304,21 @@ export class ApiService {
     return this.get<M.FaturamentoOperadora>(`/operadoras/${id}/faturamento?de=${de}&ate=${ate}`);
   }
 
+  // -- Contratos corporativos ----------------------------------------------------
+
+  listarContratos() {
+    return this.get<M.ContratoCorporativo[]>('/contratos');
+  }
+  criarContrato(input: M.ContratoInput) {
+    return this.post<M.ContratoCorporativo>('/contratos', input);
+  }
+  atualizarContrato(id: number, input: M.ContratoInput) {
+    return this.put<M.ContratoCorporativo>(`/contratos/${id}`, input);
+  }
+  definirContratoAtivo(id: number, ativo: boolean) {
+    return this.patch<M.ContratoCorporativo>(`/contratos/${id}/ativo`, { ativo });
+  }
+
   // -- reservas -----------------------------------------------------------------
   listarReservas(f: {
     inicio?: string | null; fim?: string | null; status?: string | null;

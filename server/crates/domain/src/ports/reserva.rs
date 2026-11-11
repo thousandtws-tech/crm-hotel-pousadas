@@ -36,6 +36,8 @@ pub struct NovaReserva {
     pub expira_em: Option<DateTime<Utc>>,
     /// Operadora B2B de origem (extranet) — None em venda direta.
     pub idoperadora: Option<i64>,
+    /// Contrato corporativo aplicado (código público do motor).
+    pub idcontrato: Option<i64>,
 }
 
 #[derive(Debug, Clone)]

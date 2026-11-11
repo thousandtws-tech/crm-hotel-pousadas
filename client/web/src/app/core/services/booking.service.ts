@@ -71,7 +71,8 @@ export class BookingService {
           early_checkin: submission.earlyCheckin === true,
           late_checkout: submission.lateCheckout === true,
           aceito_termos: submission.aceitoTermos === true,
-          aceito_marketing: submission.aceitoMarketing === true
+          aceito_marketing: submission.aceitoMarketing === true,
+          codigo_corporativo: submission.codigoCorporativo || null
         })
       });
       const data = await res.json();

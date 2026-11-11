@@ -22,10 +22,10 @@ use clarituz_domain::enums::StatusReserva;
 use clarituz_domain::events::{Aviso, TipoAviso};
 use clarituz_domain::ports::{
     AcomodacaoRepository, AcompanhanteRepository, ClienteRepository, ComandoCheckout,
-    EstabelecimentoRepository, EventoPublisher, FilaEnvioRepository, FiltroReserva, FnrhRepository,
-    FormaPagamentoRepository, ImpressoraGateway, ImpressoraRepository, LgpdRepository, LinhaRecibo,
-    NovaFnrh, NovaReserva, NovoAcompanhante, NovoAdicional, NovoClienteSite, NovoItemConsumido,
-    ReservaRepository,
+    ContratoRepository, EstabelecimentoRepository, EventoPublisher, FilaEnvioRepository,
+    FiltroReserva, FnrhRepository, FormaPagamentoRepository, ImpressoraGateway,
+    ImpressoraRepository, LgpdRepository, LinhaRecibo, NovaFnrh, NovaReserva, NovoAcompanhante,
+    NovoAdicional, NovoClienteSite, NovoItemConsumido, ReservaRepository,
 };
 use clarituz_domain::queries::{ComprovanteResumo, MapaQuarto, ReservaDetalhe, ReservaResumo};
 use clarituz_domain::value_objects::PeriodoEstadia;
@@ -56,6 +56,8 @@ pub struct ReservaDeps {
     pub lgpd: Arc<dyn LgpdRepository>,
     /// Fila de envio — relatório de fechamento por e-mail.
     pub fila: Arc<dyn FilaEnvioRepository>,
+    /// Contratos corporativos — desconto por código no motor público.
+    pub contratos: Arc<dyn ContratoRepository>,
     /// Minutos do hold de pagamento nas reservas criadas pelo site.
     pub hold_minutos: i64,
 }
@@ -74,6 +76,7 @@ pub struct ReservaService {
     fnrh: Arc<dyn FnrhRepository>,
     lgpd: Arc<dyn LgpdRepository>,
     fila: Arc<dyn FilaEnvioRepository>,
+    contratos: Arc<dyn ContratoRepository>,
     hold_minutos: i64,
 }
 
@@ -93,6 +96,7 @@ impl ReservaService {
             fnrh: d.fnrh,
             lgpd: d.lgpd,
             fila: d.fila,
+            contratos: d.contratos,
             hold_minutos: d.hold_minutos,
         }
     }
@@ -633,6 +637,7 @@ impl ReservaService {
             late_checkout: late,
             expira_em: None,
             idoperadora: input.idoperadora,
+            idcontrato: input.idcontrato,
         };
 
         let log = ator.log(
@@ -758,6 +763,31 @@ impl ReservaService {
             .taxas_horario(acomodacao.id, &periodo, early, late)
             .await?;
         let diaria = self.diaria_para(&acomodacao, hospedes).await?;
+
+        // Contrato corporativo — código público aplica o desconto negociado
+        // na diária cobrada. Inválido/expirado não gera erro (não vaza a
+        // existência do contrato) — a reserva segue na tarifa balcão.
+        let contrato = match input
+            .codigo_corporativo
+            .as_deref()
+            .map(str::trim)
+            .filter(|c| !c.is_empty())
+        {
+            Some(codigo) => self
+                .contratos
+                .por_codigo(codigo)
+                .await?
+                .filter(|c| c.vigente(Utc::now().date_naive())),
+            None => None,
+        };
+        let (diaria, idcontrato) = match &contrato {
+            Some(c) => (
+                money::round2(diaria * (Decimal::ONE - c.desconto_pct / Decimal::from(100))),
+                Some(c.id),
+            ),
+            None => (diaria, None),
+        };
+
         let nova = NovaReserva {
             idacomodacao: acomodacao.id,
             idcliente,
@@ -772,6 +802,7 @@ impl ReservaService {
             // aguardando o pagamento; expirada, o sweeper a cancela.
             expira_em: Some(Utc::now() + Duration::minutes(self.hold_minutos)),
             idoperadora: None,
+            idcontrato,
         };
         let log = NovoLog {
             idfuncionario: None,

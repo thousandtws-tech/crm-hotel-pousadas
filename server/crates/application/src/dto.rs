@@ -291,6 +291,8 @@ pub struct ReservaInput {
     pub late_checkout: Option<bool>,
     /// Operadora B2B de origem — a recepção pode marcar a consolidação.
     pub idoperadora: Option<i64>,
+    /// Contrato corporativo (desconto negociado) vinculado pela recepção.
+    pub idcontrato: Option<i64>,
 }
 
 /// Reserva online vinda do site público — sem autenticação; o serviço
@@ -318,6 +320,8 @@ pub struct ReservaPublicaInput {
     /// Consentimento de marketing (opcional, checkbox separada — LGPD art. 8º).
     #[serde(default)]
     pub aceito_marketing: bool,
+    /// Código de contrato corporativo — desconto negociado no motor.
+    pub codigo_corporativo: Option<String>,
 }
 
 #[derive(Debug, Serialize)]

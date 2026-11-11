@@ -351,6 +351,7 @@ impl OperadoraService {
             // Faturado ao parceiro — não expira aguardando pagamento online.
             expira_em: None,
             idoperadora: Some(op.id),
+            idcontrato: None,
         };
         let log = NovoLog {
             idfuncionario: None,

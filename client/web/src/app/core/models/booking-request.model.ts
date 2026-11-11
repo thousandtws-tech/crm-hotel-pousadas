@@ -19,6 +19,7 @@ export interface BookingSubmission {
   lateCheckout?: boolean;
   aceitoTermos?: boolean;
   aceitoMarketing?: boolean;
+  codigoCorporativo?: string;
   totalNights?: number;
   estimatedTotal?: number;
 }

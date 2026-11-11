@@ -10,8 +10,9 @@ use axum::http::request::Parts;
 use axum::Json;
 use chrono::NaiveDate;
 use clarituz_application::actor::Ator;
+use clarituz_application::services::contratos::{ContratoCodigoView, ContratoInput};
 use clarituz_application::services::operadoras::{OperadoraInput, ReservaOperadoraInput};
-use clarituz_domain::entities::{Operadora, Reserva};
+use clarituz_domain::entities::{ContratoCorporativo, Operadora, Reserva};
 use clarituz_domain::DomainError;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -167,4 +168,61 @@ pub async fn extranet_reservar(
     Json(input): Json<ReservaOperadoraInput>,
 ) -> Result<Json<Reserva>, AppError> {
     Ok(Json(s.services.operadoras.reservar(&op, input).await?))
+}
+
+// ---------------------------------------------------------------------------
+// Contratos corporativos — desconto por código público no motor.
+// ---------------------------------------------------------------------------
+
+/// `GET /contratos` — lista (código nunca serializado).
+pub async fn contratos_listar(
+    State(s): State<AppState>,
+    ator: Ator,
+) -> Result<Json<Vec<ContratoCorporativo>>, AppError> {
+    Ok(Json(s.services.contratos.listar(&ator).await?))
+}
+
+/// `POST /contratos` — cadastra empresa + código público + vigência.
+pub async fn contratos_criar(
+    State(s): State<AppState>,
+    ator: Ator,
+    Json(input): Json<ContratoInput>,
+) -> Result<Json<ContratoCorporativo>, AppError> {
+    Ok(Json(s.services.contratos.criar(&ator, input).await?))
+}
+
+/// `PUT /contratos/{id}` — dados e vigência do contrato.
+pub async fn contratos_atualizar(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+    Json(input): Json<ContratoInput>,
+) -> Result<Json<ContratoCorporativo>, AppError> {
+    Ok(Json(
+        s.services.contratos.atualizar(&ator, id, input).await?,
+    ))
+}
+
+/// `PATCH /contratos/{id}/ativo` — desativa sem perder o histórico.
+pub async fn contratos_definir_ativo(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+    Json(input): Json<AtivaInput>,
+) -> Result<Json<ContratoCorporativo>, AppError> {
+    Ok(Json(
+        s.services
+            .contratos
+            .definir_ativo(&ator, id, input.ativa)
+            .await?,
+    ))
+}
+
+/// `GET /publico/contrato/{codigo}` — valida código no motor; inválido
+/// e expirado respondem o mesmo `{valido: false}` (não vaza existência).
+pub async fn publico_contrato(
+    State(s): State<AppState>,
+    Path(codigo): Path<String>,
+) -> Result<Json<ContratoCodigoView>, AppError> {
+    Ok(Json(s.services.contratos.resolver_codigo(&codigo).await?))
 }

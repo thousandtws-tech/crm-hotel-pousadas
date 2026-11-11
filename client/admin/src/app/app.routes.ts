@@ -39,6 +39,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'contratos',
+        loadComponent: () =>
+          import('./features/contratos/contratos.component').then(
+            (m) => m.ContratosComponent,
+          ),
+      },
+      {
         path: 'reservas/:id',
         loadComponent: () =>
           import('./features/reservas/reserva-detail.component').then(

@@ -1,0 +1,268 @@
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { ApiService } from '../../core/services/api.service';
+import { Notify } from '@core/services/notify.service';
+import * as M from '../../core/models/api.models';
+
+/**
+ * Contratos corporativos — empresa com código público e desconto
+ * negociado, aplicado quando o hóspede digita o código no motor.
+ */
+@Component({
+  selector: 'app-contratos',
+  imports: [ReactiveFormsModule, MatIconModule],
+  template: `
+    <div class="pag">
+      <div class="cab">
+        <div>
+          <h1>Contratos corporativos</h1>
+          <p class="sub">Desconto negociado por código — o hóspede digita no motor e a diária já sai reduzida.</p>
+        </div>
+        <button type="button" class="btn-pri" (click)="abrirForm(null)">
+          <mat-icon>add</mat-icon> Novo contrato
+        </button>
+      </div>
+
+      @if (carregando()) {
+        <p class="vazio">Carregando…</p>
+      } @else if (contratos().length === 0) {
+        <div class="inner-card vazio-card">
+          <mat-icon>corporate_fare</mat-icon>
+          <p>Nenhum contrato cadastrado. Empresas com código ganham desconto automático no motor.</p>
+        </div>
+      } @else {
+        <div class="inner-card">
+          <table class="tab">
+            <thead>
+              <tr>
+                <th>Empresa</th>
+                <th>Desconto</th>
+                <th>Vigência</th>
+                <th>Contato</th>
+                <th>Status</th>
+                <th class="ac">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of contratos(); track c.id) {
+                <tr [class.inativa]="!c.ativo">
+                  <td>
+                    <strong>{{ c.empresa }}</strong>
+                    @if (c.notas) { <span class="mini notas">{{ c.notas }}</span> }
+                  </td>
+                  <td>{{ c.desconto_pct }}%</td>
+                  <td>
+                    <span class="mini">{{ dataBr(c.vigente_de) }} → {{ dataBr(c.vigente_ate) }}</span>
+                    @if (expirado(c)) { <span class="pill pill-off">expirado</span> }
+                  </td>
+                  <td><span class="mini">{{ c.contato ?? '—' }} · {{ c.email ?? '—' }}</span></td>
+                  <td>
+                    <span class="pill" [class.pill-off]="!c.ativo">
+                      {{ c.ativo ? 'Ativo' : 'Inativo' }}
+                    </span>
+                  </td>
+                  <td class="ac">
+                    <button type="button" class="mini-btn" (click)="abrirForm(c)" title="Editar">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button type="button" class="mini-btn" [class.perigo]="c.ativo"
+                            (click)="alternar(c)" [title]="c.ativo ? 'Desativar' : 'Reativar'">
+                      <mat-icon>{{ c.ativo ? 'block' : 'check_circle' }}</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @if (modalForm()) {
+        <div class="modal-fundo" (click)="modalForm.set(false)" (keydown.escape)="modalForm.set(false)" role="presentation"></div>
+        <div class="modal" role="dialog" aria-modal="true" [attr.aria-label]="editando() ? 'Editar contrato' : 'Novo contrato'">
+          <h2>{{ editando() ? 'Editar contrato' : 'Novo contrato' }}</h2>
+          <form [formGroup]="form" (ngSubmit)="salvar()">
+            <label class="dl">
+              <span>Empresa *</span>
+              <input class="input-inn" formControlName="empresa" placeholder="Ex.: Acme Logística Ltda" />
+            </label>
+            <div class="grid2">
+              <label class="dl">
+                <span>Código público *</span>
+                <input class="input-inn mono" formControlName="codigo" placeholder="ACME2025"
+                       aria-describedby="codigo-dica" />
+                <span id="codigo-dica" class="dica">O hóspede digita no motor — maiúsculas, sem espaço.</span>
+              </label>
+              <label class="dl">
+                <span>Desconto % *</span>
+                <input class="input-inn" type="number" formControlName="desconto_pct" min="1" max="100" step="0.5" />
+              </label>
+            </div>
+            <div class="grid2">
+              <label class="dl">
+                <span>Vigente de *</span>
+                <input class="input-inn" type="date" formControlName="vigente_de" />
+              </label>
+              <label class="dl">
+                <span>Vigente até *</span>
+                <input class="input-inn" type="date" formControlName="vigente_ate" />
+              </label>
+            </div>
+            <div class="grid2">
+              <label class="dl">
+                <span>Contato</span>
+                <input class="input-inn" formControlName="contato" />
+              </label>
+              <label class="dl">
+                <span>E-mail</span>
+                <input class="input-inn" type="email" formControlName="email" />
+              </label>
+            </div>
+            <label class="dl">
+              <span>Notas internas</span>
+              <textarea class="input-inn" formControlName="notas" rows="2"></textarea>
+            </label>
+            <div class="modal-acoes">
+              <button type="button" class="btn-sec" (click)="modalForm.set(false)">Cancelar</button>
+              <button type="submit" class="btn-pri" [disabled]="salvando()">
+                {{ salvando() ? 'Salvando…' : 'Salvar' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+    </div>
+  `,
+  styles: `
+    .pag { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+    .cab { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+    .cab h1 { margin: 0; font-size: 1.4rem; color: #054054; }
+    .sub { margin: 4px 0 0; font-size: 0.82rem; color: #5d6d7e; }
+    .vazio { color: #7d97a1; }
+    .vazio-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px; color: #7d97a1; }
+    .vazio-card mat-icon { font-size: 40px; width: 40px; height: 40px; }
+    .inner-card { background: #fff; border: 1px solid #e3eaef; border-radius: 10px; padding: 16px; overflow-x: auto; }
+    .tab { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    .tab th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: #7d97a1; padding: 6px 10px; border-bottom: 1px solid #e3eaef; }
+    .tab td { padding: 10px; border-bottom: 1px solid #f0f4f6; vertical-align: middle; }
+    .tab tr.inativa td { opacity: 0.55; }
+    .ac { text-align: right; white-space: nowrap; }
+    .mini { font-size: 0.76rem; color: #7d97a1; }
+    .notas { display: block; }
+    .dica { font-size: 0.7rem; color: #7d97a1; }
+    .pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; background: rgba(26,111,138,0.1); color: #1a6f8a; margin-left: 6px; }
+    .pill-off { background: #f0f4f6; color: #b3402a; }
+    .mini-btn { display: inline-flex; align-items: center; gap: 4px; border: 1px solid #d7e0e6; background: #fff; color: #1a6f8a; border-radius: 6px; padding: 5px 9px; font-size: 0.74rem; cursor: pointer; margin-left: 6px; }
+    .mini-btn mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .mini-btn:hover { border-color: #1a6f8a; }
+    .mini-btn.perigo { color: #b3402a; }
+    .btn-pri { display: inline-flex; align-items: center; gap: 6px; background: #1a6f8a; color: #fff; border: none; border-radius: 8px; padding: 0 16px; min-height: 38px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+    .btn-pri:disabled { opacity: 0.6; }
+    .btn-sec { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #d7e0e6; background: #fff; color: #1a6f8a; border-radius: 8px; padding: 0 16px; min-height: 38px; font-size: 0.82rem; cursor: pointer; }
+    .dl { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: #5d6d7e; margin-bottom: 10px; }
+    .input-inn { border: 1px solid #d7e0e6; border-radius: 8px; padding: 9px 12px; font-size: 0.88rem; font-family: inherit; color: #33424c; }
+    .input-inn:focus { outline: none; border-color: #1a6f8a; box-shadow: 0 0 0 3px rgba(26,111,138,0.14); }
+    .mono { font-family: monospace; text-transform: uppercase; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-fundo { position: fixed; inset: 0; background: rgba(9,20,26,0.45); z-index: 60; }
+    .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 61; background: #fff; border-radius: 14px; padding: 22px; width: min(520px, 92vw); max-height: 88vh; overflow-y: auto; }
+    .modal h2 { margin: 0 0 10px; font-size: 1.1rem; color: #054054; }
+    .modal-acoes { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+    @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+  `,
+})
+export class ContratosComponent implements OnInit {
+  private readonly api = inject(ApiService);
+  private readonly notify = inject(Notify);
+  private readonly fb = inject(FormBuilder);
+
+  protected readonly contratos = signal<M.ContratoCorporativo[]>([]);
+  protected readonly carregando = signal(true);
+  protected readonly salvando = signal(false);
+  protected readonly modalForm = signal(false);
+  protected readonly editando = signal<M.ContratoCorporativo | null>(null);
+
+  protected readonly form = this.fb.nonNullable.group({
+    empresa: ['', [Validators.required, Validators.minLength(3)]],
+    codigo: ['', [Validators.required, Validators.minLength(4)]],
+    desconto_pct: [10, [Validators.required, Validators.min(0.5), Validators.max(100)]],
+    vigente_de: ['', Validators.required],
+    vigente_ate: ['', Validators.required],
+    contato: [''],
+    email: [''],
+    notas: [''],
+  });
+
+  ngOnInit(): void {
+    this.carregar();
+  }
+
+  protected dataBr(iso: string): string {
+    const [a, m, d] = iso.split('-');
+    return `${d}/${m}/${a}`;
+  }
+
+  protected expirado(c: M.ContratoCorporativo): boolean {
+    return c.vigente_ate < new Date().toISOString().slice(0, 10);
+  }
+
+  private carregar(): void {
+    this.api.listarContratos().subscribe({
+      next: (l) => { this.contratos.set(l); this.carregando.set(false); },
+      error: () => { this.carregando.set(false); this.notify.erroMsg('Falha ao carregar contratos.'); },
+    });
+  }
+
+  protected abrirForm(c: M.ContratoCorporativo | null): void {
+    this.editando.set(c);
+    this.form.reset({
+      empresa: c?.empresa ?? '',
+      codigo: c?.codigo ?? '',
+      desconto_pct: Number(c?.desconto_pct ?? 10),
+      vigente_de: c?.vigente_de ?? new Date().toISOString().slice(0, 10),
+      vigente_ate: c?.vigente_ate ?? '',
+      contato: c?.contato ?? '',
+      email: c?.email ?? '',
+      notas: c?.notas ?? '',
+    });
+    this.modalForm.set(true);
+  }
+
+  protected salvar(): void {
+    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    const v = this.form.getRawValue();
+    const input: M.ContratoInput = {
+      empresa: v.empresa.trim(),
+      codigo: v.codigo.trim().toUpperCase(),
+      desconto_pct: v.desconto_pct,
+      vigente_de: v.vigente_de,
+      vigente_ate: v.vigente_ate,
+      contato: v.contato.trim() || null,
+      email: v.email.trim() || null,
+      notas: v.notas.trim() || null,
+    };
+    this.salvando.set(true);
+    const c = this.editando();
+    const req = c ? this.api.atualizarContrato(c.id, input) : this.api.criarContrato(input);
+    req.subscribe({
+      next: () => {
+        this.salvando.set(false);
+        this.modalForm.set(false);
+        this.carregar();
+        this.notify.ok('Contrato salvo.');
+      },
+      error: (e) => {
+        this.salvando.set(false);
+        this.notify.erroMsg(e?.error?.erro ?? 'Falha ao salvar.');
+      },
+    });
+  }
+
+  protected alternar(c: M.ContratoCorporativo): void {
+    this.api.definirContratoAtivo(c.id, !c.ativo).subscribe({
+      next: () => this.carregar(),
+      error: () => this.notify.erroMsg('Falha ao alterar o status.'),
+    });
+  }
+}

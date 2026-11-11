@@ -8,6 +8,7 @@ import { SeoService } from '../../core/services/seo.service';
 import { IconComponent } from '../../shared/components/icons/icon.component';
 import { HOTEL_CONFIG } from '../../core/config/hotel-config';
 import { MotionService } from '../../core/services/motion.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-booking',
@@ -185,6 +186,25 @@ import { MotionService } from '../../core/services/motion.service';
                       <input type="checkbox" [ngModel]="lateCheckout()" (ngModelChange)="lateCheckout.set($event)" name="lateCheckout" class="accent-[#054054]" />
                       Late checkout (saída estendida, sujeito à disponibilidade)
                     </label>
+                  </div>
+
+                  <div>
+                    <label for="book-corporate" class="type-eyebrow block mb-1 text-[10px]">Código corporativo (opcional)</label>
+                    <input
+                      id="book-corporate"
+                      type="text"
+                      [ngModel]="codigoCorporativo()"
+                      (ngModelChange)="onCodigoChange($event)"
+                      name="codigoCorporativo"
+                      placeholder="Ex.: ACME2025"
+                      autocomplete="off"
+                      class="w-full bg-[#F7F5F0] border border-[#DCE6EA] p-3 text-sm text-[#054054] uppercase focus:outline-none focus:border-[#054054]"
+                    />
+                    @if (descontoCorporativo() !== null) {
+                      <p class="text-xs mt-1 text-[#1a6f4a]">Desconto de {{ descontoCorporativo() }}% aplicado na diária.</p>
+                    } @else if (codigoInvalido()) {
+                      <p class="text-xs mt-1 text-[#536B73]">Código não reconhecido — tarifa padrão aplicada.</p>
+                    }
                   </div>
 
                   <div>
@@ -397,6 +417,11 @@ export class BookingComponent implements OnInit {
   public readonly guests = signal<number>(this.bookingService.filter().guests);
   public readonly selectedSuiteSlug = signal<string>('quarto-duplo-standard');
 
+  public readonly codigoCorporativo = signal<string>('');
+  public readonly descontoCorporativo = signal<number | null>(null);
+  public readonly codigoInvalido = signal<boolean>(false);
+  private codigoTimer: ReturnType<typeof setTimeout> | null = null;
+
   public readonly guestName = signal<string>('');
   public readonly guestEmail = signal<string>('');
   public readonly guestPhone = signal<string>('');
@@ -470,6 +495,9 @@ export class BookingComponent implements OnInit {
       guestEmail: this.guestEmail(),
       guestPhone: this.guestPhone(),
       specialRequests: this.specialRequests(),
+      codigoCorporativo: this.descontoCorporativo() !== null
+        ? this.codigoCorporativo().trim().toUpperCase()
+        : undefined,
       earlyCheckin: this.earlyCheckin(),
       lateCheckout: this.lateCheckout(),
       aceitoTermos: this.aceiteTermos(),
@@ -491,8 +519,42 @@ export class BookingComponent implements OnInit {
   /** Estimativa exibida ao hóspede — o valor cobrado é recalculado no servidor. */
   public readonly estimatedTotal = computed(() => {
     const acc = this.selectedAccommodation();
-    return acc?.price ? Math.round(acc.price * this.calculatedNights() * 100) : 0;
+    if (!acc?.price) return 0;
+    const desc = this.descontoCorporativo();
+    const fator = desc !== null ? 1 - desc / 100 : 1;
+    return Math.round(acc.price * this.calculatedNights() * fator * 100);
   });
+
+  /** Valida o código corporativo com debounce — desconto só se vigente. */
+  public onCodigoChange(valor: string): void {
+    this.codigoCorporativo.set(valor);
+    this.descontoCorporativo.set(null);
+    this.codigoInvalido.set(false);
+    if (this.codigoTimer) clearTimeout(this.codigoTimer);
+    const codigo = valor.trim();
+    if (codigo.length < 4) return;
+    this.codigoTimer = setTimeout(() => this.validarCodigo(codigo), 500);
+  }
+
+  private async validarCodigo(codigo: string): Promise<void> {
+    try {
+      const res = await fetch(
+        `${environment.apiUrl}/publico/contrato/${encodeURIComponent(codigo)}`
+      );
+      const data = await res.json();
+      // Só aplica se o campo ainda tiver o mesmo código (digitação posterior).
+      if (codigo !== this.codigoCorporativo().trim()) return;
+      if (data?.valido && typeof data.desconto_pct === 'number') {
+        this.descontoCorporativo.set(data.desconto_pct);
+        this.codigoInvalido.set(false);
+      } else {
+        this.descontoCorporativo.set(null);
+        this.codigoInvalido.set(true);
+      }
+    } catch {
+      this.descontoCorporativo.set(null);
+    }
+  }
 
   /** Cria a sessão Stripe e redireciona o hóspede ao checkout hospedado. */
   public async pagarAgora(): Promise<void> {

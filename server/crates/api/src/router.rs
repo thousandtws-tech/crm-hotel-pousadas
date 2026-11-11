@@ -234,6 +234,19 @@ pub fn build(state: AppState) -> Router {
             "/extranet/reservas",
             post(routes::operadoras::extranet_reservar),
         )
+        // Contratos corporativos — desconto por código no motor.
+        .route(
+            "/contratos",
+            get(routes::operadoras::contratos_listar).post(routes::operadoras::contratos_criar),
+        )
+        .route(
+            "/contratos/{id}",
+            put(routes::operadoras::contratos_atualizar),
+        )
+        .route(
+            "/contratos/{id}/ativo",
+            patch(routes::operadoras::contratos_definir_ativo),
+        )
         .route("/bloqueios", get(routes::reservas::bloqueios))
         .route(
             "/bloqueios/{id}",
@@ -953,6 +966,10 @@ pub fn build(state: AppState) -> Router {
         .route("/api/v1/publico/stream", get(routes::cms::publico_stream))
         // site público — só conteúdo `publicado`
         .route("/api/v1/publico/cms/site", get(routes::cms::publico_site))
+        .route(
+            "/api/v1/publico/contrato/{codigo}",
+            get(routes::operadoras::publico_contrato),
+        )
         .route(
             "/api/v1/publico/acomodacoes",
             get(routes::cms::publico_listar),

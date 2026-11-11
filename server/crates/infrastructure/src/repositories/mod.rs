@@ -8,6 +8,7 @@ pub mod catalogo;
 pub mod cms;
 pub mod compras;
 pub mod comunicacao;
+pub mod contrato;
 pub mod estoque;
 pub mod impressora;
 pub mod notificacao;
@@ -35,6 +36,7 @@ pub use comunicacao::{
     PgAtendimentoRepository, PgAutomacaoRepository, PgAvaliacaoRepository, PgFidelidadeRepository,
     PgFilaEnvio, PgInnaRepository, PgLgpdRepository, PgPreReservaRepository, PgPushRepository,
 };
+pub use contrato::PgContratoRepository;
 pub use estoque::PgEstoqueRepository;
 pub use impressora::PgImpressoraRepository;
 pub use notificacao::PgNotificacaoRepository;

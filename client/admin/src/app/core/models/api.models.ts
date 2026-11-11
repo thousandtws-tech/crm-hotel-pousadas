@@ -444,6 +444,33 @@ export interface FaturamentoOperadora {
   linhas: FaturamentoLinha[];
 }
 
+// ---------- Contratos corporativos ----------
+
+export interface ContratoCorporativo {
+  id: number;
+  empresa: string;
+  codigo: string;
+  desconto_pct: string;
+  vigente_de: string;
+  vigente_ate: string;
+  contato: string | null;
+  email: string | null;
+  ativo: boolean;
+  notas: string | null;
+  criado_em: string;
+}
+
+export interface ContratoInput {
+  empresa: string;
+  codigo: string;
+  desconto_pct?: number;
+  vigente_de: string;
+  vigente_ate: string;
+  contato?: string | null;
+  email?: string | null;
+  notas?: string | null;
+}
+
 export interface TarifaHistorico {
   id: number;
   idacomodacao: number;

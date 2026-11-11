@@ -9,6 +9,7 @@ pub mod cliente;
 pub mod cms;
 pub mod compras;
 pub mod comunicacao;
+pub mod contrato;
 pub mod documento;
 pub mod estabelecimento;
 pub mod estacionamento;
@@ -36,6 +37,7 @@ pub use cms::{
 };
 pub use compras::{Fornecedor, PedidoCompra, PedidoCompraItem};
 pub use comunicacao::*;
+pub use contrato::ContratoCorporativo;
 pub use documento::ClienteDocumento;
 pub use estabelecimento::{EnderecoEstabelecimento, Estabelecimento, LogoEstabelecimento};
 pub use estacionamento::VagaEstacionamento;

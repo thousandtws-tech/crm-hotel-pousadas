@@ -13,6 +13,7 @@ pub mod cms;
 pub mod compras;
 pub mod comunicacao;
 pub mod concierge;
+pub mod contratos;
 pub mod dashboard;
 pub mod documentos;
 pub mod escalas;
@@ -48,6 +49,7 @@ pub use cms::CmsService;
 pub use compras::ComprasService;
 pub use comunicacao::{AvaliacoesService, ComunicacaoService, FidelidadeService};
 pub use concierge::ConciergeService;
+pub use contratos::ContratoService;
 pub use dashboard::DashboardService;
 pub use documentos::DocumentoService;
 pub use escalas::EscalasService;
@@ -102,6 +104,7 @@ pub struct Services {
     pub compras: Arc<ComprasService>,
     pub comunicacao: Arc<ComunicacaoService>,
     pub operadoras: Arc<OperadoraService>,
+    pub contratos: Arc<ContratoService>,
     pub atendimento: Arc<AtendimentoService>,
     pub concierge: Arc<ConciergeService>,
     pub lgpd: Arc<LgpdService>,

@@ -154,6 +154,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         fnrh: reserva_repo.clone(),
         lgpd: lgpd_repo.clone(),
         fila: fila_envio_repo.clone(),
+        contratos: Arc::new(PgContratoRepository::new(pool.clone())),
         hold_minutos: settings.hold_minutos,
     }));
     let pagamentos_online_svc = Arc::new(PagamentosOnlineService::new(
@@ -196,6 +197,10 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         atendimento_svc.clone(),
     ));
     let lgpd_svc = Arc::new(LgpdService::new(lgpd_repo.clone(), publisher.clone()));
+
+    let contratos_svc = Arc::new(ContratoService::new(Arc::new(PgContratoRepository::new(
+        pool.clone(),
+    ))));
 
     // B2B — operadoras/canal indireto com extranet por token e tarifa net.
     let operadoras_svc = Arc::new(OperadoraService::new(
@@ -271,6 +276,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         )),
         comunicacao: comunicacao_svc,
         operadoras: operadoras_svc,
+        contratos: contratos_svc,
         atendimento: atendimento_svc,
         concierge: concierge_svc,
         lgpd: lgpd_svc,
