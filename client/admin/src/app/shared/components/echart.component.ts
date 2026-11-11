@@ -61,9 +61,11 @@ export class EChartComponent {
   private readonly el = viewChild.required<ElementRef<HTMLDivElement>>('el');
   private chart: echarts.ECharts | null = null;
   private ro: ResizeObserver | null = null;
+  private rafResize = 0;
 
   constructor() {
     inject(DestroyRef).onDestroy(() => {
+      if (this.rafResize) cancelAnimationFrame(this.rafResize);
       this.ro?.disconnect();
       this.chart?.dispose();
       this.chart = null;
@@ -72,7 +74,15 @@ export class EChartComponent {
       const el = this.el().nativeElement;
       if (!this.chart) {
         this.chart = echarts.init(el);
-        this.ro = new ResizeObserver(() => this.chart?.resize());
+        // rAF: coalesce rajadas e tira o resize do "main process" do
+        // setOption — chamá-lo ali dentro dispara warning do ECharts.
+        this.ro = new ResizeObserver(() => {
+          if (this.rafResize) return;
+          this.rafResize = requestAnimationFrame(() => {
+            this.rafResize = 0;
+            this.chart?.resize();
+          });
+        });
         this.ro.observe(el);
       }
       const opt = this.option();
@@ -80,7 +90,7 @@ export class EChartComponent {
       // replaceMerge troca só os componentes mudados e lazyUpdate agrupa
       // updates na mesma frame — updates de dados não dão reflow no canvas.
       this.chart.setOption(opt, {
-        replaceMerge: ['xAxis', 'yAxis', 'series', 'grid', 'title', 'tooltip', 'legend'],
+        replaceMerge: ['xAxis', 'yAxis', 'series', 'grid', 'tooltip', 'legend'],
         lazyUpdate: true,
       });
     });

@@ -1,0 +1,15 @@
+{
+  "name": "pousada-e2e",
+  "version": "1.0.0",
+  "description": "Jornadas Playwright dos frontends admin e web (API mockada)",
+  "scripts": {
+    "test": "playwright test",
+    "test:admin": "playwright test --project=admin",
+    "test:web": "playwright test --project=web"
+  },
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.65.0"
+  },
+  "private": true
+}
