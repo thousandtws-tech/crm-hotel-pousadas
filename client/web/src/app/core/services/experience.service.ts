@@ -1,14 +1,11 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { Experience } from '../models/experience.model';
-import { CmsDados, SiteContentService, cmsLista, cmsStr } from './site-content.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ExperienceService {
-  private readonly site = inject(SiteContentService);
-
-  private readonly padrao: Experience[] = [
+  private readonly experiencesState = signal<Experience[]>([
     {
       id: 'exp-1',
       slug: 'piscina-externa-e-descanso',
@@ -104,45 +101,15 @@ export class ExperienceService {
       featured: true,
       order: 4
     }
-  ];
+  ]);
 
-  /** Itens do CMS (`experiencias.itens`); sem conteúdo publicado cai na lista padrão. */
-  public readonly experiences = computed<Experience[]>(() => {
-    const lista = cmsLista(this.site.secao('experiencias.itens'), 'itens')
-      .map((i, idx) => this.paraExperience(i, idx))
-      .filter((i): i is Experience => i !== null);
-    return lista.length ? lista : this.padrao;
-  });
+  public readonly experiences = this.experiencesState.asReadonly();
   public readonly featuredExperiences = computed(() =>
-    this.experiences().filter((item) => item.featured).sort((a, b) => a.order - b.order)
+    this.experiencesState().filter((item) => item.featured).sort((a, b) => a.order - b.order)
   );
 
-  private paraExperience(i: CmsDados, idx: number): Experience | null {
-    const url = this.site.midiaUrl(i['imagem']);
-    if (!url) return null;
-    const titulo = cmsStr(i, 'titulo');
-    return {
-      id: `cms-exp-${idx}`,
-      slug: `cms-${idx}`,
-      title: titulo,
-      category: cmsStr(i, 'categoria'),
-      tagline: cmsStr(i, 'tagline'),
-      description: cmsStr(i, 'texto'),
-      longDescription: cmsStr(i, 'detalhe') || undefined,
-      image: url,
-      video: this.site.midia(i['imagem'])?.tipo === 'video',
-      gallery: [url],
-      schedule: cmsStr(i, 'horario') || undefined,
-      ctaLabel: cmsStr(i, 'cta_label') || undefined,
-      ctaHref: cmsStr(i, 'cta_href') || undefined,
-      includedInStay: true,
-      featured: true,
-      order: idx + 1
-    };
-  }
-
   public getBySlug(slug: string): Experience | undefined {
-    return this.experiences().find((item) => item.slug === slug);
+    return this.experiencesState().find((item) => item.slug === slug);
   }
 }
 

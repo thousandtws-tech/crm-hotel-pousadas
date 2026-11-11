@@ -39,18 +39,6 @@ pub struct CmsSecao {
     pub atualizado_em: DateTime<Utc>,
 }
 
-/// Item da biblioteca de mídia do site — `caminho` é a chave no object
-/// storage; o binário público é servido por `/api/v1/site-midia/{id}`.
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
-pub struct SiteMidia {
-    pub id: i64,
-    pub caminho: String,
-    pub mime: String,
-    pub tipo: String,
-    pub nome: String,
-    pub criado_em: DateTime<Utc>,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct AcomodacaoMidia {
     pub id: i64,

@@ -1,22 +1,20 @@
-import { Component, afterNextRender, ElementRef, inject, DestroyRef, OnInit, computed } from '@angular/core';
+import { Component, afterNextRender, ElementRef, inject, DestroyRef, OnInit } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ExperienceService } from '../../core/services/experience.service';
 import { SeoService } from '../../core/services/seo.service';
 import { IconComponent } from '../../shared/components/icons/icon.component';
 import { HOTEL_CONFIG } from '../../core/config/hotel-config';
 import { MotionService } from '../../core/services/motion.service';
-import { SiteContentService, cmsStr } from '../../core/services/site-content.service';
-
-const PADRAO_HEADER_IMG = 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=2200&q=85';
 
 @Component({
   selector: 'app-experiences',
-  imports: [IconComponent],
+  imports: [RouterLink, IconComponent],
   template: `
     <!-- Header Hero -->
     <header class="exp-page-header relative pt-28 pb-12 sm:pt-32 sm:pb-14 lg:pt-36 lg:pb-16 bg-[#032B38] text-white overflow-hidden">
       <div class="absolute inset-0 z-0">
         <img
-          [src]="headerImg()"
+          src="https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=2200&q=85"
           alt="Estrutura e comodidades na Pousada Espírito do Mar (imagem ilustrativa)"
           class="w-full h-full object-cover object-center filter brightness-[0.5]"
         />
@@ -25,10 +23,10 @@ const PADRAO_HEADER_IMG = 'https://images.unsplash.com/photo-1576013551627-0cc20
 
       <div class="relative z-10 container-editorial text-center flex flex-col items-center">
         <h1 class="font-serif text-4xl sm:text-6xl text-white font-normal mb-3 sm:mb-4 leading-tight">
-          {{ headerTxt('titulo', 'Estrutura & Comodidades') }}
+          Estrutura & Comodidades
         </h1>
         <p class="text-sm sm:text-base text-[#F7F5F0]/80 font-light max-w-xl leading-relaxed">
-          {{ headerTxt('subtitulo', 'Piscina externa, café da manhã, Wi-Fi, estacionamento e fácil acesso à Praia do Peró para seus dias em Cabo Frio.') }}
+          Piscina externa, café da manhã, Wi-Fi, estacionamento e fácil acesso à Praia do Peró para seus dias em Cabo Frio.
         </p>
       </div>
     </header>
@@ -47,21 +45,12 @@ const PADRAO_HEADER_IMG = 'https://images.unsplash.com/photo-1576013551627-0cc20
                 class="lg:col-span-7 editorial-image-container aspect-[16/10] shadow-sm group"
                 [class.lg:order-2]="idx % 2 === 1"
               >
-                @if (exp.video) {
-                  <video
-                    [src]="exp.image"
-                    [attr.aria-label]="exp.title"
-                    muted playsinline preload="metadata"
-                    class="w-full h-full object-cover"
-                  ></video>
-                } @else {
-                  <img
-                    [src]="exp.image"
-                    [alt]="exp.title + ' (imagem ilustrativa)'"
-                    loading="lazy"
-                    class="w-full h-full object-cover"
-                  />
-                }
+                <img
+                  [src]="exp.image"
+                  [alt]="exp.title + ' (imagem ilustrativa)'"
+                  loading="lazy"
+                  class="w-full h-full object-cover"
+                />
               </div>
 
               <!-- Information Column -->
@@ -98,10 +87,10 @@ const PADRAO_HEADER_IMG = 'https://images.unsplash.com/photo-1576013551627-0cc20
                 }
 
                 <a
-                  [href]="exp.ctaHref || '/reservar'"
+                  routerLink="/reservar"
                   class="btn-secondary"
                 >
-                  <span>{{ exp.ctaLabel || 'Consultar disponibilidade' }}</span>
+                  <span>Consultar disponibilidade</span>
                   <app-icon name="arrow-right" [size]="13"></app-icon>
                 </a>
 
@@ -122,15 +111,6 @@ export class ExperiencesComponent implements OnInit {
   private readonly el = inject(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly motion = inject(MotionService);
-  private readonly site = inject(SiteContentService);
-
-  private readonly header = computed(() => this.site.secao('experiencias.header'));
-  protected readonly headerImg = computed(
-    () => this.site.midiaUrl(this.header()?.['imagem']) || PADRAO_HEADER_IMG
-  );
-  protected headerTxt(key: string, fallback: string): string {
-    return cmsStr(this.header(), key) || fallback;
-  }
 
   constructor() {
     afterNextRender(() => {
@@ -139,11 +119,9 @@ export class ExperiencesComponent implements OnInit {
   }
 
   public ngOnInit(): void {
-    const seo = this.site.seoPagina('experiencias');
     this.seoService.updateSeo({
-      title: seo?.titulo || 'Estrutura & Comodidades | Pousada Espírito do Mar, Cabo Frio',
-      description: seo?.descricao || 'Conheça a estrutura da Pousada Espírito do Mar no Peró, Cabo Frio: piscina externa, café da manhã, Wi-Fi, estacionamento e quartos climatizados.',
-      keywords: seo?.keywords,
+      title: 'Estrutura & Comodidades | Pousada Espírito do Mar, Cabo Frio',
+      description: 'Conheça a estrutura da Pousada Espírito do Mar no Peró, Cabo Frio: piscina externa, café da manhã, Wi-Fi, estacionamento e quartos climatizados.',
       url: 'https://pousadaespiritodomar.com.br/experiencias'
     });
   }

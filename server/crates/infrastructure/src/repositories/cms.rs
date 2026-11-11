@@ -5,7 +5,7 @@ use crate::db::map_db_err;
 use async_trait::async_trait;
 use clarituz_domain::entities::{
     Acomodacao, AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica, CmsSecao,
-    MidiaView, NovoLog, SiteMidia,
+    MidiaView, NovoLog,
 };
 use clarituz_domain::ports::{CmsRepository, ConteudoCms, NovaMidia};
 use clarituz_domain::DomainError;
@@ -339,107 +339,6 @@ impl CmsRepository for PgCmsRepository {
         audit::gravar(&mut *tx, &log).await?;
         tx.commit().await.map_err(map_db_err)?;
         Ok(s)
-    }
-
-    async fn site_definir_visivel(
-        &self,
-        secao: &str,
-        visivel: bool,
-        log: NovoLog,
-    ) -> Result<CmsSecao, DomainError> {
-        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
-        let s = sqlx::query_as::<_, CmsSecao>(
-            "INSERT INTO cms_site (secao, dados, visivel)
-             VALUES ($1, '{}'::jsonb, $2)
-             ON CONFLICT (secao) DO UPDATE
-                SET visivel = $2, atualizado_em = now()
-             RETURNING id, secao, dados, ordem, visivel, atualizado_em",
-        )
-        .bind(secao)
-        .bind(visivel)
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(map_db_err)?;
-        let mut log = log;
-        log.idtabela = s.id;
-        audit::gravar(&mut *tx, &log).await?;
-        tx.commit().await.map_err(map_db_err)?;
-        Ok(s)
-    }
-
-    // -- biblioteca de mídia do site ------------------------------------------
-
-    async fn site_midias(&self) -> Result<Vec<SiteMidia>, DomainError> {
-        sqlx::query_as::<_, SiteMidia>(
-            "SELECT id, caminho, mime, tipo, nome, criado_em
-             FROM site_midia ORDER BY id DESC",
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(map_db_err)
-    }
-
-    async fn site_midia_adicionar(
-        &self,
-        tipo: &str,
-        caminho: &str,
-        mime: &str,
-        nome: &str,
-        log: NovoLog,
-    ) -> Result<SiteMidia, DomainError> {
-        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
-        let m = sqlx::query_as::<_, SiteMidia>(
-            "INSERT INTO site_midia (caminho, mime, tipo, nome)
-             VALUES ($1, $2, $3, $4)
-             RETURNING id, caminho, mime, tipo, nome, criado_em",
-        )
-        .bind(caminho)
-        .bind(mime)
-        .bind(tipo)
-        .bind(nome)
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(map_db_err)?;
-        let mut log = log;
-        log.idtabela = m.id;
-        audit::gravar(&mut *tx, &log).await?;
-        tx.commit().await.map_err(map_db_err)?;
-        Ok(m)
-    }
-
-    async fn site_midia_remover(
-        &self,
-        id: i64,
-        log: NovoLog,
-    ) -> Result<Option<String>, DomainError> {
-        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
-        let caminho = sqlx::query_scalar::<_, String>(
-            "DELETE FROM site_midia WHERE id = $1 RETURNING caminho",
-        )
-        .bind(id)
-        .fetch_optional(&mut *tx)
-        .await
-        .map_err(map_db_err)?;
-        if caminho.is_some() {
-            let mut log = log;
-            log.idtabela = id;
-            audit::gravar(&mut *tx, &log).await?;
-        }
-        tx.commit().await.map_err(map_db_err)?;
-        Ok(caminho)
-    }
-
-    async fn site_midia_caminho(
-        &self,
-        id: i64,
-    ) -> Result<Option<(String, String)>, DomainError> {
-        sqlx::query_as::<_, (String, String)>(
-            "SELECT caminho, mime FROM site_midia WHERE id = $1",
-        )
-        .bind(id)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(map_db_err)
     }
 
     async fn listar_publicadas(&self) -> Result<Vec<AcomodacaoPublica>, DomainError> {

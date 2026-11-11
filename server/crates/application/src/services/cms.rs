@@ -4,35 +4,11 @@ use crate::actor::Ator;
 use crate::dto::CmsInput;
 use crate::error::AppResult;
 use clarituz_domain::entities::{
-    AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica, CmsSecao, SiteMidia,
+    AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica, CmsSecao,
 };
 use clarituz_domain::ports::{AcomodacaoRepository, CmsRepository, ConteudoCms, NovaMidia};
 use clarituz_domain::DomainError;
 use std::sync::Arc;
-
-/// Seções editáveis do site institucional — chaves legadas da home sem
-/// prefixo; demais páginas usam `pagina.nome`.
-const SECOES_SITE: &[&str] = &[
-    // home (legado)
-    "hero", "seo", "faq", "diferenciais", "mapa", "contato",
-    // home
-    "home.essence", "home.quartos", "home.experiencias", "home.frase",
-    "home.galeria", "home.localizacao", "home.depoimentos",
-    // sobre
-    "sobre.header", "sobre.manifesto", "sobre.pilares", "sobre.cta", "sobre.seo",
-    // experiências
-    "experiencias.header", "experiencias.itens", "experiencias.seo",
-    // galeria
-    "galeria.header", "galeria.itens", "galeria.seo",
-    // contato
-    "contato.header", "contato.canais", "contato.faq", "contato.seo",
-    // localização
-    "localizacao.header", "localizacao.conteudo", "localizacao.pontos", "localizacao.seo",
-    // acomodações (listagem)
-    "acomodacoes.header", "acomodacoes.seo",
-    // global (rodapé, contato institucional)
-    "geral.contato",
-];
 
 pub struct CmsService {
     cms: Arc<dyn CmsRepository>,
@@ -98,15 +74,15 @@ impl CmsService {
     }
 
     /// Upsert por nome — allowlist fecha o conjunto de seções editáveis.
-    /// Chaves legadas da home ficam sem prefixo; o restante usa `pagina.nome`.
     pub async fn salvar_secao(
         &self,
         ator: &Ator,
         secao: &str,
         dados: serde_json::Value,
     ) -> AppResult<CmsSecao> {
+        const SECOES: [&str; 6] = ["hero", "seo", "faq", "diferenciais", "mapa", "contato"];
         let secao = secao.trim().to_lowercase();
-        if !SECOES_SITE.contains(&secao.as_str()) {
+        if !SECOES.contains(&secao.as_str()) {
             return Err(DomainError::validacao(format!("Seção desconhecida: '{secao}'.")).into());
         }
         if !dados.is_object() {
@@ -120,30 +96,6 @@ impl CmsService {
             None,
         );
         Ok(self.cms.site_salvar(&secao, &dados, log).await?)
-    }
-
-    /// Alterna `visivel` da seção — mesma allowlist do upsert de conteúdo.
-    pub async fn site_visivel(
-        &self,
-        ator: &Ator,
-        secao: &str,
-        visivel: bool,
-    ) -> AppResult<CmsSecao> {
-        let secao = secao.trim().to_lowercase();
-        if !SECOES_SITE.contains(&secao.as_str()) {
-            return Err(DomainError::validacao(format!("Seção desconhecida: '{secao}'.")).into());
-        }
-        let log = ator.log(
-            "status",
-            format!(
-                "{} a seção '{secao}' do site",
-                if visivel { "Exibiu" } else { "Ocultou" }
-            ),
-            "cms_site",
-            0,
-            None,
-        );
-        Ok(self.cms.site_definir_visivel(&secao, visivel, log).await?)
     }
 
     /// Cria/atualiza o conteúdo editorial de uma acomodação (admin-only).
@@ -324,53 +276,6 @@ impl CmsService {
     /// binário (público exige `publicado`; admin ignora a flag).
     pub async fn caminho_midia(&self, id: i64) -> AppResult<Option<(String, String, bool)>> {
         Ok(self.cms.caminho_midia(id).await?)
-    }
-
-    // -- biblioteca de mídia do site --------------------------------------------
-
-    pub async fn site_midias(&self) -> AppResult<Vec<SiteMidia>> {
-        Ok(self.cms.site_midias().await?)
-    }
-
-    /// Registra mídia do site já gravada no storage (admin-only).
-    pub async fn site_midia_adicionar(
-        &self,
-        ator: &Ator,
-        tipo: &str,
-        caminho: &str,
-        mime: &str,
-        nome: &str,
-    ) -> AppResult<SiteMidia> {
-        ator.exigir_admin()?;
-        let log = ator.log(
-            "cadastro",
-            format!("Adicionou '{nome}' à biblioteca de mídia do site"),
-            "site_midia",
-            0,
-            None,
-        );
-        Ok(self
-            .cms
-            .site_midia_adicionar(tipo, caminho, mime, nome, log)
-            .await?)
-    }
-
-    /// Remove metadado — retorna `caminho` p/ a rota apagar o arquivo (admin-only).
-    pub async fn site_midia_remover(&self, ator: &Ator, id: i64) -> AppResult<Option<String>> {
-        ator.exigir_admin()?;
-        let log = ator.log(
-            "exclusão",
-            format!("Removeu a mídia Nº{id} da biblioteca do site"),
-            "site_midia",
-            id,
-            None,
-        );
-        Ok(self.cms.site_midia_remover(id, log).await?)
-    }
-
-    /// `(caminho, mime)` para o handler público servir o binário.
-    pub async fn site_midia_caminho(&self, id: i64) -> AppResult<Option<(String, String)>> {
-        Ok(self.cms.site_midia_caminho(id).await?)
     }
 
     // -- público ----------------------------------------------------------------

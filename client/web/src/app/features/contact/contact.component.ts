@@ -17,9 +17,6 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
 import { SeoService } from '../../core/services/seo.service';
 import { IconComponent } from '../../shared/components/icons/icon.component';
 import { MotionService } from '../../core/services/motion.service';
-import { SiteContentService, cmsLista, cmsStr } from '../../core/services/site-content.service';
-
-const PADRAO_HEADER_IMG = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2200&q=85';
 
 interface SelectOption {
   label: string;
@@ -34,7 +31,7 @@ interface SelectOption {
     <header class="contact-page-header relative pt-32 pb-16 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24 bg-[#032B38] text-white overflow-hidden">
       <div class="absolute inset-0 z-0">
         <img
-          [src]="headerImg()"
+          src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2200&q=85"
           alt="Atendimento e contato da Pousada Espírito do Mar em Cabo Frio"
           class="w-full h-full object-cover object-center brightness-[0.42] scale-[1.02]"
         />
@@ -43,10 +40,10 @@ interface SelectOption {
 
       <div class="relative z-10 container-editorial text-center flex flex-col items-center">
         <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl text-white font-normal mb-4 leading-[1.08] max-w-3xl">
-          {{ headerTxt('titulo', 'Estamos à disposição para planejar sua estadia') }}
+          Estamos à disposição para planejar sua estadia
         </h1>
         <p class="text-sm sm:text-base text-[#F7F5F0]/85 font-light max-w-2xl leading-relaxed">
-          {{ headerTxt('subtitulo', 'Fale diretamente com a recepção da Pousada Espírito do Mar para consultar disponibilidade de datas, categorias de quartos e orientações de chegada à Praia do Peró.') }}
+          Fale diretamente com a recepção da Pousada Espírito do Mar para consultar disponibilidade de datas, categorias de quartos e orientações de chegada à Praia do Peró.
         </p>
       </div>
     </header>
@@ -99,7 +96,7 @@ interface SelectOption {
             <div>
               <span class="type-eyebrow block text-[10px] text-[#DDA554] mb-1">Horários de Referência</span>
               <span class="block font-serif text-xl text-[#054054] font-medium">
-                {{ canaisTxt('checkin', 'Check-in 13h · Check-out 11h') }}
+                Check-in 13h · Check-out 11h
               </span>
               <span class="type-caption block text-[#536B73] mt-0.5">
                 Confirme condições no ato da reserva
@@ -119,10 +116,10 @@ interface SelectOption {
           <!-- Left Column: Institutional Channels & Map (Col 1-5) -->
           <div class="contact-channels-col lg:col-span-5 flex flex-col space-y-6">
             <div>
-              <span class="type-eyebrow text-[#DDA554] block mb-2">{{ canaisTxt('eyebrow', 'Atendimento Personalizado') }}</span>
-              <h2 class="type-title text-[#054054] mb-3">{{ canaisTxt('titulo', 'Canais Oficiais') }}</h2>
+              <span class="type-eyebrow text-[#DDA554] block mb-2">Atendimento Personalizado</span>
+              <h2 class="type-title text-[#054054] mb-3">Canais Oficiais</h2>
               <p class="type-body text-sm text-[#536B73] leading-relaxed">
-                {{ canaisTxt('texto', 'Para garantir informações precisas sobre tarifas, disponibilidade de categorias e regras da hospedagem, utilize sempre nossos canais diretos.') }}
+                Para garantir informações precisas sobre tarifas, disponibilidade de categorias e regras da hospedagem, utilize sempre nossos canais diretos.
               </p>
             </div>
 
@@ -190,7 +187,7 @@ interface SelectOption {
               <div>
                 <span class="type-eyebrow text-[#DDA554] block mb-2">Formulário de Atendimento</span>
                 <h2 class="font-serif text-3xl sm:text-4xl text-[#054054] font-normal">
-                  {{ canaisTxt('form_titulo', 'Envie uma mensagem à recepção') }}
+                  Envie uma mensagem à recepção
                 </h2>
               </div>
               <span class="text-xs text-[#536B73]">
@@ -404,12 +401,12 @@ interface SelectOption {
         <div class="max-w-4xl mx-auto">
 
           <div class="text-center mb-10 sm:mb-12">
-            <span class="type-eyebrow text-[#DDA554] block mb-2">{{ faqTxt('eyebrow', 'Dúvidas Frequentes (FAQ)') }}</span>
+            <span class="type-eyebrow text-[#DDA554] block mb-2">Dúvidas Frequentes (FAQ)</span>
             <h2 id="faq-heading" class="type-title text-[#054054] mb-3">
-              {{ faqTxt('titulo', 'Informações importantes antes da sua reserva') }}
+              Informações importantes antes da sua reserva
             </h2>
             <p class="type-body text-sm sm:text-base text-[#536B73] max-w-2xl mx-auto">
-              {{ faqTxt('texto', 'Reunimos as principais respostas sobre localização no bairro Peró, horários, comodidades e funcionamento da Pousada Espírito do Mar.') }}
+              Reunimos as principais respostas sobre localização no bairro Peró, horários, comodidades e funcionamento da Pousada Espírito do Mar.
             </p>
           </div>
 
@@ -520,39 +517,9 @@ export class ContactComponent implements OnInit {
   public readonly selectedCategory = signal<string>('Todas');
   public readonly openFaqIndex = signal<number | null>(0);
 
-  private readonly site = inject(SiteContentService);
-  private readonly header = computed(() => this.site.secao('contato.header'));
-  private readonly canais = computed(() => this.site.secao('contato.canais'));
-  private readonly faqSecao = computed(() => this.site.secao('contato.faq'));
-
-  protected readonly headerImg = computed(
-    () => this.site.midiaUrl(this.header()?.['imagem']) || PADRAO_HEADER_IMG
-  );
-  protected headerTxt(key: string, fallback: string): string {
-    return cmsStr(this.header(), key) || fallback;
-  }
-  protected canaisTxt(key: string, fallback: string): string {
-    return cmsStr(this.canais(), key) || fallback;
-  }
-  protected faqTxt(key: string, fallback: string): string {
-    return cmsStr(this.faqSecao(), key) || fallback;
-  }
-
-  /** FAQ do CMS (`contato.faq.itens`); vazio cai nas perguntas padrão do config. */
-  private readonly faqItens = computed(() => {
-    const itens = cmsLista(this.faqSecao(), 'itens')
-      .map((i) => ({
-        category: cmsStr(i, 'categoria') || 'Geral',
-        question: cmsStr(i, 'pergunta'),
-        answer: cmsStr(i, 'resposta'),
-      }))
-      .filter((f) => f.question && f.answer);
-    return itens.length ? itens : this.hotelConfig.faqs;
-  });
-
   public readonly faqCategories = computed<string[]>(() => {
     const categories = new Set<string>(['Todas']);
-    for (const item of this.faqItens()) {
+    for (const item of this.hotelConfig.faqs) {
       categories.add(item.category);
     }
     return Array.from(categories);
@@ -561,9 +528,9 @@ export class ContactComponent implements OnInit {
   public readonly filteredFaqs = computed(() => {
     const category = this.selectedCategory();
     if (category === 'Todas') {
-      return this.faqItens();
+      return this.hotelConfig.faqs;
     }
-    return this.faqItens().filter((f) => f.category === category);
+    return this.hotelConfig.faqs.filter((f) => f.category === category);
   });
 
   constructor() {
@@ -577,12 +544,10 @@ export class ContactComponent implements OnInit {
   }
 
   public ngOnInit(): void {
-    const seo = this.site.seoPagina('contato');
     this.seoService.updateSeo({
-      title: seo?.titulo || 'Contato & FAQ | Pousada Espírito do Mar no Peró, Cabo Frio',
-      description: seo?.descricao ||
+      title: 'Contato & FAQ | Pousada Espírito do Mar no Peró, Cabo Frio',
+      description:
         'Entre em contato com a Pousada Espírito do Mar, no bairro Peró, Cabo Frio (RJ). Tire suas dúvidas sobre localização, acomodações, horários e reservas.',
-      keywords: seo?.keywords,
       url: 'https://pousadaespiritodomar.com.br/contato'
     });
   }

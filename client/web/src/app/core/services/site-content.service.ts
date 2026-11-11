@@ -1,4 +1,4 @@
-import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Socket, Channel } from 'phoenix';
 import { environment } from '../../../environments/environment';
@@ -19,35 +19,17 @@ export interface FaqItem {
   resposta: string;
 }
 
-export type CmsDados = Record<string, unknown>;
-
 interface CmsSecaoApi {
   secao: string;
-  dados: CmsDados;
+  dados: Record<string, unknown>;
   visivel: boolean;
-}
-
-export interface SiteMidiaMeta {
-  id: number;
-  tipo: 'foto' | 'video';
-  nome: string;
-  mime: string;
 }
 
 const API = environment.apiUrl;
 
-/** String de uma chave; '' quando ausente ou de outro tipo. */
-export function cmsStr(dados: CmsDados | null | undefined, key: string): string {
-  const v = dados?.[key];
+function str(dados: Record<string, unknown>, key: string): string {
+  const v = dados[key];
   return typeof v === 'string' ? v : '';
-}
-
-/** Lista de objetos de uma chave; [] quando ausente. */
-export function cmsLista(dados: CmsDados | null | undefined, key: string): CmsDados[] {
-  const v = dados?.[key];
-  return Array.isArray(v)
-    ? v.filter((i): i is CmsDados => typeof i === 'object' && i !== null)
-    : [];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -57,29 +39,9 @@ export class SiteContentService {
   private canal: Channel | null = null;
   private refetchTimer: ReturnType<typeof setTimeout> | null = null;
 
-  /** Todas as seções visíveis indexadas por chave (`hero`, `sobre.header`…). */
-  public readonly secoes = signal<Record<string, CmsDados>>({});
-
-  /** Metadados da biblioteca pública indexados por id. */
-  public readonly midias = signal<Record<number, SiteMidiaMeta>>({});
-
-  public readonly hero = computed<HeroContent | null>(() => {
-    const d = this.secoes()['hero'];
-    return d ? { titulo: cmsStr(d, 'titulo'), subtitulo: cmsStr(d, 'subtitulo') } : null;
-  });
-
-  public readonly seo = computed<SeoContent | null>(() => {
-    const d = this.secoes()['seo'];
-    return d
-      ? { titulo: cmsStr(d, 'titulo'), descricao: cmsStr(d, 'descricao'), keywords: cmsStr(d, 'keywords') }
-      : null;
-  });
-
-  public readonly faq = computed<FaqItem[]>(() =>
-    cmsLista(this.secoes()['faq'], 'itens')
-      .map((i) => ({ pergunta: cmsStr(i, 'pergunta'), resposta: cmsStr(i, 'resposta') }))
-      .filter((i) => i.pergunta && i.resposta),
-  );
+  public readonly hero = signal<HeroContent | null>(null);
+  public readonly seo = signal<SeoContent | null>(null);
+  public readonly faq = signal<FaqItem[]>([]);
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
@@ -91,53 +53,43 @@ export class SiteContentService {
     }
   }
 
-  /** Dados de uma seção (null quando inexistente/oculta — use fallback no componente). */
-  public secao(nome: string): CmsDados | null {
-    return this.secoes()[nome] ?? null;
-  }
-
-  /** SEO por página: `${pagina}.seo`, caindo para a seção `seo` global (home). */
-  public seoPagina(pagina: string): SeoContent | null {
-    const d = this.secoes()[`${pagina}.seo`] ?? this.secoes()['seo'];
-    return d
-      ? { titulo: cmsStr(d, 'titulo'), descricao: cmsStr(d, 'descricao'), keywords: cmsStr(d, 'keywords') }
-      : null;
-  }
-
-  /** URL pública do binário de uma mídia da biblioteca (id guardado no CMS). */
-  public midiaUrl(id: unknown): string {
-    const n = Number(id);
-    return Number.isFinite(n) && n > 0 ? `${API}/site-midia/${n}` : '';
-  }
-
-  /** Metadados de uma mídia (tipo foto/video) — null enquanto não carregado. */
-  public midia(id: unknown): SiteMidiaMeta | null {
-    const n = Number(id);
-    return Number.isFinite(n) && n > 0 ? (this.midias()[n] ?? null) : null;
-  }
-
   public async carregar(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
     try {
-      const [resSecoes, resMidias] = await Promise.all([
-        fetch(`${API}/publico/cms/site`, { cache: 'no-store' }),
-        fetch(`${API}/publico/site-midia`, { cache: 'no-store' }),
-      ]);
-      if (resSecoes.ok) {
-        const secoes = (await resSecoes.json()) as CmsSecaoApi[];
-        const mapa: Record<string, CmsDados> = {};
-        for (const s of secoes) {
-          if (!s.visivel || typeof s.dados !== 'object' || s.dados === null) continue;
-          mapa[s.secao] = s.dados;
+      const res = await fetch(`${API}/publico/cms/site`, { cache: 'no-store' });
+      if (!res.ok) return;
+      const secoes = (await res.json()) as CmsSecaoApi[];
+      let novoHero: HeroContent | null = null;
+      let novoSeo: SeoContent | null = null;
+      let novoFaq: FaqItem[] = [];
+
+      for (const s of secoes) {
+        if (!s.visivel || typeof s.dados !== 'object' || s.dados === null) continue;
+        if (s.secao === 'hero') {
+          novoHero = {
+            titulo: str(s.dados, 'titulo'),
+            subtitulo: str(s.dados, 'subtitulo'),
+          };
+        } else if (s.secao === 'seo') {
+          novoSeo = {
+            titulo: str(s.dados, 'titulo'),
+            descricao: str(s.dados, 'descricao'),
+            keywords: str(s.dados, 'keywords'),
+          };
+        } else if (s.secao === 'faq') {
+          const itens = s.dados['itens'];
+          if (Array.isArray(itens)) {
+            novoFaq = itens
+              .filter((i): i is Record<string, unknown> => typeof i === 'object' && i !== null)
+              .map((i) => ({ pergunta: str(i, 'pergunta'), resposta: str(i, 'resposta') }))
+              .filter((i) => i.pergunta && i.resposta);
+          }
         }
-        this.secoes.set(mapa);
       }
-      if (resMidias.ok) {
-        const lista = (await resMidias.json()) as SiteMidiaMeta[];
-        const mapa: Record<number, SiteMidiaMeta> = {};
-        for (const m of lista) mapa[m.id] = m;
-        this.midias.set(mapa);
-      }
+
+      this.hero.set(novoHero);
+      this.seo.set(novoSeo);
+      this.faq.set(novoFaq);
     } catch {
       // API indisponível → o site segue com o conteúdo padrão dos componentes.
     }

@@ -64,11 +64,15 @@ pub async fn status(
 const MAX_FOTO: usize = 8 * 1024 * 1024;
 const MAX_VIDEO: usize = 80 * 1024 * 1024;
 
-/// Valida `Content-Type`/tamanho e devolve `(tipo, ext, content_type)`.
-fn validar_upload(
-    headers: &HeaderMap,
-    len: usize,
-) -> Result<(&'static str, &'static str, String), AppError> {
+/// `POST /cms/acomodacoes/{id}/midia` — bytes crus no body,
+/// `Content-Type: image/*` (≤ 8 MB) ou `video/mp4|webm` (≤ 80 MB).
+pub async fn upload_midia(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Result<(StatusCode, Json<AcomodacaoMidia>), AppError> {
     let content_type = headers
         .get(header::CONTENT_TYPE)
         .and_then(|v| v.to_str().ok())
@@ -97,26 +101,13 @@ fn validar_upload(
             .into())
         }
     };
-    if len == 0 || len > limite {
+    if body.is_empty() || body.len() > limite {
         return Err(DomainError::validacao(format!(
             "Arquivo vazio ou maior que {} MB.",
             limite / 1024 / 1024
         ))
         .into());
     }
-    Ok((tipo, ext, content_type))
-}
-
-/// `POST /cms/acomodacoes/{id}/midia` — bytes crus no body,
-/// `Content-Type: image/*` (≤ 8 MB) ou `video/mp4|webm` (≤ 80 MB).
-pub async fn upload_midia(
-    State(s): State<AppState>,
-    ator: Ator,
-    Path(id): Path<i64>,
-    headers: HeaderMap,
-    body: Bytes,
-) -> Result<(StatusCode, Json<AcomodacaoMidia>), AppError> {
-    let (tipo, ext, content_type) = validar_upload(&headers, body.len())?;
 
     let key = format!("cms/{id}/{}.{ext}", clarituz_shared::ids::simples());
     s.store.put(&key, &body, &content_type).await?;
@@ -186,79 +177,6 @@ pub async fn site_salvar(
     ))
 }
 
-#[derive(serde::Deserialize)]
-pub struct SiteVisivelInput {
-    pub visivel: bool,
-}
-
-/// `PATCH /cms/site/{secao}/visivel` — exibe/oculta a seção no site público.
-pub async fn site_visivel(
-    State(s): State<AppState>,
-    ator: Ator,
-    Path(secao): Path<String>,
-    Json(input): Json<SiteVisivelInput>,
-) -> Result<Json<clarituz_domain::entities::CmsSecao>, AppError> {
-    Ok(Json(
-        s.services
-            .cms
-            .site_visivel(&ator, &secao, input.visivel)
-            .await?,
-    ))
-}
-
-// ---------------------------------------------------------------------------
-// admin — biblioteca de mídia do site
-// ---------------------------------------------------------------------------
-
-/// `GET /cms/site/midia` — biblioteca completa (admin).
-pub async fn site_midia_listar(
-    State(s): State<AppState>,
-    _ator: Ator,
-) -> Result<Json<Vec<clarituz_domain::entities::SiteMidia>>, AppError> {
-    Ok(Json(s.services.cms.site_midias().await?))
-}
-
-#[derive(serde::Deserialize)]
-pub struct SiteMidiaQuery {
-    pub nome: Option<String>,
-}
-
-/// `POST /cms/site/midia?nome=…` — upload binário p/ a biblioteca do site.
-pub async fn site_midia_upload(
-    State(s): State<AppState>,
-    ator: Ator,
-    axum::extract::Query(q): axum::extract::Query<SiteMidiaQuery>,
-    headers: HeaderMap,
-    body: Bytes,
-) -> Result<(StatusCode, Json<clarituz_domain::entities::SiteMidia>), AppError> {
-    let (tipo, ext, content_type) = validar_upload(&headers, body.len())?;
-
-    let key = format!("site/{}.{ext}", clarituz_shared::ids::simples());
-    s.store.put(&key, &body, &content_type).await?;
-
-    let nome = q.nome.unwrap_or_default();
-    let nome = nome.trim();
-    let midia = s
-        .services
-        .cms
-        .site_midia_adicionar(&ator, tipo, &key, &content_type, &nome[..nome.len().min(120)])
-        .await?;
-    Ok((StatusCode::CREATED, Json(midia)))
-}
-
-/// `DELETE /cms/site/midia/{id}` — remove metadado + objeto.
-pub async fn site_midia_remover(
-    State(s): State<AppState>,
-    ator: Ator,
-    Path(id): Path<i64>,
-) -> Result<StatusCode, AppError> {
-    let anterior = s.services.cms.site_midia_remover(&ator, id).await?;
-    if let Some(c) = anterior {
-        s.store.delete(&c).await.ok();
-    }
-    Ok(StatusCode::NO_CONTENT)
-}
-
 // ---------------------------------------------------------------------------
 // público — site da pousada
 // ---------------------------------------------------------------------------
@@ -268,46 +186,6 @@ pub async fn publico_site(
     State(s): State<AppState>,
 ) -> Result<Json<Vec<clarituz_domain::entities::CmsSecao>>, AppError> {
     Ok(Json(s.services.cms.site_publico().await?))
-}
-
-/// Metadados públicos de um item da biblioteca (sem a chave do storage).
-#[derive(serde::Serialize)]
-pub struct SiteMidiaPublica {
-    pub id: i64,
-    pub tipo: String,
-    pub nome: String,
-    pub mime: String,
-}
-
-/// `GET /publico/site-midia` — metadados públicos da biblioteca do site.
-pub async fn publico_site_midia(
-    State(s): State<AppState>,
-) -> Result<Json<Vec<SiteMidiaPublica>>, AppError> {
-    let lista = s
-        .services
-        .cms
-        .site_midias()
-        .await?
-        .into_iter()
-        .map(|m| SiteMidiaPublica {
-            id: m.id,
-            tipo: m.tipo,
-            nome: m.nome,
-            mime: m.mime,
-        })
-        .collect();
-    Ok(Json(lista))
-}
-
-/// `GET /site-midia/{id}` — binário público da biblioteca do site.
-pub async fn servir_site_midia(
-    State(s): State<AppState>,
-    Path(id): Path<i64>,
-) -> Result<([(HeaderName, String); 2], Vec<u8>), AppError> {
-    let Some((key, mime)) = s.services.cms.site_midia_caminho(id).await? else {
-        return Err(DomainError::nao_encontrado("Mídia não encontrada.").into());
-    };
-    servir_objeto(&s, &key, &mime).await
 }
 
 /// `GET /publico/acomodacoes` — cards `publicado` + acomodação ativa.
@@ -381,7 +259,7 @@ pub async fn publico_stream(
         Ok(EventoApp::Delta(d))
             if matches!(
                 d.tabela.as_str(),
-                "acomodacao" | "acomodacao_cms" | "acomodacao_midia" | "cms_site" | "site_midia"
+                "acomodacao" | "acomodacao_cms" | "acomodacao_midia" | "cms_site"
             ) =>
         {
             Some(Ok(Event::default()

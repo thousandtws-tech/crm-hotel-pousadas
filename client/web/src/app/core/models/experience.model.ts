@@ -7,12 +7,8 @@ export interface Experience {
   description: string;
   longDescription?: string;
   image: string;
-  /** true quando a mídia é vídeo. */
-  video?: boolean;
   gallery?: string[];
   schedule?: string;
-  ctaLabel?: string;
-  ctaHref?: string;
   highlights?: string[];
   includedInStay: boolean;
   featured: boolean;

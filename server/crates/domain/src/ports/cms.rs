@@ -2,7 +2,6 @@
 
 use crate::entities::{
     AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica, CmsSecao, NovoLog,
-    SiteMidia,
 };
 use crate::error::DomainError;
 use async_trait::async_trait;
@@ -87,35 +86,6 @@ pub trait CmsRepository: Send + Sync {
         dados: &serde_json::Value,
         log: NovoLog,
     ) -> Result<CmsSecao, DomainError>;
-    /// Alterna a visibilidade pública da seção (cria a linha se ausente).
-    async fn site_definir_visivel(
-        &self,
-        secao: &str,
-        visivel: bool,
-        log: NovoLog,
-    ) -> Result<CmsSecao, DomainError>;
-
-    // -- biblioteca de mídia do site ------------------------------------------
-
-    async fn site_midias(&self) -> Result<Vec<SiteMidia>, DomainError>;
-    /// Registra a mídia já gravada no storage (chave `site/…`).
-    async fn site_midia_adicionar(
-        &self,
-        tipo: &str,
-        caminho: &str,
-        mime: &str,
-        nome: &str,
-        log: NovoLog,
-    ) -> Result<SiteMidia, DomainError>;
-    /// Remove o metadado — retorna `caminho` para o chamador apagar o objeto.
-    async fn site_midia_remover(
-        &self,
-        id: i64,
-        log: NovoLog,
-    ) -> Result<Option<String>, DomainError>;
-    /// `(caminho, mime)` para servir o binário público.
-    async fn site_midia_caminho(&self, id: i64)
-        -> Result<Option<(String, String)>, DomainError>;
 
     /// Cards `publicado` + acomodacao ativa — consumo do site público.
     async fn listar_publicadas(&self) -> Result<Vec<AcomodacaoPublica>, DomainError>;
