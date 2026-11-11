@@ -390,3 +390,36 @@ pub async fn desbloquear(
     s.services.reservas.desbloquear(&ator, id).await?;
     Ok(StatusCode::NO_CONTENT)
 }
+
+// ---------------------------------------------------------------------------
+// Widget "usar no meu site" — link + QR + snippet embed do motor de reservas.
+// ---------------------------------------------------------------------------
+
+/// GET /reservas/widget — devolve a URL do motor, o QR (SVG) e o snippet
+/// HTML pronto para colar num site externo (mini busca abre em nova aba).
+pub async fn widget_motor(State(s): State<AppState>, _ator: Ator) -> Result<Json<Value>, AppError> {
+    let url = format!("{}/reservar", s.site_base.trim_end_matches('/'));
+    let qr = qrcode::QrCode::new(url.as_bytes())
+        .map_err(|e| DomainError::regra(format!("QR inválido: {e}")))?;
+    let svg = qr
+        .render::<qrcode::render::svg::Color>()
+        .min_dimensions(320, 320)
+        .quiet_zone(true)
+        .build();
+    let snippet = format!(
+        r#"<!-- Motor de reservas — cole no seu site -->
+<form action="{url}" method="get" target="_blank" rel="noopener"
+      style="display:flex;gap:8px;flex-wrap:wrap;font-family:sans-serif">
+  <input type="date" name="checkIn" required aria-label="Check-in" />
+  <input type="date" name="checkOut" required aria-label="Check-out" />
+  <input type="number" name="guests" min="1" value="2" aria-label="Hóspedes" style="width:90px" />
+  <button type="submit"
+          style="background:#1a6f8a;color:#fff;border:0;border-radius:6px;padding:10px 18px;cursor:pointer">
+    Reservar agora
+  </button>
+</form>"#
+    );
+    Ok(Json(
+        json!({ "url": url, "qr_svg": svg, "snippet": snippet }),
+    ))
+}

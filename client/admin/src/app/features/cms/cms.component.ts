@@ -137,6 +137,41 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
         </span>
       </div>
 
+      <!-- ================= Widget "usar no meu site" ================= -->
+      @if (widget(); as w) {
+        <div class="inner-card cms-card wg-card">
+          <h3 class="wg-tit"><mat-icon>link</mat-icon> Motor de reservas — usar no seu site</h3>
+          <p class="wg-sub">
+            Hóspede reserva e paga direto no motor; os dados caem aqui no CRM.
+            Compartilhe o link, o QR ou cole o código no seu site.
+          </p>
+          <div class="wg-grid">
+            <img
+              class="wg-qr" alt="QR code apontando para o motor de reservas"
+              [src]="qrSrc()"
+            />
+            <div class="wg-info">
+              <label class="dl">
+                <span>Link direto</span>
+                <input class="input-inn" readonly [value]="w.url" aria-label="Link do motor" />
+              </label>
+              <label class="dl">
+                <span>Código do widget (mini busca + botão)</span>
+                <textarea
+                  class="input-inn wg-snippet" readonly rows="6"
+                  [value]="w.snippet" aria-label="Código HTML do widget"
+                ></textarea>
+              </label>
+              <div class="wg-acoes">
+                <button type="button" class="mc-btn" (click)="copiarWidget(w.url)">Copiar link</button>
+                <button type="button" class="mc-btn" (click)="copiarWidget(w.snippet)">Copiar código</button>
+                <a class="mc-btn" [href]="w.url" target="_blank" rel="noopener">Abrir motor</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- ================= Lista ================= -->
       <div class="inner-card cms-card" id="tour-tabela">
         <div class="cms-toolbar">
@@ -676,6 +711,20 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
 
     /* ---------- toolbar ---------- */
     .cms-card { padding-top: 14px; }
+
+    /* ---------- widget "usar no meu site" ---------- */
+    .wg-card { margin-bottom: 16px; }
+    .wg-tit { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 1rem; color: #054054; }
+    .wg-tit mat-icon { font-size: 20px; width: 20px; height: 20px; }
+    .wg-sub { margin: 0 0 12px; font-size: 0.82rem; color: #5d6d7e; }
+    .wg-grid { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+    .wg-qr { width: 150px; height: 150px; border: 1px solid #e3eaef; border-radius: 8px; background: #fff; }
+    .wg-info { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 8px; }
+    .wg-snippet { font-family: monospace; font-size: 0.72rem; resize: vertical; }
+    .wg-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+    .dl { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: #5d6d7e; }
+    .mc-btn { font-size: 0.78rem; padding: 6px 14px; border: 1px solid #d7e0e6; border-radius: 6px; background: #fff; color: #1a6f8a; cursor: pointer; text-decoration: none; }
+    .mc-btn:hover { border-color: #1a6f8a; }
     .cms-toolbar {
       display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
       padding: 4px 2px 14px;
@@ -1017,6 +1066,12 @@ export class CmsComponent implements OnInit {
     destaque: [true],
   });
 
+  protected readonly widget = signal<{ url: string; qr_svg: string; snippet: string } | null>(null);
+  protected readonly qrSrc = computed(() => {
+    const svg = this.widget()?.qr_svg;
+    return svg ? `data:image/svg+xml;utf8,${encodeURIComponent(svg)}` : '';
+  });
+
   private cmsVersion = 0;
   private pmsVersion = 0;
 
@@ -1038,6 +1093,17 @@ export class CmsComponent implements OnInit {
       next: (ts) => this.tipos.set(ts),
       error: () => {},
     });
+    this.api.widgetMotor().subscribe({
+      next: (w) => this.widget.set(w),
+      error: () => {},
+    });
+  }
+
+  copiarWidget(texto: string): void {
+    navigator.clipboard
+      .writeText(texto)
+      .then(() => this.notify.ok('Copiado.'))
+      .catch(() => this.notify.erroMsg('Não foi possível copiar.'));
   }
 
   onEsc(): void {

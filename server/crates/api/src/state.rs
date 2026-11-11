@@ -27,4 +27,6 @@ pub struct AppState {
     pub link_secret: String,
     /// Chave pública VAPID (base64url) exposta ao PWA —  sem push.
     pub vapid_public_b64: Option<String>,
+    /// URL pública do site — base do link/QR do motor de reservas.
+    pub site_base: String,
 }

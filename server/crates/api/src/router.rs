@@ -193,6 +193,7 @@ pub fn build(state: AppState) -> Router {
         .route("/reservas/eventos", get(routes::reservas::eventos))
         // Mapa por andar + bloqueio formal
         .route("/reservas/mapa", get(routes::reservas::mapa_quartos))
+        .route("/reservas/widget", get(routes::reservas::widget_motor))
         .route("/bloqueios", get(routes::reservas::bloqueios))
         .route(
             "/bloqueios/{id}",

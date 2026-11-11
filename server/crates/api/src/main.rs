@@ -161,6 +161,7 @@ async fn serve(settings: Settings, pool: sqlx::PgPool) -> Result<(), Box<dyn std
         stripe_webhook_secret: settings.stripe_webhook_secret.clone(),
         link_secret: settings.jwt_secret.clone(),
         vapid_public_b64: settings.vapid_public_b64.clone(),
+        site_base: settings.site_base.clone(),
     };
     // Sweeper de conciliação: holds expirados, webhooks falhos e
     // pagamentos pendentes consultados direto no provedor (a cada 5min).

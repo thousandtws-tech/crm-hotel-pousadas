@@ -984,6 +984,9 @@ export class ApiService {
   mapaQuartos() {
     return this.get<M.MapaQuarto[]>('/reservas/mapa');
   }
+  widgetMotor() {
+    return this.get<{ url: string; qr_svg: string; snippet: string }>('/reservas/widget');
+  }
   bloqueios() {
     return this.get<M.Bloqueio[]>('/bloqueios');
   }
