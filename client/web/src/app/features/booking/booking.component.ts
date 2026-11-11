@@ -8,7 +8,7 @@ import { SeoService } from '../../core/services/seo.service';
 import { IconComponent } from '../../shared/components/icons/icon.component';
 import { HOTEL_CONFIG } from '../../core/config/hotel-config';
 import { MotionService } from '../../core/services/motion.service';
-import { environment } from '../../../environments/environment';
+
 
 @Component({
   selector: 'app-booking',
@@ -537,22 +537,15 @@ export class BookingComponent implements OnInit {
   }
 
   private async validarCodigo(codigo: string): Promise<void> {
-    try {
-      const res = await fetch(
-        `${environment.apiUrl}/publico/contrato/${encodeURIComponent(codigo)}`
-      );
-      const data = await res.json();
-      // Só aplica se o campo ainda tiver o mesmo código (digitação posterior).
-      if (codigo !== this.codigoCorporativo().trim()) return;
-      if (data?.valido && typeof data.desconto_pct === 'number') {
-        this.descontoCorporativo.set(data.desconto_pct);
-        this.codigoInvalido.set(false);
-      } else {
-        this.descontoCorporativo.set(null);
-        this.codigoInvalido.set(true);
-      }
-    } catch {
+    const data = await this.bookingService.validarContrato(codigo);
+    // Só aplica se o campo ainda tiver o mesmo código (digitação posterior).
+    if (codigo !== this.codigoCorporativo().trim()) return;
+    if (data?.valido && typeof data.desconto_pct === 'number') {
+      this.descontoCorporativo.set(data.desconto_pct);
+      this.codigoInvalido.set(false);
+    } else {
       this.descontoCorporativo.set(null);
+      this.codigoInvalido.set(data !== null);
     }
   }
 

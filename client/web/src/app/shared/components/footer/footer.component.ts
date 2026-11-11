@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { IconComponent } from '../icons/icon.component';
 import { HOTEL_CONFIG } from '../../../core/config/hotel-config';
-import { environment } from '../../../../environments/environment';
+import { NewsletterService } from '../../../core/services/newsletter.service';
 
 @Component({
   selector: 'app-footer',
@@ -13,6 +13,7 @@ import { environment } from '../../../../environments/environment';
 })
 export class FooterComponent {
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly newsletter = inject(NewsletterService);
 
   public readonly hotelConfig = HOTEL_CONFIG;
   public readonly safeMapEmbedUrl: SafeResourceUrl =
@@ -32,17 +33,12 @@ export class FooterComponent {
     }
     this.newsletterEstado.set('enviando');
     this.newsletterMsg.set('');
-    try {
-      const res = await fetch(`${environment.apiUrl}/publico/newsletter`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, origem: 'rodape' })
-      });
-      if (!res.ok) throw new Error(String(res.status));
+    const ok = await this.newsletter.inscrever(email, 'rodape');
+    if (ok) {
       this.newsletterEstado.set('ok');
       this.newsletterMsg.set('Inscrição confirmada — até breve!');
       this.newsletterEmail.set('');
-    } catch {
+    } else {
       this.newsletterEstado.set('erro');
       this.newsletterMsg.set('Não foi possível concluir. Tente novamente.');
     }

@@ -1,6 +1,8 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Socket, Channel } from 'phoenix';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface HeroContent {
@@ -35,6 +37,7 @@ function str(dados: Record<string, unknown>, key: string): string {
 @Injectable({ providedIn: 'root' })
 export class SiteContentService {
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly http = inject(HttpClient);
   private socket: Socket | null = null;
   private canal: Channel | null = null;
   private refetchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -56,9 +59,7 @@ export class SiteContentService {
   public async carregar(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
     try {
-      const res = await fetch(`${API}/publico/cms/site`, { cache: 'no-store' });
-      if (!res.ok) return;
-      const secoes = (await res.json()) as CmsSecaoApi[];
+      const secoes = await firstValueFrom(this.http.get<CmsSecaoApi[]>(`${API}/publico/cms/site`));
       let novoHero: HeroContent | null = null;
       let novoSeo: SeoContent | null = null;
       let novoFaq: FaqItem[] = [];

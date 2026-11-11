@@ -1,6 +1,8 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable, signal, computed, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Socket, Channel } from 'phoenix';
+import { firstValueFrom } from 'rxjs';
 import { Accommodation, Amenity } from '../models/accommodation.model';
 import { environment } from '../../../environments/environment';
 
@@ -232,6 +234,7 @@ const FALLBACK: Accommodation[] = [
 @Injectable({ providedIn: 'root' })
 export class AccommodationService {
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly http = inject(HttpClient);
   private readonly accommodationsState = signal<Accommodation[]>(FALLBACK);
   private socket: Socket | null = null;
   private canal: Channel | null = null;
@@ -255,9 +258,7 @@ export class AccommodationService {
   /** Refetch completo do catálogo público. Sempre reflete o estado publicado no CMS. */
   private async carregar(): Promise<void> {
     try {
-      const res = await fetch(`${API}/publico/acomodacoes`, { cache: 'no-store' });
-      if (!res.ok) return;
-      const dados = (await res.json()) as AcomodacaoPublica[];
+      const dados = await firstValueFrom(this.http.get<AcomodacaoPublica[]>(`${API}/publico/acomodacoes`));
       this.accommodationsState.set(dados.map(mapItem));
     } catch {
       // API indisponível → mantém o estado atual (ou FALLBACK inicial).

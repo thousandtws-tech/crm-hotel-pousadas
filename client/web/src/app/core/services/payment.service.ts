@@ -1,4 +1,6 @@
-import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export type TipoPagamento = 'integral' | 'sinal' | 'saldo';
@@ -28,19 +30,18 @@ export interface StatusReserva {
 
 @Injectable({ providedIn: 'root' })
 export class PaymentService {
+  private readonly http = inject(HttpClient);
+  private readonly api = `${environment.apiUrl}/publico/pagamentos`;
+
   /**
    * Cria a sessão Stripe para a reserva identificada pelo token opaco.
    * O valor é recalculado no servidor — o site nunca envia dinheiro.
    */
   public async criarCheckout(token: string, tipo: TipoPagamento): Promise<CheckoutOutput | null> {
     try {
-      const res = await fetch(`${environment.apiUrl}/publico/pagamentos/checkout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, tipo })
-      });
-      if (!res.ok) return null;
-      return await res.json();
+      return await firstValueFrom(
+        this.http.post<CheckoutOutput>(`${this.api}/checkout`, { token, tipo })
+      );
     } catch {
       return null;
     }
@@ -49,9 +50,11 @@ export class PaymentService {
   /** Estado persistido da reserva — reflete o que o webhook confirmou. */
   public async status(token: string): Promise<StatusReserva | null> {
     try {
-      const res = await fetch(`${environment.apiUrl}/publico/pagamentos/status?token=${token}`);
-      if (!res.ok) return null;
-      return await res.json();
+      return await firstValueFrom(
+        this.http.get<StatusReserva>(`${this.api}/status`, {
+          params: new HttpParams().set('token', token)
+        })
+      );
     } catch {
       return null;
     }

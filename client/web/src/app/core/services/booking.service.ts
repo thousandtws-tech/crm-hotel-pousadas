@@ -1,12 +1,34 @@
-import { Injectable, signal, computed } from '@angular/core';
-import { BookingFilter, BookingSubmission } from '../models/booking-request.model';
-import { HOTEL_CONFIG } from '../config/hotel-config';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { HOTEL_CONFIG } from '../config/hotel-config';
+import { BookingFilter, BookingSubmission } from '../models/booking-request.model';
+
+interface ReservaCriadaResponse {
+  idreserva?: number | null;
+  token_publico?: string | null;
+  mensagem?: string;
+  erro?: { mensagem?: string };
+}
+
+interface ContratoResponse {
+  valido?: boolean;
+  desconto_pct?: number;
+}
+
+export interface BookingResult {
+  success: boolean;
+  message: string;
+  idreserva?: number | null;
+  token?: string | null;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class BookingService {
+  private readonly http = inject(HttpClient);
   // Pre-fill with reasonable future dates
   private readonly defaultCheckIn = this.formatDate(new Date(Date.now() + 86400000 * 7));
   private readonly defaultCheckOut = this.formatDate(new Date(Date.now() + 86400000 * 10));
@@ -52,14 +74,23 @@ export class BookingService {
     return `https://wa.me/${HOTEL_CONFIG.whatsapp}?text=${fullMessage}`;
   }
 
-  public async submitBookingRequest(
-    submission: BookingSubmission
-  ): Promise<{ success: boolean; message: string; idreserva?: number | null; token?: string | null }> {
+  /** Valida código corporativo — desconto só se o contrato estiver vigente. */
+  public async validarContrato(codigo: string): Promise<ContratoResponse | null> {
     try {
-      const res = await fetch(`${environment.apiUrl}/publico/reservas`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      return await firstValueFrom(
+        this.http.get<ContratoResponse>(
+          `${environment.apiUrl}/publico/contrato/${encodeURIComponent(codigo)}`
+        )
+      );
+    } catch {
+      return null;
+    }
+  }
+
+  public async submitBookingRequest(submission: BookingSubmission): Promise<BookingResult> {
+    try {
+      const data = await firstValueFrom(
+        this.http.post<ReservaCriadaResponse>(`${environment.apiUrl}/publico/reservas`, {
           slug: submission.accommodationSlug,
           check_in: submission.checkIn,
           check_out: submission.checkOut,
@@ -74,14 +105,7 @@ export class BookingService {
           aceito_marketing: submission.aceitoMarketing === true,
           codigo_corporativo: submission.codigoCorporativo || null
         })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        return {
-          success: false,
-          message: data?.erro?.mensagem || 'Não foi possível registrar a reserva. Verifique os dados informados.'
-        };
-      }
+      );
       return {
         success: true,
         idreserva: data?.idreserva ?? null,
@@ -90,11 +114,13 @@ export class BookingService {
           data?.mensagem ||
           'Reserva registrada com sucesso! Nossa recepção já foi notificada em tempo real.'
       };
-    } catch {
-      return {
-        success: false,
-        message: 'Falha de conexão com o servidor. Por favor, tente novamente ou fale conosco pelo telefone.'
-      };
+    } catch (e) {
+      const mensagem =
+        e instanceof HttpErrorResponse && e.status > 0
+          ? (e.error as ReservaCriadaResponse | null)?.erro?.mensagem ||
+            'Não foi possível registrar a reserva. Verifique os dados informados.'
+          : 'Falha de conexão com o servidor. Por favor, tente novamente ou fale conosco pelo telefone.';
+      return { success: false, message: mensagem };
     }
   }
 
@@ -105,4 +131,3 @@ export class BookingService {
     return `${year}-${month}-${day}`;
   }
 }
-
