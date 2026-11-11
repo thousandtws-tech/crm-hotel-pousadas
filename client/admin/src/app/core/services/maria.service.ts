@@ -56,6 +56,7 @@ export class MariaService {
   private parcial = '';
   private retry = 0;
   private querConectar = false;
+  private retryTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ---- captura de microfone ----
   private micStream: MediaStream | null = null;
@@ -98,7 +99,10 @@ export class MariaService {
         this.pararMic();
         if (this.querConectar) {
           const wait = Math.min(15000, 1000 * Math.pow(2, this.retry++));
-          setTimeout(() => this.conectar(), wait);
+          this.retryTimer = setTimeout(() => {
+            this.retryTimer = null;
+            this.conectar();
+          }, wait);
         }
       };
       this.ws.onerror = () => this.erro.set('serviço Maria fora do ar');
@@ -110,12 +114,19 @@ export class MariaService {
 
   desconectar(): void {
     this.querConectar = false;
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
     this.ws?.close();
     this.ws = null;
     this.conectado.set(false);
     this.estado.set('offline');
     this.pararMic();
     this.limparAudio();
+    void this.playCtx?.close();
+    this.playCtx = null;
+    this.ttsAnalyser = null;
   }
 
   private onMsg(e: MessageEvent): void {

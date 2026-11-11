@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, signal, computed, inject, PLATFORM_ID } from '@angular/core';
+import { DestroyRef, Injectable, signal, computed, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Socket, Channel } from 'phoenix';
 import { firstValueFrom } from 'rxjs';
@@ -234,11 +234,16 @@ const FALLBACK: Accommodation[] = [
 @Injectable({ providedIn: 'root' })
 export class AccommodationService {
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly http = inject(HttpClient);
   private readonly accommodationsState = signal<Accommodation[]>(FALLBACK);
   private socket: Socket | null = null;
   private canal: Channel | null = null;
   private refetchTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private readonly onVisibilityChange = () => {
+    if (document.visibilityState === 'visible') void this.carregar();
+  };
 
   public readonly accommodations = this.accommodationsState.asReadonly();
   public readonly featuredAccommodations = computed(() =>
@@ -249,10 +254,19 @@ export class AccommodationService {
     if (isPlatformBrowser(this.platformId)) {
       void this.carregar();
       this.conectarStream();
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') void this.carregar();
-      });
+      document.addEventListener('visibilitychange', this.onVisibilityChange);
+      this.destroyRef.onDestroy(() => this.desligar());
     }
+  }
+
+  private desligar(): void {
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    if (this.refetchTimer) clearTimeout(this.refetchTimer);
+    this.refetchTimer = null;
+    this.canal?.leave();
+    this.canal = null;
+    this.socket?.disconnect();
+    this.socket = null;
   }
 
   /** Refetch completo do catálogo público. Sempre reflete o estado publicado no CMS. */

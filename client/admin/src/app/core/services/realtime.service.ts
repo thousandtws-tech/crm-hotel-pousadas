@@ -84,6 +84,8 @@ export class Realtime {
 
   parar(): void {
     this.rodando = false;
+    for (const t of this.pendentes.values()) clearTimeout(t);
+    this.pendentes.clear();
     this.canalDeltas?.leave();
     this.canalAvisos?.leave();
     this.canalDeltas = null;
@@ -91,6 +93,8 @@ export class Realtime {
     this.socket?.disconnect();
     this.socket = null;
     this.online.set(false);
+    void this.audioCtx?.close();
+    this.audioCtx = null;
   }
 
   private async conectar(): Promise<void> {
