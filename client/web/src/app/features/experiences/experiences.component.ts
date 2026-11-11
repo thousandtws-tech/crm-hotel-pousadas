@@ -36,64 +36,50 @@ import { MotionService } from '../../core/services/motion.service';
       <div class="container-editorial">
         <h2 id="all-experiences-title" class="sr-only">Estrutura e Comodidades da Pousada</h2>
 
-        <div class="space-y-12 sm:space-y-16 lg:space-y-20">
-          @for (exp of experienceService.experiences(); track exp.id; let idx = $index) {
-            <article class="exp-article grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-              
-              <!-- Large Photo -->
-              <div
-                class="lg:col-span-7 editorial-image-container aspect-[16/10] shadow-sm group"
-                [class.lg:order-2]="idx % 2 === 1"
-              >
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          @for (exp of experienceService.experiences(); track exp.id) {
+            <article class="exp-article group flex flex-col bg-white border border-[#DCE6EA] rounded-xl overflow-hidden shadow-[0_6px_24px_rgba(5,64,84,0.05)] hover:shadow-[0_16px_44px_rgba(5,64,84,0.12)] transition-shadow">
+
+              <!-- Photo -->
+              <div class="editorial-image-container aspect-[16/10] relative">
                 <img
                   [src]="exp.image"
                   [alt]="exp.title + ' (imagem ilustrativa)'"
                   loading="lazy"
                   class="w-full h-full object-cover"
                 />
-              </div>
-
-              <!-- Information Column -->
-              <div
-                class="lg:col-span-5 flex flex-col items-start"
-                [class.lg:order-1]="idx % 2 === 1"
-              >
-                <span class="type-eyebrow text-[#DDA554] block mb-2">
+                <span class="absolute top-4 left-4 z-10 inline-flex items-center bg-[#DDA554] text-[#032B38] text-[10px] font-semibold uppercase tracking-[0.12em] px-3 py-1.5 rounded-full">
                   {{ exp.category }}
                 </span>
+              </div>
 
-                <h3 class="font-serif text-3xl sm:text-4xl text-[#054054] mb-3">
+              <!-- Card body -->
+              <div class="flex flex-col flex-1 p-5 sm:p-6">
+                <h3 class="font-serif text-2xl text-[#054054] mb-1.5">
                   {{ exp.title }}
                 </h3>
 
-                <p class="font-serif italic text-base text-[#536B73] mb-5">
+                <p class="font-serif italic text-sm text-[#536B73] mb-3">
                   "{{ exp.tagline }}"
                 </p>
 
-                <p class="type-body text-sm sm:text-base mb-4">
+                <p class="type-body text-xs sm:text-sm line-clamp-3 mb-5 text-[#536B73]">
                   {{ exp.description }}
                 </p>
 
-                @if (exp.longDescription) {
-                  <p class="type-body text-sm sm:text-base mb-6">
-                    {{ exp.longDescription }}
-                  </p>
-                }
-
                 @if (exp.schedule) {
-                  <span class="type-caption block text-[#054054] font-medium mb-6">
-                    Observação: {{ exp.schedule }}
+                  <span class="type-caption block text-[#054054] font-medium mb-4">
+                    {{ exp.schedule }}
                   </span>
                 }
 
                 <a
                   routerLink="/reservar"
-                  class="btn-secondary"
+                  class="btn-primary !px-4 !py-2.5 text-xs self-start mt-auto"
                 >
-                  <span>Consultar disponibilidade</span>
-                  <app-icon name="arrow-right" [size]="13"></app-icon>
+                  <span>Reservar estadia</span>
+                  <app-icon name="arrow-right" [size]="12"></app-icon>
                 </a>
-
               </div>
 
             </article>

@@ -35,73 +35,72 @@ import { MotionService } from '../../core/services/motion.service';
       <div class="container-editorial">
         <h2 id="suites-list-title" class="sr-only">Lista de Acomodações</h2>
 
-        <div class="space-y-12 sm:space-y-16 lg:space-y-20">
-          @for (acc of accommodationService.accommodations(); track acc.id; let idx = $index) {
-            <article class="suite-article grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-              
-              <!-- Large Photo -->
-              <div
-                class="lg:col-span-7 editorial-image-container aspect-[16/10] shadow-sm group"
-                [class.lg:order-2]="idx % 2 === 1"
-              >
-                <a [routerLink]="['/acomodacoes', acc.slug]" class="block w-full h-full">
-                  <img
-                    [src]="acc.coverImage"
-                    [alt]="acc.name + ' (imagem ilustrativa)'"
-                    loading="lazy"
-                    class="w-full h-full object-cover"
-                  />
-                </a>
-              </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          @for (acc of accommodationService.accommodations(); track acc.id) {
+            <article class="suite-article group flex flex-col bg-white border border-[#DCE6EA] rounded-xl overflow-hidden shadow-[0_6px_24px_rgba(5,64,84,0.05)] hover:shadow-[0_16px_44px_rgba(5,64,84,0.12)] transition-shadow">
 
-              <!-- Information Column -->
-              <div
-                class="lg:col-span-5 flex flex-col items-start"
-                [class.lg:order-1]="idx % 2 === 1"
-              >
-                <span class="type-eyebrow text-[#DDA554] block mb-2">
-                  {{ acc.view }}
+              <!-- Photo + rating badge -->
+              <a [routerLink]="['/acomodacoes', acc.slug]" class="block editorial-image-container aspect-[4/3] relative">
+                <img
+                  [src]="acc.coverImage"
+                  [alt]="acc.name + ' (imagem ilustrativa)'"
+                  loading="lazy"
+                  class="w-full h-full object-cover"
+                />
+                <span class="absolute top-4 right-4 z-10 inline-flex items-center gap-1.5 bg-[#032B38]/85 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full">
+                  <app-icon name="star" [size]="12" class="text-[#DDA554]"></app-icon>
+                  4,9
+                </span>
+              </a>
+
+              <!-- Card body -->
+              <div class="flex flex-col flex-1 p-5 sm:p-6">
+                <span class="type-eyebrow text-[#DDA554] block mb-1.5">
+                  {{ acc.view }} · Até {{ acc.guests }} hóspedes
                 </span>
 
-                <h3 class="font-serif text-3xl sm:text-4xl text-[#054054] mb-3">
-                  <a [routerLink]="['/acomodacoes', acc.slug]" class="hover:text-[#DDA554] transition-colors">
+                <h3 class="font-serif text-2xl text-[#054054] group-hover:text-[#DDA554] transition-colors mb-1.5">
+                  <a [routerLink]="['/acomodacoes', acc.slug]">
                     {{ acc.name }}
                   </a>
                 </h3>
 
-                <p class="font-serif italic text-base text-[#536B73] mb-5">
-                  "{{ acc.subtitle }}"
+                <p class="type-body text-xs sm:text-sm line-clamp-2 mb-4 text-[#536B73]">
+                  {{ acc.shortDescription || acc.subtitle }}
                 </p>
 
-                <p class="type-body text-sm sm:text-base mb-6">
-                  {{ acc.description }}
-                </p>
-
-                <!-- Spec Line -->
-                <div class="w-full flex flex-wrap items-center justify-between gap-2 py-3 border-y border-[#DCE6EA] mb-6 text-xs text-[#536B73]">
-                  <span>{{ acc.beds }}</span>
-                  <span>·</span>
-                  <span>Até {{ acc.guests }} hóspedes</span>
+                <!-- Meta row -->
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-[#536B73] mb-5 pb-5 border-b border-[#DCE6EA]">
+                  <span class="inline-flex items-center gap-1.5">
+                    <app-icon name="users" [size]="13" class="text-[#054054]"></app-icon>
+                    {{ acc.beds }}
+                  </span>
+                  <span class="inline-flex items-center gap-1.5">
+                    <app-icon name="wind" [size]="13" class="text-[#054054]"></app-icon>
+                    Ar-condicionado
+                  </span>
+                  <span class="inline-flex items-center gap-1.5">
+                    <app-icon name="bath" [size]="13" class="text-[#054054]"></app-icon>
+                    Banheiro privativo
+                  </span>
                 </div>
 
-                <!-- Price Label and Link -->
-                <div class="flex items-center justify-between w-full pt-2">
-                  <div>
-                    <span class="type-caption block text-[#536B73]">Tarifas e disponibilidade</span>
-                    <span class="font-serif text-2xl text-[#054054]">
-                      {{ acc.priceLabel }}
+                <!-- Price + CTA -->
+                <div class="flex items-center justify-between gap-4 mt-auto">
+                  <div class="flex flex-col">
+                    <span class="type-caption text-[#536B73] text-[10px]">A partir de</span>
+                    <span class="font-serif text-xl text-[#054054]">
+                      {{ acc.priceLabel }}<span class="text-xs text-[#536B73] font-normal">/noite</span>
                     </span>
                   </div>
-
                   <a
                     [routerLink]="['/acomodacoes', acc.slug]"
-                    class="btn-primary"
+                    class="btn-secondary !px-4 !py-2.5 text-xs shrink-0"
                   >
-                    <span>Consultar categoria</span>
-                    <app-icon name="arrow-right" [size]="13"></app-icon>
+                    <span>Ver detalhes</span>
+                    <app-icon name="arrow-right" [size]="12"></app-icon>
                   </a>
                 </div>
-
               </div>
 
             </article>
