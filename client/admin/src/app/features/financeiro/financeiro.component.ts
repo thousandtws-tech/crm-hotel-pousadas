@@ -16,14 +16,12 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { MatTabsModule } from '@angular/material/tabs';
 import { debounceTime } from 'rxjs';
-import { ApiService, STATUS_RESERVA, num } from '@core/services/api.service';
-import {
-  ItemMaisVendido,
-  PontoSerie,
-  ReservaResumo,
-  ResumoFinanceiro,
-  VendaItem,
-} from '@core/models/api.models';
+import { RelatoriosApi } from '@core/api/relatorios.api';
+import { ReservasApi } from '@core/api/reservas.api';
+import { STATUS_RESERVA } from '@core/models/reservas.models';
+import { num } from '@core/utils/num';
+import { ItemMaisVendido, PontoSerie, ResumoFinanceiro, VendaItem } from '@core/models/relatorios.models';
+import { ReservaResumo } from '@core/models/reservas.models';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
 import { TourGuiado } from '@core/services/tour.service';
@@ -509,7 +507,8 @@ function ttItem(fmtExtra: (p: { name: string; value: number; dataIndex: number }
   `,
 })
 export class FinanceiroComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly relatoriosApi = inject(RelatoriosApi);
+  private readonly reservasApi = inject(ReservasApi);
   private readonly notify = inject(Notify);
   private readonly rt = inject(Realtime);
   private readonly tour = inject(TourGuiado);
@@ -603,39 +602,39 @@ export class FinanceiroComponent implements OnInit {
     let pendentes = 8;
     const fimReq = () => { if (--pendentes === 0) this.carregando.set(false); };
 
-    this.api.resumoFinanceiro(i, f).subscribe({
+    this.relatoriosApi.resumoFinanceiro(i, f).subscribe({
       next: (r) => { this.resumo.set(r); fimReq(); },
       error: (e) => { this.notify.erro(e); fimReq(); },
     });
-    this.api.serieRecebido(i, f).subscribe({
+    this.relatoriosApi.serieRecebido(i, f).subscribe({
       next: (s) => { this.serieRecebido.set(s); fimReq(); },
       error: () => fimReq(),
     });
-    this.api.serieReservas(i, f).subscribe({
+    this.relatoriosApi.serieReservas(i, f).subscribe({
       next: (s) => { this.serieReservasFat.set(s); fimReq(); },
       error: () => fimReq(),
     });
-    this.api.serieVendas(i, f).subscribe({
+    this.relatoriosApi.serieVendas(i, f).subscribe({
       next: (s) => { this.serieVendas.set(s); fimReq(); },
       error: () => fimReq(),
     });
-    this.api.seriePorPagamento(i, f).subscribe({
+    this.relatoriosApi.seriePorPagamento(i, f).subscribe({
       next: (s) => { this.seriePagamento.set(s); fimReq(); },
       error: () => fimReq(),
     });
-    this.api.seriePorAcomodacao(i, f).subscribe({
+    this.relatoriosApi.seriePorAcomodacao(i, f).subscribe({
       next: (s) => { this.serieAcomodacao.set(s); fimReq(); },
       error: () => fimReq(),
     });
-    this.api.itensMaisVendidos(i, f).subscribe({
+    this.relatoriosApi.itensMaisVendidos(i, f).subscribe({
       next: (v) => { this.itensVendidos.set(v); fimReq(); },
       error: () => fimReq(),
     });
-    this.api.listarReservas({ inicio: i, fim: f, page: 1, porPagina: 200 }).subscribe({
+    this.reservasApi.listarReservas({ inicio: i, fim: f, page: 1, porPagina: 200 }).subscribe({
       next: (p) => { this.reservas.set(p.items); fimReq(); },
       error: () => fimReq(),
     });
-    this.api.vendasFinanceiro(i, f).subscribe({
+    this.relatoriosApi.vendasFinanceiro(i, f).subscribe({
       next: (v) => this.vendasItens.set(v),
       error: (e) => this.notify.erro(e),
     });

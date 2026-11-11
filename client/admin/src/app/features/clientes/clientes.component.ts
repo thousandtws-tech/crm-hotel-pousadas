@@ -8,8 +8,8 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
-import { ApiService } from '@core/services/api.service';
-import { Cliente, ClienteInput } from '@core/models/api.models';
+import { ClientesApi } from '@core/api/clientes.api';
+import { Cliente, ClienteInput } from '@core/models/clientes.models';
 import { Confirm } from '@core/services/confirm.service';
 import { ExportacaoService, RelatorioCfg } from '@core/services/exportacao.service';
 import { Notify } from '@core/services/notify.service';
@@ -909,7 +909,7 @@ export class ClientesComponent implements OnInit, OnDestroy {
       }
     });
   }
-  private readonly api = inject(ApiService);
+  private readonly clientesApi = inject(ClientesApi);
   private readonly exp = inject(ExportacaoService);
   private readonly notify = inject(Notify);
   private readonly tour = inject(TourGuiado);
@@ -1000,7 +1000,7 @@ export class ClientesComponent implements OnInit, OnDestroy {
     }
     this.sugestaoAberta.set(true);
     this.buscandoSug.set(true);
-    this.api.listarClientes(termo, 1, 6, this.apenasAtivos()).subscribe({
+    this.clientesApi.listarClientes(termo, 1, 6, this.apenasAtivos()).subscribe({
       next: (p) => {
         if (req !== this.sugestaoReq) return;
         this.sugestoes.set(p.items);
@@ -1096,8 +1096,7 @@ export class ClientesComponent implements OnInit, OnDestroy {
 
   carregar(): void {
     this.carregando.set(true);
-    this.api
-      .listarClientes(this.busca.value || null, this.pagina(), 20, this.apenasAtivos())
+    this.clientesApi.listarClientes(this.busca.value || null, this.pagina(), 20, this.apenasAtivos())
       .subscribe({
         next: (p) => {
           this.items.set(p.items);
@@ -1128,7 +1127,7 @@ export class ClientesComponent implements OnInit, OnDestroy {
   }
 
   toggleStatus(c: Cliente, ativo: boolean): void {
-    this.api.statusCliente(c.id, ativo).subscribe({
+    this.clientesApi.statusCliente(c.id, ativo).subscribe({
       next: (novo) => {
         this.items.update((xs) => xs.map((x) => (x.id === novo.id ? novo : x)));
         this.notify.ok(ativo ? 'Cliente ativado.' : 'Cliente desativado.');
@@ -1147,7 +1146,7 @@ Use para pedidos de eliminação do titular.`,
       { titulo: 'Anonimizar titular (LGPD)', confirmar: 'Anonimizar' },
     );
     if (!ok) return;
-    this.api.anonimizarCliente(c.id).subscribe({
+    this.clientesApi.anonimizarCliente(c.id).subscribe({
       next: () => {
         this.notify.ok('Titular anonimizado — dados pessoais removidos.');
         this.carregar();
@@ -1162,7 +1161,7 @@ Use para pedidos de eliminação do titular.`,
       { titulo: 'Excluir cliente', confirmar: 'Excluir' },
     );
     if (!ok) return;
-    this.api.excluirCliente(c.id).subscribe({
+    this.clientesApi.excluirCliente(c.id).subscribe({
       next: () => {
         this.notify.ok('Cliente excluído.');
         this.carregar();
@@ -1177,8 +1176,7 @@ Use para pedidos de eliminação do titular.`,
     try {
       const p = await new Promise<{ items: Cliente[]; total: number }>(
         (resolve, reject) =>
-          this.api
-            .listarClientes(this.busca.value || null, 1, 500, this.apenasAtivos())
+          this.clientesApi.listarClientes(this.busca.value || null, 1, 500, this.apenasAtivos())
             .subscribe({ next: resolve, error: reject }),
       );
 
@@ -1383,7 +1381,7 @@ Use para pedidos de eliminação do titular.`,
     document.body.style.overflow = 'hidden';
     setTimeout(() => document.getElementById('cli-nome')?.focus(), 260);
     if (cliente?.tem_foto) {
-      this.api.fotoCliente(cliente.id).subscribe({
+      this.clientesApi.fotoCliente(cliente.id).subscribe({
         next: (b) => this.definirPreview(URL.createObjectURL(b)),
         error: () => {},
       });
@@ -1440,8 +1438,8 @@ Use para pedidos de eliminação do titular.`,
     };
     const cliente = this.editando();
     const op = cliente
-      ? this.api.atualizarCliente(cliente.id, input)
-      : this.api.criarCliente(input);
+      ? this.clientesApi.atualizarCliente(cliente.id, input)
+      : this.clientesApi.criarCliente(input);
     op.subscribe({
       next: (salvo) => this.persistirFoto(salvo, cliente),
       error: (e) => this.notify.erro(e),
@@ -1536,9 +1534,9 @@ Use para pedidos de eliminação do titular.`,
     const pendente = this.fotoPendente();
     const removida = this.fotoRemover();
     const foto$: Observable<unknown> | null = pendente
-      ? this.api.uploadFotoCliente(salvo.id, pendente)
+      ? this.clientesApi.uploadFotoCliente(salvo.id, pendente)
       : removida
-        ? this.api.removerFotoCliente(salvo.id)
+        ? this.clientesApi.removerFotoCliente(salvo.id)
         : null;
     if (!foto$) {
       this.finalizarSalvar(anterior);
@@ -1567,7 +1565,7 @@ Use para pedidos de eliminação do titular.`,
   private carregarFotos(lista: Cliente[]): void {
     for (const c of lista) {
       if (c.tem_foto && !this.fotos().has(c.id)) {
-        this.api.fotoCliente(c.id).subscribe({
+        this.clientesApi.fotoCliente(c.id).subscribe({
           next: (b) =>
             this.fotos.update((m) => {
               const n = new Map(m);

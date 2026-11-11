@@ -1,9 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { ApiService } from '../../core/services/api.service';
+import { ContratosApi } from '@core/api/contratos.api';
 import { Notify } from '@core/services/notify.service';
-import * as M from '../../core/models/api.models';
+import * as M from '@core/models';
 
 /**
  * Contratos corporativos — empresa com código público e desconto
@@ -173,7 +173,7 @@ import * as M from '../../core/models/api.models';
   `,
 })
 export class ContratosComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly contratosApi = inject(ContratosApi);
   private readonly notify = inject(Notify);
   private readonly fb = inject(FormBuilder);
 
@@ -208,7 +208,7 @@ export class ContratosComponent implements OnInit {
   }
 
   private carregar(): void {
-    this.api.listarContratos().subscribe({
+    this.contratosApi.listarContratos().subscribe({
       next: (l) => { this.contratos.set(l); this.carregando.set(false); },
       error: () => { this.carregando.set(false); this.notify.erroMsg('Falha ao carregar contratos.'); },
     });
@@ -244,7 +244,7 @@ export class ContratosComponent implements OnInit {
     };
     this.salvando.set(true);
     const c = this.editando();
-    const req = c ? this.api.atualizarContrato(c.id, input) : this.api.criarContrato(input);
+    const req = c ? this.contratosApi.atualizarContrato(c.id, input) : this.contratosApi.criarContrato(input);
     req.subscribe({
       next: () => {
         this.salvando.set(false);
@@ -260,7 +260,7 @@ export class ContratosComponent implements OnInit {
   }
 
   protected alternar(c: M.ContratoCorporativo): void {
-    this.api.definirContratoAtivo(c.id, !c.ativo).subscribe({
+    this.contratosApi.definirContratoAtivo(c.id, !c.ativo).subscribe({
       next: () => this.carregar(),
       error: () => this.notify.erroMsg('Falha ao alterar o status.'),
     });

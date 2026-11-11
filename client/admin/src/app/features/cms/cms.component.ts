@@ -4,13 +4,16 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { firstValueFrom } from 'rxjs';
-import { ApiService, num } from '@core/services/api.service';
+import { AcomodacoesApi } from '@core/api/acomodacoes.api';
+import { CmsApi } from '@core/api/cms.api';
+import { ReservasApi } from '@core/api/reservas.api';
+import { num } from '@core/utils/num';
 import { AuthStore } from '@core/services/auth.store';
 import { Confirm } from '@core/services/confirm.service';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
 import { TourGuiado } from '@core/services/tour.service';
-import * as M from '@core/models/api.models';
+import * as M from '@core/models';
 
 interface ComodidadeForm {
   name: string;
@@ -1090,7 +1093,9 @@ type AbaCms = 'quartos' | 'site' | 'widget';
   `],
 })
 export class CmsComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly acomodacoesApi = inject(AcomodacoesApi);
+  private readonly cmsApi = inject(CmsApi);
+  private readonly reservasApi = inject(ReservasApi);
   private readonly notify = inject(Notify);
   private readonly confirm = inject(Confirm);
   private readonly tour = inject(TourGuiado);
@@ -1209,11 +1214,11 @@ export class CmsComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregar();
-    this.api.listarTipos(true).subscribe({
+    this.acomodacoesApi.listarTipos(true).subscribe({
       next: (ts) => this.tipos.set(ts),
       error: () => {},
     });
-    this.api.widgetMotor().subscribe({
+    this.reservasApi.widgetMotor().subscribe({
       next: (w) => this.widget.set(w),
       error: () => {},
     });
@@ -1221,7 +1226,7 @@ export class CmsComponent implements OnInit {
   }
 
   private carregarSite(): void {
-    this.api.listarSiteSecoes().subscribe({
+    this.cmsApi.listarSiteSecoes().subscribe({
       next: (secoes) => {
         const por = new Map(secoes.map((s) => [s.secao, s.dados]));
         const str = (d: Record<string, unknown> | undefined, k: string, padrao = '') =>
@@ -1290,7 +1295,7 @@ export class CmsComponent implements OnInit {
 
   protected salvarSite(secao: 'hero' | 'seo' | 'faq'): void {
     this.salvandoSite.set(true);
-    this.api.salvarSiteSecao(secao, this.montarDadosSite(secao)).subscribe({
+    this.cmsApi.salvarSiteSecao(secao, this.montarDadosSite(secao)).subscribe({
       next: () => {
         this.salvandoSite.set(false);
         this.notify.ok('Seção salva — o site já reflete a mudança.');
@@ -1306,9 +1311,9 @@ export class CmsComponent implements OnInit {
     this.salvandoSite.set(true);
     try {
       await Promise.all([
-        firstValueFrom(this.api.salvarSiteSecao('hero', this.montarDadosSite('hero'))),
-        firstValueFrom(this.api.salvarSiteSecao('seo', this.montarDadosSite('seo'))),
-        firstValueFrom(this.api.salvarSiteSecao('faq', this.montarDadosSite('faq'))),
+        firstValueFrom(this.cmsApi.salvarSiteSecao('hero', this.montarDadosSite('hero'))),
+        firstValueFrom(this.cmsApi.salvarSiteSecao('seo', this.montarDadosSite('seo'))),
+        firstValueFrom(this.cmsApi.salvarSiteSecao('faq', this.montarDadosSite('faq'))),
       ]);
       this.notify.ok('Página inicial, SEO e FAQ salvos e publicados no site.');
     } catch (e) {
@@ -1362,7 +1367,7 @@ export class CmsComponent implements OnInit {
   }
 
   carregar(): void {
-    this.api.listarCms().subscribe({
+    this.cmsApi.listarCms().subscribe({
       next: (it) => {
         this.items.set(it);
         this.carregando.set(false);
@@ -1384,7 +1389,7 @@ export class CmsComponent implements OnInit {
       const fotos = a.midias.filter((m) => m.tipo === 'foto');
       const capa = fotos.find((m) => m.capa) ?? fotos[0];
       if (capa) {
-        this.api.midiaBlob(capa.id).subscribe({
+        this.cmsApi.midiaBlob(capa.id).subscribe({
           next: (b) => this.thumbs.update((t) => ({ ...t, [a.id]: URL.createObjectURL(b) })),
           error: () => {},
         });
@@ -1472,7 +1477,7 @@ export class CmsComponent implements OnInit {
     this.editandoMidias.set([...a.midias].sort((x, y) => x.ordem - y.ordem || x.id - y.id));
     for (const m of a.midias) {
       if (!this.midiaBlobs()[m.id]) {
-        this.api.midiaBlob(m.id).subscribe({
+        this.cmsApi.midiaBlob(m.id).subscribe({
           next: (b) => this.midiaBlobs.update((t) => ({ ...t, [m.id]: URL.createObjectURL(b) })),
           error: () => {},
         });
@@ -1552,12 +1557,12 @@ export class CmsComponent implements OnInit {
       };
 
       if (!acomId) {
-        const criada = await firstValueFrom(this.api.criarAcomodacao(acomInput));
+        const criada = await firstValueFrom(this.acomodacoesApi.criarAcomodacao(acomInput));
         acomId = criada.id;
         this.pmsVersion = criada.version;
-        firstValueFrom(this.api.criarQuarto(acomId, String(acomInput.numero))).catch(() => {});
+        firstValueFrom(this.acomodacoesApi.criarQuarto(acomId, String(acomInput.numero))).catch(() => {});
       } else {
-        const atualizada = await firstValueFrom(this.api.atualizarAcomodacao(acomId, acomInput));
+        const atualizada = await firstValueFrom(this.acomodacoesApi.atualizarAcomodacao(acomId, acomInput));
         this.pmsVersion = atualizada.version;
       }
 
@@ -1578,11 +1583,11 @@ export class CmsComponent implements OnInit {
         version: this.cmsVersion || undefined,
       };
 
-      const cmsSalvo = await firstValueFrom(this.api.salvarCms(acomId, cmsInput));
+      const cmsSalvo = await firstValueFrom(this.cmsApi.salvarCms(acomId, cmsInput));
       this.cmsVersion = cmsSalvo.version;
 
       if (publicarDepois) {
-        await firstValueFrom(this.api.statusCms(acomId, true));
+        await firstValueFrom(this.cmsApi.statusCms(acomId, true));
         this.notify.ok('Quarto gravado e publicado no site em tempo real.');
       } else {
         this.notify.ok('Quarto gravado com sucesso.');
@@ -1598,7 +1603,7 @@ export class CmsComponent implements OnInit {
   }
 
   togglePublicacao(a: M.AcomodacaoCmsView, publicar: boolean): void {
-    this.api.statusCms(a.id, publicar).subscribe({
+    this.cmsApi.statusCms(a.id, publicar).subscribe({
       next: () => {
         this.notify.ok(publicar ? 'Quarto publicado no site.' : 'Quarto movido para rascunho.');
         this.carregar();
@@ -1608,7 +1613,7 @@ export class CmsComponent implements OnInit {
   }
 
   toggleAtivo(a: M.AcomodacaoCmsView): void {
-    this.api.statusAcomodacao(a.id, !a.ativo).subscribe({
+    this.acomodacoesApi.statusAcomodacao(a.id, !a.ativo).subscribe({
       next: () => {
         this.notify.ok(!a.ativo ? 'Quarto ativado.' : 'Quarto desativado.');
         this.carregar();
@@ -1634,7 +1639,7 @@ export class CmsComponent implements OnInit {
       try {
         this.enviando.set(true);
         const criada = await firstValueFrom(
-          this.api.criarAcomodacao({
+          this.acomodacoesApi.criarAcomodacao({
             idtipo_acomodacao: v.idtipo_acomodacao,
             nome: v.nome.trim(),
             numero: Number(v.numero) || 101,
@@ -1662,9 +1667,9 @@ export class CmsComponent implements OnInit {
     this.enviando.set(true);
     for (const file of files) {
       try {
-        const m = await firstValueFrom(this.api.uploadMidia(acomId, file));
+        const m = await firstValueFrom(this.cmsApi.uploadMidia(acomId, file));
         this.editandoMidias.update((l) => [...l, m]);
-        this.api.midiaBlob(m.id).subscribe({
+        this.cmsApi.midiaBlob(m.id).subscribe({
           next: (b) => this.midiaBlobs.update((t) => ({ ...t, [m.id]: URL.createObjectURL(b) })),
           error: () => {},
         });
@@ -1683,7 +1688,7 @@ export class CmsComponent implements OnInit {
       { titulo: 'Excluir quarto', confirmar: 'Excluir' },
     );
     if (!ok) return;
-    this.api.excluirAcomodacao(a.id).subscribe({
+    this.acomodacoesApi.excluirAcomodacao(a.id).subscribe({
       next: (r) => {
         this.notify.ok(r.mensagem);
         this.carregar();
@@ -1699,7 +1704,7 @@ export class CmsComponent implements OnInit {
     );
     if (!ok) return;
     this.fecharPreview();
-    this.api.removerMidia(m.id).subscribe({
+    this.cmsApi.removerMidia(m.id).subscribe({
       next: () => {
         this.editandoMidias.update((l) => l.filter((x) => x.id !== m.id));
         this.carregar();
@@ -1709,7 +1714,7 @@ export class CmsComponent implements OnInit {
   }
 
   capa(id: number): void {
-    this.api.definirCapa(id).subscribe({
+    this.cmsApi.definirCapa(id).subscribe({
       next: () => {
         this.editandoMidias.update((l) => l.map((x) => ({ ...x, capa: x.id === id })));
         this.carregar();
@@ -1726,7 +1731,7 @@ export class CmsComponent implements OnInit {
     this.fecharPreview();
     [l[i], l[j]] = [l[j], l[i]];
     this.editandoMidias.set(l);
-    this.api.ordenarMidias(a.id, l.map((m) => m.id)).subscribe({
+    this.cmsApi.ordenarMidias(a.id, l.map((m) => m.id)).subscribe({
       error: () => this.notify.erroMsg('Falha ao reordenar.'),
     });
   }

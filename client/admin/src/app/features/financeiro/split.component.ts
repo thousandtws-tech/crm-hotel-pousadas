@@ -3,13 +3,9 @@ import { DatePipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DateInputComponent } from '@shared/components/date-input.component';
-import { ApiService, num } from '@core/services/api.service';
-import {
-  SplitEventoView,
-  SplitResumo,
-  TributoApuracao,
-  TributoConfig,
-} from '@core/models/api.models';
+import { FinanceiroApi } from '@core/api/financeiro.api';
+import { num } from '@core/utils/num';
+import { SplitEventoView, SplitResumo, TributoApuracao, TributoConfig } from '@core/models/financeiro.models';
 import { Notify } from '@core/services/notify.service';
 import { FinNavComponent } from './fin-nav.component';
 
@@ -228,7 +224,7 @@ function isoLocal(d: Date): string {
   `,
 })
 export class FinSplitComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly financeiroApi = inject(FinanceiroApi);
   private readonly notify = inject(Notify);
 
   readonly fmt = fmt;
@@ -264,15 +260,15 @@ export class FinSplitComponent implements OnInit {
   }
 
   carregar(): void {
-    this.api.tributoConfig().subscribe({
+    this.financeiroApi.tributoConfig().subscribe({
       next: (c) => this.config.set(c),
       error: (e) => this.notify.erro(e),
     });
-    this.api.splitResumo().subscribe({
+    this.financeiroApi.splitResumo().subscribe({
       next: (r) => this.resumo.set(r),
       error: (e) => this.notify.erro(e),
     });
-    this.api.listarApuracoes().subscribe({
+    this.financeiroApi.listarApuracoes().subscribe({
       next: (a) => this.apuracoes.set(a),
       error: () => undefined,
     });
@@ -280,7 +276,7 @@ export class FinSplitComponent implements OnInit {
   }
 
   carregarEventos(): void {
-    this.api.splitEventos(null, null, this.page()).subscribe({
+    this.financeiroApi.splitEventos(null, null, this.page()).subscribe({
       next: (p) => {
         this.eventos.set(p.items);
         this.total.set(p.total);
@@ -310,8 +306,7 @@ export class FinSplitComponent implements OnInit {
   salvarConfig(): void {
     if (this.cfgForm.invalid) return;
     const v = this.cfgForm.getRawValue();
-    this.api
-      .criarTributoConfig({
+    this.financeiroApi.criarTributoConfig({
         aliq_ibs: Number(v.aliq_ibs),
         aliq_cbs: Number(v.aliq_cbs),
         regime: v.regime,
@@ -334,7 +329,7 @@ export class FinSplitComponent implements OnInit {
   confirmarRecolher(): void {
     const mes = this.recForm.controls.competencia.value; // "yyyy-MM"
     if (!mes) return;
-    this.api.recolherApuracao(`${mes}-01`).subscribe({
+    this.financeiroApi.recolherApuracao(`${mes}-01`).subscribe({
       next: (a) => {
         this.notify.ok(
           `Apuração ${mes} fechada: ${fmt(num(a.valor_ibs) + num(a.valor_cbs))} recolhidos.`,

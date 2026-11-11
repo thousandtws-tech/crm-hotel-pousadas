@@ -2,7 +2,8 @@
 // Renderiza o snapshot imutável `Fnrh.dados` em um iframe oculto
 // (não depende de window.open, que pode ser bloqueado).
 
-import { Fnrh, TIPOS_DOCUMENTO, TipoDocumento } from '@core/models/api.models';
+import { TIPOS_DOCUMENTO, TipoDocumento } from '@core/models/clientes.models';
+import { Fnrh } from '@core/models/reservas.models';
 
 const esc = (v: string | number | null | undefined): string =>
   String(v ?? '—')

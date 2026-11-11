@@ -4,15 +4,10 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MatIconModule } from '@angular/material/icon';
 import { DateInputComponent } from '@shared/components/date-input.component';
 import { firstValueFrom } from 'rxjs';
-import {
-  Fornecedor,
-  FornecedorInput,
-  ItemEstoque,
-  PedidoCompraView,
-  PedidoItemView,
-  RecebimentoItem,
-} from '../../core/models/api.models';
-import { ApiService } from '../../core/services/api.service';
+import { Fornecedor, FornecedorInput, PedidoCompraView, PedidoItemView, RecebimentoItem } from '@core/models/compras.models';
+import { ItemEstoque } from '@core/models/estoque.models';
+import { ComprasApi } from '@core/api/compras.api';
+import { EstoqueApi } from '@core/api/estoque.api';
 import { Confirm } from '../../core/services/confirm.service';
 import { Notify } from '../../core/services/notify.service';
 import { Realtime } from '../../core/services/realtime.service';
@@ -1166,7 +1161,8 @@ interface LinhaPedido {
   `,
 })
 export class ComprasComponent {
-  private readonly api = inject(ApiService);
+  private readonly comprasApi = inject(ComprasApi);
+  private readonly estoqueApi = inject(EstoqueApi);
   private readonly nt = inject(Notify);
   private readonly rt = inject(Realtime);
   private readonly confirm = inject(Confirm);
@@ -1400,7 +1396,7 @@ export class ComprasComponent {
     this.carregando.set(true);
     try {
       const r = await firstValueFrom(
-        this.api.listarPedidos({
+        this.comprasApi.listarPedidos({
           status: this.filtro() || undefined,
           pagina: this.pagina(),
         })
@@ -1419,7 +1415,7 @@ export class ComprasComponent {
     try {
       const sts = ['pendente', 'parcial', 'recebido', 'cancelado'];
       const rs = await Promise.all(
-        sts.map((s) => firstValueFrom(this.api.listarPedidos({ status: s, pagina: 1 })))
+        sts.map((s) => firstValueFrom(this.comprasApi.listarPedidos({ status: s, pagina: 1 })))
       );
       const m: Record<string, number> = { '': 0 };
       rs.forEach((r, i) => {
@@ -1434,7 +1430,7 @@ export class ComprasComponent {
 
   async carregarFornecedores(): Promise<void> {
     try {
-      this.fornecedores.set(await firstValueFrom(this.api.listarFornecedores(false)));
+      this.fornecedores.set(await firstValueFrom(this.comprasApi.listarFornecedores(false)));
     } catch (e) {
       this.nt.erro(e);
     }
@@ -1458,7 +1454,7 @@ export class ComprasComponent {
       const [it] = await Promise.all([
         this.itens().length
           ? Promise.resolve({ items: this.itens(), total: this.itens().length })
-          : firstValueFrom(this.api.listarItens(1, 500, true)),
+          : firstValueFrom(this.estoqueApi.listarItens(1, 500, true)),
         this.fornecedores().length ? Promise.resolve() : this.carregarFornecedores(),
       ]);
       this.itens.set(it.items);
@@ -1480,7 +1476,7 @@ export class ComprasComponent {
     this.salvandoForn.set(true);
     try {
       const f = await firstValueFrom(
-        this.api.salvarFornecedor({
+        this.comprasApi.salvarFornecedor({
           nome,
           cnpj: this.rapidoCnpj().trim() || undefined,
           lead_time_dias: Math.max(0, this.rapidoLead()),
@@ -1511,7 +1507,7 @@ export class ComprasComponent {
     };
     this.salvandoForn.set(true);
     try {
-      await firstValueFrom(this.api.salvarFornecedor(b));
+      await firstValueFrom(this.comprasApi.salvarFornecedor(b));
       this.nt.ok(v.id ? 'Fornecedor atualizado.' : 'Fornecedor cadastrado.');
       this.fornForm.reset({ lead_time_dias: 0 });
       await this.carregarFornecedores();
@@ -1535,7 +1531,7 @@ export class ComprasComponent {
 
   async toggleForn(f: Fornecedor): Promise<void> {
     try {
-      await firstValueFrom(this.api.statusFornecedor(f.id, !f.ativo));
+      await firstValueFrom(this.comprasApi.statusFornecedor(f.id, !f.ativo));
       this.nt.ok(f.ativo ? 'Fornecedor desativado.' : 'Fornecedor reativado.');
       await this.carregarFornecedores();
     } catch (e) {
@@ -1551,7 +1547,7 @@ export class ComprasComponent {
     this.criando.set(true);
     try {
       const r = await firstValueFrom(
-        this.api.criarPedido({
+        this.comprasApi.criarPedido({
           idfornecedor: idforn,
           itens: itens.map((l) => ({
             iditem: l.iditem!,
@@ -1578,7 +1574,7 @@ export class ComprasComponent {
 
   async abrir(p: PedidoCompraView): Promise<void> {
     try {
-      const d = await firstValueFrom(this.api.buscarPedido(p.id));
+      const d = await firstValueFrom(this.comprasApi.buscarPedido(p.id));
       this.detalhe.set(d.pedido);
       this.detalheItens.set(d.itens);
       this.recebendo.set(false);
@@ -1626,13 +1622,13 @@ export class ComprasComponent {
     this.salvandoReceb.set(true);
     try {
       const r = await firstValueFrom(
-        this.api.receberPedido(p.id, {
+        this.comprasApi.receberPedido(p.id, {
           itens,
           observacao: obs.trim() || undefined,
         })
       );
       this.nt.ok(`Entrada registrada no estoque — pedido ${this.rotulo(r.status).toLowerCase()}.`);
-      const d = await firstValueFrom(this.api.buscarPedido(p.id));
+      const d = await firstValueFrom(this.comprasApi.buscarPedido(p.id));
       this.detalhe.set(d.pedido);
       this.detalheItens.set(d.itens);
       this.recebendo.set(false);
@@ -1659,7 +1655,7 @@ export class ComprasComponent {
     );
     if (!ok) return;
     try {
-      const r = await firstValueFrom(this.api.cancelarPedido(p.id));
+      const r = await firstValueFrom(this.comprasApi.cancelarPedido(p.id));
       this.nt.ok(r.mensagem ?? 'Pedido cancelado.');
       this.fechar();
       await this.carregar();

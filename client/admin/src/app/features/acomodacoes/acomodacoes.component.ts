@@ -6,16 +6,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { forkJoin } from 'rxjs';
-import { ApiService, num } from '@core/services/api.service';
-import {
-  Acomodacao,
-  AcomodacaoInput,
-  Quarto,
-  TarifaHistorico,
-  TarifaOcupacaoInput,
-  TipoAcomodacao,
-  VagaEstacionamento,
-} from '@core/models/api.models';
+import { AcomodacoesApi } from '@core/api/acomodacoes.api';
+import { EstacionamentoApi } from '@core/api/estacionamento.api';
+import { num } from '@core/utils/num';
+import { Acomodacao, AcomodacaoInput, Quarto, TarifaOcupacaoInput, TipoAcomodacao } from '@core/models/catalogo.models';
+import { TarifaHistorico } from '@core/models/comercial.models';
+import { VagaEstacionamento } from '@core/models/estacionamento.models';
 import { Notify } from '@core/services/notify.service';
 import { Confirm } from '@core/services/confirm.service';
 import { Realtime } from '@core/services/realtime.service';
@@ -1158,7 +1154,8 @@ export class AcomodacoesComponent implements OnInit {
       .pipe(takeUntilDestroyed())
       .subscribe((v) => this.termo.set(v.trim().toLowerCase()));
   }
-  private readonly api = inject(ApiService);
+  private readonly acomodacoesApi = inject(AcomodacoesApi);
+  private readonly estacionamentoApi = inject(EstacionamentoApi);
   private readonly notify = inject(Notify);
   private readonly tour = inject(TourGuiado);
   private readonly confirm = inject(Confirm);
@@ -1238,7 +1235,7 @@ export class AcomodacoesComponent implements OnInit {
   }
 
   carregar(): void {
-    this.api.listarAcomodacoes(1, 200).subscribe({
+    this.acomodacoesApi.listarAcomodacoes(1, 200).subscribe({
       next: (p) => {
         this.items.set(p.items);
         this.carregando.set(false);
@@ -1251,7 +1248,7 @@ export class AcomodacoesComponent implements OnInit {
   }
 
   carregarTipos(): void {
-    this.api.listarTipos().subscribe({
+    this.acomodacoesApi.listarTipos().subscribe({
       next: (t) => this.tipos.set(t),
       error: (e) => this.notify.erro(e),
     });
@@ -1263,15 +1260,15 @@ export class AcomodacoesComponent implements OnInit {
 
   visualizar(a: Acomodacao): void {
     this.selecionada.set(a);
-    this.api.listarQuartos(a.id).subscribe({
+    this.acomodacoesApi.listarQuartos(a.id).subscribe({
       next: (q) => this.quartos.set(q),
       error: () => undefined,
     });
-    this.api.tarifasAcomodacao(a.id).subscribe({
+    this.acomodacoesApi.tarifasAcomodacao(a.id).subscribe({
       next: (t) => this.tarifas.set(t),
       error: () => undefined,
     });
-    this.api.listarVagas().subscribe({
+    this.estacionamentoApi.listarVagas().subscribe({
       next: (v) =>
         this.vagasDaAcomodacao.set(v.filter((x) => x.idacomodacao === a.id && x.ativo)),
       error: () => this.vagasDaAcomodacao.set([]),
@@ -1332,7 +1329,7 @@ export class AcomodacoesComponent implements OnInit {
         descricao: '',
         cor: '#1a6f8a',
       });
-      this.api.listarVagas().subscribe({
+      this.estacionamentoApi.listarVagas().subscribe({
         next: (v) => this.vagasLivres.set(v.filter((x) => x.ativo && x.idacomodacao === null)),
         error: () => this.vagasLivres.set([]),
       });
@@ -1366,13 +1363,13 @@ export class AcomodacoesComponent implements OnInit {
     };
     const editando = this.editando();
     const op = editando
-      ? this.api.atualizarAcomodacao(editando.id, input)
-      : this.api.criarAcomodacao(input);
+      ? this.acomodacoesApi.atualizarAcomodacao(editando.id, input)
+      : this.acomodacoesApi.criarAcomodacao(input);
     op.subscribe({
       next: (salva) => {
         const vagas = this.vagasSel();
         if (!editando && vagas.length > 0) {
-          forkJoin(vagas.map((id) => this.api.vincularVaga(id, salva.id)))
+          forkJoin(vagas.map((id) => this.estacionamentoApi.vincularVaga(id, salva.id)))
             .subscribe({ error: (e) => this.notify.erro(e) });
         }
         this.notify.ok(editando ? 'Acomodação atualizada.' : 'Acomodação cadastrada.');
@@ -1390,7 +1387,7 @@ export class AcomodacoesComponent implements OnInit {
   criarTipo(): void {
     const nome = this.novoTipo.value?.trim();
     if (!nome) return;
-    this.api.criarTipo(nome).subscribe({
+    this.acomodacoesApi.criarTipo(nome).subscribe({
       next: () => {
         this.novoTipo.reset();
         this.carregarTipos();
@@ -1413,7 +1410,7 @@ export class AcomodacoesComponent implements OnInit {
       return;
     }
     this.tarifasTipo.set(t.id);
-    this.api.tarifasOcupacao(t.id).subscribe({
+    this.acomodacoesApi.tarifasOcupacao(t.id).subscribe({
       next: (lista) => {
         // Semente: faixas 1..3 sempre visíveis (spec), mescladas com o que já existe.
         const base = [1, 2, 3].map((h) => {
@@ -1450,7 +1447,7 @@ export class AcomodacoesComponent implements OnInit {
       .filter((f) => f.valor !== '' && Number(f.valor) > 0)
       .map((f) => ({ hospedes: f.hospedes, valor: Number(f.valor) }));
     this.salvandoFaixas.set(true);
-    this.api.salvarTarifasOcupacao(t.id, payload).subscribe({
+    this.acomodacoesApi.salvarTarifasOcupacao(t.id, payload).subscribe({
       next: () => {
         this.salvandoFaixas.set(false);
         this.notify.ok(`Faixas de ocupação de '${t.nome}' salvas.`);
@@ -1465,7 +1462,7 @@ export class AcomodacoesComponent implements OnInit {
   salvarTipo(t: TipoAcomodacao): void {
     const nome = this.tipoNomeCtrl.value?.trim();
     if (!nome) return;
-    this.api.atualizarTipo(t.id, nome, t.version).subscribe({
+    this.acomodacoesApi.atualizarTipo(t.id, nome, t.version).subscribe({
       next: () => {
         this.editandoTipo.set(null);
         this.carregarTipos();
@@ -1476,14 +1473,14 @@ export class AcomodacoesComponent implements OnInit {
   }
 
   statusTipo(t: TipoAcomodacao, ativo: boolean): void {
-    this.api.statusTipo(t.id, ativo).subscribe({
+    this.acomodacoesApi.statusTipo(t.id, ativo).subscribe({
       next: () => this.carregarTipos(),
       error: (e) => this.notify.erro(e),
     });
   }
 
   statusAcomodacao(a: Acomodacao, ativo: boolean): void {
-    this.api.statusAcomodacao(a.id, ativo).subscribe({
+    this.acomodacoesApi.statusAcomodacao(a.id, ativo).subscribe({
       next: () => {
         this.notify.ok(ativo ? 'Acomodação ativada.' : 'Acomodação desativada.');
         this.carregar();
@@ -1498,7 +1495,7 @@ export class AcomodacoesComponent implements OnInit {
       { titulo: 'Excluir acomodação', confirmar: 'Excluir' },
     );
     if (!ok) return;
-    this.api.excluirAcomodacao(a.id).subscribe({
+    this.acomodacoesApi.excluirAcomodacao(a.id).subscribe({
       next: (r) => {
         this.notify.ok(r.mensagem);
         if (this.selecionada()?.id === a.id) this.selecionada.set(null);
@@ -1514,7 +1511,7 @@ export class AcomodacoesComponent implements OnInit {
       { titulo: 'Excluir tipo', confirmar: 'Excluir' },
     );
     if (!ok) return;
-    this.api.excluirTipo(t.id).subscribe({
+    this.acomodacoesApi.excluirTipo(t.id).subscribe({
       next: () => {
         this.notify.ok('Tipo excluído.');
         this.carregarTipos();
@@ -1529,7 +1526,7 @@ export class AcomodacoesComponent implements OnInit {
       { titulo: 'Excluir quarto', confirmar: 'Excluir' },
     );
     if (!ok) return;
-    this.api.excluirQuarto(q.id).subscribe({
+    this.acomodacoesApi.excluirQuarto(q.id).subscribe({
       next: () => {
         this.notify.ok('Quarto excluído.');
         const a = this.selecionada();
@@ -1548,7 +1545,7 @@ export class AcomodacoesComponent implements OnInit {
     const a = this.selecionada();
     const numero = this.quartoNumero.value?.trim();
     if (!a || !numero) return;
-    this.api.criarQuarto(a.id, numero).subscribe({
+    this.acomodacoesApi.criarQuarto(a.id, numero).subscribe({
       next: () => {
         this.fecharModal();
         this.visualizar(a);
@@ -1559,7 +1556,7 @@ export class AcomodacoesComponent implements OnInit {
   }
 
   statusQuarto(q: Quarto, ativo: boolean): void {
-    this.api.statusQuarto(q.id, ativo).subscribe({
+    this.acomodacoesApi.statusQuarto(q.id, ativo).subscribe({
       next: (novo) => {
         this.quartos.update((list) => list.map((x) => (x.id === novo.id ? novo : x)));
       },

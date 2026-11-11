@@ -17,15 +17,9 @@ import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ApiService } from '@core/services/api.service';
-import {
-  Cliente,
-  ClienteDocumento,
-  DocumentoInput,
-  Fnrh,
-  TIPOS_DOCUMENTO,
-  TipoDocumento,
-} from '@core/models/api.models';
+import { ClientesApi } from '@core/api/clientes.api';
+import { Cliente, ClienteDocumento, DocumentoInput, TIPOS_DOCUMENTO, TipoDocumento } from '@core/models/clientes.models';
+import { Fnrh } from '@core/models/reservas.models';
 import { Notify } from '@core/services/notify.service';
 import { Confirm } from '@core/services/confirm.service';
 import { DateInputComponent } from '@shared/components/date-input.component';
@@ -395,7 +389,7 @@ export class DocumentosModalComponent implements OnInit, OnDestroy {
   readonly cliente = input.required<Cliente>();
   readonly fechou = output<void>();
 
-  private readonly api = inject(ApiService);
+  private readonly clientesApi = inject(ClientesApi);
   private readonly notify = inject(Notify);
   private readonly fb = inject(FormBuilder);
   private readonly confirm = inject(Confirm);
@@ -437,7 +431,7 @@ export class DocumentosModalComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
-    this.api.listarDocumentos(this.cliente().id).subscribe({
+    this.clientesApi.listarDocumentos(this.cliente().id).subscribe({
       next: (docs) => {
         this.docs.set(docs);
         this.carregando.set(false);
@@ -448,7 +442,7 @@ export class DocumentosModalComponent implements OnInit, OnDestroy {
         this.notify.erro(e);
       },
     });
-    this.api.fnrhCliente(this.cliente().id).subscribe({
+    this.clientesApi.fnrhCliente(this.cliente().id).subscribe({
       next: (f) => this.fichas.set(f),
       error: () => undefined,
     });
@@ -524,8 +518,8 @@ export class DocumentosModalComponent implements OnInit, OnDestroy {
     };
     const ed = this.editando();
     const op = ed
-      ? this.api.atualizarDocumento(ed.id, input)
-      : this.api.criarDocumento(this.cliente().id, input);
+      ? this.clientesApi.atualizarDocumento(ed.id, input)
+      : this.clientesApi.criarDocumento(this.cliente().id, input);
     op.subscribe({
       next: (salvo) => {
         this.docs.update((xs) =>
@@ -544,7 +538,7 @@ export class DocumentosModalComponent implements OnInit, OnDestroy {
       { titulo: 'Excluir documento', confirmar: 'Excluir', detalhe: 'O scan vinculado também será apagado.' },
     );
     if (!ok) return;
-    this.api.removerDocumento(d.id).subscribe({
+    this.clientesApi.removerDocumento(d.id).subscribe({
       next: () => {
         this.liberarScan(d.id);
         this.docs.update((xs) => xs.filter((x) => x.id !== d.id));
@@ -597,7 +591,7 @@ export class DocumentosModalComponent implements OnInit, OnDestroy {
       confirmar: 'Remover',
     });
     if (!ok) return;
-    this.api.removerScanDocumento(d.id).subscribe({
+    this.clientesApi.removerScanDocumento(d.id).subscribe({
       next: () => {
         this.liberarScan(d.id);
         this.docs.update((xs) =>
@@ -616,7 +610,7 @@ export class DocumentosModalComponent implements OnInit, OnDestroy {
   // -- internos ---------------------------------------------------------------
 
   private enviarScan(d: ClienteDocumento, blob: Blob): void {
-    this.api.uploadScanDocumento(d.id, blob).subscribe({
+    this.clientesApi.uploadScanDocumento(d.id, blob).subscribe({
       next: () => {
         this.docs.update((xs) =>
           xs.map((x) => (x.id === d.id ? { ...x, tem_scan: true } : x)),
@@ -632,7 +626,7 @@ export class DocumentosModalComponent implements OnInit, OnDestroy {
   private carregarScans(lista: ClienteDocumento[]): void {
     for (const d of lista) {
       if (d.tem_scan && !this.scans().has(d.id)) {
-        this.api.scanDocumento(d.id).subscribe({
+        this.clientesApi.scanDocumento(d.id).subscribe({
           next: (b) =>
             this.scans.update((m) => {
               const n = new Map(m);

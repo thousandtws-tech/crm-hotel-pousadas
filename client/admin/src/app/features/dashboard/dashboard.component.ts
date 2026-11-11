@@ -2,12 +2,9 @@ import { Component, computed, inject, signal, OnInit, effect } from '@angular/co
 import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { ApiService, STATUS_RESERVA } from '@core/services/api.service';
-import {
-  DashboardResponse,
-  PontoSerie,
-  ResumoFinanceiro,
-} from '@core/models/api.models';
+import { RelatoriosApi } from '@core/api/relatorios.api';
+import { STATUS_RESERVA } from '@core/models/reservas.models';
+import { DashboardResponse, PontoSerie, ResumoFinanceiro } from '@core/models/relatorios.models';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
 import { TourGuiado } from '@core/services/tour.service';
@@ -608,7 +605,7 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
 })
 export class DashboardComponent implements OnInit {
   private readonly rt = inject(Realtime);
-  private readonly api = inject(ApiService);
+  private readonly relatoriosApi = inject(RelatoriosApi);
   private readonly notify = inject(Notify);
   private readonly tour = inject(TourGuiado);
 
@@ -666,7 +663,7 @@ export class DashboardComponent implements OnInit {
 
   carregarOps(): void {
     this.carregandoOps.set(true);
-    this.api.dashboard().subscribe({
+    this.relatoriosApi.dashboard().subscribe({
       next: (d) => {
         this.dados.set(d);
         this.carregandoOps.set(false);
@@ -690,35 +687,35 @@ export class DashboardComponent implements OnInit {
       this.notify.erro(e);
       ok();
     };
-    this.api.resumoFinanceiro(i, f).subscribe({
+    this.relatoriosApi.resumoFinanceiro(i, f).subscribe({
       next: (r) => {
         this.resumo.set(r);
         ok();
       },
       error: erro,
     });
-    this.api.serieRecebido(i, f).subscribe({
+    this.relatoriosApi.serieRecebido(i, f).subscribe({
       next: (s) => {
         this.serieRecebido.set(s);
         ok();
       },
       error: erro,
     });
-    this.api.serieReservas(i, f).subscribe({
+    this.relatoriosApi.serieReservas(i, f).subscribe({
       next: (s) => {
         this.serieReservas.set(s);
         ok();
       },
       error: erro,
     });
-    this.api.seriePorPagamento(i, f).subscribe({
+    this.relatoriosApi.seriePorPagamento(i, f).subscribe({
       next: (s) => {
         this.seriePagamento.set(s);
         ok();
       },
       error: erro,
     });
-    this.api.seriePorAcomodacao(i, f).subscribe({
+    this.relatoriosApi.seriePorAcomodacao(i, f).subscribe({
       next: (s) => this.serieAcomodacao.set(s),
       error: erro,
     });

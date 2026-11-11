@@ -1,7 +1,8 @@
 import { Component, computed, inject, signal, OnInit, effect } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { ApiService } from '@core/services/api.service';
-import { ComprovanteResumo, FormaPagamento } from '@core/models/api.models';
+import { ImpressorasApi } from '@core/api/impressoras.api';
+import { PagamentosApi } from '@core/api/pagamentos.api';
+import { ComprovanteResumo, FormaPagamento } from '@core/models/pagamentos.models';
 import { Confirm } from '@core/services/confirm.service';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
@@ -491,7 +492,8 @@ import { AuthStore } from '@core/services/auth.store';
   `,
 })
 export class PagamentosComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly impressorasApi = inject(ImpressorasApi);
+  private readonly pagamentosApi = inject(PagamentosApi);
   private readonly notify = inject(Notify);
   private readonly confirm = inject(Confirm);
   private readonly rt = inject(Realtime);
@@ -549,7 +551,7 @@ export class PagamentosComponent implements OnInit {
   }
 
   carregar(): void {
-    this.api.comprovantes().subscribe({
+    this.pagamentosApi.comprovantes().subscribe({
       next: (c) => {
         this.comprovantes.set(c);
         this.carregando.set(false);
@@ -562,7 +564,7 @@ export class PagamentosComponent implements OnInit {
   }
 
   carregarFormas(): void {
-    this.api.listarPagamentos(false).subscribe({
+    this.pagamentosApi.listarPagamentos(false).subscribe({
       next: (p) => this.formas.set(p),
       error: (e) => this.notify.erro(e),
     });
@@ -584,7 +586,7 @@ export class PagamentosComponent implements OnInit {
   }
 
   visualizar(c: ComprovanteResumo): void {
-    this.api.comprovanteTexto(c.idreserva).subscribe({
+    this.pagamentosApi.comprovanteTexto(c.idreserva).subscribe({
       next: (txt) => {
         const url = URL.createObjectURL(new Blob([txt], { type: 'text/plain;charset=utf-8' }));
         window.open(url, '_blank');
@@ -594,7 +596,7 @@ export class PagamentosComponent implements OnInit {
   }
 
   baixar(c: ComprovanteResumo): void {
-    this.api.comprovanteTexto(c.idreserva).subscribe({
+    this.pagamentosApi.comprovanteTexto(c.idreserva).subscribe({
       next: (txt) => {
         const url = URL.createObjectURL(new Blob([txt], { type: 'text/plain;charset=utf-8' }));
         const a = document.createElement('a');
@@ -609,7 +611,7 @@ export class PagamentosComponent implements OnInit {
 
   imprimir(c: ComprovanteResumo): void {
     this.imprimindo.set(c.idreserva);
-    this.api.imprimirComprovante(c.idreserva).subscribe({
+    this.impressorasApi.imprimirComprovante(c.idreserva).subscribe({
       next: (r) => {
         this.imprimindo.set(null);
         this.notify.ok(r.mensagem);
@@ -624,7 +626,7 @@ export class PagamentosComponent implements OnInit {
   criar(): void {
     const nome = this.nova().trim();
     if (!nome) return;
-    this.api.criarPagamento(nome).subscribe({
+    this.pagamentosApi.criarPagamento(nome).subscribe({
       next: () => {
         this.nova.set('');
         this.carregarFormas();
@@ -637,14 +639,14 @@ export class PagamentosComponent implements OnInit {
     const nome = (e.target as HTMLInputElement).value.trim();
     this.editando.set(null);
     if (!nome || nome === p.nome) return;
-    this.api.atualizarPagamento(p.id, nome, p.version).subscribe({
+    this.pagamentosApi.atualizarPagamento(p.id, nome, p.version).subscribe({
       next: () => this.carregarFormas(),
       error: (err) => this.notify.erro(err),
     });
   }
 
   alternar(p: FormaPagamento): void {
-    this.api.statusPagamento(p.id, !p.ativo).subscribe({
+    this.pagamentosApi.statusPagamento(p.id, !p.ativo).subscribe({
       next: () => this.carregarFormas(),
       error: (e) => this.notify.erro(e),
     });
@@ -656,7 +658,7 @@ export class PagamentosComponent implements OnInit {
       { titulo: 'Excluir forma de pagamento', confirmar: 'Excluir' },
     );
     if (!ok) return;
-    this.api.excluirPagamento(p.id).subscribe({
+    this.pagamentosApi.excluirPagamento(p.id).subscribe({
       next: () => {
         this.notify.ok('Forma de pagamento excluída.');
         this.carregarFormas();

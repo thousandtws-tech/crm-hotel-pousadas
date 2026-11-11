@@ -9,8 +9,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { ApiService } from '@core/services/api.service';
-import { RegistroLog } from '@core/models/api.models';
+import { RelatoriosApi } from '@core/api/relatorios.api';
+import { RegistroLog } from '@core/models/relatorios.models';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
 import { DateInputComponent } from '@shared/components/date-input.component';
@@ -132,7 +132,7 @@ export class AuditoriaComponent implements OnInit {
       }
     });
   }
-  private readonly api = inject(ApiService);
+  private readonly relatoriosApi = inject(RelatoriosApi);
   private readonly notify = inject(Notify);
   private readonly fb = inject(FormBuilder);
 
@@ -150,8 +150,7 @@ export class AuditoriaComponent implements OnInit {
   }
 
   carregar(): void {
-    this.api
-      .logs({
+    this.relatoriosApi.logs({
         tabela: this.fTabela.value || null,
         acao: this.fAcao.value || null,
         desde: this.fDesde.value,

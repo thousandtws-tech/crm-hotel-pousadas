@@ -6,8 +6,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { provideNativeDateAdapter } from '@angular/material/core';
-import { ApiService, num } from '@core/services/api.service';
-import { FluxoCaixa } from '@core/models/api.models';
+import { FinanceiroApi } from '@core/api/financeiro.api';
+import { num } from '@core/utils/num';
+import { FluxoCaixa } from '@core/models/financeiro.models';
 import { Notify } from '@core/services/notify.service';
 import { EChartComponent, EChartOption } from '@shared/components/echart.component';
 import { FinNavComponent } from './fin-nav.component';
@@ -163,7 +164,7 @@ function fimMes(): string {
   `,
 })
 export class FinFluxoCaixaComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly financeiroApi = inject(FinanceiroApi);
   private readonly notify = inject(Notify);
 
   readonly fmt = fmt;
@@ -199,7 +200,7 @@ export class FinFluxoCaixaComponent implements OnInit {
 
   carregar(): void {
     this.fx.set(null);
-    this.api.fluxoCaixa(this.ini, this.fim).subscribe({
+    this.financeiroApi.fluxoCaixa(this.ini, this.fim).subscribe({
       next: (f) => this.fx.set(f),
       error: (e) => this.notify.erro(e),
     });

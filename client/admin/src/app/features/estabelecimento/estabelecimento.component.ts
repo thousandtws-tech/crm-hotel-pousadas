@@ -3,12 +3,13 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { ApiService } from '@core/services/api.service';
+import { EstabelecimentoApi } from '@core/api/estabelecimento.api';
+import { ImpressorasApi } from '@core/api/impressoras.api';
 import { Confirm } from '@core/services/confirm.service';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
 import { TourGuiado } from '@core/services/tour.service';
-import * as M from '@core/models/api.models';
+import * as M from '@core/models';
 
 const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao'];
 
@@ -738,7 +739,8 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
   `,
 })
 export class EstabelecimentoComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly estabelecimentoApi = inject(EstabelecimentoApi);
+  private readonly impressorasApi = inject(ImpressorasApi);
   private readonly notify = inject(Notify);
   private readonly confirm = inject(Confirm);
   private readonly rt = inject(Realtime);
@@ -846,7 +848,7 @@ export class EstabelecimentoComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.api.obterEstabelecimento().subscribe({
+    this.estabelecimentoApi.obterEstabelecimento().subscribe({
       next: (e) => {
         this.dadosVersion.set(e.version);
         const faixas = (e.politica_cancelamento as { faixas?: { ate_dias: number; pct: number }[] } | null)?.faixas;
@@ -884,11 +886,11 @@ export class EstabelecimentoComponent implements OnInit {
     });
     this.carregarImpressoras();
     this.carregarDescobertas();
-    this.api.logoAtual().subscribe({
+    this.estabelecimentoApi.logoAtual().subscribe({
       next: () => this.logoOk.set(true),
       error: () => this.logoOk.set(false),
     });
-    this.api.obterEndereco().subscribe({
+    this.estabelecimentoApi.obterEndereco().subscribe({
       next: (e) => {
         this.endVersion.set(e.version);
         this.endereco.patchValue({
@@ -913,8 +915,7 @@ export class EstabelecimentoComponent implements OnInit {
     this.salvando.set(true);
     const v = this.dados.getRawValue();
     const empty = (s: string) => s || null;
-    this.api
-      .salvarEstabelecimento({
+    this.estabelecimentoApi.salvarEstabelecimento({
         cnpj: empty(v.cnpj),
         razao_social: empty(v.razao_social),
         site: empty(v.site),
@@ -961,8 +962,7 @@ export class EstabelecimentoComponent implements OnInit {
     this.salvando.set(true);
     const v = this.endereco.getRawValue();
     const empty = (s: string) => s || null;
-    this.api
-      .salvarEndereco({
+    this.estabelecimentoApi.salvarEndereco({
         logradouro: empty(v.logradouro),
         numero: empty(v.numero),
         complemento: empty(v.complemento),
@@ -989,7 +989,7 @@ export class EstabelecimentoComponent implements OnInit {
     this.logoArquivo.set(null);
     this.logoPreview.set(null);
     // logo atual via GET /estabelecimento/logo (404 = não configurada)
-    this.api.logoAtual().subscribe({
+    this.estabelecimentoApi.logoAtual().subscribe({
       next: (b) => this.logoPreview.set(URL.createObjectURL(b)),
       error: () => undefined,
     });
@@ -1009,7 +1009,7 @@ export class EstabelecimentoComponent implements OnInit {
     const f = this.logoArquivo();
     if (!f) return;
     this.enviando.set(true);
-    this.api.uploadLogo(f).subscribe({
+    this.estabelecimentoApi.uploadLogo(f).subscribe({
       next: () => {
         this.enviando.set(false);
         this.modalLogo.set(false);
@@ -1026,7 +1026,7 @@ export class EstabelecimentoComponent implements OnInit {
   // -- impressoras por setor --------------------------------------------------
 
   private carregarImpressoras(): void {
-    this.api.listarImpressoras().subscribe({
+    this.impressorasApi.listarImpressoras().subscribe({
       next: (l) => this.impressoras.set(l),
       error: () => undefined,
     });
@@ -1051,8 +1051,8 @@ export class EstabelecimentoComponent implements OnInit {
     this.salvando.set(true);
     const edit = this.impEditando();
     const req = edit
-      ? this.api.atualizarImpressora(edit.id, { ...v, version: edit.version })
-      : this.api.criarImpressora(v);
+      ? this.impressorasApi.atualizarImpressora(edit.id, { ...v, version: edit.version })
+      : this.impressorasApi.criarImpressora(v);
     req.subscribe({
       next: () => {
         this.salvando.set(false);
@@ -1068,14 +1068,14 @@ export class EstabelecimentoComponent implements OnInit {
   }
 
   statusImpressora(p: M.Impressora): void {
-    this.api.statusImpressora(p.id, !p.ativa).subscribe({
+    this.impressorasApi.statusImpressora(p.id, !p.ativa).subscribe({
       next: () => this.carregarImpressoras(),
       error: (e) => this.notify.erro(e),
     });
   }
 
   testar(p: M.Impressora): void {
-    this.api.testarImpressora(p.id).subscribe({
+    this.impressorasApi.testarImpressora(p.id).subscribe({
       next: () => this.notify.ok('Teste de impressão enviado.'),
       error: (e) => this.notify.erro(e),
     });
@@ -1087,7 +1087,7 @@ export class EstabelecimentoComponent implements OnInit {
       { titulo: 'Excluir impressora', confirmar: 'Excluir' },
     );
     if (!ok) return;
-    this.api.removerImpressora(p.id).subscribe({
+    this.impressorasApi.removerImpressora(p.id).subscribe({
       next: () => {
         this.notify.ok('Impressora excluída.');
         this.carregarImpressoras();
@@ -1099,7 +1099,7 @@ export class EstabelecimentoComponent implements OnInit {
   // -- auto-descoberta (agente local) ----------------------------------------
 
   private carregarDescobertas(): void {
-    this.api.listarDescobertasImpressoras().subscribe({
+    this.impressorasApi.listarDescobertasImpressoras().subscribe({
       next: (l) => this.descobertas.set(l),
       error: () => undefined,
     });
@@ -1115,7 +1115,7 @@ export class EstabelecimentoComponent implements OnInit {
     if (!d) return;
     const v = this.regForm.getRawValue();
     this.salvando.set(true);
-    this.api.registrarDescoberta(d.id, v).subscribe({
+    this.impressorasApi.registrarDescoberta(d.id, v).subscribe({
       next: () => {
         this.salvando.set(false);
         this.modalReg.set(null);
@@ -1136,7 +1136,7 @@ export class EstabelecimentoComponent implements OnInit {
       { titulo: 'Ignorar dispositivo', confirmar: 'Ignorar' },
     );
     if (!ok) return;
-    this.api.ignorarDescoberta(d.id).subscribe({
+    this.impressorasApi.ignorarDescoberta(d.id).subscribe({
       next: () => this.carregarDescobertas(),
       error: (e) => this.notify.erro(e),
     });

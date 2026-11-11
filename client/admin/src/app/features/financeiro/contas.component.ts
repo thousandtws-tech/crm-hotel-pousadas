@@ -8,16 +8,11 @@ import {
 } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DateInputComponent } from '@shared/components/date-input.component';
-import { ApiService, num } from '@core/services/api.service';
-import {
-  BaixaView,
-  ContaFinanceira,
-  FormaPagamento,
-  LancamentoView,
-  PlanoConta,
-  StatusLancamento,
-  TipoLancamento,
-} from '@core/models/api.models';
+import { FinanceiroApi } from '@core/api/financeiro.api';
+import { PagamentosApi } from '@core/api/pagamentos.api';
+import { num } from '@core/utils/num';
+import { BaixaView, ContaFinanceira, LancamentoView, PlanoConta, StatusLancamento, TipoLancamento } from '@core/models/financeiro.models';
+import { FormaPagamento } from '@core/models/pagamentos.models';
 import { Notify } from '@core/services/notify.service';
 import { FinNavComponent } from './fin-nav.component';
 
@@ -398,7 +393,8 @@ function hojeIso(): string {
   `,
 })
 export class FinContasComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly financeiroApi = inject(FinanceiroApi);
+  private readonly pagamentosApi = inject(PagamentosApi);
   private readonly notify = inject(Notify);
 
   readonly STATUS = STATUS;
@@ -473,11 +469,11 @@ export class FinContasComponent implements OnInit {
   }
 
   private recarregarAuxiliares(): void {
-    this.api.listarContasFinanceiras(true).subscribe({
+    this.financeiroApi.listarContasFinanceiras(true).subscribe({
       next: (cs) => {
         this.contas.set(cs);
         for (const c of cs) {
-          this.api.saldoConta(c.id).subscribe({
+          this.financeiroApi.saldoConta(c.id).subscribe({
             next: (r) => this.saldos.update((s) => ({ ...s, [c.id]: num(r.saldo) })),
             error: () => undefined,
           });
@@ -485,11 +481,11 @@ export class FinContasComponent implements OnInit {
       },
       error: (e) => this.notify.erro(e),
     });
-    this.api.listarPlanoContas(false).subscribe({
+    this.financeiroApi.listarPlanoContas(false).subscribe({
       next: (p) => this.plano.set(p),
       error: () => undefined,
     });
-    this.api.listarPagamentos().subscribe({
+    this.pagamentosApi.listarPagamentos().subscribe({
       next: (p) => this.pagamentos.set(p),
       error: () => undefined,
     });
@@ -497,8 +493,7 @@ export class FinContasComponent implements OnInit {
 
   carregar(): void {
     this.carregando.set(true);
-    this.api
-      .listarLancamentos({
+    this.financeiroApi.listarLancamentos({
         tipo: this.aba(),
         status: (this.statusCtrl.value || null) as StatusLancamento | null,
         vencidos: this.vencidosCtrl.value,
@@ -541,8 +536,7 @@ export class FinContasComponent implements OnInit {
     if (this.form.invalid) return;
     this.salvando.set(true);
     const v = this.form.getRawValue();
-    this.api
-      .criarLancamento({
+    this.financeiroApi.criarLancamento({
         tipo: v.tipo,
         descricao: v.descricao.trim(),
         favorecido: v.favorecido.trim() || null,
@@ -585,8 +579,7 @@ export class FinContasComponent implements OnInit {
   salvarConta(): void {
     if (this.cfForm.invalid) return;
     const v = this.cfForm.getRawValue();
-    this.api
-      .criarContaFinanceira({
+    this.financeiroApi.criarContaFinanceira({
         nome: v.nome.trim(),
         tipo: v.tipo,
         banco: v.banco.trim() || null,
@@ -621,8 +614,7 @@ export class FinContasComponent implements OnInit {
   confirmarBaixa(l: LancamentoView): void {
     if (this.baixaForm.invalid) return;
     const v = this.baixaForm.getRawValue();
-    this.api
-      .baixarLancamento(l.id, {
+    this.financeiroApi.baixarLancamento(l.id, {
         idconta_financeira: Number(v.idconta_financeira),
         valor: Number(v.valor),
         data: v.data || null,
@@ -644,7 +636,7 @@ export class FinContasComponent implements OnInit {
 
   cancelar(l: LancamentoView): void {
     if (!confirm(`Cancelar "${l.descricao}"? As baixas serão desconsideradas.`)) return;
-    this.api.cancelarLancamento(l.id).subscribe({
+    this.financeiroApi.cancelarLancamento(l.id).subscribe({
       next: () => {
         this.notify.ok('Lançamento cancelado.');
         this.carregar();
@@ -659,7 +651,7 @@ export class FinContasComponent implements OnInit {
       return;
     }
     this.baixasAbertas.set(id);
-    this.api.listarBaixas(id).subscribe({
+    this.financeiroApi.listarBaixas(id).subscribe({
       next: (b) => this.baixas.set(b),
       error: (e) => this.notify.erro(e),
     });

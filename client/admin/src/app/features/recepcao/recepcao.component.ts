@@ -2,8 +2,8 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { ApiService } from '@core/services/api.service';
-import { MapaQuarto, ReservaResumo } from '@core/models/api.models';
+import { ReservasApi } from '@core/api/reservas.api';
+import { MapaQuarto, ReservaResumo } from '@core/models/reservas.models';
 import { Notify } from '@core/services/notify.service';
 
 /** Recepção mobile-first — check-in em 1 toque, saídas do dia e mapa de quartos. */
@@ -140,7 +140,7 @@ import { Notify } from '@core/services/notify.service';
   `,
 })
 export class RecepcaoComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly reservasApi = inject(ReservasApi);
   private readonly notify = inject(Notify);
 
   protected readonly hoje = new Date();
@@ -168,23 +168,23 @@ export class RecepcaoComponent implements OnInit {
 
   carregar(): void {
     const hoje = this.hoje.toISOString().slice(0, 10);
-    this.api.listarReservas({ inicio: hoje, fim: hoje, status: 'p', porPagina: 50 }).subscribe({
+    this.reservasApi.listarReservas({ inicio: hoje, fim: hoje, status: 'p', porPagina: 50 }).subscribe({
       next: (p) => this.chegadas.set(p.items),
       error: (e) => this.notify.erro(e),
     });
-    this.api.listarReservas({ inicio: hoje, fim: hoje, status: 'i', porPagina: 100 }).subscribe({
+    this.reservasApi.listarReservas({ inicio: hoje, fim: hoje, status: 'i', porPagina: 100 }).subscribe({
       next: (p) => {
         this.naCasa.set(p.items);
         this.saidas.set(p.items.filter((r) => r.saidaprevista === hoje));
       },
       error: () => undefined,
     });
-    this.api.mapaQuartos().subscribe({ next: (m) => this.mapa.set(m), error: () => undefined });
+    this.reservasApi.mapaQuartos().subscribe({ next: (m) => this.mapa.set(m), error: () => undefined });
   }
 
   checkin(r: ReservaResumo): void {
     this.aguardando.set(r.id);
-    this.api.checkin(r.id, null, null).subscribe({
+    this.reservasApi.checkin(r.id, null, null).subscribe({
       next: () => {
         this.aguardando.set(null);
         this.notify.ok(`Check-in de ${r.cliente_nome} realizado.`);

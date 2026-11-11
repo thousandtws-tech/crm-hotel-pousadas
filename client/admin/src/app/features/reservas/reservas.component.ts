@@ -12,16 +12,12 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { provideNativeDateAdapter } from '@angular/material/core';
-import { ApiService, num } from '@core/services/api.service';
-import {
-  Acomodacao,
-  Bloqueio,
-  Grupo,
-  GrupoUnidadeView,
-  MapaQuarto,
-  ReservaResumo,
-  StatusReserva,
-} from '@core/models/api.models';
+import { AcomodacoesApi } from '@core/api/acomodacoes.api';
+import { ReservasApi } from '@core/api/reservas.api';
+import { num } from '@core/utils/num';
+import { Acomodacao, Grupo, GrupoUnidadeView } from '@core/models/catalogo.models';
+import { StatusReserva } from '@core/models/comum.models';
+import { Bloqueio, MapaQuarto, ReservaResumo } from '@core/models/reservas.models';
 import { Confirm } from '@core/services/confirm.service';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
@@ -926,7 +922,8 @@ const JANELA_DIAS = 14;
 export class ReservasComponent implements OnInit {
   protected readonly JANELA_DIAS = JANELA_DIAS;
   private readonly rt = inject(Realtime);
-  private readonly api = inject(ApiService);
+  private readonly acomodacoesApi = inject(AcomodacoesApi);
+  private readonly reservasApi = inject(ReservasApi);
   private readonly notify = inject(Notify);
   private readonly confirm = inject(Confirm);
   private readonly tour = inject(TourGuiado);
@@ -1064,7 +1061,7 @@ export class ReservasComponent implements OnInit {
   ngOnInit(): void {
     this.carregar();
     this.carregarKpis();
-    this.api.listarAcomodacoes(1, 200, true).subscribe({
+    this.acomodacoesApi.listarAcomodacoes(1, 200, true).subscribe({
       next: (p) => this.acomodacoes.set(p.items),
       error: () => undefined,
     });
@@ -1075,8 +1072,7 @@ export class ReservasComponent implements OnInit {
   carregar(): void {
     this.carregando.set(true);
     const { inicio, fim } = this.range.getRawValue();
-    this.api
-      .listarReservas({
+    this.reservasApi.listarReservas({
         busca: this.fBusca.value?.trim() || null,
         status: this.fStatus() || null,
         inicio: inicio ? this.isoLocal(inicio) : null,
@@ -1161,7 +1157,7 @@ export class ReservasComponent implements OnInit {
       { titulo: 'Excluir reserva', confirmar: 'Excluir' },
     );
     if (!ok) return;
-    this.api.excluirReserva(r.id).subscribe({
+    this.reservasApi.excluirReserva(r.id).subscribe({
       next: () => {
         this.notify.ok('Reserva excluída.');
         this.carregar();
@@ -1175,8 +1171,8 @@ export class ReservasComponent implements OnInit {
 
   // ---------- mapa por andar + bloqueio ----------
   carregarMapa(): void {
-    this.api.mapaQuartos().subscribe({ next: (m) => this.mapa.set(m), error: () => undefined });
-    this.api.bloqueios().subscribe({ next: (b) => this.bloqueios.set(b), error: () => undefined });
+    this.reservasApi.mapaQuartos().subscribe({ next: (m) => this.mapa.set(m), error: () => undefined });
+    this.reservasApi.bloqueios().subscribe({ next: (b) => this.bloqueios.set(b), error: () => undefined });
   }
 
   statusQuarto(a: MapaQuarto): string {
@@ -1195,9 +1191,9 @@ export class ReservasComponent implements OnInit {
 
   // ---------- grupos / eventos ----------
   carregarGrupos(): void {
-    this.api.grupos().subscribe({ next: (g) => this.grupos.set(g), error: () => undefined });
+    this.reservasApi.grupos().subscribe({ next: (g) => this.grupos.set(g), error: () => undefined });
     if (!this.acomodacoes().length) {
-      this.api.listarAcomodacoes(1, 200, true).subscribe({
+      this.acomodacoesApi.listarAcomodacoes(1, 200, true).subscribe({
         next: (p) => this.acomodacoes.set(p.items),
         error: () => undefined,
       });
@@ -1219,8 +1215,7 @@ export class ReservasComponent implements OnInit {
       return;
     }
     this.salvandoGrupo.set(true);
-    this.api
-      .criarGrupo({
+    this.reservasApi.criarGrupo({
         nome: this.gNome.trim(),
         contato: this.gContato.trim() || null,
         inicio: this.gIni,
@@ -1250,7 +1245,7 @@ export class ReservasComponent implements OnInit {
       return;
     }
     this.roomingAberto.set(id);
-    this.api.grupoUnidades(id).subscribe({
+    this.reservasApi.grupoUnidades(id).subscribe({
       next: (u) => this.rooming.set(u),
       error: () => this.rooming.set([]),
     });
@@ -1262,7 +1257,7 @@ export class ReservasComponent implements OnInit {
       { titulo: 'Remover grupo', confirmar: 'Remover' },
     );
     if (!ok) return;
-    this.api.removerGrupo(g.id).subscribe({
+    this.reservasApi.removerGrupo(g.id).subscribe({
       next: () => {
         this.notify.ok('Grupo removido.');
         this.carregarGrupos();
@@ -1282,7 +1277,7 @@ export class ReservasComponent implements OnInit {
     const a = this.bloqueioAlvo();
     if (!a || !this.bIni || !this.bFim || this.bMot.trim().length < 3) return;
     this.salvandoBloq.set(true);
-    this.api.bloquear(a.id, this.bIni, this.bFim, this.bMot.trim()).subscribe({
+    this.reservasApi.bloquear(a.id, this.bIni, this.bFim, this.bMot.trim()).subscribe({
       next: () => {
         this.salvandoBloq.set(false);
         this.bloqueioAlvo.set(null);
@@ -1293,15 +1288,15 @@ export class ReservasComponent implements OnInit {
   }
 
   desbloquear(id: number): void {
-    this.api.desbloquear(id).subscribe({ next: () => this.carregarMapa(), error: () => undefined });
+    this.reservasApi.desbloquear(id).subscribe({ next: () => this.carregarMapa(), error: () => undefined });
   }
 
   carregarKpis(): void {
-    this.api.eventosReserva(this.hojeIso, this.hojeIso).subscribe({
+    this.reservasApi.eventosReserva(this.hojeIso, this.hojeIso).subscribe({
       next: (ev) => this.eventosHoje.set(ev),
       error: () => undefined,
     });
-    this.api.listarReservas({ status: 'p', porPagina: 1 }).subscribe({
+    this.reservasApi.listarReservas({ status: 'p', porPagina: 1 }).subscribe({
       next: (p) => this.pendentesTotal.set(p.total),
       error: () => undefined,
     });
@@ -1328,7 +1323,7 @@ export class ReservasComponent implements OnInit {
     this.carregandoEventos.set(true);
     const ini = this.isoLocal(this.dias()[0]);
     const fim = this.isoLocal(this.addDias(this.dias()[0], JANELA_DIAS));
-    this.api.eventosReserva(ini, fim).subscribe({
+    this.reservasApi.eventosReserva(ini, fim).subscribe({
       next: (ev) => {
         this.eventos.set(ev);
         this.carregandoEventos.set(false);

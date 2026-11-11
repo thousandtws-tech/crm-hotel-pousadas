@@ -6,15 +6,14 @@
 //   painel com histórico + read receipts (uma e "todas").
 
 import { Service, effect, inject, signal } from '@angular/core';
-import { ApiService } from './api.service';
-import { Notificacao } from '@core/models/api.models';
+import { NotificacoesApi } from '@core/api/notificacoes.api';
+import { Notificacao } from '@core/models/notificacoes.models';
 import { AuthStore } from './auth.store';
 import { Realtime } from './realtime.service';
 
 @Service()
 export class Notificacoes {
-[x: string]: any;
-  private readonly api = inject(ApiService);
+  private readonly notificacoesApi = inject(NotificacoesApi);
   private readonly rt = inject(Realtime);
   private readonly auth = inject(AuthStore);
 
@@ -63,7 +62,7 @@ export class Notificacoes {
 
   /** Contagem inicial — chamado quando o shell sobe. */
   iniciar(): void {
-    this.api.naoLidas().subscribe({
+    this.notificacoesApi.naoLidas().subscribe({
       next: (r) => this.naoLidas.set(r.total),
       error: () => undefined,
     });
@@ -81,7 +80,7 @@ export class Notificacoes {
 
   carregarInbox(): void {
     this.carregando.set(true);
-    this.api.notificacoes(1, 30).subscribe({
+    this.notificacoesApi.notificacoes(1, 30).subscribe({
       next: (p) => {
         this.inbox.set(p.items);
         this.carregando.set(false);
@@ -94,21 +93,21 @@ export class Notificacoes {
     if (n.lida) return;
     this.inbox.update((l) => l.map((x) => (x.id === n.id ? { ...x, lida: true } : x)));
     this.naoLidas.update((x) => Math.max(0, x - 1));
-    this.api.lerNotificacao(n.id).subscribe({ error: () => undefined });
+    this.notificacoesApi.lerNotificacao(n.id).subscribe({ error: () => undefined });
   }
 
   lerTodas(): void {
     if (this.naoLidas() === 0) return;
     this.naoLidas.set(0);
     this.inbox.update((l) => l.map((n) => ({ ...n, lida: true })));
-    this.api.lerTodasNotificacoes().subscribe({ error: () => undefined });
+    this.notificacoesApi.lerTodasNotificacoes().subscribe({ error: () => undefined });
   }
 
   /** Remove do histórico (só admin — a linha é compartilhada). */
   excluir(n: Notificacao): void {
     if (!n.lida) this.naoLidas.update((x) => Math.max(0, x - 1));
     this.inbox.update((l) => l.filter((x) => x.id !== n.id));
-    this.api.excluirNotificacao(n.id).subscribe({ error: () => undefined });
+    this.notificacoesApi.excluirNotificacao(n.id).subscribe({ error: () => undefined });
   }
 
   /** "agora", "5min", "2h", "3d" ou data. */

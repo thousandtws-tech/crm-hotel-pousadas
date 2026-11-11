@@ -2,15 +2,9 @@ import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { ApiService, num } from '@core/services/api.service';
-import {
-  ConciliacaoResumo,
-  ContaFinanceira,
-  ExtratoView,
-  PlanoConta,
-  StatusExtrato,
-  SugestaoConciliacao,
-} from '@core/models/api.models';
+import { FinanceiroApi } from '@core/api/financeiro.api';
+import { num } from '@core/utils/num';
+import { ConciliacaoResumo, ContaFinanceira, ExtratoView, PlanoConta, StatusExtrato, SugestaoConciliacao } from '@core/models/financeiro.models';
 import { Notify } from '@core/services/notify.service';
 import { FinNavComponent } from './fin-nav.component';
 
@@ -248,7 +242,7 @@ const fmt = (v: string | number | null | undefined) => BRL.format(num(v));
   `,
 })
 export class FinConciliacaoComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly financeiroApi = inject(FinanceiroApi);
   private readonly notify = inject(Notify);
 
   readonly fmt = fmt;
@@ -277,7 +271,7 @@ export class FinConciliacaoComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.api.listarContasFinanceiras(true).subscribe({
+    this.financeiroApi.listarContasFinanceiras(true).subscribe({
       next: (cs) => {
         this.contas.set(cs);
         const banco = cs.find((c) => c.tipo === 'banco' && c.ativo) ?? cs.find((c) => c.ativo);
@@ -286,7 +280,7 @@ export class FinConciliacaoComponent implements OnInit {
       },
       error: (e) => this.notify.erro(e),
     });
-    this.api.listarPlanoContas(false).subscribe({
+    this.financeiroApi.listarPlanoContas(false).subscribe({
       next: (p) => this.plano.set(p),
       error: () => undefined,
     });
@@ -303,8 +297,7 @@ export class FinConciliacaoComponent implements OnInit {
     this.aberto.set(null);
     this.classAberto.set(null);
     const idconta = this.contaCtrl.value;
-    this.api
-      .listarExtrato({
+    this.financeiroApi.listarExtrato({
         idconta_financeira: idconta,
         status: this.status(),
         page: this.page(),
@@ -320,7 +313,7 @@ export class FinConciliacaoComponent implements OnInit {
           this.notify.erro(e);
         },
       });
-    this.api.resumoExtrato(idconta).subscribe({
+    this.financeiroApi.resumoExtrato(idconta).subscribe({
       next: (r) => this.resumo.set(r),
       error: () => undefined,
     });
@@ -352,7 +345,7 @@ export class FinConciliacaoComponent implements OnInit {
     }
     const reader = new FileReader();
     reader.onload = () => {
-      this.api.importarExtrato(idconta, String(reader.result ?? '')).subscribe({
+      this.financeiroApi.importarExtrato(idconta, String(reader.result ?? '')).subscribe({
         next: (r) => {
           this.notify.ok(
             `${r.importados} itens importados, ${r.duplicados} duplicados ignorados.`,
@@ -373,7 +366,7 @@ export class FinConciliacaoComponent implements OnInit {
       return;
     }
     this.rodando.set(true);
-    this.api.autoConciliar(idconta).subscribe({
+    this.financeiroApi.autoConciliar(idconta).subscribe({
       next: (r) => {
         this.rodando.set(false);
         this.notify.ok(`${r.conciliados} itens conciliados automaticamente.`);
@@ -394,7 +387,7 @@ export class FinConciliacaoComponent implements OnInit {
     this.classAberto.set(null);
     this.aberto.set(e.id);
     this.carregandoSug.set(true);
-    this.api.sugestoesExtrato(e.id).subscribe({
+    this.financeiroApi.sugestoesExtrato(e.id).subscribe({
       next: (s) => {
         this.sugestoes.set(s);
         this.carregandoSug.set(false);
@@ -413,7 +406,7 @@ export class FinConciliacaoComponent implements OnInit {
   }
 
   conciliar(e: ExtratoView, idbaixa: number): void {
-    this.api.conciliarExtrato(e.id, idbaixa).subscribe({
+    this.financeiroApi.conciliarExtrato(e.id, idbaixa).subscribe({
       next: () => {
         this.notify.ok('Conciliado.');
         this.carregar();
@@ -425,8 +418,7 @@ export class FinConciliacaoComponent implements OnInit {
   confirmarClassificar(e: ExtratoView): void {
     const v = this.clsForm.getRawValue();
     if (v.idplano_conta === null) return;
-    this.api
-      .classificarExtrato(e.id, v.idplano_conta, v.descricao.trim() || null)
+    this.financeiroApi.classificarExtrato(e.id, v.idplano_conta, v.descricao.trim() || null)
       .subscribe({
         next: () => {
           this.notify.ok('Lançamento criado e conciliado.');
@@ -438,7 +430,7 @@ export class FinConciliacaoComponent implements OnInit {
   }
 
   ignorar(e: ExtratoView): void {
-    this.api.ignorarExtrato(e.id).subscribe({
+    this.financeiroApi.ignorarExtrato(e.id).subscribe({
       next: () => {
         this.notify.ok('Item ignorado.');
         this.carregar();

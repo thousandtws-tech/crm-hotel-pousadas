@@ -9,21 +9,19 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { ApiService, num } from '@core/services/api.service';
-import {
-  ComandaItemView,
-  ComandaView,
-  ComissaoResumo,
-  ComissaoView,
-  ContaFinanceira,
-  FormaPagamento,
-  Funcionario,
-  GarcomView,
-  ItemVendaView,
-  MesaView,
-  Page,
-  ReservaResumo,
-} from '@core/models/api.models';
+import { ComunicacaoApi } from '@core/api/comunicacao.api';
+import { FinanceiroApi } from '@core/api/financeiro.api';
+import { FuncionariosApi } from '@core/api/funcionarios.api';
+import { PagamentosApi } from '@core/api/pagamentos.api';
+import { PdvApi } from '@core/api/pdv.api';
+import { ReservasApi } from '@core/api/reservas.api';
+import { num } from '@core/utils/num';
+import { Page } from '@core/models/comum.models';
+import { ContaFinanceira } from '@core/models/financeiro.models';
+import { Funcionario } from '@core/models/funcionarios.models';
+import { FormaPagamento } from '@core/models/pagamentos.models';
+import { ComandaItemView, ComandaView, ComissaoResumo, ComissaoView, GarcomView, ItemVendaView, MesaView } from '@core/models/pdv.models';
+import { ReservaResumo } from '@core/models/reservas.models';
 import { Notify } from '@core/services/notify.service';
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -1109,7 +1107,12 @@ function rotuloComanda(c: ComandaView): string {
   `,
 })
 export class PdvComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly comunicacaoApi = inject(ComunicacaoApi);
+  private readonly financeiroApi = inject(FinanceiroApi);
+  private readonly funcionariosApi = inject(FuncionariosApi);
+  private readonly pagamentosApi = inject(PagamentosApi);
+  private readonly pdvApi = inject(PdvApi);
+  private readonly reservasApi = inject(ReservasApi);
   private readonly notify = inject(Notify);
 
   readonly num = num;
@@ -1287,23 +1290,23 @@ export class PdvComponent implements OnInit {
   }
 
   private carregarAuxiliares(): void {
-    this.api.listarContasFinanceiras().subscribe({
+    this.financeiroApi.listarContasFinanceiras().subscribe({
       next: (c) => this.contas.set(c.filter((x) => x.ativo)),
       error: () => {},
     });
-    this.api.listarPagamentos().subscribe({
+    this.pagamentosApi.listarPagamentos().subscribe({
       next: (f) => this.formas.set(f.filter((x) => x.ativo)),
       error: () => {},
     });
-    this.api.listarFuncionarios(1, 100, true).subscribe({
+    this.funcionariosApi.listarFuncionarios(1, 100, true).subscribe({
       next: (p: Page<Funcionario>) => this.funcionarios.set(p.items),
       error: () => {},
     });
-    this.api.itensVenda().subscribe({
+    this.pdvApi.itensVenda().subscribe({
       next: (i) => this.itensVenda.set(i),
       error: () => {},
     });
-    this.api.listarReservas({ status: 'i', porPagina: 100 }).subscribe({
+    this.reservasApi.listarReservas({ status: 'i', porPagina: 100 }).subscribe({
       next: (p) => this.reservasEstadia.set(p.items.filter((r) => r.idquarto !== null)),
       error: () => {},
     });
@@ -1316,15 +1319,14 @@ export class PdvComponent implements OnInit {
   }
 
   carregarMesas(): void {
-    this.api.listarMesas().subscribe({
+    this.pdvApi.listarMesas().subscribe({
       next: (m) => this.mesas.set(m),
       error: () => this.notify.erro('Falha ao carregar mesas.'),
     });
   }
 
   carregarComandas(): void {
-    this.api
-      .listarComandas({
+    this.pdvApi.listarComandas({
         status: this.filtroStatus.value,
         page: this.comandasPage(),
         porPagina: this.POR_PAGINA,
@@ -1349,15 +1351,14 @@ export class PdvComponent implements OnInit {
   }
 
   carregarGarcons(): void {
-    this.api.listarGarcons().subscribe({
+    this.pdvApi.listarGarcons().subscribe({
       next: (g) => this.garcons.set(g),
       error: () => {},
     });
   }
 
   carregarComissoes(): void {
-    this.api
-      .listarComissoes({ page: this.comissoesPage(), porPagina: this.POR_PAGINA })
+    this.comunicacaoApi.listarComissoes({ page: this.comissoesPage(), porPagina: this.POR_PAGINA })
       .subscribe({
         next: (p) => {
           this.comissoes.set(p.items);
@@ -1365,7 +1366,7 @@ export class PdvComponent implements OnInit {
         },
         error: () => this.notify.erro('Falha ao carregar comissões.'),
       });
-    this.api.resumoComissoes().subscribe({
+    this.pdvApi.resumoComissoes().subscribe({
       next: (r) => this.resumoComissoes.set(r),
       error: () => {},
     });
@@ -1375,7 +1376,7 @@ export class PdvComponent implements OnInit {
 
   criarMesa(): void {
     const v = this.mesaForm.getRawValue();
-    this.api.criarMesa(v.numero.trim(), v.lugares).subscribe({
+    this.pdvApi.criarMesa(v.numero.trim(), v.lugares).subscribe({
       next: () => {
         this.notify.ok('Mesa criada.');
         this.mesaForm.reset({ numero: '', lugares: 4 });
@@ -1460,7 +1461,7 @@ export class PdvComponent implements OnInit {
   abrirComanda(): void {
     const v = this.abrirForm.getRawValue();
     this.salvando.set(true);
-    this.api.abrirComanda({
+    this.pdvApi.abrirComanda({
       tipo: v.tipo,
       idmesa: v.idmesa,
       idquarto: v.idquarto,
@@ -1488,12 +1489,12 @@ export class PdvComponent implements OnInit {
   abrirDetalhe(id: number): void {
     this.aba.set('mesas');
     this.selecao.set(null);
-    this.api.buscarComanda(id).subscribe({
+    this.pdvApi.buscarComanda(id).subscribe({
       next: (c) => {
         this.comanda.set(c);
         this.fechando.set(false);
         this.cancelando.set(null);
-        this.api.itensComanda(id).subscribe({
+        this.pdvApi.itensComanda(id).subscribe({
           next: (i) => this.itens.set(i),
           error: () => {},
         });
@@ -1513,8 +1514,7 @@ export class PdvComponent implements OnInit {
   }
 
   carregarAbertas(): void {
-    this.api
-      .listarComandas({ status: 'aberta', page: 1, porPagina: 50 })
+    this.pdvApi.listarComandas({ status: 'aberta', page: 1, porPagina: 50 })
       .subscribe({
         next: (p) => this.comandasAbertas.set(p.items),
         error: () => {},
@@ -1524,9 +1524,9 @@ export class PdvComponent implements OnInit {
   private recarregarComanda(): void {
     const id = this.comanda()?.id;
     if (id) {
-      this.api.buscarComanda(id).subscribe({ next: (c) => this.comanda.set(c), error: () => {} });
-      this.api.itensComanda(id).subscribe({ next: (i) => this.itens.set(i), error: () => {} });
-      this.api.itensVenda().subscribe({ next: (i) => this.itensVenda.set(i), error: () => {} });
+      this.pdvApi.buscarComanda(id).subscribe({ next: (c) => this.comanda.set(c), error: () => {} });
+      this.pdvApi.itensComanda(id).subscribe({ next: (i) => this.itens.set(i), error: () => {} });
+      this.pdvApi.itensVenda().subscribe({ next: (i) => this.itensVenda.set(i), error: () => {} });
     }
   }
 
@@ -1536,7 +1536,7 @@ export class PdvComponent implements OnInit {
     const com = this.comanda();
     if (!com || com.status !== 'aberta') return;
     this.salvando.set(true);
-    this.api.adicionarItem(com.id, i.id, 1).subscribe({
+    this.pdvApi.adicionarItem(com.id, i.id, 1).subscribe({
       next: () => {
         this.salvando.set(false);
         this.recarregarComanda();
@@ -1551,7 +1551,7 @@ export class PdvComponent implements OnInit {
   entregarItem(iditem: number): void {
     const com = this.comanda();
     if (!com) return;
-    this.api.entregarItem(com.id, iditem).subscribe({
+    this.pdvApi.entregarItem(com.id, iditem).subscribe({
       next: () => this.recarregarComanda(),
       error: (e) => this.notify.erro(e?.error?.erro?.mensagem ?? 'Falha ao marcar entregue.'),
     });
@@ -1583,7 +1583,7 @@ export class PdvComponent implements OnInit {
       );
     };
     if (tipo === 'item') {
-      this.api.cancelarItem(com.id, this.cancelandoItem()!, motivo).subscribe({
+      this.pdvApi.cancelarItem(com.id, this.cancelandoItem()!, motivo).subscribe({
         next: () => {
           ok('Item cancelado — estoque devolvido.');
           this.recarregarComanda();
@@ -1591,7 +1591,7 @@ export class PdvComponent implements OnInit {
         error: erro,
       });
     } else {
-      this.api.cancelarComanda(com.id, motivo).subscribe({
+      this.pdvApi.cancelarComanda(com.id, motivo).subscribe({
         next: () => {
           ok('Comanda cancelada — itens devolvidos ao estoque.');
           this.fecharDetalhe();
@@ -1618,7 +1618,7 @@ export class PdvComponent implements OnInit {
     if (!com) return;
     const v = this.fecharForm.getRawValue();
     this.salvando.set(true);
-    this.api.fecharComanda(com.id, {
+    this.pdvApi.fecharComanda(com.id, {
       modo: this.modo(),
       desconto: v.desconto,
       idconta_financeira: v.idconta_financeira,
@@ -1645,7 +1645,7 @@ export class PdvComponent implements OnInit {
   salvarGarcom(): void {
     const v = this.garcomForm.getRawValue();
     if (v.idfuncionario === null || v.percentual === null) return;
-    this.api.salvarGarcom(v.idfuncionario, v.percentual, true).subscribe({
+    this.pdvApi.salvarGarcom(v.idfuncionario, v.percentual, true).subscribe({
       next: () => {
         this.notify.ok('Garçom configurado.');
         this.garcomForm.reset({ idfuncionario: null, percentual: null });
@@ -1656,7 +1656,7 @@ export class PdvComponent implements OnInit {
   }
 
   toggleMesa(m: MesaView): void {
-    this.api.statusMesa(m.id, !m.ativo).subscribe({
+    this.pdvApi.statusMesa(m.id, !m.ativo).subscribe({
       next: () => {
         this.notify.ok(`Mesa ${m.numero} ${m.ativo ? 'desativada' : 'reativada'}.`);
         this.carregarMesas();
@@ -1666,7 +1666,7 @@ export class PdvComponent implements OnInit {
   }
 
   toggleGarcom(g: GarcomView): void {
-    this.api.salvarGarcom(g.idfuncionario, num(g.percentual), !g.ativo).subscribe({
+    this.pdvApi.salvarGarcom(g.idfuncionario, num(g.percentual), !g.ativo).subscribe({
       next: () => {
         this.notify.ok(`${g.funcionario_nome} ${g.ativo ? 'desativado' : 'reativado'}.`);
         this.carregarGarcons();
@@ -1685,7 +1685,7 @@ export class PdvComponent implements OnInit {
     const v = this.pagarForm.getRawValue();
     if (v.idconta_financeira === null) return;
     this.salvando.set(true);
-    this.api.pagarComissao(id, v.idconta_financeira, v.idforma_pagamento).subscribe({
+    this.pdvApi.pagarComissao(id, v.idconta_financeira, v.idforma_pagamento).subscribe({
       next: () => {
         this.salvando.set(false);
         this.notify.ok('Comissão paga — lançamento gerado no financeiro.');

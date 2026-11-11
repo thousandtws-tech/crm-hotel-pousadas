@@ -3,17 +3,11 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MatIconModule } from '@angular/material/icon';
 import { DateInputComponent } from '@shared/components/date-input.component';
 import { RouterLink } from '@angular/router';
-import { ApiService, num } from '@core/services/api.service';
+import { EstoqueApi } from '@core/api/estoque.api';
+import { num } from '@core/utils/num';
 import { Realtime } from '@core/services/realtime.service';
 import { Notify } from '@core/services/notify.service';
-import {
-  ConversaoUnidade,
-  EstoqueBaixoView,
-  FichaItemView,
-  ItemEstoque,
-  NfeImportRequest,
-  NfePreview,
-} from '@core/models/api.models';
+import { ConversaoUnidade, EstoqueBaixoView, FichaItemView, ItemEstoque, NfeImportRequest, NfePreview } from '@core/models/estoque.models';
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmt = (v: string | number | null | undefined) => BRL.format(num(v));
@@ -408,7 +402,7 @@ interface LinhaNfe {
   `,
 })
 export class InsumosComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly estoqueApi = inject(EstoqueApi);
   private readonly notify = inject(Notify);
   protected readonly rt = inject(Realtime);
 
@@ -485,11 +479,11 @@ export class InsumosComponent implements OnInit {
   }
 
   protected carregar(silencioso = false) {
-    this.api.listarItens(1, 500, true).subscribe({
+    this.estoqueApi.listarItens(1, 500, true).subscribe({
       next: (p) => this.itens.set(p.items),
       error: () => !silencioso && this.notify.erro('Falha ao carregar itens.'),
     });
-    this.api.alertasEstoque().subscribe({
+    this.estoqueApi.alertasEstoque().subscribe({
       next: (a) => this.alertas.set(a),
       error: () => {},
     });
@@ -501,8 +495,8 @@ export class InsumosComponent implements OnInit {
   }
 
   private carregarDetalhe(i: ItemEstoque) {
-    this.api.listarFicha(i.id).subscribe((f) => this.ficha.set(f));
-    this.api.listarConversoes(i.id).subscribe((c) => this.conversoes.set(c));
+    this.estoqueApi.listarFicha(i.id).subscribe((f) => this.ficha.set(f));
+    this.estoqueApi.listarConversoes(i.id).subscribe((c) => this.conversoes.set(c));
   }
 
   protected baixo(i: ItemEstoque) {
@@ -516,7 +510,7 @@ export class InsumosComponent implements OnInit {
     if (!sel) return;
     const { idinsumo, quantidade } = this.formFicha.getRawValue();
     if (!idinsumo || !quantidade) return;
-    this.api.salvarFichaItem(sel.id, { idinsumo, quantidade }).subscribe({
+    this.estoqueApi.salvarFichaItem(sel.id, { idinsumo, quantidade }).subscribe({
       next: () => {
         this.notify.ok('Insumo incluído na ficha.');
         this.formFicha.patchValue({ quantidade: 1 });
@@ -526,7 +520,7 @@ export class InsumosComponent implements OnInit {
   }
 
   protected removerFicha(f: FichaItemView) {
-    this.api.removerFichaItem(f.id).subscribe({
+    this.estoqueApi.removerFichaItem(f.id).subscribe({
       next: () => this.notify.ok('Insumo removido.'),
       error: () => this.notify.erro('Falha ao remover.'),
     });
@@ -538,8 +532,7 @@ export class InsumosComponent implements OnInit {
     const sel = this.selecionado();
     if (!sel) return;
     const { unidade_compra, fator } = this.formConv.getRawValue();
-    this.api
-      .salvarConversao(sel.id, { unidade_compra: unidade_compra.trim(), fator })
+    this.estoqueApi.salvarConversao(sel.id, { unidade_compra: unidade_compra.trim(), fator })
       .subscribe({
         next: () => {
           this.notify.ok('Conversão salva.');
@@ -550,7 +543,7 @@ export class InsumosComponent implements OnInit {
   }
 
   protected removerConversao(c: ConversaoUnidade) {
-    this.api.removerConversao(c.id).subscribe({
+    this.estoqueApi.removerConversao(c.id).subscribe({
       next: () => this.notify.ok('Conversão removida.'),
       error: () => this.notify.erro('Falha ao remover.'),
     });
@@ -577,7 +570,7 @@ export class InsumosComponent implements OnInit {
     this.nfeErro.set(null);
     const reader = new FileReader();
     reader.onload = () => {
-      this.api.previewNfe(String(reader.result)).subscribe({
+      this.estoqueApi.previewNfe(String(reader.result)).subscribe({
         next: (n) => {
           this.nfe.set(n);
           this.linhas.set(
@@ -629,7 +622,7 @@ export class InsumosComponent implements OnInit {
       })),
     };
     this.importando.set(true);
-    this.api.importarNfe(req).subscribe({
+    this.estoqueApi.importarNfe(req).subscribe({
       next: (r) => {
         this.importando.set(false);
         this.notify.ok(

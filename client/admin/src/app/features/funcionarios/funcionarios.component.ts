@@ -5,8 +5,8 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { ApiService } from '@core/services/api.service';
-import { Funcionario, FuncionarioInput, FuncionarioUpdate } from '@core/models/api.models';
+import { FuncionariosApi } from '@core/api/funcionarios.api';
+import { Funcionario, FuncionarioInput, FuncionarioUpdate } from '@core/models/funcionarios.models';
 import { Confirm } from '@core/services/confirm.service';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
@@ -623,7 +623,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
   `,
 })
 export class FuncionariosComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly funcionariosApi = inject(FuncionariosApi);
   private readonly notify = inject(Notify);
   private readonly confirm = inject(Confirm);
   private readonly rt = inject(Realtime);
@@ -698,7 +698,7 @@ export class FuncionariosComponent implements OnInit {
   }
 
   carregar(): void {
-    this.api.listarFuncionarios(1, 500).subscribe({
+    this.funcionariosApi.listarFuncionarios(1, 500).subscribe({
       next: (p) => {
         this.items.set(p.items);
         this.total.set(p.total);
@@ -739,7 +739,7 @@ export class FuncionariosComponent implements OnInit {
   }
 
   status(f: Funcionario, ativo: boolean): void {
-    this.api.statusFuncionario(f.id, ativo).subscribe({
+    this.funcionariosApi.statusFuncionario(f.id, ativo).subscribe({
       next: () => this.carregar(),
       error: (e) => this.notify.erro(e),
     });
@@ -751,7 +751,7 @@ export class FuncionariosComponent implements OnInit {
       { titulo: 'Excluir funcionário', confirmar: 'Excluir' },
     );
     if (!ok) return;
-    this.api.excluirFuncionario(f.id).subscribe({
+    this.funcionariosApi.excluirFuncionario(f.id).subscribe({
       next: () => {
         this.notify.ok('Funcionário excluído.');
         this.carregar();
@@ -832,7 +832,7 @@ export class FuncionariosComponent implements OnInit {
         data_nascimento: v.data_nascimento || null,
         nivel: v.nivel,
       };
-      this.api.criarFuncionario(input).subscribe({
+      this.funcionariosApi.criarFuncionario(input).subscribe({
         next: () => {
           this.notify.ok('Funcionário cadastrado.');
           this.fecharDrawer();
@@ -850,7 +850,7 @@ export class FuncionariosComponent implements OnInit {
         version: f.version,
       };
       if (v.senha) input.senha = v.senha;
-      this.api.atualizarFuncionario(f.id, input).subscribe({
+      this.funcionariosApi.atualizarFuncionario(f.id, input).subscribe({
         next: () => {
           this.notify.ok('Funcionário salvo.');
           this.fecharDrawer();

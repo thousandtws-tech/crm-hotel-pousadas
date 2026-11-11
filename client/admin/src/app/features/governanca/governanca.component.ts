@@ -1,9 +1,10 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '@core/services/api.service';
+import { FuncionariosApi } from '@core/api/funcionarios.api';
+import { OperacaoApi } from '@core/api/operacao.api';
 import { Notify } from '@core/services/notify.service';
-import { GovTarefa, PrevisaoDia, LavLote, EnxovalMov, StatusTarefaGov } from '@core/models/api.models';
+import { EnxovalMov, GovTarefa, LavLote, PrevisaoDia, StatusTarefaGov } from '@core/models/operacao.models';
 
 type Aba = 'quadro' | 'previsao' | 'lavanderia';
 
@@ -241,7 +242,8 @@ const TIPO_ROTULO: Record<string, string> = {
   `],
 })
 export class GovernancaComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly funcionariosApi = inject(FuncionariosApi);
+  private readonly operacaoApi = inject(OperacaoApi);
   private readonly notify = inject(Notify);
 
   protected readonly aba = signal<Aba>('quadro');
@@ -260,25 +262,25 @@ export class GovernancaComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregarQuadro();
-    this.api.govPrevisao().subscribe({ next: (p) => this.previsao.set(p), error: () => undefined });
-    this.api.lavLotes().subscribe({ next: (l) => this.lotes.set(l), error: () => undefined });
-    this.api.enxovalMovs().subscribe({ next: (m) => this.movs.set(m), error: () => undefined });
-    this.api.enxovalSaldo().subscribe({ next: (s) => this.saldoEnxoval.set(s), error: () => undefined });
-    this.api.listarFuncionarios(1, 100, true).subscribe({
+    this.operacaoApi.govPrevisao().subscribe({ next: (p) => this.previsao.set(p), error: () => undefined });
+    this.operacaoApi.lavLotes().subscribe({ next: (l) => this.lotes.set(l), error: () => undefined });
+    this.operacaoApi.enxovalMovs().subscribe({ next: (m) => this.movs.set(m), error: () => undefined });
+    this.operacaoApi.enxovalSaldo().subscribe({ next: (s) => this.saldoEnxoval.set(s), error: () => undefined });
+    this.funcionariosApi.listarFuncionarios(1, 100, true).subscribe({
       next: (p) => this.funcionarios.set(p.items.map((f) => ({ id: f.id, nome: f.nome }))),
       error: () => undefined,
     });
   }
 
   carregarQuadro(): void {
-    this.api.govQuadro(this.dataQuadro).subscribe({
+    this.operacaoApi.govQuadro(this.dataQuadro).subscribe({
       next: (t) => this.tarefas.set(t),
       error: () => this.notify.erroMsg('Falha ao carregar tarefas.'),
     });
   }
 
   status(t: GovTarefa, status: StatusTarefaGov): void {
-    this.api.govStatus(t.id, status).subscribe({
+    this.operacaoApi.govStatus(t.id, status).subscribe({
       next: () => this.carregarQuadro(),
       error: () => this.notify.erroMsg('Não foi possível atualizar.'),
     });
@@ -286,21 +288,21 @@ export class GovernancaComponent implements OnInit {
 
   atribuir(id: number, idfuncionario: number | null): void {
     if (!idfuncionario) return;
-    this.api.govAtribuir(id, idfuncionario).subscribe({
+    this.operacaoApi.govAtribuir(id, idfuncionario).subscribe({
       next: () => this.notify.ok('Responsável atribuído.'),
       error: () => this.notify.erroMsg('Falha ao atribuir.'),
     });
   }
 
   gerarD1(): void {
-    this.api.govGerarD1().subscribe({
+    this.operacaoApi.govGerarD1().subscribe({
       next: (r) => this.notify.ok(`${r.criadas} tarefas geradas para amanhã.`),
       error: () => this.notify.erroMsg('Falha na geração.'),
     });
   }
 
   abrirLote(): void {
-    this.api.lavAbrir({
+    this.operacaoApi.lavAbrir({
       fornecedor: this.novoLote.fornecedor,
       qtd_itens: this.novoLote.qtd_itens,
       custo_centavos: Math.round(this.novoLote.custo * 100),
@@ -312,22 +314,22 @@ export class GovernancaComponent implements OnInit {
 
   devolver(l: LavLote): void {
     const qtd = l.qtd_itens - l.qtd_devolvida;
-    this.api.lavDevolver(l.id, qtd).subscribe({
-      next: () => { this.api.lavLotes().subscribe({ next: (x) => this.lotes.set(x), error: () => undefined }); },
+    this.operacaoApi.lavDevolver(l.id, qtd).subscribe({
+      next: () => { this.operacaoApi.lavLotes().subscribe({ next: (x) => this.lotes.set(x), error: () => undefined }); },
       error: () => this.notify.erroMsg('Falha ao registrar devolução.'),
     });
   }
 
   fecharMes(): void {
     const comp = this.dataQuadro.slice(0, 7) + '-01';
-    this.api.lavFechar(comp).subscribe({
+    this.operacaoApi.lavFechar(comp).subscribe({
       next: (r) => this.notify.ok(`Competência fechada — conta a pagar #${r.idlancamento}.`),
       error: () => this.notify.erroMsg('Competência já fechada ou sem lotes.'),
     });
   }
 
   gravarMov(): void {
-    this.api.enxovalRegistrar(this.novaMov).subscribe({
+    this.operacaoApi.enxovalRegistrar(this.novaMov).subscribe({
       next: () => { this.modalMov.set(false); this.ngOnInit(); this.notify.ok('Movimentação registrada.'); },
       error: () => this.notify.erroMsg('Falha ao registrar.'),
     });

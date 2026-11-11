@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Service, signal } from '@angular/core';
-import { ApiErro } from '@core/models/api.models';
+import { ApiErro } from '@core/models/comum.models';
 
 export type ToastTipo = 'sucesso' | 'erro' | 'aviso';
 

@@ -1,11 +1,10 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '@core/services/api.service';
+import { FuncionariosApi } from '@core/api/funcionarios.api';
+import { OperacaoApi } from '@core/api/operacao.api';
 import { Notify } from '@core/services/notify.service';
-import {
-  FuncionarioJornada, EscalaTurno, CltViolacao, RegimeEscala,
-} from '@core/models/api.models';
+import { CltViolacao, EscalaTurno, FuncionarioJornada, RegimeEscala } from '@core/models/operacao.models';
 
 type Aba = 'grade' | 'jornadas' | 'clt';
 
@@ -199,7 +198,8 @@ const REGRA_ROTULO: Record<string, string> = {
   `],
 })
 export class EscalasComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly funcionariosApi = inject(FuncionariosApi);
+  private readonly operacaoApi = inject(OperacaoApi);
   private readonly notify = inject(Notify);
 
   protected readonly aba = signal<Aba>('grade');
@@ -220,7 +220,7 @@ export class EscalasComponent implements OnInit {
   private nomes = new Map<number, string>();
 
   ngOnInit(): void {
-    this.api.listarFuncionarios(1, 100, true).subscribe({
+    this.funcionariosApi.listarFuncionarios(1, 100, true).subscribe({
       next: (p) => {
         this.funcionarios.set(p.items.map((f) => ({ id: f.id, nome: f.nome })));
         this.nomes = new Map(p.items.map((f) => [f.id, f.nome]));
@@ -228,12 +228,12 @@ export class EscalasComponent implements OnInit {
       error: () => undefined,
     });
     this.carregar();
-    this.api.jornadas().subscribe({ next: (j) => this.jornadas.set(j), error: () => undefined });
+    this.operacaoApi.jornadas().subscribe({ next: (j) => this.jornadas.set(j), error: () => undefined });
     this.validarClt();
   }
 
   carregar(): void {
-    this.api.turnos(this.inicio, this.fim).subscribe({
+    this.operacaoApi.turnos(this.inicio, this.fim).subscribe({
       next: (t) => { this.turnos.set(t); this.alterados.set(new Set()); },
       error: () => this.notify.erroMsg('Falha ao carregar turnos.'),
     });
@@ -256,7 +256,7 @@ export class EscalasComponent implements OnInit {
   salvarTurno(t: EscalaTurno): void {
     const inicio = `${t.data}T${this.horasEdit.get(t.id + '-i') ?? this.hhmm(t.inicio)}:00Z`;
     const fim = `${t.data}T${this.horasEdit.get(t.id + '-f') ?? this.hhmm(t.fim)}:00Z`;
-    this.api.turnoAtualizar(t.id, { inicio, fim, almoco_min: t.almoco_min }).subscribe({
+    this.operacaoApi.turnoAtualizar(t.id, { inicio, fim, almoco_min: t.almoco_min }).subscribe({
       next: () => {
         this.alterados.update((s) => { const n = new Set(s); n.delete(t.id); return n; });
         this.notify.ok('Turno atualizado.');
@@ -266,21 +266,21 @@ export class EscalasComponent implements OnInit {
   }
 
   removerTurno(t: EscalaTurno): void {
-    this.api.removerTurno(t.id).subscribe({
+    this.operacaoApi.removerTurno(t.id).subscribe({
       next: () => this.carregar(),
       error: () => this.notify.erroMsg('Falha ao excluir turno.'),
     });
   }
 
   gravarJornada(): void {
-    this.api.gravarJornada({
+    this.operacaoApi.gravarJornada({
       ...this.jornadaForm,
       entrada: this.jornadaForm.entrada + ':00',
       saida: this.jornadaForm.saida + ':00',
     }, this.diasGerar).subscribe({
       next: () => {
         this.modalJornada.set(false);
-        this.api.jornadas().subscribe({ next: (j) => this.jornadas.set(j), error: () => undefined });
+        this.operacaoApi.jornadas().subscribe({ next: (j) => this.jornadas.set(j), error: () => undefined });
         this.carregar();
         this.notify.ok(`Jornada salva — turnos gerados por ${this.diasGerar} dias.`);
       },
@@ -289,14 +289,14 @@ export class EscalasComponent implements OnInit {
   }
 
   validarClt(): void {
-    this.api.cltValidar(14).subscribe({
+    this.operacaoApi.cltValidar(14).subscribe({
       next: (v) => this.violacoes.set(v),
       error: () => undefined,
     });
   }
 
   corrigir(v: CltViolacao): void {
-    this.api.cltCorrigir(v.correcao).subscribe({
+    this.operacaoApi.cltCorrigir(v.correcao).subscribe({
       next: () => { this.validarClt(); this.carregar(); this.notify.ok('Correção aplicada.'); },
       error: () => this.notify.erroMsg('Falha ao aplicar correção.'),
     });

@@ -3,8 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
-import { ApiService } from '@core/services/api.service';
-import { Acomodacao, VagaEstacionamento } from '@core/models/api.models';
+import { AcomodacoesApi } from '@core/api/acomodacoes.api';
+import { EstacionamentoApi } from '@core/api/estacionamento.api';
+import { Acomodacao } from '@core/models/catalogo.models';
+import { VagaEstacionamento } from '@core/models/estacionamento.models';
 import { Confirm } from '@core/services/confirm.service';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
@@ -479,7 +481,8 @@ export class EstacionamentoComponent implements OnInit {
       .pipe(takeUntilDestroyed())
       .subscribe((v) => this.termo.set(v.trim().toLowerCase()));
   }
-  private readonly api = inject(ApiService);
+  private readonly acomodacoesApi = inject(AcomodacoesApi);
+  private readonly estacionamentoApi = inject(EstacionamentoApi);
   private readonly notify = inject(Notify);
   private readonly tour = inject(TourGuiado);
   private readonly confirm = inject(Confirm);
@@ -522,14 +525,14 @@ export class EstacionamentoComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregar();
-    this.api.listarAcomodacoes(1, 200, true).subscribe({
+    this.acomodacoesApi.listarAcomodacoes(1, 200, true).subscribe({
       next: (p) => this.acomodacoes.set(p.items),
       error: () => undefined,
     });
   }
 
   carregar(): void {
-    this.api.listarVagas().subscribe({
+    this.estacionamentoApi.listarVagas().subscribe({
       next: (v) => {
         this.vagas.set(v);
         this.carregando.set(false);
@@ -544,7 +547,7 @@ export class EstacionamentoComponent implements OnInit {
   criar(): void {
     const n = this.numero.value;
     if (n == null || n < 1) return;
-    this.api.criarVaga(String(n)).subscribe({
+    this.estacionamentoApi.criarVaga(String(n)).subscribe({
       next: () => {
         this.numero.reset();
         this.notify.ok('Vaga cadastrada.');
@@ -555,7 +558,7 @@ export class EstacionamentoComponent implements OnInit {
   }
 
   vincular(v: VagaEstacionamento, idacomodacao: number | null): void {
-    this.api.vincularVaga(v.id, idacomodacao).subscribe({
+    this.estacionamentoApi.vincularVaga(v.id, idacomodacao).subscribe({
       next: () => {
         this.notify.ok('Vínculo atualizado.');
         this.carregar();
@@ -565,7 +568,7 @@ export class EstacionamentoComponent implements OnInit {
   }
 
   status(v: VagaEstacionamento, ativo: boolean): void {
-    this.api.statusVaga(v.id, ativo).subscribe({
+    this.estacionamentoApi.statusVaga(v.id, ativo).subscribe({
       next: () => this.carregar(),
       error: (e) => this.notify.erro(e),
     });
@@ -577,7 +580,7 @@ export class EstacionamentoComponent implements OnInit {
       confirmar: 'Remover',
     });
     if (!ok) return;
-    this.api.removerVaga(v.id).subscribe({
+    this.estacionamentoApi.removerVaga(v.id).subscribe({
       next: () => {
         this.notify.ok('Vaga removida.');
         this.carregar();

@@ -2,13 +2,11 @@ import { Component, inject, output, signal, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { ApiService, num } from '@core/services/api.service';
-import {
-  AcomodacaoDisponivel,
-  Cliente,
-  DisponibilidadeResponse,
-  ReservaInput,
-} from '@core/models/api.models';
+import { ClientesApi } from '@core/api/clientes.api';
+import { ReservasApi } from '@core/api/reservas.api';
+import { num } from '@core/utils/num';
+import { Cliente } from '@core/models/clientes.models';
+import { AcomodacaoDisponivel, DisponibilidadeResponse, ReservaInput } from '@core/models/reservas.models';
 import { Notify } from '@core/services/notify.service';
 import { DateInputComponent } from '@shared/components/date-input.component';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
@@ -181,7 +179,8 @@ export class NovaReservaDialogComponent implements OnInit {
   readonly fechar = output<void>();
   readonly criada = output<void>();
 
-  private readonly api = inject(ApiService);
+  private readonly clientesApi = inject(ClientesApi);
+  private readonly reservasApi = inject(ReservasApi);
   private readonly notify = inject(Notify);
   private readonly fb = inject(FormBuilder);
 
@@ -209,7 +208,7 @@ export class NovaReservaDialogComponent implements OnInit {
         debounceTime(300),
         distinctUntilChanged(),
         switchMap((v) =>
-          v.length >= 2 ? this.api.listarClientes(v, 1, 8, true) : of(null),
+          v.length >= 2 ? this.clientesApi.listarClientes(v, 1, 8, true) : of(null),
         ),
       )
       .subscribe((p) => this.clientes.set(p?.items ?? []));
@@ -235,7 +234,7 @@ export class NovaReservaDialogComponent implements OnInit {
   verificar(): void {
     if (!this.datasValidas()) return;
     const { entrada, saida } = this.form.getRawValue();
-    this.api.disponibilidade(entrada, saida).subscribe({
+    this.reservasApi.disponibilidade(entrada, saida).subscribe({
       next: (d) => {
         this.disp.set(d);
         if (d.acomodacoes.length === 1) {
@@ -272,7 +271,7 @@ export class NovaReservaDialogComponent implements OnInit {
       early_checkin: v.early_checkin === true,
       late_checkout: v.late_checkout === true,
     };
-    this.api.criarReserva(input).subscribe({
+    this.reservasApi.criarReserva(input).subscribe({
       next: () => this.criada.emit(),
       error: (e) => {
         this.salvando.set(false);

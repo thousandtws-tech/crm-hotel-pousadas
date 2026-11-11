@@ -6,8 +6,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { provideNativeDateAdapter } from '@angular/material/core';
-import { ApiService, num } from '@core/services/api.service';
-import { Dre, GrupoDre } from '@core/models/api.models';
+import { FinanceiroApi } from '@core/api/financeiro.api';
+import { num } from '@core/utils/num';
+import { Dre, GrupoDre } from '@core/models/financeiro.models';
 import { Notify } from '@core/services/notify.service';
 import { FinNavComponent } from './fin-nav.component';
 
@@ -177,7 +178,7 @@ interface LinhaDre {
   `,
 })
 export class FinDreComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly financeiroApi = inject(FinanceiroApi);
   private readonly notify = inject(Notify);
 
   readonly fmt = fmt;
@@ -239,7 +240,7 @@ export class FinDreComponent implements OnInit {
 
   carregar(): void {
     this.dre.set(null);
-    this.api.dre(this.ini || undefined, this.fim || undefined).subscribe({
+    this.financeiroApi.dre(this.ini || undefined, this.fim || undefined).subscribe({
       next: (d) => this.dre.set(d),
       error: (e) => this.notify.erro(e),
     });

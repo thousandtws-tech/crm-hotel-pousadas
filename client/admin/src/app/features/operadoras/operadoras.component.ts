@@ -1,9 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { ApiService } from '../../core/services/api.service';
+import { OperadorasApi } from '@core/api/operadoras.api';
 import { Notify } from '@core/services/notify.service';
-import * as M from '../../core/models/api.models';
+import * as M from '@core/models';
 
 /**
  * Operadoras & consolidadoras B2B — cadastro com % de comissão (tarifa
@@ -235,7 +235,7 @@ import * as M from '../../core/models/api.models';
   `,
 })
 export class OperadorasComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly operadorasApi = inject(OperadorasApi);
   private readonly notify = inject(Notify);
   private readonly fb = inject(FormBuilder);
 
@@ -290,7 +290,7 @@ export class OperadorasComponent implements OnInit {
   }
 
   private carregar(): void {
-    this.api.listarOperadoras().subscribe({
+    this.operadorasApi.listarOperadoras().subscribe({
       next: (l) => { this.operadoras.set(l); this.carregando.set(false); },
       error: () => { this.carregando.set(false); this.notify.erroMsg('Falha ao carregar operadoras.'); },
     });
@@ -323,12 +323,12 @@ export class OperadorasComponent implements OnInit {
     this.salvando.set(true);
     const op = this.editando();
     if (op) {
-      this.api.atualizarOperadora(op.id, input).subscribe({
+      this.operadorasApi.atualizarOperadora(op.id, input).subscribe({
         next: () => this.posSalvamento(null),
         error: (e) => this.falhaSalvamento(e),
       });
     } else {
-      this.api.criarOperadora(input).subscribe({
+      this.operadorasApi.criarOperadora(input).subscribe({
         next: (resp) => this.posSalvamento(resp),
         error: (e) => this.falhaSalvamento(e),
       });
@@ -354,14 +354,14 @@ export class OperadorasComponent implements OnInit {
   }
 
   protected alternar(o: M.Operadora): void {
-    this.api.definirOperadoraAtiva(o.id, !o.ativa).subscribe({
+    this.operadorasApi.definirOperadoraAtiva(o.id, !o.ativa).subscribe({
       next: () => this.carregar(),
       error: () => this.notify.erroMsg('Falha ao alterar o status.'),
     });
   }
 
   protected verToken(o: M.Operadora): void {
-    this.api.tokenOperadora(o.id).subscribe({
+    this.operadorasApi.tokenOperadora(o.id).subscribe({
       next: (t) => this.modalToken.set({ id: o.id, nome: o.nome, token: t.token }),
       error: () => this.notify.erroMsg('Falha ao obter o token.'),
     });
@@ -369,7 +369,7 @@ export class OperadorasComponent implements OnInit {
 
   protected rotacionar(id: number): void {
     if (!confirm('Rotacionar o token? A credencial atual para de funcionar imediatamente.')) return;
-    this.api.rotacionarTokenOperadora(id).subscribe({
+    this.operadorasApi.rotacionarTokenOperadora(id).subscribe({
       next: (t) => {
         const cur = this.modalToken();
         if (cur) this.modalToken.set({ ...cur, token: t.token });
@@ -384,7 +384,7 @@ export class OperadorasComponent implements OnInit {
   }
 
   protected buscarFaturamento(id: number): void {
-    this.api.faturamentoOperadora(id, this.fatDe(), this.fatAte()).subscribe({
+    this.operadorasApi.faturamentoOperadora(id, this.fatDe(), this.fatAte()).subscribe({
       next: (f) => this.modalFat.set(f),
       error: () => this.notify.erroMsg('Falha ao carregar o faturamento.'),
     });

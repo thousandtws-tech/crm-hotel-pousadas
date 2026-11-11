@@ -1,11 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '@core/services/api.service';
+import { OperacaoApi } from '@core/api/operacao.api';
 import { Notify } from '@core/services/notify.service';
-import {
-  ManutOrdem, PmocRegistro, StatusManut, PrioridadeManut,
-} from '@core/models/api.models';
+import { ManutOrdem, PmocRegistro, PrioridadeManut, StatusManut } from '@core/models/operacao.models';
 
 type Aba = 'ordens' | 'pmoc';
 
@@ -186,7 +184,7 @@ const STATUS: StatusManut[] = ['aberta', 'em_execucao', 'aguardando_peca', 'conc
   `],
 })
 export class ManutencaoComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly operacaoApi = inject(OperacaoApi);
   private readonly notify = inject(Notify);
 
   protected readonly aba = signal<Aba>('ordens');
@@ -209,18 +207,18 @@ export class ManutencaoComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregar();
-    this.api.pmocItens().subscribe({ next: (i) => this.itensPmoc.set(i), error: () => undefined });
+    this.operacaoApi.pmocItens().subscribe({ next: (i) => this.itensPmoc.set(i), error: () => undefined });
   }
 
   carregar(): void {
-    this.api.manutOrdens(this.filtroStatus() || undefined).subscribe({
+    this.operacaoApi.manutOrdens(this.filtroStatus() || undefined).subscribe({
       next: (o) => this.ordens.set(o),
       error: () => this.notify.erroMsg('Falha ao carregar ordens.'),
     });
   }
 
   carregarPmoc(): void {
-    this.api.pmocListar().subscribe({ next: (p) => this.pmoc.set(p), error: () => undefined });
+    this.operacaoApi.pmocListar().subscribe({ next: (p) => this.pmoc.set(p), error: () => undefined });
   }
 
   vencimentoPmoc(): { data: string; vencido: boolean } | null {
@@ -230,14 +228,14 @@ export class ManutencaoComponent implements OnInit {
   }
 
   mudarStatus(o: ManutOrdem, status: StatusManut): void {
-    this.api.manutStatus(o.id, status).subscribe({
+    this.operacaoApi.manutStatus(o.id, status).subscribe({
       next: () => this.carregar(),
       error: () => this.notify.erroMsg('Falha ao atualizar status.'),
     });
   }
 
   criarOrdem(): void {
-    this.api.manutCriar({
+    this.operacaoApi.manutCriar({
       titulo: this.novaOrdem.titulo,
       idquarto: this.novaOrdem.idquarto || null,
       local: this.novaOrdem.local,
@@ -251,7 +249,7 @@ export class ManutencaoComponent implements OnInit {
 
   registrarPmoc(): void {
     const itens = this.itensPmoc().map((item, i) => ({ item, conforme: this.checkPmoc[i] ?? false, obs: '' }));
-    this.api.pmocRegistrar({
+    this.operacaoApi.pmocRegistrar({
       itens,
       responsavel_nome: this.pmocForm.nome,
       responsavel_crea: this.pmocForm.crea,

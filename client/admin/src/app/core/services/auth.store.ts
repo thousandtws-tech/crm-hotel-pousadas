@@ -5,8 +5,8 @@
 import { Service, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, catchError, map, of, shareReplay, switchMap, tap, throwError } from 'rxjs';
-import { ApiService } from './api.service';
-import { FuncionarioView, TokenResponse } from '@core/models/api.models';
+import { AuthApi } from '@core/api/auth.api';
+import { FuncionarioView, TokenResponse } from '@core/models/funcionarios.models';
 
 const K_ACCESS = 'clarituz.access';
 const K_REFRESH = 'clarituz.refresh';
@@ -14,7 +14,7 @@ const K_USER = 'clarituz.user';
 
 @Service()
 export class AuthStore {
-  private readonly api = inject(ApiService);
+  private readonly authApi = inject(AuthApi);
   private readonly router = inject(Router);
 
   private readonly _user = signal<FuncionarioView | null>(this.readUser());
@@ -35,7 +35,7 @@ export class AuthStore {
   }
 
   login(login: string, senha: string): Observable<FuncionarioView> {
-    return this.api.login(login, senha).pipe(
+    return this.authApi.login(login, senha).pipe(
       tap((r) => this.persist(r)),
       map((r) => r.funcionario),
     );
@@ -43,7 +43,7 @@ export class AuthStore {
 
   logout(): void {
     const rt = this.refreshToken();
-    if (rt) this.api.logout(rt).subscribe({ error: () => undefined });
+    if (rt) this.authApi.logout(rt).subscribe({ error: () => undefined });
     this.limpar();
     void this.router.navigateByUrl('/login');
   }
@@ -52,7 +52,7 @@ export class AuthStore {
   tentarRefresh(): Observable<boolean> {
     const rt = this.refreshToken();
     if (!rt) return of(false);
-    this.refreshing ??= this.api.refresh(rt).pipe(
+    this.refreshing ??= this.authApi.refresh(rt).pipe(
       tap((r) => this.persist(r)),
       map(() => true),
       catchError(() => {

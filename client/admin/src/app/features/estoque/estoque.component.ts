@@ -7,15 +7,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { ApiService, num } from '@core/services/api.service';
-import {
-  CategoriaEstoque,
-  Impressora,
-  ItemEstoque,
-  ItemEstoqueInput,
-  MovimentacaoInput,
-  MovimentoView,
-} from '@core/models/api.models';
+import { EstoqueApi } from '@core/api/estoque.api';
+import { ImpressorasApi } from '@core/api/impressoras.api';
+import { num } from '@core/utils/num';
+import { Impressora } from '@core/models/estabelecimento.models';
+import { CategoriaEstoque, ItemEstoque, ItemEstoqueInput, MovimentacaoInput, MovimentoView } from '@core/models/estoque.models';
 import { Notify } from '@core/services/notify.service';
 import { Confirm } from '@core/services/confirm.service';
 import { Realtime } from '@core/services/realtime.service';
@@ -1042,7 +1038,8 @@ export class EstoqueComponent implements OnInit {
       .pipe(takeUntilDestroyed())
       .subscribe((v) => this.termo.set(v.trim().toLowerCase()));
   }
-  private readonly api = inject(ApiService);
+  private readonly estoqueApi = inject(EstoqueApi);
+  private readonly impressorasApi = inject(ImpressorasApi);
   private readonly notify = inject(Notify);
   private readonly tour = inject(TourGuiado);
   private readonly confirm = inject(Confirm);
@@ -1127,7 +1124,7 @@ export class EstoqueComponent implements OnInit {
   }
 
   carregar(): void {
-    this.api.listarItens(1, 200).subscribe({
+    this.estoqueApi.listarItens(1, 200).subscribe({
       next: (p) => {
         this.itens.set(p.items);
         this.carregando.set(false);
@@ -1137,15 +1134,15 @@ export class EstoqueComponent implements OnInit {
         this.notify.erro(e);
       },
     });
-    this.api.listarCategorias().subscribe({
+    this.estoqueApi.listarCategorias().subscribe({
       next: (c) => this.categorias.set(c),
       error: () => undefined,
     });
-    this.api.listarImpressoras().subscribe({
+    this.impressorasApi.listarImpressoras().subscribe({
       next: (p) => this.impressoras.set(p),
       error: () => undefined,
     });
-    this.api.listarMovimentos(1, 50).subscribe({
+    this.estoqueApi.listarMovimentos(1, 50).subscribe({
       next: (p) => this.movimentos.set(p.items),
       error: () => undefined,
     });
@@ -1204,7 +1201,7 @@ export class EstoqueComponent implements OnInit {
   }
 
   private enviarMovimentos(movs: MovimentacaoInput[], msg: string): void {
-    this.api.movimentar(movs).subscribe({
+    this.estoqueApi.movimentar(movs).subscribe({
       next: () => {
         this.notify.ok(msg);
         this.entradaAdd.set({});
@@ -1288,7 +1285,7 @@ export class EstoqueComponent implements OnInit {
       version: this.editandoItem()?.version,
     };
     const item = this.editandoItem();
-    const op = item ? this.api.atualizarItem(item.id, input) : this.api.criarItem(input);
+    const op = item ? this.estoqueApi.atualizarItem(item.id, input) : this.estoqueApi.criarItem(input);
     op.subscribe({
       next: () => {
         this.notify.ok(item ? 'Item atualizado.' : 'Item cadastrado.');
@@ -1306,7 +1303,7 @@ export class EstoqueComponent implements OnInit {
   criarCategoriaModal(): void {
     const nome = this.novaCategoria.value?.trim();
     if (!nome) return;
-    this.api.criarCategoria(nome).subscribe({
+    this.estoqueApi.criarCategoria(nome).subscribe({
       next: () => {
         this.novaCategoria.reset();
         this.carregar();
@@ -1317,7 +1314,7 @@ export class EstoqueComponent implements OnInit {
 
   /** Roteamento KOT — envia tickets de produção da categoria à impressora. */
   rotearCategoria(c: CategoriaEstoque, impressoraId: number | null): void {
-    this.api.rotaCategoria(c.id, impressoraId).subscribe({
+    this.estoqueApi.rotaCategoria(c.id, impressoraId).subscribe({
       next: () => {
         this.carregar();
         this.notify.ok(impressoraId ? 'Categoria roteada.' : 'Roteamento removido.');
@@ -1327,14 +1324,14 @@ export class EstoqueComponent implements OnInit {
   }
 
   statusItem(i: ItemEstoque, ativo: boolean): void {
-    this.api.statusItem(i.id, ativo).subscribe({
+    this.estoqueApi.statusItem(i.id, ativo).subscribe({
       next: () => this.carregar(),
       error: (e) => this.notify.erro(e),
     });
   }
 
   imprimirEtiqueta(i: ItemEstoque): void {
-    this.api.etiquetaItem(i.id).subscribe({
+    this.impressorasApi.etiquetaItem(i.id).subscribe({
       next: () => this.notify.ok(`Etiqueta de "${i.nome}" enviada.`),
       error: (e) => this.notify.erro(e),
     });
@@ -1346,7 +1343,7 @@ export class EstoqueComponent implements OnInit {
       { titulo: 'Excluir item', confirmar: 'Excluir' },
     );
     if (!ok) return;
-    this.api.excluirItem(i.id).subscribe({
+    this.estoqueApi.excluirItem(i.id).subscribe({
       next: (r) => {
         this.notify.ok(r.mensagem);
         this.carregar();
@@ -1356,7 +1353,7 @@ export class EstoqueComponent implements OnInit {
   }
 
   statusCategoria(c: CategoriaEstoque, ativo: boolean): void {
-    this.api.statusCategoria(c.id, ativo).subscribe({
+    this.estoqueApi.statusCategoria(c.id, ativo).subscribe({
       next: () => this.carregar(),
       error: (e) => this.notify.erro(e),
     });
@@ -1368,7 +1365,7 @@ export class EstoqueComponent implements OnInit {
       { titulo: 'Excluir categoria', confirmar: 'Excluir' },
     );
     if (!ok) return;
-    this.api.excluirCategoria(c.id).subscribe({
+    this.estoqueApi.excluirCategoria(c.id).subscribe({
       next: () => {
         this.notify.ok('Categoria excluída.');
         this.carregar();

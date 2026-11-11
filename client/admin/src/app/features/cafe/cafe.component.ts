@@ -7,10 +7,10 @@ import {
 } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { DateInputComponent } from '@shared/components/date-input.component';
-import { ApiService } from '../../core/services/api.service';
+import { CafeApi } from '@core/api/cafe.api';
 import { Realtime } from '../../core/services/realtime.service';
 import { Notify } from '../../core/services/notify.service';
-import { CafeQuadroItem } from '../../core/models/api.models';
+import { CafeQuadroItem } from '@core/models/cafe.models';
 
 type FiltroPresenca = 'todas' | 'aguardando' | 'presentes';
 
@@ -344,7 +344,7 @@ type FiltroPresenca = 'todas' | 'aguardando' | 'presentes';
 })
 export class CafeComponent implements OnInit, OnDestroy {
   protected readonly rt = inject(Realtime);
-  private readonly api = inject(ApiService);
+  private readonly cafeApi = inject(CafeApi);
   private readonly notify = inject(Notify);
 
   readonly quadro = signal<CafeQuadroItem[]>([]);
@@ -405,7 +405,7 @@ export class CafeComponent implements OnInit, OnDestroy {
 
   carregar(spinner: boolean): void {
     if (spinner) this.carregando.set(true);
-    this.api.quadroCafe(this.dia()).subscribe({
+    this.cafeApi.quadroCafe(this.dia()).subscribe({
       next: (q) => {
         this.quadro.set(q);
         this.carregando.set(false);
@@ -429,7 +429,7 @@ export class CafeComponent implements OnInit, OnDestroy {
   confirmar(r: CafeQuadroItem): void {
     if (this.ocupando()) return;
     this.ocupando.set(true);
-    this.api.registrarPresenca(r.idreserva, this.qtd(), this.dia()).subscribe({
+    this.cafeApi.registrarPresenca(r.idreserva, this.qtd(), this.dia()).subscribe({
       next: () => {
         this.ocupando.set(false);
         this.escolhendo.set(0);
@@ -446,7 +446,7 @@ export class CafeComponent implements OnInit, OnDestroy {
   desmarcar(r: CafeQuadroItem): void {
     if (this.ocupando() || r.presenca_id === null) return;
     this.ocupando.set(true);
-    this.api.removerPresenca(r.presenca_id).subscribe({
+    this.cafeApi.removerPresenca(r.presenca_id).subscribe({
       next: () => {
         this.ocupando.set(false);
         this.carregar(false);

@@ -1,11 +1,8 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { ApiService } from '@core/services/api.service';
+import { InteligenciaApi } from '@core/api/inteligencia.api';
 import { Notify } from '@core/services/notify.service';
-import {
-  IaResumo, IaMesHistorico, IaRisco, IaPerfil, IaUpsell,
-  IaEscalaDia, IaEstoquePrev, IaRiscoQuarto,
-} from '@core/models/api.models';
+import { IaEscalaDia, IaEstoquePrev, IaMesHistorico, IaPerfil, IaResumo, IaRisco, IaRiscoQuarto, IaUpsell } from '@core/models/inteligencia.models';
 
 type Aba = 'visao' | 'riscos' | 'hospedes' | 'operacao';
 
@@ -273,7 +270,7 @@ const CLASSE_ROTULO: Record<string, string> = {
   `,
 })
 export class InteligenciaComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly inteligenciaApi = inject(InteligenciaApi);
   private readonly notify = inject(Notify);
 
   readonly aba = signal<Aba>('visao');
@@ -291,11 +288,11 @@ export class InteligenciaComponent implements OnInit {
   private carregadas = new Set<Aba>();
 
   ngOnInit() {
-    this.api.iaResumo().subscribe({
+    this.inteligenciaApi.iaResumo().subscribe({
       next: (r) => this.resumo.set(r),
       error: (e) => this.notify.erro(e),
     });
-    this.api.iaHistorico().subscribe({
+    this.inteligenciaApi.iaHistorico().subscribe({
       next: (h) => this.historico.set(h),
       error: () => {},
     });
@@ -307,14 +304,14 @@ export class InteligenciaComponent implements OnInit {
     if (this.carregadas.has(aba)) return;
     this.carregadas.add(aba);
     if (aba === 'riscos') {
-      this.api.iaRiscos().subscribe({ next: (r) => this.riscos.set(r), error: (e) => this.notify.erro(e) });
-      this.api.iaManutencao().subscribe({ next: (r) => this.riscoQuartos.set(r), error: (e) => this.notify.erro(e) });
+      this.inteligenciaApi.iaRiscos().subscribe({ next: (r) => this.riscos.set(r), error: (e) => this.notify.erro(e) });
+      this.inteligenciaApi.iaManutencao().subscribe({ next: (r) => this.riscoQuartos.set(r), error: (e) => this.notify.erro(e) });
     } else if (aba === 'hospedes') {
-      this.api.iaPerfis().subscribe({ next: (p) => this.perfis.set(p), error: (e) => this.notify.erro(e) });
-      this.api.iaUpsell().subscribe({ next: (u) => this.upsells.set(u), error: (e) => this.notify.erro(e) });
+      this.inteligenciaApi.iaPerfis().subscribe({ next: (p) => this.perfis.set(p), error: (e) => this.notify.erro(e) });
+      this.inteligenciaApi.iaUpsell().subscribe({ next: (u) => this.upsells.set(u), error: (e) => this.notify.erro(e) });
     } else if (aba === 'operacao') {
-      this.api.iaEscala().subscribe({ next: (e) => this.escala.set(e), error: (e2) => this.notify.erro(e2) });
-      this.api.iaEstoque().subscribe({ next: (e) => this.estoque.set(e), error: (e2) => this.notify.erro(e2) });
+      this.inteligenciaApi.iaEscala().subscribe({ next: (e) => this.escala.set(e), error: (e2) => this.notify.erro(e2) });
+      this.inteligenciaApi.iaEstoque().subscribe({ next: (e) => this.estoque.set(e), error: (e2) => this.notify.erro(e2) });
     }
   }
 

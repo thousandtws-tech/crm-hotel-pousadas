@@ -4,18 +4,18 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ApiService, STATUS_RESERVA, num } from '@core/services/api.service';
-import {
-  Acompanhante,
-  AdicionalConsumo,
-  Fnrh,
-  FormaPagamento,
-  ItemConsumido,
-  ItemFrigobarView,
-  ReservaDetalhe,
-  TIPOS_DOCUMENTO,
-  TipoDocumento,
-} from '@core/models/api.models';
+import { EstabelecimentoApi } from '@core/api/estabelecimento.api';
+import { FrigobaresApi } from '@core/api/frigobares.api';
+import { ImpressorasApi } from '@core/api/impressoras.api';
+import { PagamentosApi } from '@core/api/pagamentos.api';
+import { RelatoriosApi } from '@core/api/relatorios.api';
+import { ReservasApi } from '@core/api/reservas.api';
+import { STATUS_RESERVA } from '@core/models/reservas.models';
+import { num } from '@core/utils/num';
+import { TIPOS_DOCUMENTO, TipoDocumento } from '@core/models/clientes.models';
+import { ItemFrigobarView } from '@core/models/frigobares.models';
+import { FormaPagamento } from '@core/models/pagamentos.models';
+import { Acompanhante, AdicionalConsumo, Fnrh, ItemConsumido, ReservaDetalhe } from '@core/models/reservas.models';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
 import { AuthStore } from '@core/services/auth.store';
@@ -1058,7 +1058,7 @@ export class ReservaDetailComponent implements OnInit {
         ultimo = v;
         const id = this.id();
         if (id > 0) {
-          this.api.buscarReserva(id).subscribe({
+          this.reservasApi.buscarReserva(id).subscribe({
             next: (r) => {
               this.r.set(r);
               this.carregarExtras(r);
@@ -1069,7 +1069,12 @@ export class ReservaDetailComponent implements OnInit {
       }
     });
   }
-  private readonly api = inject(ApiService);
+  private readonly estabelecimentoApi = inject(EstabelecimentoApi);
+  private readonly frigobaresApi = inject(FrigobaresApi);
+  private readonly impressorasApi = inject(ImpressorasApi);
+  private readonly pagamentosApi = inject(PagamentosApi);
+  private readonly relatoriosApi = inject(RelatoriosApi);
+  private readonly reservasApi = inject(ReservasApi);
   private readonly notify = inject(Notify);
   private readonly route = inject(ActivatedRoute);
   protected readonly auth = inject(AuthStore);
@@ -1185,7 +1190,7 @@ export class ReservaDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.paramMap
-      .pipe(switchMap((p) => this.api.buscarReserva(Number(p.get('id')))))
+      .pipe(switchMap((p) => this.reservasApi.buscarReserva(Number(p.get('id')))))
       .subscribe({
         next: (r) => {
           this.id.set(r.id);
@@ -1201,32 +1206,32 @@ export class ReservaDetailComponent implements OnInit {
 
   private carregarExtras(res: ReservaDetalhe): void {
     this.carregando.set(true);
-    this.api.itensConsumidos(res.id).subscribe({
+    this.reservasApi.itensConsumidos(res.id).subscribe({
       next: (i) => this.itens.set(i),
       error: () => undefined,
     });
-    this.api.adicionais(res.id).subscribe({
+    this.reservasApi.adicionais(res.id).subscribe({
       next: (a) => this.adicionaisList.set(a),
       error: () => undefined,
     });
-    this.api.listarAcompanhantes(res.id).subscribe({
+    this.reservasApi.listarAcompanhantes(res.id).subscribe({
       next: (a) => this.acompanhantes.set(a),
       error: () => undefined,
     });
-    this.api.fnrhReserva(res.id).subscribe({
+    this.reservasApi.fnrhReserva(res.id).subscribe({
       next: (f) => this.fichas.set(f),
       error: () => undefined,
     });
-    this.api.obterEstabelecimento().subscribe({
+    this.estabelecimentoApi.obterEstabelecimento().subscribe({
       next: (e) => this.retencaoAnos.set(e.retencao_dados_anos ?? 5),
       error: () => undefined,
     });
     if (res.status === 'i') {
-      this.api.listarFrigobares().subscribe({
+      this.frigobaresApi.listarFrigobares().subscribe({
         next: (fs) => {
           const f = fs.find((x) => x.idacomodacao === res.idacomodacao && x.ativo);
           if (f) {
-            this.api.itensFrigobar(f.id).subscribe({
+            this.frigobaresApi.itensFrigobar(f.id).subscribe({
               next: (its) =>
                 this.itensFrigobar.set(its.filter((i) => i.ativo && i.quantidade > 0)),
               error: () => undefined,
@@ -1240,7 +1245,7 @@ export class ReservaDetailComponent implements OnInit {
   }
 
   private recarregar(): void {
-    this.api.buscarReserva(this.id()).subscribe({
+    this.reservasApi.buscarReserva(this.id()).subscribe({
       next: (r) => {
         this.r.set(r);
         this.carregarExtras(r);
@@ -1295,7 +1300,7 @@ export class ReservaDetailComponent implements OnInit {
       hora = v.hora;
     }
     this.enviando.set(true);
-    this.api.checkin(this.id(), data, hora).subscribe({
+    this.reservasApi.checkin(this.id(), data, hora).subscribe({
       next: () => {
         this.notify.ok('Check-in realizado.');
         this.ecaBloqueio.set(false);
@@ -1320,7 +1325,7 @@ export class ReservaDetailComponent implements OnInit {
     const doc = this.checkinForm.value.autorizacao?.trim();
     if (!doc) return;
     this.enviando.set(true);
-    this.api.autorizacaoMenor(this.id(), doc).subscribe({
+    this.reservasApi.autorizacaoMenor(this.id(), doc).subscribe({
       next: () => this.confirmarCheckin(),
       error: (e) => {
         this.enviando.set(false);
@@ -1332,7 +1337,7 @@ export class ReservaDetailComponent implements OnInit {
   // -- check-out (mCheck-out.php) --------------------------------------------------
 
   abrirCheckout(): void {
-    this.api.listarPagamentos(true).subscribe({
+    this.pagamentosApi.listarPagamentos(true).subscribe({
       next: (p) => {
         this.pagamentos.set(p);
         this.custosAdicionais.set(false);
@@ -1371,8 +1376,7 @@ export class ReservaDetailComponent implements OnInit {
   confirmarCheckout(): void {
     const v = this.checkoutForm.getRawValue();
     this.enviando.set(true);
-    this.api
-      .checkout(this.id(), {
+    this.reservasApi.checkout(this.id(), {
         idforma_pagamento: v.idforma_pagamento,
         total_desconto: v.desconto || null,
         adicionais: this.adicionaisCheckout().filter((a) => a.motivo.trim() && a.valor > 0),
@@ -1396,8 +1400,7 @@ export class ReservaDetailComponent implements OnInit {
   abrirDados(acao: 'checkin' | 'checkout'): void {
     this.realizador.set(null);
     this.modal.set(acao === 'checkin' ? 'dados-checkin' : 'dados-checkout');
-    this.api
-      .logs({ tabela: 'reserva', acao, idtabela: this.id(), porPagina: 1 })
+    this.relatoriosApi.logs({ tabela: 'reserva', acao, idtabela: this.id(), porPagina: 1 })
       .subscribe({
         next: (p) => this.realizador.set(p.items[0]?.funcionario_nome ?? null),
         error: () => undefined,
@@ -1407,7 +1410,7 @@ export class ReservaDetailComponent implements OnInit {
   baixarComprovante(): void {
     const res = this.r();
     if (!res) return;
-    this.api.comprovanteTexto(res.id).subscribe({
+    this.pagamentosApi.comprovanteTexto(res.id).subscribe({
       next: (texto) => {
         const nome = res.consumo?.comprovante ?? `comprovante_${res.id}.txt`;
         const url = URL.createObjectURL(new Blob([texto], { type: 'text/plain' }));
@@ -1437,8 +1440,7 @@ export class ReservaDetailComponent implements OnInit {
   confirmarCancelar(): void {
     const v = this.adminForm.getRawValue();
     this.enviando.set(true);
-    this.api
-      .cancelarReserva(this.id(), {
+    this.reservasApi.cancelarReserva(this.id(), {
         login_admin: this.cancelarAdmin() ? v.login_admin : null,
         senha_admin: this.cancelarAdmin() ? v.senha_admin : null,
       })
@@ -1460,7 +1462,7 @@ export class ReservaDetailComponent implements OnInit {
   registrarItem(): void {
     if (this.itemForm.invalid) return;
     const v = this.itemForm.getRawValue();
-    this.api.registrarItemConsumido(this.id(), v.iditem_frigobar, v.quantidade).subscribe({
+    this.reservasApi.registrarItemConsumido(this.id(), v.iditem_frigobar, v.quantidade).subscribe({
       next: () => {
         this.notify.ok('Consumo lançado.');
         this.itemForm.reset({ iditem_frigobar: 0, quantidade: 1 });
@@ -1473,7 +1475,7 @@ export class ReservaDetailComponent implements OnInit {
   /** Lançamento avulso na conta durante a estadia (consumo adicional). */
   lancarAdicional(): void {
     const v = this.adicionalForm.getRawValue();
-    this.api.lancarAdicional(this.id(), v.motivo, v.valor).subscribe({
+    this.reservasApi.lancarAdicional(this.id(), v.motivo, v.valor).subscribe({
       next: () => {
         this.notify.ok('Adicional lançado.');
         this.adicionalForm.reset({ motivo: '', valor: 0 });
@@ -1485,7 +1487,7 @@ export class ReservaDetailComponent implements OnInit {
 
   /** Reimprime os tickets de produção — um por impressora de setor. */
   reimprimirProducao(): void {
-    this.api.imprimirProducao(this.id()).subscribe({
+    this.impressorasApi.imprimirProducao(this.id()).subscribe({
       next: (r) => this.notify.ok(r.mensagem),
       error: (e) => this.notify.erro(e),
     });
@@ -1496,8 +1498,7 @@ export class ReservaDetailComponent implements OnInit {
   adicionarAcompanhante(): void {
     if (this.acompForm.invalid) return;
     const v = this.acompForm.getRawValue();
-    this.api
-      .adicionarAcompanhante(this.id(), {
+    this.reservasApi.adicionarAcompanhante(this.id(), {
         nome: v.nome.trim(),
         data_nascimento: v.data_nascimento || null,
         parentesco: v.parentesco || null,
@@ -1521,7 +1522,7 @@ export class ReservaDetailComponent implements OnInit {
   }
 
   removerAcompanhante(a: Acompanhante): void {
-    this.api.removerAcompanhante(a.id).subscribe({
+    this.reservasApi.removerAcompanhante(a.id).subscribe({
       next: () => {
         this.acompanhantes.update((xs) => xs.filter((x) => x.id !== a.id));
         this.notify.ok('Acompanhante removido.');
@@ -1539,8 +1540,7 @@ export class ReservaDetailComponent implements OnInit {
   emitirFnrh(): void {
     const v = this.fnrhForm.getRawValue();
     this.enviando.set(true);
-    this.api
-      .emitirFnrh(this.id(), {
+    this.reservasApi.emitirFnrh(this.id(), {
         motivo_viagem: v.motivo_viagem || null,
         placa_veiculo: v.placa_veiculo || null,
       })
@@ -1570,7 +1570,7 @@ export class ReservaDetailComponent implements OnInit {
 
   exportarSne(): void {
     if (!this.sneIni || !this.sneFim) return;
-    this.api.exportarFnrh(this.sneIni, this.sneFim).subscribe({
+    this.reservasApi.exportarFnrh(this.sneIni, this.sneFim).subscribe({
       next: (csv) => {
         const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
         const a = document.createElement('a');

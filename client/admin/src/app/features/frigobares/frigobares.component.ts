@@ -5,14 +5,13 @@ import { DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { ApiService, num } from '@core/services/api.service';
-import {
-  Acomodacao,
-  CategoriaEstoque,
-  Frigobar,
-  ItemEstoque,
-  ItemFrigobarView,
-} from '@core/models/api.models';
+import { AcomodacoesApi } from '@core/api/acomodacoes.api';
+import { EstoqueApi } from '@core/api/estoque.api';
+import { FrigobaresApi } from '@core/api/frigobares.api';
+import { num } from '@core/utils/num';
+import { Acomodacao } from '@core/models/catalogo.models';
+import { CategoriaEstoque, ItemEstoque } from '@core/models/estoque.models';
+import { Frigobar, ItemFrigobarView } from '@core/models/frigobares.models';
 import { Confirm } from '@core/services/confirm.service';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
@@ -888,7 +887,9 @@ export class FrigobaresComponent implements OnInit {
       .subscribe((v) => this.termo.set(v.trim().toLowerCase()));
   }
 
-  private readonly api = inject(ApiService);
+  private readonly acomodacoesApi = inject(AcomodacoesApi);
+  private readonly estoqueApi = inject(EstoqueApi);
+  private readonly frigobaresApi = inject(FrigobaresApi);
   private readonly notify = inject(Notify);
   private readonly tour = inject(TourGuiado);
   private readonly confirm = inject(Confirm);
@@ -963,22 +964,22 @@ export class FrigobaresComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregar();
-    this.api.listarAcomodacoes(1, 200, true).subscribe({
+    this.acomodacoesApi.listarAcomodacoes(1, 200, true).subscribe({
       next: (p) => this.acomodacoes.set(p.items),
       error: () => undefined,
     });
-    this.api.listarItens(1, 200, true).subscribe({
+    this.estoqueApi.listarItens(1, 200, true).subscribe({
       next: (p) => this.itensEstoque.set(p.items),
       error: () => undefined,
     });
-    this.api.listarCategorias().subscribe({
+    this.estoqueApi.listarCategorias().subscribe({
       next: (c) => this.categorias.set(c.filter((x) => x.ativo)),
       error: () => undefined,
     });
   }
 
   carregar(): void {
-    this.api.listarFrigobares().subscribe({
+    this.frigobaresApi.listarFrigobares().subscribe({
       next: (f) => {
         this.frigobares.set(f);
         this.carregando.set(false);
@@ -1067,8 +1068,8 @@ export class FrigobaresComponent implements OnInit {
       version: editando?.version,
     };
     const op = editando
-      ? this.api.atualizarFrigobar(editando.id, input)
-      : this.api.criarFrigobar(input);
+      ? this.frigobaresApi.atualizarFrigobar(editando.id, input)
+      : this.frigobaresApi.criarFrigobar(input);
     op.subscribe({
       next: () => {
         this.notify.ok(editando ? 'Frigobar atualizado.' : 'Frigobar cadastrado.');
@@ -1080,7 +1081,7 @@ export class FrigobaresComponent implements OnInit {
   }
 
   statusFrigobar(f: Frigobar, ativo: boolean): void {
-    this.api.statusFrigobar(f.id, ativo).subscribe({
+    this.frigobaresApi.statusFrigobar(f.id, ativo).subscribe({
       next: () => {
         this.notify.ok(ativo ? 'Frigobar ativado.' : 'Frigobar desativado.');
         this.carregar();
@@ -1095,7 +1096,7 @@ export class FrigobaresComponent implements OnInit {
       { titulo: 'Excluir frigobar', confirmar: 'Excluir' },
     );
     if (!ok) return;
-    this.api.excluirFrigobar(f.id).subscribe({
+    this.frigobaresApi.excluirFrigobar(f.id).subscribe({
       next: (r) => {
         this.notify.ok(r.mensagem);
         if (this.detalhe()?.id === f.id) this.fecharDetalhe();
@@ -1120,7 +1121,7 @@ export class FrigobaresComponent implements OnInit {
   }
 
   carregarItens(idfrigobar: number): void {
-    this.api.itensFrigobar(idfrigobar).subscribe({
+    this.frigobaresApi.itensFrigobar(idfrigobar).subscribe({
       next: (i) => this.itens.set(i),
       error: () => undefined,
     });
@@ -1130,13 +1131,13 @@ export class FrigobaresComponent implements OnInit {
     const iditem = this.itemSel();
     const quantidade = this.qtdSel();
     if (!iditem || quantidade < 1) return;
-    this.api.reporItemFrigobar(idfrigobar, iditem, quantidade).subscribe({
+    this.frigobaresApi.reporItemFrigobar(idfrigobar, iditem, quantidade).subscribe({
       next: () => {
         this.notify.ok('Item adicionado.');
         this.itemSel.set(null);
         this.qtdSel.set(1);
         this.carregarItens(idfrigobar);
-        this.api.listarItens(1, 200, true).subscribe({
+        this.estoqueApi.listarItens(1, 200, true).subscribe({
           next: (p) => this.itensEstoque.set(p.items),
           error: () => undefined,
         });
@@ -1148,14 +1149,14 @@ export class FrigobaresComponent implements OnInit {
   ajustar(i: ItemFrigobarView, delta: number): void {
     const qtd = i.quantidade + delta;
     if (qtd < 0) return;
-    this.api.atualizarItemFrigobar(i.id, qtd, i.version).subscribe({
+    this.frigobaresApi.atualizarItemFrigobar(i.id, qtd, i.version).subscribe({
       next: () => this.carregarItens(i.idfrigobar),
       error: (e) => this.notify.erro(e),
     });
   }
 
   statusItem(i: ItemFrigobarView, ativo: boolean): void {
-    this.api.statusItemFrigobar(i.id, ativo).subscribe({
+    this.frigobaresApi.statusItemFrigobar(i.id, ativo).subscribe({
       next: () => this.carregarItens(i.idfrigobar),
       error: (e) => this.notify.erro(e),
     });
@@ -1167,7 +1168,7 @@ export class FrigobaresComponent implements OnInit {
       confirmar: 'Remover',
     });
     if (!ok) return;
-    this.api.removerItemFrigobar(i.id).subscribe({
+    this.frigobaresApi.removerItemFrigobar(i.id).subscribe({
       next: () => this.carregarItens(i.idfrigobar),
       error: (e) => this.notify.erro(e),
     });

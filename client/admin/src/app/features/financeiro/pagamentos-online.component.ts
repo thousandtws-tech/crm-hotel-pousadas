@@ -1,15 +1,10 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '@core/services/api.service';
+import { PagamentosApi } from '@core/api/pagamentos.api';
 import { AuthStore } from '@core/services/auth.store';
 import { Notify } from '@core/services/notify.service';
-import {
-  PagOnlineResumo,
-  ResumoFinanceiroOnline,
-  ReceitaAcomodacao,
-  StatusPagOnline,
-} from '@core/models/api.models';
+import { PagOnlineResumo, ReceitaAcomodacao, ResumoFinanceiroOnline, StatusPagOnline } from '@core/models/pagamentos.models';
 
 // Pagamentos online (Stripe): cartão/Pix recebidos pelo site, com resumo,
 // filtros e reembolso restrito à permissão `financeiro`.
@@ -153,7 +148,7 @@ import {
   `],
 })
 export class FinPagamentosOnlineComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly pagamentosApi = inject(PagamentosApi);
   private readonly notify = inject(Notify);
   readonly auth = inject(AuthStore);
 
@@ -178,15 +173,15 @@ export class FinPagamentosOnlineComponent implements OnInit {
 
   protected carregar(): void {
     this.carregando.set(true);
-    this.api.resumoFinanceiroOnline(this.de, this.ate).subscribe({
+    this.pagamentosApi.resumoFinanceiroOnline(this.de, this.ate).subscribe({
       next: (r) => this.resumo.set(r),
       error: () => this.notify.erro('Não foi possível carregar o resumo financeiro.'),
     });
-    this.api.receitaPorAcomodacao(this.de, this.ate).subscribe({
+    this.pagamentosApi.receitaPorAcomodacao(this.de, this.ate).subscribe({
       next: (r) => this.porAcomodacao.set(r),
       error: () => undefined,
     });
-    this.api.pagamentosOnline({ status: this.status || undefined, inicio: this.de, fim: this.ate, per_page: 200 }).subscribe({
+    this.pagamentosApi.pagamentosOnline({ status: this.status || undefined, inicio: this.de, fim: this.ate, per_page: 200 }).subscribe({
       next: (p) => {
         this.lista.set(p.items);
         this.carregando.set(false);
@@ -217,7 +212,7 @@ export class FinPagamentosOnlineComponent implements OnInit {
     this.reembolsando.set(true);
     const centavos =
       this.valorReembolso && this.valorReembolso > 0 ? Math.round(this.valorReembolso * 100) : null;
-    this.api.reembolsarPagamento(p.id, centavos, this.motivoReembolso).subscribe({
+    this.pagamentosApi.reembolsarPagamento(p.id, centavos, this.motivoReembolso).subscribe({
       next: () => {
         this.reembolsando.set(false);
         this.modal.set(null);

@@ -7,15 +7,12 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { ApiService, num } from '@core/services/api.service';
-import {
-  ConferenciaCaixa,
-  ContaFinanceira,
-  PendenciaReserva,
-  PendenciasFechamento,
-  TipoMovimentoCaixa,
-  TurnoView,
-} from '@core/models/api.models';
+import { CaixaApi } from '@core/api/caixa.api';
+import { FinanceiroApi } from '@core/api/financeiro.api';
+import { ReservasApi } from '@core/api/reservas.api';
+import { num } from '@core/utils/num';
+import { ConferenciaCaixa, PendenciaReserva, PendenciasFechamento, TipoMovimentoCaixa, TurnoView } from '@core/models/caixa.models';
+import { ContaFinanceira } from '@core/models/financeiro.models';
 import { Notify } from '@core/services/notify.service';
 import { FinNavComponent } from './fin-nav.component';
 import { RouterLink } from '@angular/router';
@@ -382,7 +379,9 @@ const fmt = (v: string | number | null | undefined) => BRL.format(num(v));
   `,
 })
 export class FinCaixaComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly caixaApi = inject(CaixaApi);
+  private readonly financeiroApi = inject(FinanceiroApi);
+  private readonly reservasApi = inject(ReservasApi);
   private readonly notify = inject(Notify);
 
   readonly fmt = fmt;
@@ -428,7 +427,7 @@ export class FinCaixaComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.api.listarContasFinanceiras().subscribe({
+    this.financeiroApi.listarContasFinanceiras().subscribe({
       next: (contas) => {
         const gs = contas.filter((c) => c.tipo === 'caixa' && c.ativo);
         this.gavetas.set(gs);
@@ -442,7 +441,7 @@ export class FinCaixaComponent implements OnInit {
   }
 
   carregarPendencias(): void {
-    this.api.pendenciasFechamento().subscribe({
+    this.reservasApi.pendenciasFechamento().subscribe({
       next: (p) => this.fch.set(p),
       error: () => undefined,
     });
@@ -450,7 +449,7 @@ export class FinCaixaComponent implements OnInit {
 
   confirmarNoShow(alvo: PendenciaReserva): void {
     if (!this.pinVal.trim()) return;
-    this.api.marcarNoShow(alvo.id, this.pinVal.trim()).subscribe({
+    this.reservasApi.marcarNoShow(alvo.id, this.pinVal.trim()).subscribe({
       next: () => {
         this.pinAlvo.set(null);
         this.pinVal = '';
@@ -463,7 +462,7 @@ export class FinCaixaComponent implements OnInit {
 
   enviarRelatorio(): void {
     this.enviandoRel.set(true);
-    this.api.enviarRelatorioFechamento().subscribe({
+    this.reservasApi.enviarRelatorioFechamento().subscribe({
       next: () => {
         this.enviandoRel.set(false);
         this.notify.ok('Relatório de fechamento enfileirado para envio.');
@@ -485,7 +484,7 @@ export class FinCaixaComponent implements OnInit {
       return;
     }
     this.carregando.set(true);
-    this.api.turnoAberto(g).subscribe({
+    this.caixaApi.turnoAberto(g).subscribe({
       next: (t) => {
         this.carregando.set(false);
         if (t) this.recarregarTurno(t.id);
@@ -493,14 +492,14 @@ export class FinCaixaComponent implements OnInit {
       },
       error: (e) => { this.carregando.set(false); this.notify.erro(e); },
     });
-    this.api.listarTurnos({ idconta_financeira: g, porPagina: 10 }).subscribe({
+    this.caixaApi.listarTurnos({ idconta_financeira: g, porPagina: 10 }).subscribe({
       next: (p) => this.historico.set({ items: p.items, total: p.total }),
       error: (e) => this.notify.erro(e),
     });
   }
 
   private recarregarTurno(id: number): void {
-    this.api.conferirTurno(id).subscribe({
+    this.caixaApi.conferirTurno(id).subscribe({
       next: (c) => { this.conferencia.set(c); this.turno.set(c.turno); },
       error: (e) => this.notify.erro(e),
     });
@@ -510,8 +509,7 @@ export class FinCaixaComponent implements OnInit {
     const g = this.gavetaSel();
     const v = this.abrirForm.getRawValue();
     if (!g || v.saldo_inicial === null) return;
-    this.api
-      .abrirTurno({ idconta_financeira: g, saldo_inicial: v.saldo_inicial, observacao: v.observacao })
+    this.caixaApi.abrirTurno({ idconta_financeira: g, saldo_inicial: v.saldo_inicial, observacao: v.observacao })
       .subscribe({
         next: (t) => {
           this.notify.ok('Turno aberto.');
@@ -526,8 +524,7 @@ export class FinCaixaComponent implements OnInit {
     const t = this.turno();
     const v = this.movForm.getRawValue();
     if (!t || v.valor === null || !v.motivo.trim()) return;
-    this.api
-      .movimentarTurno(t.id, { tipo: v.tipo, valor: v.valor, motivo: v.motivo.trim() })
+    this.caixaApi.movimentarTurno(t.id, { tipo: v.tipo, valor: v.valor, motivo: v.motivo.trim() })
       .subscribe({
         next: () => {
           this.notify.ok(v.tipo === 'sangria' ? 'Sangria registrada.' : 'Suprimento registrado.');
@@ -542,8 +539,7 @@ export class FinCaixaComponent implements OnInit {
     const t = this.turno();
     const v = this.feForm.getRawValue();
     if (!t || v.valor_contado === null) return;
-    this.api
-      .fecharTurno(t.id, { valor_contado: v.valor_contado, observacao: v.observacao })
+    this.caixaApi.fecharTurno(t.id, { valor_contado: v.valor_contado, observacao: v.observacao })
       .subscribe({
         next: (t2) => {
           const q = num(t2.quebra);
@@ -560,8 +556,7 @@ export class FinCaixaComponent implements OnInit {
     const g = this.gavetaSel();
     if (!g) return;
     this.histPagina++;
-    this.api
-      .listarTurnos({ idconta_financeira: g, page: this.histPagina, porPagina: 10 })
+    this.caixaApi.listarTurnos({ idconta_financeira: g, page: this.histPagina, porPagina: 10 })
       .subscribe({
         next: (p) =>
           this.historico.update((h) => ({ items: [...h.items, ...p.items], total: p.total })),

@@ -11,10 +11,10 @@ import {
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { ApiService } from '../../core/services/api.service';
+import { PdvApi } from '@core/api/pdv.api';
 import { Realtime } from '../../core/services/realtime.service';
 import { Notify } from '../../core/services/notify.service';
-import { FilaItemView, PdvItemStatus } from '../../core/models/api.models';
+import { FilaItemView, PdvItemStatus } from '@core/models/pdv.models';
 
 interface Ticket {
   idcomanda: number;
@@ -389,7 +389,7 @@ type FiltroStatus = 'todos' | PdvItemStatus;
 })
 export class KdsComponent implements OnInit, OnDestroy {
   protected readonly rt = inject(Realtime);
-  private readonly api = inject(ApiService);
+  private readonly pdvApi = inject(PdvApi);
   private readonly notify = inject(Notify);
 
   readonly fila = signal<FilaItemView[]>([]);
@@ -493,7 +493,7 @@ export class KdsComponent implements OnInit, OnDestroy {
 
   carregar(mostrarSpinner: boolean): void {
     if (mostrarSpinner) this.carregando.set(true);
-    this.api.filaCozinha().subscribe({
+    this.pdvApi.filaCozinha().subscribe({
       next: (f) => {
         const pendentes = f.filter((i) => i.status === 'pendente').length;
         if (this.somAtivo() && pendentes > this.pendentesAntes) this.bip();
@@ -519,14 +519,14 @@ export class KdsComponent implements OnInit, OnDestroy {
   /** Ação do card aplica a transição a todos os itens exibidos daquela etapa. */
   acaoTicket(t: Ticket, acao: 'preparar' | 'pronto' | 'entregar'): void {
     for (const i of t.itens) {
-      if (acao === 'preparar') void this.transicao(i, () => this.api.prepararItem(i.idcomanda, i.id));
-      else if (acao === 'pronto') void this.transicao(i, () => this.api.prontoItem(i.idcomanda, i.id));
-      else void this.transicao(i, () => this.api.entregarItem(i.idcomanda, i.id));
+      if (acao === 'preparar') void this.transicao(i, () => this.pdvApi.prepararItem(i.idcomanda, i.id));
+      else if (acao === 'pronto') void this.transicao(i, () => this.pdvApi.prontoItem(i.idcomanda, i.id));
+      else void this.transicao(i, () => this.pdvApi.entregarItem(i.idcomanda, i.id));
     }
   }
 
   async retornar(i: FilaItemView): Promise<void> {
-    await this.transicao(i, () => this.api.retornarItem(i.idcomanda, i.id));
+    await this.transicao(i, () => this.pdvApi.retornarItem(i.idcomanda, i.id));
   }
 
   alternarSom(): void {
@@ -541,7 +541,7 @@ export class KdsComponent implements OnInit, OnDestroy {
   /** Update otimista + fallback para a fila real em caso de erro/conflito. */
   private async transicao(
     item: FilaItemView,
-    req: () => ReturnType<ApiService['prepararItem']>,
+    req: () => ReturnType<PdvApi['prepararItem']>,
   ): Promise<void> {
     if (this.ocupando().has(item.id)) return;
     this.ocupando.update((s) => new Set(s).add(item.id));

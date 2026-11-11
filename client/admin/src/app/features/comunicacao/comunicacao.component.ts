@@ -1,13 +1,11 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '@core/services/api.service';
+import { ComunicacaoApi } from '@core/api/comunicacao.api';
 import { AuthStore } from '@core/services/auth.store';
 import { Notify } from '@core/services/notify.service';
 import { environment } from '../../../environments/environment';
-import {
-  Atendimento, Avaliacao, AvaliacoesDash, CanalEnvio, ItemFila, LgpdSolicitacao, RegraMatriz,
-} from '@core/models/api.models';
+import { Atendimento, Avaliacao, AvaliacoesDash, CanalEnvio, ItemFila, LgpdSolicitacao, RegraMatriz } from '@core/models/comunicacao.models';
 
 type Aba = 'avaliacoes' | 'fila' | 'matriz' | 'lgpd' | 'atend';
 const CANAIS: CanalEnvio[] = ['inbox', 'push', 'email', 'whatsapp'];
@@ -298,7 +296,7 @@ const PAPEL_ROTULO: Record<number, string> = { 1: 'Admin', 2: 'Gerente', 3: 'Tod
   `],
 })
 export class ComunicacaoComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly comunicacaoApi = inject(ComunicacaoApi);
   private readonly notify = inject(Notify);
   private readonly auth = inject(AuthStore);
 
@@ -338,30 +336,30 @@ export class ComunicacaoComponent implements OnInit {
   }
 
   carregar(): void {
-    this.api.avaliacoesDashboard().subscribe({ next: (d) => this.dash.set(d), error: () => undefined });
-    this.api.avaliacoes().subscribe({ next: (a) => this.avaliacoes.set(a), error: () => undefined });
-    this.api.filaEnvio().subscribe({ next: (f) => this.fila.set(f), error: () => undefined });
-    this.api.matrizNotificacao().subscribe({ next: (m) => this.matriz.set(m), error: () => undefined });
+    this.comunicacaoApi.avaliacoesDashboard().subscribe({ next: (d) => this.dash.set(d), error: () => undefined });
+    this.comunicacaoApi.avaliacoes().subscribe({ next: (a) => this.avaliacoes.set(a), error: () => undefined });
+    this.comunicacaoApi.filaEnvio().subscribe({ next: (f) => this.fila.set(f), error: () => undefined });
+    this.comunicacaoApi.matrizNotificacao().subscribe({ next: (m) => this.matriz.set(m), error: () => undefined });
     this.carregarLgpd();
     this.carregarAtend();
   }
 
   carregarAtend(): void {
-    this.api.atendimentos(this.atendFiltro()).subscribe({
+    this.comunicacaoApi.atendimentos(this.atendFiltro()).subscribe({
       next: (a) => this.atends.set(a),
       error: () => undefined,
     });
   }
 
   aceitarAtend(a: Atendimento): void {
-    this.api.atendAceitar(a.id).subscribe({
+    this.comunicacaoApi.atendAceitar(a.id).subscribe({
       next: () => this.carregarAtend(),
       error: () => this.notify.erroMsg('Não foi possível assumir o protocolo.'),
     });
   }
 
   resolverAtend(a: Atendimento): void {
-    this.api.atendResolver(a.id).subscribe({
+    this.comunicacaoApi.atendResolver(a.id).subscribe({
       next: () => {
         this.notify.ok(`Protocolo ${a.protocolo} resolvido.`);
         this.carregarAtend();
@@ -371,7 +369,7 @@ export class ComunicacaoComponent implements OnInit {
   }
 
   carregarLgpd(): void {
-    this.api.lgpdSolicitacoes().subscribe({ next: (s) => this.lgpd.set(s), error: () => undefined });
+    this.comunicacaoApi.lgpdSolicitacoes().subscribe({ next: (s) => this.lgpd.set(s), error: () => undefined });
   }
 
   tipoLgpd(t: string): string {
@@ -397,7 +395,7 @@ export class ComunicacaoComponent implements OnInit {
   enviarRespostaLgpd(): void {
     const s = this.modalLgpd();
     if (!s || !this.textoLgpd.trim()) return;
-    this.api.lgpdResponder(s.id, this.textoLgpd.trim()).subscribe({
+    this.comunicacaoApi.lgpdResponder(s.id, this.textoLgpd.trim()).subscribe({
       next: () => {
         this.notify.ok('Resposta registrada — solicitação respondida.');
         this.modalLgpd.set(null);
@@ -426,7 +424,7 @@ export class ComunicacaoComponent implements OnInit {
   toggle(evento: string, canal: CanalEnvio, papel: number): void {
     const atual = this.regra(evento, canal, papel);
     const nova: RegraMatriz = { evento, canal, papel, ativo: !(atual?.ativo ?? false) };
-    this.api.gravarRegraMatriz(nova).subscribe({
+    this.comunicacaoApi.gravarRegraMatriz(nova).subscribe({
       next: () => {
         this.matriz.update((m) => {
           const i = m.findIndex((r) => r.evento === evento && r.canal === canal && r.papel === papel);
@@ -485,7 +483,7 @@ export class ComunicacaoComponent implements OnInit {
   enviarResposta(): void {
     const av = this.modalAv();
     if (!av) return;
-    this.api.responderAvaliacao(av.id, this.textoResposta.trim()).subscribe({
+    this.comunicacaoApi.responderAvaliacao(av.id, this.textoResposta.trim()).subscribe({
       next: () => {
         this.modalAv.set(null);
         this.notify.ok('Resposta publicada.');
@@ -498,7 +496,7 @@ export class ComunicacaoComponent implements OnInit {
   async ativarPush(): Promise<void> {
     try {
       const reg = await navigator.serviceWorker.register('/push-sw.js');
-      const { publica } = await this.api.pushVapidKey().toPromise() ?? {};
+      const { publica } = await this.comunicacaoApi.pushVapidKey().toPromise() ?? {};
       if (!publica) {
         this.notify.erroMsg('Push não configurado no servidor (VAPID).');
         return;
@@ -513,7 +511,7 @@ export class ComunicacaoComponent implements OnInit {
         applicationServerKey: this.b64paraBytes(publica),
       });
       const j = sub.toJSON();
-      await this.api.pushSubscribe({
+      await this.comunicacaoApi.pushSubscribe({
         endpoint: j.endpoint ?? '',
         p256dh: j.keys?.['p256dh'] ?? '',
         auth: j.keys?.['auth'] ?? '',
