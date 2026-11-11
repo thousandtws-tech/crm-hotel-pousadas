@@ -47,6 +47,9 @@
             <a routerLink="/localizacao" class="text-[#CBD7DC] hover:text-white transition-colors">Localização</a>
           </li>
           <li>
+            <a routerLink="/guia" class="text-[#CBD7DC] hover:text-white transition-colors">Guia do Peró</a>
+          </li>
+          <li>
             <a routerLink="/contato" class="text-[#CBD7DC] hover:text-white transition-colors">Contato & FAQ</a>
           </li>
           <li>
@@ -113,6 +116,53 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Newsletter Strip -->
+    <div class="py-8 sm:py-10 border-b border-white/10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+      <div class="max-w-md">
+        <span class="type-eyebrow text-[#DDA554] block mb-2">Fique por dentro</span>
+        <p class="text-sm text-[#CBD7DC] font-light leading-relaxed">
+          Receba novidades da pousada e dicas da Região dos Lagos direto no seu e-mail.
+        </p>
+      </div>
+
+      <form
+        class="w-full lg:max-w-md flex flex-col sm:flex-row gap-3"
+        (submit)="inscreverNewsletter(); $event.preventDefault()"
+        aria-label="Inscrever-se na newsletter da pousada"
+      >
+        <label for="footer-newsletter" class="sr-only">Seu e-mail</label>
+        <input
+          id="footer-newsletter"
+          type="email"
+          name="newsletterEmail"
+          [ngModel]="newsletterEmail()"
+          (ngModelChange)="newsletterEmail.set($event)"
+          placeholder="Seu melhor e-mail"
+          autocomplete="email"
+          required
+          [attr.aria-invalid]="newsletterEstado() === 'erro'"
+          class="flex-1 bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[#DDA554] transition-colors"
+        />
+        <button
+          type="submit"
+          [disabled]="newsletterEstado() === 'enviando'"
+          class="shrink-0 px-6 py-3 bg-[#DDA554] text-[#032B38] text-xs uppercase tracking-luxury font-semibold hover:bg-white transition-colors disabled:opacity-60 disabled:cursor-wait cursor-pointer"
+        >
+          {{ newsletterEstado() === 'enviando' ? 'Enviando…' : 'Inscrever' }}
+        </button>
+      </form>
+
+      @if (newsletterMsg(); as msg) {
+        <p
+          role="status"
+          class="w-full lg:max-w-md lg:self-end text-xs -mt-3"
+          [class]="newsletterEstado() === 'ok' ? 'text-[#8FD6A8]' : 'text-[#F2A9A9]'"
+        >
+          {{ msg }}
+        </p>
+      }
     </div>
 
     <!-- Bottom Copyright -->

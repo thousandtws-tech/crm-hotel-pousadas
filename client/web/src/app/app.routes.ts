@@ -27,6 +27,14 @@ export const routes: Routes = [
         loadComponent: () => import('./features/gallery/gallery.component').then((m) => m.GalleryComponent)
       },
       {
+        path: 'guia',
+        loadComponent: () => import('./features/guia/guia-list.component').then((m) => m.GuiaListComponent)
+      },
+      {
+        path: 'guia/:slug',
+        loadComponent: () => import('./features/guia/guia-article.component').then((m) => m.GuiaArticleComponent)
+      },
+      {
         path: 'sobre',
         loadComponent: () => import('./features/about/about.component').then((m) => m.AboutComponent)
       },

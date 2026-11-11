@@ -87,6 +87,14 @@ pub trait CmsRepository: Send + Sync {
         log: NovoLog,
     ) -> Result<CmsSecao, DomainError>;
 
+    /// Inscrição da newsletter do rodapé — `true` quando inseriu,
+    /// `false` quando o e-mail já estava cadastrado (reativa se inativo).
+    async fn newsletter_inscrever(
+        &self,
+        email: &str,
+        origem: &str,
+    ) -> Result<bool, DomainError>;
+
     /// Cards `publicado` + acomodacao ativa — consumo do site público.
     async fn listar_publicadas(&self) -> Result<Vec<AcomodacaoPublica>, DomainError>;
     async fn publicada_por_slug(

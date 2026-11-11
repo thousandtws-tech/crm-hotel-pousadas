@@ -188,6 +188,28 @@ pub async fn publico_site(
     Ok(Json(s.services.cms.site_publico().await?))
 }
 
+#[derive(serde::Deserialize)]
+pub struct NewsletterInput {
+    pub email: String,
+    #[serde(default)]
+    pub origem: Option<String>,
+}
+
+/// `POST /publico/newsletter` — captação de e-mail do rodapé do site.
+/// `novo` = inscrição criada/reativada; `false` = já estava inscrito.
+pub async fn publico_newsletter(
+    State(s): State<AppState>,
+    Json(input): Json<NewsletterInput>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let origem = input.origem.unwrap_or_else(|| "site".into());
+    let novo = s
+        .services
+        .cms
+        .inscrever_newsletter(&input.email, &origem)
+        .await?;
+    Ok(Json(serde_json::json!({ "inscrito": true, "novo": novo })))
+}
+
 /// `GET /publico/acomodacoes` — cards `publicado` + acomodação ativa.
 pub async fn publico_listar(
     State(s): State<AppState>,

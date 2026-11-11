@@ -72,6 +72,14 @@
         Localização
       </a>
       <a
+        routerLink="/guia"
+        routerLinkActive="nav-active text-[#DDA554] font-medium"
+        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
+        [class]="isScrolled() ? 'text-[#054054]' : 'text-white/90'"
+      >
+        Guia
+      </a>
+      <a
         routerLink="/contato"
         routerLinkActive="nav-active text-[#DDA554] font-medium"
         class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
@@ -174,6 +182,13 @@
         class="font-serif text-3xl sm:text-4xl text-white hover:text-[#DDA554] transition-colors"
       >
         Localização
+      </a>
+      <a
+        routerLink="/guia"
+        (click)="closeMobileMenu()"
+        class="font-serif text-3xl sm:text-4xl text-white hover:text-[#DDA554] transition-colors"
+      >
+        Guia
       </a>
       <a
         routerLink="/contato"

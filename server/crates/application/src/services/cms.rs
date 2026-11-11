@@ -98,6 +98,23 @@ impl CmsService {
         Ok(self.cms.site_salvar(&secao, &dados, log).await?)
     }
 
+    /// Inscrição da newsletter (público) — valida formato e normaliza o e-mail.
+    /// Retorna `true` quando a inscrição é nova (ou reativada).
+    pub async fn inscrever_newsletter(&self, email: &str, origem: &str) -> AppResult<bool> {
+        let email = email.trim().to_lowercase();
+        let valido = email.len() <= 254
+            && email.len() >= 5
+            && email.split('@').count() == 2
+            && email
+                .split('@')
+                .nth(1)
+                .is_some_and(|d| d.contains('.') && d.len() >= 4);
+        if !valido {
+            return Err(DomainError::validacao("Informe um e-mail válido.").into());
+        }
+        Ok(self.cms.newsletter_inscrever(&email, origem).await?)
+    }
+
     /// Cria/atualiza o conteúdo editorial de uma acomodação (admin-only).
     /// `slug` vazio → deriva do nome da acomodação; duplicado → 409.
     pub async fn salvar(

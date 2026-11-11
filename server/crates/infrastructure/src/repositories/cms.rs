@@ -341,6 +341,27 @@ impl CmsRepository for PgCmsRepository {
         Ok(s)
     }
 
+    async fn newsletter_inscrever(
+        &self,
+        email: &str,
+        origem: &str,
+    ) -> Result<bool, DomainError> {
+        // Conflito com ativo=true → já inscrito (false); ativo=false → reativa (true).
+        let row = sqlx::query(
+            "INSERT INTO newsletter_inscricao (email, origem) VALUES ($1, $2)
+             ON CONFLICT (email) DO UPDATE
+                SET ativo = true
+                WHERE newsletter_inscricao.ativo = false
+             RETURNING id",
+        )
+        .bind(email)
+        .bind(origem)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(row.is_some())
+    }
+
     async fn listar_publicadas(&self) -> Result<Vec<AcomodacaoPublica>, DomainError> {
         let rows = sqlx::query(
             "SELECT a.id, c.slug, a.nome, a.numero, a.valor, a.capacidade, a.cor,

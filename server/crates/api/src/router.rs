@@ -967,6 +967,10 @@ pub fn build(state: AppState) -> Router {
         // site público — só conteúdo `publicado`
         .route("/api/v1/publico/cms/site", get(routes::cms::publico_site))
         .route(
+            "/api/v1/publico/newsletter",
+            post(routes::cms::publico_newsletter),
+        )
+        .route(
             "/api/v1/publico/contrato/{codigo}",
             get(routes::operadoras::publico_contrato),
         )
