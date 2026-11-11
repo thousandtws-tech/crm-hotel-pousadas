@@ -3,9 +3,6 @@ import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatChipsModule } from '@angular/material/chips';
 import { firstValueFrom } from 'rxjs';
 import { ApiService, num } from '@core/services/api.service';
 import { AuthStore } from '@core/services/auth.store';
@@ -50,6 +47,7 @@ export const ICONES_SITE: { id: string; label: string }[] = [
 ];
 
 type FiltroPub = 'todos' | 'pub' | 'rasc';
+type AbaCms = 'quartos' | 'site' | 'widget';
 
 @Component({
   selector: 'app-cms',
@@ -63,489 +61,645 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
     ReactiveFormsModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatChipsModule,
   ],
   template: `
-    <div class="page">
-      <!-- ================= Cabeçalho ================= -->
-      <div class="cms-head">
-        <div>
-          <h2 class="cms-titulo">Conteúdo do site</h2>
-          <p class="cms-sub">Quartos, textos, fotos e vídeos exibidos no site da pousada</p>
+    <div class="page cms-shell">
+      <header class="cms-head">
+        <div class="cms-head-copy">
+          <h1 class="cms-titulo">Conteúdo do site</h1>
+          <p class="cms-sub">Gerencie acomodações, páginas institucionais, SEO e integração do motor de reservas.</p>
         </div>
         <div class="cms-acoes">
-          <span class="rt-pill" [class.on]="rt.online()" [title]="rt.online() ? 'Publicações chegam ao site instantaneamente' : 'Sem conexão em tempo real'">
+          <span
+            class="rt-pill"
+            [class.on]="rt.online()"
+            [title]="rt.online() ? 'Publicações chegam ao site instantaneamente' : 'Sem conexão em tempo real'"
+          >
             <span class="dot"></span>
-            {{ rt.online() ? 'Sincronização em tempo real' : 'Reconectando…' }}
+            {{ rt.online() ? 'Tempo real ativo' : 'Reconectando…' }}
           </span>
-          <button class="btn-tour" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
-            <mat-icon>school</mat-icon> Tutorial
+          <button class="btn-ghost" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
+            Tutorial
           </button>
-          <button id="tour-novo" class="btn-dark-blue" type="button" (click)="abrirNovo()">
-            <mat-icon>add</mat-icon> Novo quarto
+          <button id="tour-novo" class="btn-primary" type="button" (click)="abrirNovo()">
+            <mat-icon>add</mat-icon>
+            Novo quarto
           </button>
         </div>
-      </div>
+      </header>
 
-      <!-- ================= Banners ================= -->
-      <div class="cms-banners">
-        <div class="cms-banner">
-          <span class="cms-banner-ic tint-teal"><mat-icon>public</mat-icon></span>
-          <div>
-            <strong>Publicação em tempo real</strong>
-            <p>O que estiver <b>Publicado</b> aparece no site na mesma hora — sem recarregar nem esperar. Rascunhos ficam invisíveis.</p>
-          </div>
-        </div>
-        <div class="cms-banner">
-          <span class="cms-banner-ic tint-gold"><mat-icon>photo_library</mat-icon></span>
-          <div>
-            <strong>Fotos e vídeos</strong>
-            <p>No editor de cada quarto você envia a galeria, escolhe a <b>foto de capa</b> e ordena com as setas.</p>
-          </div>
-        </div>
-        <div class="cms-banner">
-          <span class="cms-banner-ic tint-navy"><mat-icon>star</mat-icon></span>
-          <div>
-            <strong>Vitrine da página inicial</strong>
-            <p>Quartos marcados como <b>Destaque</b> aparecem na vitrine principal do site. Use com parcimônia — menos é mais.</p>
-          </div>
-        </div>
-      </div>
+      <nav class="cms-tabs" role="tablist" aria-label="Seções do conteúdo do site">
+        <button
+          type="button"
+          role="tab"
+          class="cms-tab"
+          [class.ativo]="aba() === 'quartos'"
+          [attr.aria-selected]="aba() === 'quartos'"
+          (click)="aba.set('quartos')"
+        >
+          Acomodações
+          <span class="tab-count">{{ items().length }}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="cms-tab"
+          [class.ativo]="aba() === 'site'"
+          [attr.aria-selected]="aba() === 'site'"
+          (click)="aba.set('site')"
+        >
+          Página inicial e SEO
+        </button>
+        @if (widget()) {
+          <button
+            type="button"
+            role="tab"
+            class="cms-tab"
+            [class.ativo]="aba() === 'widget'"
+            [attr.aria-selected]="aba() === 'widget'"
+            (click)="aba.set('widget')"
+          >
+            Motor e integração
+          </button>
+        }
+      </nav>
 
-      <!-- ================= Barra de números ================= -->
-      <div class="cms-resumo" id="tour-resumo">
-        <div class="cms-est">
-          <span class="cms-est-num">{{ items().length }}</span>
-          <span class="cms-est-lbl"><mat-icon>hotel</mat-icon> Quartos</span>
-        </div>
-        <div class="cms-est">
-          <span class="cms-est-num">{{ totalPublicados() }}</span>
-          <span class="cms-est-lbl"><mat-icon>public</mat-icon> No ar</span>
-        </div>
-        <div class="cms-est">
-          <span class="cms-est-num">{{ totalRascunhos() }}</span>
-          <span class="cms-est-lbl"><mat-icon>edit_note</mat-icon> Rascunhos / ocultos</span>
-        </div>
-        <div class="cms-est">
-          <span class="cms-est-num" [class.cms-alerta]="semFotos() > 0">{{ semFotos() }}</span>
-          <span class="cms-est-lbl"><mat-icon>image_not_supported</mat-icon> Sem fotos</span>
-        </div>
-        <span class="cms-resumo-info">
-          <mat-icon>info</mat-icon> Quartos sem foto aparecem sem capa no site
-        </span>
-      </div>
+      @if (aba() === 'quartos') {
+        <section class="cms-section" aria-label="Gestão de acomodações no site">
+          <div class="cms-resumo" id="tour-resumo">
+            <div class="cms-est">
+              <span class="cms-est-lbl">Total de quartos</span>
+              <span class="cms-est-num">{{ items().length }}</span>
+            </div>
+            <div class="cms-est">
+              <span class="cms-est-lbl">Publicados no site</span>
+              <span class="cms-est-num">{{ totalPublicados() }}</span>
+            </div>
+            <div class="cms-est">
+              <span class="cms-est-lbl">Rascunhos ou ocultos</span>
+              <span class="cms-est-num">{{ totalRascunhos() }}</span>
+            </div>
+            <div class="cms-est">
+              <span class="cms-est-lbl">Sem fotos</span>
+              <span class="cms-est-num">{{ semFotos() }}</span>
+            </div>
+          </div>
 
-      <!-- ================= Widget "usar no meu site" ================= -->
-      @if (widget(); as w) {
-        <div class="inner-card cms-card wg-card">
-          <h3 class="wg-tit"><mat-icon>link</mat-icon> Motor de reservas — usar no seu site</h3>
-          <p class="wg-sub">
-            Hóspede reserva e paga direto no motor; os dados caem aqui no CRM.
-            Compartilhe o link, o QR ou cole o código no seu site.
-          </p>
-          <div class="wg-grid">
-            <img
-              class="wg-qr" alt="QR code apontando para o motor de reservas"
-              [src]="qrSrc()"
-            />
-            <div class="wg-info">
-              <label class="dl">
-                <span>Link direto</span>
-                <input class="input-inn" readonly [value]="w.url" aria-label="Link do motor" />
-              </label>
-              <label class="dl">
-                <span>Código do widget (mini busca + botão)</span>
-                <textarea
-                  class="input-inn wg-snippet" readonly rows="6"
-                  [value]="w.snippet" aria-label="Código HTML do widget"
-                ></textarea>
-              </label>
-              <div class="wg-acoes">
-                <button type="button" class="mc-btn" (click)="copiarWidget(w.url)">Copiar link</button>
-                <button type="button" class="mc-btn" (click)="copiarWidget(w.snippet)">Copiar código</button>
-                <a class="mc-btn" [href]="w.url" target="_blank" rel="noopener">Abrir motor</a>
+          <div class="cms-panel" id="tour-tabela">
+            <div class="cms-toolbar">
+              <div class="cms-busca" [class.foco]="buscaFoco()">
+                <mat-icon class="cms-busca-icone">search</mat-icon>
+                <input
+                  class="cms-busca-input"
+                  type="search"
+                  [value]="termo()"
+                  (input)="termo.set(valorDe($event))"
+                  placeholder="Buscar por nome, número ou slug…"
+                  aria-label="Buscar quarto"
+                  autocomplete="off"
+                  (focus)="buscaFoco.set(true)"
+                  (blur)="buscaFoco.set(false)"
+                />
+                @if (termo()) {
+                  <button type="button" class="cms-limpar" aria-label="Limpar busca" (click)="termo.set('')">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                }
+              </div>
+
+              <div class="seg-group" role="group" aria-label="Filtrar por status de publicação">
+                <button
+                  type="button"
+                  class="seg-btn"
+                  [class.ativo]="filtro() === 'todos'"
+                  [attr.aria-pressed]="filtro() === 'todos'"
+                  (click)="filtro.set('todos')"
+                >
+                  Todos
+                </button>
+                <button
+                  type="button"
+                  class="seg-btn"
+                  [class.ativo]="filtro() === 'pub'"
+                  [attr.aria-pressed]="filtro() === 'pub'"
+                  (click)="filtro.set('pub')"
+                >
+                  No ar
+                </button>
+                <button
+                  type="button"
+                  class="seg-btn"
+                  [class.ativo]="filtro() === 'rasc'"
+                  [attr.aria-pressed]="filtro() === 'rasc'"
+                  (click)="filtro.set('rasc')"
+                >
+                  Rascunhos
+                </button>
+              </div>
+            </div>
+
+            <div class="cms-tabela-wrap">
+              <table class="cms-tabela">
+                <thead>
+                  <tr>
+                    <th class="col-capa">Capa</th>
+                    <th>Acomodação</th>
+                    <th class="tr">Diária base</th>
+                    <th>Mídia</th>
+                    <th class="tc">Sistema</th>
+                    <th class="tc">Publicação</th>
+                    <th class="tr">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @if (carregando()) {
+                    @for (s of skel; track s) {
+                      <tr class="skel-row">
+                        <td><span class="skel sk-capa"></span></td>
+                        <td><span class="skel sk-txt-l"></span><span class="skel sk-txt-s"></span></td>
+                        <td><span class="skel sk-txt tr-auto"></span></td>
+                        <td><span class="skel sk-txt"></span></td>
+                        <td><span class="skel sk-chip"></span></td>
+                        <td><span class="skel sk-chip"></span></td>
+                        <td><span class="skel sk-acoes"></span></td>
+                      </tr>
+                    }
+                  } @else {
+                    @for (a of filtrados(); track a.id) {
+                      <tr [class.inativo-row]="!a.ativo">
+                        <td>
+                          @if (thumbs()[a.id]) {
+                            <img [src]="thumbs()[a.id]" alt="Capa de {{ a.nome }}" class="capa-thumb" />
+                          } @else {
+                            <div class="capa-vazia" title="Sem foto de capa">
+                              <mat-icon>image</mat-icon>
+                            </div>
+                          }
+                        </td>
+                        <td>
+                          <div class="q-cell">
+                            <div class="q-title-row">
+                              <strong class="q-name">{{ a.nome }}</strong>
+                              @if (a.cms?.destaque) {
+                                <span class="tag-neutral" title="Exibido na vitrine da página inicial">Destaque</span>
+                              }
+                            </div>
+                            <small class="q-meta">
+                              Nº {{ a.numero }} · {{ a.capacidade }} hóspede{{ a.capacidade === 1 ? '' : 's' }}
+                              @if (a.cms?.slug) {
+                                · <span class="slug">/{{ a.cms!.slug }}</span>
+                              }
+                            </small>
+                          </div>
+                        </td>
+                        <td class="tr preco-cell">
+                          @if (Number(a.valor) > 0) {
+                            R$ {{ num(a.valor) | number: '1.2-2' }}
+                          } @else {
+                            <span class="sob-consulta">Sob consulta</span>
+                          }
+                        </td>
+                        <td class="midias-cell">
+                          <span class="midia-n" [class.off]="contar(a, 'foto') === 0">
+                            {{ contar(a, 'foto') }} foto{{ contar(a, 'foto') === 1 ? '' : 's' }}
+                          </span>
+                          <span class="midia-sep">·</span>
+                          <span class="midia-n" [class.off]="contar(a, 'video') === 0">
+                            {{ contar(a, 'video') }} vídeo{{ contar(a, 'video') === 1 ? '' : 's' }}
+                          </span>
+                        </td>
+                        <td class="tc">
+                          <button
+                            class="pill-toggle"
+                            [class.pill-solid]="a.ativo"
+                            type="button"
+                            [title]="a.ativo ? 'Clique para desativar quarto no PMS' : 'Clique para reativar quarto'"
+                            (click)="toggleAtivo(a)"
+                          >
+                            <span class="pill-dot"></span>
+                            {{ a.ativo ? 'Ativo' : 'Inativo' }}
+                          </button>
+                        </td>
+                        <td class="tc">
+                          @if (!a.cms) {
+                            <span class="pill-static">Sem conteúdo</span>
+                          } @else if (a.cms!.status === 'publicado' && a.ativo) {
+                            <button
+                              class="pill-toggle pill-solid"
+                              type="button"
+                              title="Clique para mover para rascunho"
+                              (click)="togglePublicacao(a, false)"
+                            >
+                              <span class="pill-dot"></span>
+                              No ar
+                            </button>
+                          } @else {
+                            <button
+                              class="pill-toggle"
+                              type="button"
+                              title="Clique para publicar imediatamente no site"
+                              (click)="togglePublicacao(a, true)"
+                            >
+                              <span class="pill-dot"></span>
+                              Rascunho
+                            </button>
+                          }
+                        </td>
+                        <td class="tr">
+                          <div class="cms-acoes-linha">
+                            <button
+                              class="btn-row"
+                              type="button"
+                              title="Abrir editor do quarto"
+                              (click)="abrirEditor(a)"
+                            >
+                              Editar
+                            </button>
+                            @if (auth.isAdmin()) {
+                              <button
+                                class="btn-icon-row"
+                                type="button"
+                                title="Excluir quarto"
+                                aria-label="Excluir quarto {{ a.nome }}"
+                                (click)="excluirQuarto(a)"
+                              >
+                                <mat-icon>delete_outline</mat-icon>
+                              </button>
+                            }
+                          </div>
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="7" class="cms-vazio">
+                          <p class="vazio-tit">
+                            {{ termo() || filtro() !== 'todos'
+                              ? 'Nenhuma acomodação encontrada para os filtros aplicados.'
+                              : 'Nenhuma acomodação cadastrada.' }}
+                          </p>
+                          @if (!termo() && filtro() === 'todos') {
+                            <p class="vazio-sub">Clique em "Novo quarto" no canto superior direito para cadastrar a primeira acomodação.</p>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (aba() === 'site') {
+        <section class="cms-section" aria-label="Conteúdo institucional e SEO">
+          <form class="settings-stack" [formGroup]="siteForm" (ngSubmit)="salvarSite('hero')">
+            <div class="settings-row">
+              <div class="settings-aside">
+                <h2 class="settings-tit">Primeira dobra (Hero)</h2>
+                <p class="settings-desc">
+                  Título principal e subtítulo exibidos na abertura da página inicial do site institucional.
+                </p>
+                <button type="submit" class="btn-ghost btn-sm" [disabled]="salvandoSite()">
+                  Salvar Hero
+                </button>
+              </div>
+              <div class="settings-card">
+                <label class="field">
+                  <span class="field-lbl">Título principal</span>
+                  <input
+                    class="cms-input"
+                    formControlName="hero_titulo"
+                    placeholder="Ex.: Refúgio à beira-mar com conforto e exclusividade"
+                  />
+                </label>
+                <label class="field">
+                  <span class="field-lbl">Subtítulo</span>
+                  <textarea
+                    class="cms-input"
+                    formControlName="hero_subtitulo"
+                    rows="3"
+                    placeholder="Ex.: Suítes preparadas para descanso, café da manhã artesanal e localização privilegiada."
+                  ></textarea>
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-aside">
+                <h2 class="settings-tit">SEO e buscadores</h2>
+                <p class="settings-desc">
+                  Metadados utilizados pelo Google e redes sociais ao indexar e compartilhar o endereço principal.
+                </p>
+                <button type="button" class="btn-ghost btn-sm" [disabled]="salvandoSite()" (click)="salvarSite('seo')">
+                  Salvar SEO
+                </button>
+              </div>
+              <div class="settings-card">
+                <label class="field">
+                  <span class="field-lbl">
+                    Título da página
+                    <span class="field-hint">máx. 60 caracteres</span>
+                  </span>
+                  <input
+                    class="cms-input"
+                    formControlName="seo_titulo"
+                    maxlength="60"
+                    placeholder="Ex.: Pousada Espírito do Mar — Hospedagem à beira-mar"
+                  />
+                </label>
+                <label class="field">
+                  <span class="field-lbl">
+                    Descrição (meta description)
+                    <span class="field-hint">máx. 160 caracteres</span>
+                  </span>
+                  <textarea
+                    class="cms-input"
+                    formControlName="seo_descricao"
+                    rows="3"
+                    maxlength="160"
+                    placeholder="Resumo objetivo exibido nos resultados de pesquisa."
+                  ></textarea>
+                </label>
+                <label class="field">
+                  <span class="field-lbl">Palavras-chave (separadas por vírgula)</span>
+                  <input
+                    class="cms-input"
+                    formControlName="seo_keywords"
+                    placeholder="pousada, hospedagem, suíte, reserva direta"
+                  />
+                </label>
+              </div>
+            </div>
+          </form>
+
+          <div class="settings-row">
+            <div class="settings-aside">
+              <h2 class="settings-tit">Perguntas frequentes (FAQ)</h2>
+              <p class="settings-desc">
+                Dúvidas comuns exibidas na página inicial com marcação estruturada (JSON-LD) para buscadores.
+              </p>
+              <div class="aside-actions">
+                <button type="button" class="btn-ghost btn-sm" (click)="addFaq()">
+                  <mat-icon>add</mat-icon>
+                  Adicionar pergunta
+                </button>
+                <button type="button" class="btn-primary btn-sm" [disabled]="salvandoSite()" (click)="salvarSite('faq')">
+                  Salvar FAQ
+                </button>
+              </div>
+            </div>
+            <div class="settings-card">
+              @if (faq().length === 0) {
+                <div class="empty-inline">
+                  Nenhuma pergunta cadastrada. Quando vazia, a seção de FAQ fica oculta no site.
+                </div>
+              } @else {
+                <div class="faq-list">
+                  @for (f of faq(); track $index) {
+                    <div class="faq-item">
+                      <div class="faq-item-head">
+                        <span class="faq-num">Pergunta {{ $index + 1 }}</span>
+                        <button
+                          type="button"
+                          class="btn-icon-row"
+                          [attr.aria-label]="'Remover pergunta ' + ($index + 1)"
+                          (click)="delFaq($index)"
+                        >
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </div>
+                      <input
+                        class="cms-input"
+                        [value]="f.pergunta"
+                        placeholder="Digite a pergunta…"
+                        [attr.aria-label]="'Pergunta ' + ($index + 1)"
+                        (input)="setFaq($index, 'pergunta', $event)"
+                      />
+                      <textarea
+                        class="cms-input"
+                        [value]="f.resposta"
+                        rows="2"
+                        placeholder="Digite a resposta…"
+                        [attr.aria-label]="'Resposta ' + ($index + 1)"
+                        (input)="setFaq($index, 'resposta', $event)"
+                      ></textarea>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (aba() === 'widget' && widget(); as w) {
+        <section class="cms-section" aria-label="Integração do motor de reservas">
+          <div class="settings-row">
+            <div class="settings-aside">
+              <h2 class="settings-tit">Link direto e QR Code</h2>
+              <p class="settings-desc">
+                Compartilhe em redes sociais, materiais impressos na recepção ou atendimento via WhatsApp.
+              </p>
+              <a class="btn-ghost btn-sm" [href]="w.url" target="_blank" rel="noopener">
+                Abrir motor em nova aba
+              </a>
+            </div>
+            <div class="settings-card wg-card-grid">
+              <img
+                class="wg-qr"
+                alt="QR code para o motor de reservas"
+                [src]="qrSrc()"
+              />
+              <div class="wg-url-box">
+                <label class="field">
+                  <span class="field-lbl">Endereço público do motor</span>
+                  <div class="copy-row">
+                    <input class="cms-input mono" readonly [value]="w.url" aria-label="Link do motor de reservas" />
+                    <button type="button" class="btn-ghost" (click)="copiarWidget(w.url)">Copiar link</button>
+                  </div>
+                </label>
+                <p class="field-help">
+                  As reservas concluídas no motor sincronizam disponibilidade, pagamento e ficha do hóspede automaticamente.
+                </p>
               </div>
             </div>
           </div>
-        </div>
+
+          <div class="settings-row">
+            <div class="settings-aside">
+              <h2 class="settings-tit">Widget HTML incorporável</h2>
+              <p class="settings-desc">
+                Cole este trecho em qualquer página externa para exibir um seletor de datas conectado direto ao motor.
+              </p>
+              <button type="button" class="btn-primary btn-sm" (click)="copiarWidget(w.snippet)">
+                Copiar código HTML
+              </button>
+            </div>
+            <div class="settings-card">
+              <label class="field">
+                <span class="field-lbl">Snippet de incorporação</span>
+                <textarea
+                  class="cms-input mono wg-snippet"
+                  readonly
+                  rows="7"
+                  [value]="w.snippet"
+                  aria-label="Código HTML do widget"
+                ></textarea>
+              </label>
+            </div>
+          </div>
+        </section>
       }
 
-      <!-- ================= Site institucional (hero / SEO / FAQ) ================= -->
-      <div class="inner-card cms-card">
-        <h3 class="wg-tit"><mat-icon>web</mat-icon> Site institucional</h3>
-        <p class="wg-sub">
-          Conteúdo da página inicial — editável sem mexer em código. Salve cada seção de forma independente.
-        </p>
-
-        <form [formGroup]="siteForm" (ngSubmit)="salvarSite('hero')">
-          <div class="site-secao">
-            <div class="site-secao-head">
-              <span class="site-secao-tit"><mat-icon>crop_landscape</mat-icon> Hero — primeira dobra</span>
-              <button type="submit" class="mc-btn" [disabled]="salvandoSite()">Salvar hero</button>
-            </div>
-            <div class="form-grid">
-              <label class="dl full">
-                <span>Título</span>
-                <input class="input-inn" formControlName="hero_titulo"
-                       placeholder="Ex.: Refúgio à beira-mar na Bahia" />
-              </label>
-              <label class="dl full">
-                <span>Subtítulo</span>
-                <textarea class="input-inn" formControlName="hero_subtitulo" rows="2"
-                          placeholder="Ex.: Acomodações aconchegantes, café da manhã regional e a melhor vista do litoral"></textarea>
-              </label>
-            </div>
-          </div>
-
-          <div class="site-secao">
-            <div class="site-secao-head">
-              <span class="site-secao-tit"><mat-icon>travel_explore</mat-icon> SEO — Google e buscadores</span>
-              <button type="button" class="mc-btn" [disabled]="salvandoSite()" (click)="salvarSite('seo')">
-                Salvar SEO
-              </button>
-            </div>
-            <div class="form-grid">
-              <label class="dl full">
-                <span>Título da página</span>
-                <input class="input-inn" formControlName="seo_titulo"
-                       placeholder="Ex.: Pousada Mar Azul — Suítes à beira-mar" maxlength="60" />
-              </label>
-              <label class="dl full">
-                <span>Descrição</span>
-                <textarea class="input-inn" formControlName="seo_descricao" rows="2" maxlength="160"
-                          placeholder="Aparece abaixo do título nos resultados de busca"></textarea>
-              </label>
-              <label class="dl full">
-                <span>Palavras-chave (separadas por vírgula)</span>
-                <input class="input-inn" formControlName="seo_keywords"
-                       placeholder="pousada, bahia, beira-mar, suíte com vista" />
-              </label>
-            </div>
-          </div>
-        </form>
-
-        <div class="site-secao">
-          <div class="site-secao-head">
-            <span class="site-secao-tit"><mat-icon>quiz</mat-icon> FAQ — dúvidas frequentes</span>
-            <div class="site-secao-acoes">
-              <button type="button" class="mc-btn" (click)="addFaq()">
-                <mat-icon>add</mat-icon> Pergunta
-              </button>
-              <button type="button" class="mc-btn" [disabled]="salvandoSite()" (click)="salvarSite('faq')">
-                Salvar FAQ
-              </button>
-            </div>
-          </div>
-          @if (faq().length === 0) {
-            <p class="site-vazio">Nenhuma pergunta cadastrada — o site não exibe FAQ.</p>
-          }
-          @for (f of faq(); track $index) {
-            <div class="faq-item">
-              <input class="input-inn" [value]="f.pergunta" placeholder="Pergunta"
-                     [attr.aria-label]="'Pergunta ' + ($index + 1)"
-                     (input)="setFaq($index, 'pergunta', $event)" />
-              <textarea class="input-inn" [value]="f.resposta" rows="2" placeholder="Resposta"
-                        [attr.aria-label]="'Resposta ' + ($index + 1)"
-                        (input)="setFaq($index, 'resposta', $event)"></textarea>
-              <button type="button" class="faq-del" [attr.aria-label]="'Remover pergunta ' + ($index + 1)"
-                      (click)="delFaq($index)">
-                <mat-icon>delete_outline</mat-icon>
-              </button>
-            </div>
-          }
-        </div>
-      </div>
-
-      <!-- ================= Lista ================= -->
-      <div class="inner-card cms-card" id="tour-tabela">
-        <div class="cms-toolbar">
-          <div class="cms-busca" [class.foco]="buscaFoco()">
-            <mat-icon class="cms-busca-icone">search</mat-icon>
-            <input
-              class="cms-busca-input"
-              type="search"
-              [value]="termo()"
-              (input)="termo.set(valorDe($event))"
-              placeholder="Buscar por nome, número ou slug…"
-              aria-label="Buscar quarto"
-              autocomplete="off"
-              (focus)="buscaFoco.set(true)"
-              (blur)="buscaFoco.set(false)"
-            />
-            @if (termo()) {
-              <button type="button" class="cms-limpar" aria-label="Limpar busca" (click)="termo.set('')">
-                <mat-icon>close</mat-icon>
-              </button>
-            }
-          </div>
-          <mat-chip-listbox
-            class="cms-filtro"
-            [value]="filtro()"
-            (change)="filtro.set($event.value ?? 'todos')"
-            aria-label="Filtrar por publicação"
-          >
-            <mat-chip-option value="todos">Todos</mat-chip-option>
-            <mat-chip-option value="pub">No ar</mat-chip-option>
-            <mat-chip-option value="rasc">Rascunhos</mat-chip-option>
-          </mat-chip-listbox>
-        </div>
-
-        <div class="cms-tabela-wrap">
-          <table class="cms-tabela">
-            <thead>
-              <tr>
-                <th>Capa</th>
-                <th>Quarto</th>
-                <th class="tr">Diária</th>
-                <th>Mídias</th>
-                <th class="tc">Quarto</th>
-                <th class="tc">No site</th>
-                <th class="tc">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              @if (carregando()) {
-                @for (s of skel; track s) {
-                  <tr class="skel-row">
-                    <td><span class="skel sk-capa"></span></td>
-                    <td><span class="skel sk-txt-l"></span><span class="skel sk-txt-s"></span></td>
-                    <td><span class="skel sk-txt"></span></td>
-                    <td><span class="skel sk-txt"></span></td>
-                    <td><span class="skel sk-chip"></span></td>
-                    <td><span class="skel sk-chip"></span></td>
-                    <td><span class="skel sk-acoes"></span></td>
-                  </tr>
-                }
-              } @else {
-                @for (a of filtrados(); track a.id) {
-                  <tr [class.inativo-row]="!a.ativo">
-                    <td>
-                      @if (thumbs()[a.id]) {
-                        <img [src]="thumbs()[a.id]" alt="Capa de {{ a.nome }}" class="capa-thumb" />
-                      } @else {
-                        <div class="capa-vazia" title="Sem foto de capa"><mat-icon>image</mat-icon></div>
-                      }
-                    </td>
-                    <td>
-                      <div class="q-cell">
-                        <strong>
-                          {{ a.nome }}
-                          @if (a.cms?.destaque) {
-                            <span class="tag-destaque" title="Exibido na vitrine da página inicial">★ Destaque</span>
-                          }
-                        </strong>
-                        <small>
-                          Nº {{ a.numero }} · {{ a.capacidade }} hóspede{{ a.capacidade === 1 ? '' : 's' }}
-                          @if (a.cms?.slug) {
-                            · <span class="slug">{{ a.cms!.slug }}</span>
-                          }
-                        </small>
-                      </div>
-                    </td>
-                    <td class="tr preco-cell">
-                      @if (Number(a.valor) > 0) {
-                        R$ {{ num(a.valor) | number: '1.2-2' }}
-                      } @else {
-                        <span class="sob-consulta">Sob consulta</span>
-                      }
-                    </td>
-                    <td class="midias-cell">
-                      <span class="midia-n" [class.off]="contar(a, 'foto') === 0" title="Fotos">
-                        <mat-icon>photo</mat-icon>{{ contar(a, 'foto') }}
-                      </span>
-                      <span class="midia-n" [class.off]="contar(a, 'video') === 0" title="Vídeos">
-                        <mat-icon>videocam</mat-icon>{{ contar(a, 'video') }}
-                      </span>
-                    </td>
-                    <td class="tc">
-                      <button
-                        class="status-chip badge-toggle"
-                        [class.chip-ativo]="a.ativo"
-                        [class.chip-vazio]="!a.ativo"
-                        type="button"
-                        [title]="a.ativo ? 'Clique para desativar quarto (some do PMS)' : 'Clique para reativar'"
-                        (click)="toggleAtivo(a)"
-                      >
-                        {{ a.ativo ? 'Ativo' : 'Inativo' }}
-                      </button>
-                    </td>
-                    <td class="tc">
-                      @if (!a.cms) {
-                        <span class="status-chip chip-vazio">Sem conteúdo</span>
-                      } @else if (a.cms!.status === 'publicado' && a.ativo) {
-                        <button
-                          class="status-chip chip-pub badge-toggle"
-                          type="button"
-                          title="Clique para tirar do ar (virar Rascunho)"
-                          (click)="togglePublicacao(a, false)"
-                        >
-                          ● No ar
-                        </button>
-                      } @else {
-                        <button
-                          class="status-chip chip-rasc badge-toggle"
-                          type="button"
-                          title="Clique para publicar imediatamente no site"
-                          (click)="togglePublicacao(a, true)"
-                        >
-                          Rascunho
-                        </button>
-                      }
-                    </td>
-                    <td class="tc">
-                      <div class="cms-acoes-linha">
-                        <button class="acao teal acao-txt" type="button" title="Abrir editor do quarto" (click)="abrirEditor(a)">
-                          <mat-icon>edit</mat-icon> Editar
-                        </button>
-                        @if (auth.isAdmin()) {
-                          <button
-                            class="acao navy" type="button" title="Excluir quarto"
-                            aria-label="Excluir quarto"
-                            (click)="excluirQuarto(a)"
-                          >
-                            <mat-icon>delete</mat-icon>
-                          </button>
-                        }
-                      </div>
-                    </td>
-                  </tr>
-                } @empty {
-                  <tr>
-                    <td colspan="7" class="cms-vazio">
-                      <mat-icon>web</mat-icon>
-                      {{ termo() || filtro() !== 'todos'
-                        ? 'Nenhum quarto encontrado com esses filtros.'
-                        : 'Nenhum quarto cadastrado ainda — clique em Novo quarto.' }}
-                    </td>
-                  </tr>
-                }
-              }
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- ================= modal unificado (novo ou editar) ================= -->
       @if (modalAberto()) {
         <div class="overlay" (click.self)="fecharEditor()">
-          <div class="modal-inn modal-cms" role="dialog" aria-modal="true" aria-labelledby="tit-cms">
+          <div class="modal-cms" role="dialog" aria-modal="true" aria-labelledby="tit-cms">
             <div class="modal-head">
-              <h5 id="tit-cms">
-                <mat-icon>edit_note</mat-icon>
-                {{ modoNovo() ? 'Novo quarto — cadastro e conteúdo do site' : 'Editar quarto — ' + form.controls.nome.value }}
-              </h5>
-              <button class="close" type="button" aria-label="Fechar" (click)="fecharEditor()">
+              <div>
+                <h2 id="tit-cms" class="modal-tit">
+                  {{ modoNovo() ? 'Nova acomodação' : 'Editar acomodação' }}
+                </h2>
+                <p class="modal-sub">
+                  {{ modoNovo() ? 'Cadastro operacional e conteúdo exibido no site' : form.controls.nome.value }}
+                </p>
+              </div>
+              <button class="btn-icon-row" type="button" aria-label="Fechar janela" (click)="fecharEditor()">
                 <mat-icon>close</mat-icon>
               </button>
             </div>
 
             <div class="modal-body">
               <form [formGroup]="form" (ngSubmit)="salvar(false)">
-                <!-- SEÇÃO 1: DADOS DO QUARTO & PREÇO -->
-                <div class="sec-title"><mat-icon>hotel</mat-icon> Dados do quarto &amp; tarifa</div>
-                <div class="form-grid">
-                  <label class="f-span2">
-                    Nome do quarto <span class="req">*</span>
-                    <input formControlName="nome" placeholder="Ex.: Suíte Master com Varanda" />
-                  </label>
-                  <label>
-                    Número / código <span class="req">*</span>
-                    <input type="number" formControlName="numero" min="1" placeholder="101" />
-                  </label>
-
-                  <div class="f-field">
-                    <span class="f-lbl">Categoria</span>
-                    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-mat f-mat">
-                      <mat-select formControlName="idtipo_acomodacao" placeholder="— Sem categoria —">
-                        <mat-option [value]="null">— Sem categoria —</mat-option>
-                        @for (t of tipos(); track t.id) {
-                          <mat-option [value]="t.id">{{ t.nome }}</mat-option>
-                        }
-                      </mat-select>
-                    </mat-form-field>
+                <div class="sec-block">
+                  <div class="sec-header">
+                    <span class="sec-step">01</span>
+                    <h3 class="sec-title">Identificação e tarifa</h3>
                   </div>
-                  <label>
-                    Capacidade (hóspedes) <span class="req">*</span>
-                    <input type="number" formControlName="capacidade" min="1" max="20" />
-                  </label>
-                  <label>
-                    Diária (R$) — <span class="hint-inline">0 = "Sob consulta"</span>
-                    <input type="number" formControlName="valor" min="0" step="0.01" placeholder="0,00 = Sob consulta" />
-                  </label>
+                  <div class="form-grid">
+                    <label class="field f-span2">
+                      <span class="field-lbl">Nome da acomodação <span class="req">*</span></span>
+                      <input class="cms-input" formControlName="nome" placeholder="Ex.: Suíte Master com Varanda" />
+                    </label>
+                    <label class="field">
+                      <span class="field-lbl">Número / código <span class="req">*</span></span>
+                      <input class="cms-input" type="number" formControlName="numero" min="1" placeholder="101" />
+                    </label>
+
+                    <label class="field">
+                      <span class="field-lbl">Categoria</span>
+                      <select class="cms-input" formControlName="idtipo_acomodacao">
+                        <option [ngValue]="null">Sem categoria</option>
+                        @for (t of tipos(); track t.id) {
+                          <option [ngValue]="t.id">{{ t.nome }}</option>
+                        }
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span class="field-lbl">Capacidade (hóspedes) <span class="req">*</span></span>
+                      <input class="cms-input" type="number" formControlName="capacidade" min="1" max="20" />
+                    </label>
+                    <label class="field">
+                      <span class="field-lbl">Diária base (R$) <span class="field-hint">0 = Sob consulta</span></span>
+                      <input class="cms-input" type="number" formControlName="valor" min="0" step="0.01" placeholder="0,00" />
+                    </label>
+                  </div>
                 </div>
 
-                <!-- SEÇÃO 2: CONTEÚDO EDITORIAL DO SITE -->
-                <div class="sec-title"><mat-icon>article</mat-icon> Textos &amp; ficha técnica no site</div>
-                <div class="form-grid">
-                  <label class="f-span2">
-                    Subtítulo de destaque <span class="req">*</span>
-                    <input formControlName="subtitulo"
-                           placeholder="Ex.: Conforto e praticidade a poucos passos da Praia do Peró" />
-                  </label>
-                  <label class="f-field">
-                    Slug da URL (automático se vazio)
-                    <input formControlName="slug" placeholder="suite-master-varanda" />
-                  </label>
+                <div class="sec-block">
+                  <div class="sec-header">
+                    <span class="sec-step">02</span>
+                    <h3 class="sec-title">Textos e ficha técnica</h3>
+                  </div>
+                  <div class="form-grid">
+                    <label class="field f-span2">
+                      <span class="field-lbl">Subtítulo de apresentação <span class="req">*</span></span>
+                      <input
+                        class="cms-input"
+                        formControlName="subtitulo"
+                        placeholder="Ex.: Conforto e silêncio a poucos passos da praia"
+                      />
+                    </label>
+                    <label class="field">
+                      <span class="field-lbl">Slug da URL <span class="field-hint">opcional</span></span>
+                      <input class="cms-input mono" formControlName="slug" placeholder="suite-master-varanda" />
+                    </label>
 
-                  <label class="f-full">
-                    Descrição curta (exibida no card da lista de acomodações)
-                    <textarea formControlName="descricao_curta" rows="2"
-                              placeholder="Resumo objetivo que aparece nos cards da página inicial e de acomodações."></textarea>
-                  </label>
-                  <label class="f-full">
-                    Descrição completa (página exclusiva do quarto)
-                    <textarea formControlName="descricao_longa" rows="4"
-                              placeholder="Texto detalhado apresentando a experiência, equipamentos e diferenciais do quarto."></textarea>
-                  </label>
-                  <label class="f-full">
-                    Frase editorial (citação em destaque na página do quarto)
-                    <input formControlName="destaque_editorial"
-                           placeholder="Ex.: Praticidade e descanso a poucos minutos de caminhada da Praia do Peró." />
-                  </label>
+                    <label class="field f-full">
+                      <span class="field-lbl">Descrição curta (listagens e cards)</span>
+                      <textarea
+                        class="cms-input"
+                        formControlName="descricao_curta"
+                        rows="2"
+                        placeholder="Resumo objetivo exibido nos cards de acomodação."
+                      ></textarea>
+                    </label>
+                    <label class="field f-full">
+                      <span class="field-lbl">Descrição completa (página da acomodação)</span>
+                      <textarea
+                        class="cms-input"
+                        formControlName="descricao_longa"
+                        rows="4"
+                        placeholder="Texto completo apresentando o espaço, iluminação, enxoval e diferenciais."
+                      ></textarea>
+                    </label>
+                    <label class="field f-full">
+                      <span class="field-lbl">Frase em destaque</span>
+                      <input
+                        class="cms-input"
+                        formControlName="destaque_editorial"
+                        placeholder="Citação curta exibida em destaque na página individual."
+                      />
+                    </label>
 
-                  <label>
-                    Configuração de camas
-                    <input formControlName="camas" placeholder="1 cama de casal ou 2 de solteiro" />
-                  </label>
-                  <label>
-                    Banheiros privativos
-                    <input type="number" formControlName="banheiros" min="0" />
-                  </label>
-                  <label>
-                    Área (m² — opcional)
-                    <input type="number" formControlName="metragem" min="0" step="0.5" placeholder="Opcional" />
-                  </label>
-                  <label>
-                    Vista / ambiente
-                    <input formControlName="vista" placeholder="Varanda com vista para o jardim" />
-                  </label>
-                  <label>
-                    Andar / localização
-                    <input formControlName="andar" placeholder="Térreo ou piso superior" />
-                  </label>
-                  <label>
-                    Ordem de exibição no site
-                    <input type="number" formControlName="ordem" min="0" />
-                  </label>
+                    <label class="field">
+                      <span class="field-lbl">Camas</span>
+                      <input class="cms-input" formControlName="camas" placeholder="1 cama queen" />
+                    </label>
+                    <label class="field">
+                      <span class="field-lbl">Banheiros</span>
+                      <input class="cms-input" type="number" formControlName="banheiros" min="0" />
+                    </label>
+                    <label class="field">
+                      <span class="field-lbl">Área (m²)</span>
+                      <input class="cms-input" type="number" formControlName="metragem" min="0" step="0.5" placeholder="Opcional" />
+                    </label>
+                    <label class="field">
+                      <span class="field-lbl">Vista / ambiente</span>
+                      <input class="cms-input" formControlName="vista" placeholder="Vista para o jardim" />
+                    </label>
+                    <label class="field">
+                      <span class="field-lbl">Andar / localização</span>
+                      <input class="cms-input" formControlName="andar" placeholder="Térreo" />
+                    </label>
+                    <label class="field">
+                      <span class="field-lbl">Ordem de exibição</span>
+                      <input class="cms-input" type="number" formControlName="ordem" min="0" />
+                    </label>
 
-                  <label class="check f-full">
-                    <input type="checkbox" formControlName="destaque" />
-                    <strong>Destacar na página inicial (Home)</strong> — exibe este quarto na vitrine principal do site
-                  </label>
+                    <label class="check-row f-full">
+                      <input type="checkbox" formControlName="destaque" />
+                      <span>
+                        <strong>Exibir na vitrine da página inicial</strong>
+                        <small>Destaca esta acomodação na seção principal da Home.</small>
+                      </span>
+                    </label>
+                  </div>
                 </div>
               </form>
 
-              <!-- SEÇÃO 3: COMODIDADES -->
-              <div class="bloco">
-                <div class="bloco-head">
-                  <div>
-                    <div class="sec-title bloco-titulo"><mat-icon>room_service</mat-icon> Comodidades do quarto</div>
-                    <div class="hint">Clique nos atalhos abaixo ou adicione itens personalizados:</div>
+              <div class="sec-block">
+                <div class="sec-header sec-between">
+                  <div class="sec-header-left">
+                    <span class="sec-step">03</span>
+                    <div>
+                      <h3 class="sec-title">Comodidades</h3>
+                      <p class="sec-sub">Selecione itens rápidos ou cadastre comodidades específicas.</p>
+                    </div>
                   </div>
-                  <button class="btn-gray" type="button" (click)="addComodidade()">
-                    <mat-icon>add</mat-icon> Item personalizado
+                  <button class="btn-ghost btn-sm" type="button" (click)="addComodidade()">
+                    <mat-icon>add</mat-icon>
+                    Item personalizado
                   </button>
                 </div>
 
@@ -562,51 +716,61 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
                   }
                 </div>
 
-                @for (c of comodidades(); track $index; let i = $index) {
-                  <div class="como-row">
-                    <input
-                      class="como-nome"
-                      [value]="c.name"
-                      (input)="atualizarComodidadeNome(i, $event)"
-                      placeholder="Nome da comodidade (ex.: Ar-condicionado)"
-                    />
-                    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-mat f-mat ic-sel">
-                      <mat-select
-                        [value]="c.icon"
-                        (selectionChange)="atualizarComodidadeIcone(i, $event.value)"
-                        aria-label="Ícone da comodidade"
-                      >
-                        @for (ic of iconesSite; track ic.id) {
-                          <mat-option [value]="ic.id">{{ ic.label }}</mat-option>
-                        }
-                      </mat-select>
-                    </mat-form-field>
-                    <label class="check">
-                      <input
-                        type="checkbox"
-                        [checked]="c.highlight"
-                        (change)="atualizarComodidadeDestaque(i, $event)"
-                      />
-                      Destaque no card
-                    </label>
-                    <button class="btn-icon" type="button" title="Remover comodidade" (click)="delComodidade(i)">
-                      <mat-icon>delete</mat-icon>
-                    </button>
+                @if (comodidades().length > 0) {
+                  <div class="como-list">
+                    @for (c of comodidades(); track $index; let i = $index) {
+                      <div class="como-row">
+                        <input
+                          class="cms-input como-nome"
+                          [value]="c.name"
+                          [attr.aria-label]="'Nome da comodidade ' + (i + 1)"
+                          (input)="atualizarComodidadeNome(i, $event)"
+                          placeholder="Nome da comodidade"
+                        />
+                        <select
+                          class="cms-input ic-sel"
+                          [attr.aria-label]="'Ícone da comodidade ' + (i + 1)"
+                          (change)="atualizarComodidadeIcone(i, valorDe($event))"
+                        >
+                          @for (ic of iconesSite; track ic.id) {
+                            <option [value]="ic.id" [selected]="ic.id === c.icon">{{ ic.label }}</option>
+                          }
+                        </select>
+                        <label class="como-check">
+                          <input
+                            type="checkbox"
+                            [checked]="c.highlight"
+                            (change)="atualizarComodidadeDestaque(i, $event)"
+                          />
+                          <span>Destaque</span>
+                        </label>
+                        <button
+                          class="btn-icon-row"
+                          type="button"
+                          title="Remover comodidade"
+                          [attr.aria-label]="'Remover comodidade ' + (i + 1)"
+                          (click)="delComodidade(i)"
+                        >
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </div>
+                    }
                   </div>
                 }
               </div>
 
-              <!-- SEÇÃO 4: FOTOS E VÍDEOS (MINIO S3) -->
-              <div class="bloco">
-                <div class="bloco-head">
-                  <div>
-                    <div class="sec-title bloco-titulo"><mat-icon>photo_library</mat-icon> Fotos e vídeos (S3)</div>
-                    <div class="hint">
-                      A foto marcada com <strong>Capa</strong> aparece nos cards; as demais compõem a galeria e o vídeo aparece na página do quarto.
+              <div class="sec-block">
+                <div class="sec-header sec-between">
+                  <div class="sec-header-left">
+                    <span class="sec-step">04</span>
+                    <div>
+                      <h3 class="sec-title">Fotos e vídeos</h3>
+                      <p class="sec-sub">Defina a imagem de capa e ordene a sequência da galeria.</p>
                     </div>
                   </div>
-                  <label class="upload-btn">
-                    <mat-icon>cloud_upload</mat-icon> Enviar fotos / vídeos
+                  <label class="btn-primary btn-sm upload-lbl">
+                    <mat-icon>upload</mat-icon>
+                    Enviar arquivos
                     <input
                       type="file"
                       hidden
@@ -618,42 +782,54 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
                 </div>
 
                 @if (enviando()) {
-                  <div class="loading"><mat-spinner diameter="24" /> Enviando para o armazenamento S3…</div>
+                  <div class="loading-bar">
+                    <mat-spinner diameter="18" />
+                    <span>Enviando arquivos para o armazenamento…</span>
+                  </div>
                 }
 
                 @if (editandoMidias().length === 0 && !enviando()) {
                   <div class="midia-empty">
-                    <mat-icon>add_photo_alternate</mat-icon>
-                    Nenhuma foto ou vídeo enviado ainda.<br />
-                    Clique em <strong>Enviar fotos / vídeos</strong> — aceita JPG, PNG, WebP, MP4 e WebM.
+                    Nenhum arquivo enviado. Formatos aceitos: JPG, PNG, WebP, MP4 e WebM.
                   </div>
                 } @else {
                   <div class="midia-grid">
                     @for (m of editandoMidias(); track m.id; let i = $index) {
                       <div class="midia-card" [class.capa]="m.capa">
                         @if (m.tipo === 'foto') {
-                          <img [src]="midiaUrl(m.id)" alt="" title="Clique para ampliar" (click)="abrirPreview(i)" />
+                          <img
+                            [src]="midiaUrl(m.id)"
+                            [alt]="m.capa ? 'Foto de capa' : 'Foto ' + (i + 1)"
+                            title="Clique para ampliar"
+                            (click)="abrirPreview(i)"
+                          />
                         } @else {
-                          <video [src]="midiaUrl(m.id)" muted preload="metadata" title="Clique para ampliar" (click)="abrirPreview(i)"></video>
-                          <span class="video-tag">VÍDEO</span>
+                          <video
+                            [src]="midiaUrl(m.id)"
+                            muted
+                            preload="metadata"
+                            title="Clique para ampliar"
+                            (click)="abrirPreview(i)"
+                          ></video>
+                          <span class="media-badge right">Vídeo</span>
                         }
                         @if (m.capa) {
-                          <span class="capa-tag">★ Capa</span>
+                          <span class="media-badge left">Capa</span>
                         }
                         <div class="midia-ops">
-                          <button type="button" title="Mover para trás" (click)="mover(i, -1)">
+                          <button type="button" title="Mover para trás" aria-label="Mover mídia para trás" (click)="mover(i, -1)">
                             <mat-icon>arrow_back</mat-icon>
                           </button>
-                          <button type="button" title="Mover para frente" (click)="mover(i, 1)">
+                          <button type="button" title="Mover para frente" aria-label="Mover mídia para frente" (click)="mover(i, 1)">
                             <mat-icon>arrow_forward</mat-icon>
                           </button>
                           @if (m.tipo === 'foto' && !m.capa) {
-                            <button type="button" title="Definir como foto de capa" (click)="capa(m.id)">
-                              <mat-icon>star</mat-icon>
+                            <button type="button" title="Definir como capa" aria-label="Definir como foto de capa" (click)="capa(m.id)">
+                              <mat-icon>star_outline</mat-icon>
                             </button>
                           }
-                          <button type="button" class="del" title="Excluir do S3" (click)="removerMidia(m)">
-                            <mat-icon>delete</mat-icon>
+                          <button type="button" title="Remover mídia" aria-label="Remover mídia" (click)="removerMidia(m)">
+                            <mat-icon>delete_outline</mat-icon>
                           </button>
                         </div>
                       </div>
@@ -664,33 +840,48 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
             </div>
 
             <div class="modal-foot">
-              <button class="btn-gray" type="button" [disabled]="salvando()" (click)="salvar(false)">
-                <mat-icon>save</mat-icon> Salvar rascunho
-              </button>
-              <button class="btn-green" type="button" [disabled]="salvando()" (click)="salvar(true)">
-                <mat-icon>public</mat-icon>
-                {{ editando()?.cms?.status === 'publicado' ? 'Salvar e atualizar no site' : 'Salvar e publicar no site' }}
-              </button>
-              <button class="btn-gray" type="button" (click)="fecharEditor()">Fechar</button>
+              <button class="btn-ghost" type="button" (click)="fecharEditor()">Cancelar</button>
+              <div class="foot-right">
+                <button class="btn-ghost" type="button" [disabled]="salvando()" (click)="salvar(false)">
+                  Salvar rascunho
+                </button>
+                <button class="btn-primary" type="button" [disabled]="salvando()" (click)="salvar(true)">
+                  {{ editando()?.cms?.status === 'publicado' ? 'Salvar e atualizar' : 'Salvar e publicar' }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       }
 
-      <!-- ================= Lightbox de mídia ================= -->
       @if (preview(); as p) {
-        <div class="lightbox" role="dialog" aria-modal="true" aria-label="Pré-visualização de mídia"
-             tabindex="-1" #lightbox (click)="fecharPreview()">
+        <div
+          class="lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Pré-visualização de mídia"
+          tabindex="-1"
+          #lightbox
+          (click)="fecharPreview()"
+        >
           <button type="button" class="lb-btn lb-close" aria-label="Fechar visualização" (click)="fecharPreview()">
             <mat-icon>close</mat-icon>
           </button>
           @if (editandoMidias().length > 1) {
-            <button type="button" class="lb-btn lb-nav prev" aria-label="Mídia anterior"
-                    (click)="navPreview(-1); $event.stopPropagation()">
+            <button
+              type="button"
+              class="lb-btn lb-nav prev"
+              aria-label="Mídia anterior"
+              (click)="navPreview(-1); $event.stopPropagation()"
+            >
               <mat-icon>chevron_left</mat-icon>
             </button>
-            <button type="button" class="lb-btn lb-nav next" aria-label="Próxima mídia"
-                    (click)="navPreview(1); $event.stopPropagation()">
+            <button
+              type="button"
+              class="lb-btn lb-nav next"
+              aria-label="Próxima mídia"
+              (click)="navPreview(1); $event.stopPropagation()"
+            >
               <mat-icon>chevron_right</mat-icon>
             </button>
           }
@@ -701,8 +892,8 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
               <video [src]="midiaUrl(p.id)" controls autoplay></video>
             }
             <figcaption>
-              @if (p.capa) { <span class="lb-capa">★ Capa ·</span> }
-              {{ (previewIdx() ?? 0) + 1 }} de {{ editandoMidias().length }}
+              @if (p.capa) { <span>Capa · </span> }
+              {{ (previewIdx() ?? 0) + 1 }} / {{ editandoMidias().length }}
             </figcaption>
           </figure>
         </div>
@@ -710,390 +901,170 @@ type FiltroPub = 'todos' | 'pub' | 'rasc';
     </div>
   `,
   styles: [`
-    /* ---------- cabeçalho ---------- */
-    .cms-head {
-      display: flex; justify-content: space-between; align-items: flex-end;
-      gap: 16px; flex-wrap: wrap;
-      padding-bottom: 14px; margin-bottom: 16px;
-      border-bottom: 1px solid #e3eaef;
-    }
-    .cms-titulo { margin: 0; font-size: 1.5rem; font-weight: 800; color: #054054; letter-spacing: -0.02em; }
-    .cms-sub { margin: 2px 0 0; font-size: 0.82rem; color: #7d97a1; }
-    .cms-acoes { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .cms-acoes button { display: inline-flex; align-items: center; gap: 6px; }
-    .rt-pill {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 0.74rem; padding: 6px 12px; border-radius: 20px;
-      background: #eef2f5; color: #5d6d7e; font-weight: 600;
-    }
-    .rt-pill.on { background: rgba(26, 111, 138, 0.1); color: #1a6f8a; }
-    .rt-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: #adb5bd; }
-    .rt-pill.on .dot { background: #1a6f8a; }
-    .btn-tour {
-      display: inline-flex; align-items: center; gap: 6px;
-      border: 1.5px solid #d7e0e6; background: #fff;
-      color: #5d6d7e; border-radius: 4px;
-      padding: 0 14px; min-height: 34px; cursor: pointer;
-      font-size: 0.85rem; font-weight: 600; font-family: inherit;
-      transition: border-color .15s ease, color .15s ease;
-    }
-    .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { border-color: #1a6f8a; color: #1a6f8a; }
-
-    /* ---------- banners ---------- */
-    .cms-banners {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
-      margin-bottom: 16px;
-    }
-    @media (max-width: 960px) { .cms-banners { grid-template-columns: 1fr; } }
-    .cms-banner {
-      display: flex; gap: 12px; align-items: flex-start;
-      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
-      padding: 14px 16px;
-      transition: transform .15s ease, box-shadow .15s ease;
-    }
-    .cms-banner:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(5, 64, 84, 0.07); }
-    .cms-banner-ic {
-      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
-      display: inline-flex; align-items: center; justify-content: center;
-    }
-    .cms-banner-ic mat-icon { font-size: 21px; width: 21px; height: 21px; }
-    .tint-teal { background: rgba(26, 111, 138, 0.1); color: #1a6f8a; }
-    .tint-gold { background: rgba(221, 165, 84, 0.14); color: #b5811f; }
-    .tint-navy { background: rgba(5, 64, 84, 0.08); color: #054054; }
-    .cms-banner strong { display: block; font-size: 0.88rem; color: #054054; margin-bottom: 3px; }
-    .cms-banner p { margin: 0; font-size: 0.78rem; color: #7d97a1; line-height: 1.45; }
-
-    /* ---------- resumo ---------- */
-    .cms-resumo {
-      display: flex; align-items: center;
-      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
-      margin-bottom: 16px; overflow-x: auto;
-    }
-    .cms-est {
-      display: flex; flex-direction: column; gap: 3px;
-      padding: 12px 26px; min-width: 150px;
-      border-left: 1px solid #eef2f5;
-    }
+    :host { display: block; --c-bg: #fff; --c-sub: #fafafa; --c-mut: #f4f4f5; --c-brd: #e4e4e7; --c-brd2: #d4d4d8; --c-ink: #09090b; --c-ink2: #3f3f46; --c-ink3: #52525b; --c-txt: #71717a; --mdc-circular-progress-active-indicator-color: #18181b; }
+    .cms-shell { background: var(--c-bg); border: 1px solid var(--c-brd); border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.03); padding: 24px 28px; color: var(--c-ink); font-family: var(--font-body); }
+    .cms-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; padding-bottom: 20px; }
+    .cms-titulo, .settings-tit, .modal-tit { font-family: var(--font-body) !important; font-weight: 600 !important; color: var(--c-ink) !important; margin: 0; }
+    .cms-titulo { font-size: 1.35rem !important; letter-spacing: -.02em; line-height: 1.25; }
+    .cms-sub { margin: 4px 0 0; font-size: .84rem; color: var(--c-txt); line-height: 1.45; }
+    .cms-acoes, .aside-actions, .foot-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .rt-pill { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--c-brd); background: var(--c-sub); color: var(--c-ink3); font-size: .76rem; font-weight: 500; }
+    .rt-pill .dot, .pill-toggle .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: #a1a1aa; }
+    .rt-pill.on .dot { background: var(--c-ink); }
+    .btn-primary, .btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 6px; font: 500 .82rem var(--font-body); cursor: pointer; text-decoration: none; white-space: nowrap; }
+    .btn-primary { background: #18181b; color: #fff; border: 1px solid #18181b; }
+    .btn-primary:hover:not(:disabled) { background: #27272a; border-color: #27272a; color: #fff; }
+    .btn-ghost { background: #fff; color: var(--c-ink); border: 1px solid var(--c-brd); }
+    .btn-ghost:hover:not(:disabled) { background: var(--c-sub); border-color: var(--c-brd2); color: var(--c-ink); }
+    .btn-primary:disabled, .btn-ghost:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-sm { height: 32px; padding: 0 12px; font-size: .78rem; }
+    :is(.btn-primary,.btn-ghost,.cms-limpar,.btn-icon-row,.midia-ops button) mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    :is(.btn-primary,.btn-ghost,.cms-tab,.seg-btn,.pill-toggle,.btn-row,.btn-icon-row,.preset-chip):focus-visible { outline: 2px solid var(--c-ink); outline-offset: 2px; }
+    .cms-tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--c-brd); margin-bottom: 22px; overflow-x: auto; }
+    .cms-tab { position: relative; display: inline-flex; align-items: center; gap: 7px; background: none; border: none; padding: 10px 2px 12px; font: 500 .85rem var(--font-body); color: var(--c-txt); cursor: pointer; white-space: nowrap; }
+    .cms-tab:hover, .cms-tab.ativo { color: var(--c-ink); }
+    .cms-tab.ativo { font-weight: 600; }
+    .cms-tab.ativo::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--c-ink); }
+    .tab-count { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 18px; padding: 0 6px; border-radius: 999px; background: var(--c-mut); color: var(--c-ink3); font-size: .72rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .cms-resumo { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--c-brd); border-radius: 8px; margin-bottom: 18px; overflow: hidden; }
+    .cms-est { display: flex; flex-direction: column; gap: 6px; padding: 14px 18px; border-left: 1px solid var(--c-brd); }
     .cms-est:first-child { border-left: none; }
-    .cms-est-num {
-      font-size: 1.5rem; font-weight: 800; color: #054054;
-      line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
-    }
-    .cms-est-num.cms-alerta { color: #b97708; }
-    .cms-est-lbl {
-      display: inline-flex; align-items: center; gap: 5px;
-      font-size: 0.68rem; font-weight: 600; color: #7d97a1;
-      text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap;
-    }
-    .cms-est-lbl mat-icon { font-size: 14px; width: 14px; height: 14px; color: #a5b6bf; }
-    .cms-resumo-info {
-      margin-left: auto; padding: 0 20px;
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 0.72rem; color: #a5b6bf; white-space: nowrap;
-    }
-    .cms-resumo-info mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    @media (max-width: 820px) { .cms-resumo-info { display: none; } }
-
-    /* ---------- toolbar ---------- */
-    .cms-card { padding-top: 14px; }
-
-    /* ---------- widget "usar no meu site" ---------- */
-    .wg-card { margin-bottom: 16px; }
-    .wg-tit { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 1rem; color: #054054; }
-    .wg-tit mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .wg-sub { margin: 0 0 12px; font-size: 0.82rem; color: #5d6d7e; }
-    .wg-grid { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
-    .wg-qr { width: 150px; height: 150px; border: 1px solid #e3eaef; border-radius: 8px; background: #fff; }
-    .wg-info { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 8px; }
-    .wg-snippet { font-family: monospace; font-size: 0.72rem; resize: vertical; }
-    .wg-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
-    .dl { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: #5d6d7e; }
-    .mc-btn { font-size: 0.78rem; padding: 6px 14px; border: 1px solid #d7e0e6; border-radius: 6px; background: #fff; color: #1a6f8a; cursor: pointer; text-decoration: none; }
-    .mc-btn:hover { border-color: #1a6f8a; }
-    .mc-btn:disabled { opacity: 0.55; cursor: default; }
-
-    /* ---------- site institucional ---------- */
-    .site-secao { border-top: 1px solid #edf1f4; padding: 14px 0; }
-    .site-secao-head {
-      display: flex; justify-content: space-between; align-items: center;
-      gap: 10px; flex-wrap: wrap; margin-bottom: 10px;
-    }
-    .site-secao-tit {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 0.85rem; font-weight: 700; color: #054054;
-    }
-    .site-secao-tit mat-icon { font-size: 18px; width: 18px; height: 18px; color: #1a6f8a; }
-    .site-secao-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
-    .site-secao-acoes .mc-btn { display: inline-flex; align-items: center; gap: 4px; }
-    .site-secao-acoes .mc-btn mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .site-vazio { margin: 0; font-size: 0.8rem; color: #7d97a1; }
-    .faq-item {
-      display: grid; grid-template-columns: 1fr auto; gap: 8px;
-      align-items: start; margin-bottom: 8px;
-    }
-    .faq-item textarea { grid-column: 1 / 2; resize: vertical; }
-    .faq-del {
-      grid-row: 1 / 3; align-self: center; border: none; background: none;
-      color: #b3402a; cursor: pointer; padding: 6px; border-radius: 6px;
-    }
-    .faq-del:hover { background: rgba(179, 64, 42, 0.08); }
-
-    .cms-toolbar {
-      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-      padding: 4px 2px 14px;
-    }
-    .cms-busca {
-      display: flex; align-items: center; gap: 8px;
-      flex: 1; min-width: 200px; max-width: 380px;
-      background: #fff; border: 1px solid #d7e0e6; border-radius: 8px;
-      padding: 0 10px; height: 40px;
-      transition: border-color .15s, box-shadow .15s;
-    }
-    .cms-busca.foco { border-color: #1a6f8a; box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14); }
-    .cms-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
-    .cms-busca-input {
-      flex: 1; border: none; outline: none; background: transparent;
-      font-size: 0.9rem; color: #33424c; font-family: inherit; height: 100%;
-    }
-    .cms-busca-input::placeholder { color: #8fa3ab; }
+    .cms-est-lbl { font-size: .74rem; font-weight: 500; color: var(--c-txt); }
+    .cms-est-num { font-size: 1.35rem; font-weight: 600; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .cms-panel { border: 1px solid var(--c-brd); border-radius: 8px; overflow: hidden; }
+    .cms-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border-bottom: 1px solid var(--c-brd); background: var(--c-sub); }
+    .cms-busca { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 220px; max-width: 360px; background: var(--c-bg); border: 1px solid var(--c-brd); border-radius: 6px; padding: 0 10px; height: 34px; }
+    .cms-busca.foco, .cms-input:focus { border-color: var(--c-ink); outline: none; }
+    .cms-busca-icone { color: var(--c-txt); font-size: 17px; width: 17px; height: 17px; }
+    .cms-busca-input { flex: 1; border: none; outline: none; background: none; font: .84rem var(--font-body); color: var(--c-ink); height: 100%; }
+    .cms-busca-input::placeholder, .cms-input::placeholder { color: #a1a1aa; }
     .cms-busca-input::-webkit-search-cancel-button { display: none; }
-    .cms-limpar {
-      border: none; background: #eef2f5; border-radius: 50%;
-      width: 22px; height: 22px; cursor: pointer; color: #5d6d7e;
-      display: inline-flex; align-items: center; justify-content: center; padding: 0;
-    }
-    .cms-limpar mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .cms-limpar:hover { background: #d7e0e6; }
-    .cms-filtro {
-      --mdc-chip-elevated-container-color: #fff;
-      --mdc-chip-elevated-selected-container-color: #1a6f8a;
-      --mdc-chip-selected-label-text-color: #fff;
-      --mdc-chip-label-text-color: #40525d;
-      --mdc-chip-outline-color: #d7e0e6;
-    }
-
-    /* ---------- tabela ---------- */
-    .cms-tabela-wrap { overflow-x: auto; min-height: 40vh; }
-    .cms-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
-    .cms-tabela thead th {
-      background: #f4f8fa; color: #40525d;
-      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; padding: 12px 16px; text-align: left;
-      border-bottom: 2px solid #e3eaef; white-space: nowrap;
-    }
-    .cms-tabela tbody td {
-      padding: 12px 16px; border-bottom: 1px solid #eef2f5;
-      vertical-align: middle; color: #33424c;
-    }
-    .cms-tabela tbody tr:hover { background: #f7fafb; }
-    .cms-tabela .tc { text-align: center; }
-    .cms-tabela .tr { text-align: right; }
+    .cms-limpar, .btn-icon-row { border: none; background: none; width: 28px; height: 28px; border-radius: 5px; cursor: pointer; color: var(--c-txt); display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+    .cms-limpar:hover, .btn-icon-row:hover { background: var(--c-mut); color: var(--c-ink); }
+    .seg-group { display: inline-flex; padding: 2px; border-radius: 6px; background: var(--c-mut); border: 1px solid var(--c-brd); }
+    .seg-btn { border: none; background: none; color: var(--c-ink3); font: 500 .78rem var(--font-body); height: 28px; padding: 0 12px; border-radius: 4px; cursor: pointer; }
+    .seg-btn:hover { color: var(--c-ink); }
+    .seg-btn.ativo { background: var(--c-bg); color: var(--c-ink); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+    .cms-tabela-wrap { overflow-x: auto; }
+    .cms-tabela { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    .cms-tabela thead th { color: var(--c-txt); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--c-brd); white-space: nowrap; }
+    .col-capa { width: 88px; }
+    .cms-tabela tbody td { padding: 12px 16px; border-bottom: 1px solid var(--c-brd); vertical-align: middle; color: var(--c-ink2); }
+    .cms-tabela tbody tr:last-child td { border-bottom: none; }
+    .cms-tabela tbody tr:hover { background: var(--c-sub); }
+    .tc { text-align: center !important; }
+    .tr { text-align: right !important; }
     .inativo-row { opacity: .55; }
-    .capa-thumb, .capa-vazia {
-      width: 78px; height: 52px; border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .capa-thumb { object-fit: cover; border: 1px solid #dde5e9; }
-    .capa-vazia { background: #eef3f6; color: #9fb4be; }
-    .capa-vazia mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .q-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .q-cell strong {
-      font-size: 0.93rem; color: #054054; font-weight: 700;
-      display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
-    }
-    .q-cell small { font-size: 0.75rem; color: #8a99a4; white-space: nowrap; }
-    .slug { font-family: monospace; color: #1a6f8a; font-size: 0.72rem; }
-    .tag-destaque {
-      background: rgba(221, 165, 84, 0.15); color: #b5811f;
-      font-size: 0.65rem; font-weight: 700; padding: 1px 8px; border-radius: 999px;
-      white-space: nowrap;
-    }
-    .preco-cell { font-weight: 700; color: #054054; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .sob-consulta { font-size: 0.78rem; color: #8a99a4; font-style: italic; font-weight: 400; }
-    .midias-cell { white-space: nowrap; }
-    .midia-n {
-      display: inline-flex; align-items: center; gap: 4px;
-      font-size: 0.8rem; font-weight: 700; color: #054054;
-      margin-right: 12px;
-    }
-    .midia-n mat-icon { font-size: 16px; width: 16px; height: 16px; color: #1a6f8a; }
-    .midia-n.off { color: #a5b6bf; }
-    .midia-n.off mat-icon { color: #c3d2d9; }
-    .chip-ativo { background: #1a6f8a; color: #fff; }
-    .chip-pub { background: #198754; color: #fff; }
-    .chip-rasc { background: #b5811f; color: #054054; }
-    .chip-vazio { background: #eef2f5; color: #7d97a1; }
-    .badge-toggle { border: none; cursor: pointer; font-family: inherit; }
-    .cms-acoes-linha { display: inline-flex; gap: 5px; align-items: center; }
-    .acao {
-      display: inline-flex; align-items: center; justify-content: center;
-      border: none; border-radius: 6px; height: 30px; padding: 0 10px;
-      color: #fff; cursor: pointer; transition: filter .14s;
-      font-size: 0.78rem; font-weight: 600; font-family: inherit; gap: 5px;
-    }
-    .acao mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .acao:hover { filter: brightness(1.12); }
-    .acao.teal { background: #1a6f8a; }
-    .acao.navy { background: #054054; }
-    .acao-txt { padding: 0 12px; }
-    .cms-vazio {
-      text-align: center; color: #8a99a4; padding: 40px !important; font-size: 0.86rem;
-    }
-    .cms-vazio mat-icon { display: block; margin: 0 auto 8px; font-size: 32px; width: 32px; height: 32px; color: #c3d2d9; }
-
-    /* ---------- skeleton ---------- */
-    .skel-row td { padding: 14px 16px; }
-    .skel {
-      display: block; border-radius: 6px;
-      background: linear-gradient(90deg, #eef2f5 25%, #f7fafb 50%, #eef2f5 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.3s infinite;
-    }
-    @keyframes shimmer { to { background-position: -200% 0; } }
-    .sk-capa { width: 78px; height: 52px; }
-    .sk-txt-l { width: 170px; height: 15px; margin-bottom: 6px; }
-    .sk-txt-s { width: 110px; height: 11px; }
-    .sk-txt { width: 80px; height: 14px; }
-    .sk-chip { width: 72px; height: 22px; border-radius: 999px; margin: 0 auto; }
-    .sk-acoes { width: 92px; height: 28px; margin: 0 auto; }
-
-    /* ---------- modal ---------- */
-    .overlay {
-      position: fixed; inset: 0; z-index: 100;
-      background: rgba(5, 64, 84, 0.45);
-      display: flex; align-items: flex-start; justify-content: center;
-      padding: 2rem 1rem; backdrop-filter: blur(2px);
-    }
-    .modal-inn {
-      background: #fff; border-radius: 12px;
-      box-shadow: 0 18px 50px rgba(5, 64, 84, 0.25);
-      animation: in 0.16s ease-out;
-      display: flex; flex-direction: column; max-height: 92vh;
-    }
-    .modal-cms { width: 95vw; max-width: 880px; }
-    @keyframes in { from { transform: translateY(-12px); opacity: 0; } }
-    .modal-head {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0.85rem 1.25rem; border-bottom: 1px solid #e3eaef;
-    }
-    .modal-head h5 {
-      margin: 0; font-size: 1.02rem; font-weight: 700; color: #054054;
-      display: inline-flex; align-items: center; gap: 8px;
-    }
-    .modal-head h5 mat-icon { font-size: 20px; width: 20px; height: 20px; color: #1a6f8a; }
-    .modal-head .close {
-      border: none; background: #eef2f5; border-radius: 50%;
-      width: 28px; height: 28px; cursor: pointer; color: #5d6d7e;
-      display: inline-flex; align-items: center; justify-content: center; padding: 0;
-    }
-    .modal-head .close:hover { background: #d7e0e6; }
-    .modal-head .close mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .modal-body { padding: 1.1rem 1.25rem; overflow-y: auto; }
-    .modal-foot {
-      display: flex; justify-content: flex-end; gap: 8px;
-      padding: 0.8rem 1.25rem; border-top: 1px solid #e3eaef;
-      background: #f7fafb; border-radius: 0 0 12px 12px;
-    }
-    .modal-foot button { display: inline-flex; align-items: center; gap: 6px; }
-
-    .sec-title {
-      display: flex; align-items: center; gap: 7px;
-      font-size: 0.74rem; font-weight: 700; color: #054054;
-      text-transform: uppercase; letter-spacing: 0.06em;
-      margin: 16px 0 10px; padding-bottom: 6px;
-      border-bottom: 2px solid #eef3f6;
-    }
-    .sec-title:first-child { margin-top: 0; }
-    .sec-title mat-icon { font-size: 17px; width: 17px; height: 17px; color: #1a6f8a; }
-    .bloco-titulo { margin: 0 0 4px; border-bottom: none; padding-bottom: 0; }
-    .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 12px; }
+    .capa-thumb, .capa-vazia { width: 68px; height: 46px; border-radius: 5px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--c-brd); object-fit: cover; }
+    .capa-vazia { background: var(--c-mut); color: #a1a1aa; }
+    .q-cell { display: flex; flex-direction: column; gap: 3px; min-width: 180px; }
+    .q-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .q-name { font-size: .88rem; font-weight: 600; color: var(--c-ink); }
+    .tag-neutral { display: inline-flex; align-items: center; height: 19px; padding: 0 7px; border-radius: 4px; border: 1px solid var(--c-brd); background: var(--c-sub); color: var(--c-ink3); font-size: .68rem; font-weight: 500; }
+    .q-meta { font-size: .76rem; color: var(--c-txt); white-space: nowrap; }
+    .slug, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .76rem; }
+    .preco-cell { font-weight: 600; color: var(--c-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .sob-consulta { font-size: .78rem; color: var(--c-txt); font-weight: 400; }
+    .midias-cell { white-space: nowrap; font-size: .8rem; color: var(--c-ink3); font-variant-numeric: tabular-nums; }
+    .midia-n.off { color: #a1a1aa; }
+    .midia-sep { margin: 0 6px; color: var(--c-brd2); }
+    .pill-toggle, .pill-static { display: inline-flex; align-items: center; gap: 6px; height: 25px; padding: 0 10px; border-radius: 999px; font: 500 .74rem var(--font-body); white-space: nowrap; }
+    .pill-toggle { cursor: pointer; background: var(--c-bg); color: var(--c-ink3); border: 1px solid var(--c-brd); }
+    .pill-toggle:hover { border-color: var(--c-ink); color: var(--c-ink); }
+    .pill-toggle.pill-solid { background: #18181b; color: #fff; border-color: #18181b; }
+    .pill-toggle.pill-solid:hover { background: #27272a; border-color: #27272a; }
+    .pill-toggle.pill-solid .pill-dot { background: #fff; }
+    .pill-static { background: var(--c-mut); color: var(--c-txt); }
+    .cms-acoes-linha { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; }
+    .btn-row { height: 28px; padding: 0 11px; border-radius: 5px; border: 1px solid var(--c-brd); background: var(--c-bg); color: var(--c-ink); font: 500 .78rem var(--font-body); cursor: pointer; }
+    .btn-row:hover { background: var(--c-mut); border-color: var(--c-brd2); }
+    .cms-vazio { text-align: center; padding: 48px 20px !important; }
+    .vazio-tit { margin: 0; font-size: .88rem; font-weight: 500; color: var(--c-ink2); }
+    .vazio-sub { margin: 6px 0 0; font-size: .8rem; color: var(--c-txt); }
+    .skel { display: block; border-radius: 4px; background: #f4f4f5; height: 14px; }
+    .sk-capa { width: 68px; height: 46px; }
+    .sk-txt-l { width: 160px; margin-bottom: 6px; }
+    .sk-txt-s { width: 105px; height: 11px; }
+    .sk-txt { width: 76px; }
+    .tr-auto { margin-left: auto; }
+    .sk-chip { width: 72px; height: 24px; border-radius: 999px; margin: 0 auto; }
+    .sk-acoes { width: 84px; height: 28px; margin-left: auto; }
+    .settings-row { display: grid; grid-template-columns: 260px 1fr; gap: 28px; padding: 22px 0; border-bottom: 1px solid var(--c-brd); align-items: start; }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-aside { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+    .settings-tit { font-size: .94rem !important; }
+    .settings-desc, .field-help { margin: 0; font-size: .79rem; color: var(--c-txt); line-height: 1.5; }
+    .settings-card { border: 1px solid var(--c-brd); border-radius: 8px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field-lbl { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: .78rem; font-weight: 500; color: var(--c-ink2); }
+    .field-hint { font-size: .72rem; font-weight: 400; color: var(--c-txt); }
+    .cms-input { width: 100%; border: 1px solid var(--c-brd); border-radius: 6px; background: var(--c-bg); color: var(--c-ink); font: .85rem var(--font-body); padding: 8px 11px; }
+    input.cms-input, select.cms-input { height: 36px; padding: 0 11px; }
+    textarea.cms-input { resize: vertical; line-height: 1.45; }
+    .cms-input:hover:not(:focus) { border-color: var(--c-brd2); }
+    .empty-inline { font-size: .82rem; color: var(--c-txt); padding: 8px 0; }
+    .faq-list, .como-list { display: flex; flex-direction: column; gap: 10px; }
+    .faq-item { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--c-brd); border-radius: 6px; background: var(--c-sub); }
+    .faq-item-head { display: flex; align-items: center; justify-content: space-between; }
+    .faq-num { font-size: .74rem; font-weight: 600; color: var(--c-ink3); }
+    .wg-card-grid { display: flex; flex-direction: row; gap: 20px; align-items: center; flex-wrap: wrap; }
+    .wg-qr { width: 132px; height: 132px; border: 1px solid var(--c-brd); border-radius: 6px; padding: 6px; background: #fff; }
+    .wg-url-box { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 10px; }
+    .copy-row { display: flex; gap: 8px; }
+    .wg-snippet { background: var(--c-sub); }
+    .overlay { position: fixed; inset: 0; z-index: 100; background: rgba(9,9,11,.48); display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; backdrop-filter: blur(2px); }
+    .modal-cms { width: 95vw; max-width: 840px; max-height: 90vh; background: var(--c-bg); border: 1px solid var(--c-brd); border-radius: 10px; box-shadow: 0 20px 50px rgba(0,0,0,.18); display: flex; flex-direction: column; }
+    .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 24px; border-bottom: 1px solid var(--c-brd); }
+    .modal-tit { font-size: 1.05rem !important; }
+    .modal-sub, .sec-sub { margin: 2px 0 0; font-size: .78rem; color: var(--c-txt); }
+    .modal-body { padding: 20px 24px; overflow-y: auto; }
+    .modal-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 24px; border-top: 1px solid var(--c-brd); background: var(--c-sub); border-radius: 0 0 10px 10px; }
+    .sec-block { padding: 20px 0; border-top: 1px solid var(--c-brd); }
+    .sec-block:first-child { padding-top: 0; border-top: none; }
+    .sec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .sec-between { justify-content: space-between; align-items: flex-start; flex-wrap: wrap; }
+    .sec-header-left { display: flex; align-items: flex-start; gap: 10px; }
+    .sec-step { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 5px; border: 1px solid var(--c-brd); background: var(--c-sub); color: var(--c-ink3); font-size: .72rem; font-weight: 600; flex-shrink: 0; }
+    .sec-title { margin: 0; font-size: .88rem; font-weight: 600; line-height: 24px; }
+    .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 14px; }
     .f-span2 { grid-column: span 2; }
     .f-full { grid-column: 1 / -1; }
-    label { font-size: 12px; color: #334; font-weight: 600; display: flex; flex-direction: column; gap: 3px; }
-    label.check { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; cursor: pointer; }
-    .f-field { display: flex; flex-direction: column; gap: 3px; margin-top: 1.3rem; }
-    .f-lbl { font-size: 12px; color: #334; font-weight: 600; }
-    .f-mat { width: 100%; }
-    .req { color: #b00; }
-    .hint { color: #7d97a1; font-size: 12px; margin: 3px 0 0; }
-    .hint-inline { color: #7d97a1; font-weight: 400; font-size: 11px; }
-    input, textarea { border: 1px solid #d2d6de; border-radius: 4px; padding: 7px 9px; font: inherit; font-weight: 400; background: #fff; }
-    .form-grid input:not([type='checkbox']) { height: 36px; padding: 0 9px; }
-    input:focus, textarea:focus { border-color: #1a6f8a; outline: none; }
-    .bloco { margin-top: 18px; border-top: 2px solid #eef3f6; padding-top: 12px; }
-    .bloco-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
-    .bloco-head .btn-gray { display: inline-flex; align-items: center; gap: 5px; }
-    .presets-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-    .preset-chip {
-      border: 1px solid #c5d6de; background: #f4f8fa; color: #054054;
-      border-radius: 16px; padding: 4px 11px; font-size: 11px; cursor: pointer;
-      font-family: inherit; transition: all .13s;
-    }
-    .preset-chip:hover { border-color: #1a6f8a; }
-    .preset-chip.ativo { background: #1a6f8a; color: #fff; border-color: #1a6f8a; font-weight: 600; }
-    .como-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-    .como-nome { flex: 1; min-width: 0; height: 36px; padding: 0 10px; box-sizing: border-box; }
-    .ic-sel { width: 240px; flex-shrink: 0; }
-    .btn-icon {
-      background: none; border: none; color: #b00; cursor: pointer;
-      display: inline-flex; align-items: center; padding: 4px; border-radius: 6px;
-    }
-    .btn-icon:hover { background: rgba(187, 0, 0, 0.07); }
-    .upload-btn {
-      display: inline-flex; flex-direction: row; align-items: center; gap: 6px;
-      background: #054054; color: #fff; border-radius: 5px; padding: 9px 14px;
-      font-size: 0.82rem; font-weight: 600; cursor: pointer; white-space: nowrap;
-      transition: background 0.15s; margin-top: 14px;
-    }
-    .upload-btn:hover { background: #1a6f8a; }
-    .upload-btn mat-icon { font-size: 18px; width: 18px; height: 18px; }
-    .loading { display: flex; align-items: center; gap: 10px; padding: 16px; justify-content: center; color: #7d97a1; font-size: 0.85rem; }
-    .midia-empty {
-      padding: 22px 16px; background: #f7fafb; border: 1px dashed #c5d6de;
-      border-radius: 8px; text-align: center; color: #7d97a1; font-size: 12px;
-      line-height: 1.6;
-    }
-    .midia-empty mat-icon { font-size: 26px; width: 26px; height: 26px; color: #a5b6bf; margin-bottom: 4px; }
-    .midia-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-    .midia-card { position: relative; border: 2px solid #dde5e9; border-radius: 8px; padding: 4px; background: #fff; }
-    .midia-card.capa { border-color: #b5811f; }
-    .midia-card img, .midia-card video { width: 100%; height: 92px; object-fit: cover; border-radius: 5px; display: block; background: #f2f6f8; cursor: zoom-in; }
-    /* ---------- lightbox ---------- */
-    .lightbox {
-      position: fixed; inset: 0; z-index: 300;
-      background: rgba(3, 20, 28, 0.88);
-      display: flex; align-items: center; justify-content: center;
-      outline: none; animation: lb-fade 0.15s ease-out;
-    }
-    @keyframes lb-fade { from { opacity: 0; } }
+    .check-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--c-brd); border-radius: 6px; background: var(--c-sub); cursor: pointer; }
+    .check-row input, .como-check input { accent-color: #18181b; margin-top: 2px; }
+    .check-row span { display: flex; flex-direction: column; gap: 2px; font-size: .82rem; }
+    .check-row small { font-size: .76rem; color: var(--c-txt); }
+    .presets-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .preset-chip { height: 28px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--c-brd); background: var(--c-bg); color: var(--c-ink3); font: 500 .76rem var(--font-body); cursor: pointer; }
+    .preset-chip:hover { border-color: var(--c-ink); color: var(--c-ink); }
+    .preset-chip.ativo { background: #18181b; border-color: #18181b; color: #fff; }
+    .como-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .como-nome { flex: 1; min-width: 180px; }
+    .ic-sel { width: 220px; flex-shrink: 0; }
+    .como-check { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; color: var(--c-ink3); cursor: pointer; white-space: nowrap; }
+    .upload-lbl { cursor: pointer; }
+    .loading-bar { display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--c-brd); border-radius: 6px; background: var(--c-sub); color: var(--c-ink3); font-size: .82rem; }
+    .midia-empty { padding: 24px 16px; border: 1px dashed var(--c-brd2); border-radius: 6px; background: var(--c-sub); text-align: center; color: var(--c-txt); font-size: .8rem; }
+    .midia-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; }
+    .midia-card { position: relative; border: 1px solid var(--c-brd); border-radius: 6px; padding: 5px; }
+    .midia-card.capa { border-color: var(--c-ink); box-shadow: inset 0 0 0 1px var(--c-ink); }
+    .midia-card img, .midia-card video { width: 100%; height: 96px; object-fit: cover; border-radius: 4px; display: block; background: var(--c-mut); cursor: zoom-in; }
+    .media-badge { position: absolute; top: 10px; background: rgba(9,9,11,.82); color: #fff; font-size: .66rem; font-weight: 600; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; }
+    .media-badge.left { left: 10px; }
+    .media-badge.right { right: 10px; }
+    .midia-ops { display: flex; gap: 4px; margin-top: 5px; }
+    .midia-ops button { flex: 1; height: 26px; border: 1px solid var(--c-brd); border-radius: 4px; background: var(--c-sub); color: var(--c-ink3); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+    .midia-ops button:hover { background: var(--c-mut); color: var(--c-ink); }
+    .lightbox { position: fixed; inset: 0; z-index: 300; background: rgba(9,9,11,.92); display: flex; align-items: center; justify-content: center; outline: none; }
     .lb-midia { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: min(1100px, 92vw); }
-    .lb-midia img, .lb-midia video { max-width: 100%; max-height: 78vh; object-fit: contain; border-radius: 8px; box-shadow: 0 12px 48px rgba(0, 0, 0, 0.55); background: #062d3d; }
-    .lb-midia figcaption { color: #9fc4d3; font-size: 0.82rem; font-weight: 600; }
-    .lb-capa { color: #b5811f; }
-    .lb-btn {
-      position: fixed; z-index: 301;
-      width: 42px; height: 42px; border-radius: 50%; border: none;
-      background: rgba(26, 111, 138, 0.9); color: #fff; cursor: pointer;
-      display: inline-flex; align-items: center; justify-content: center;
-      transition: background 0.15s, color 0.15s;
-    }
-    .lb-btn:hover, .lb-btn:focus-visible { background: #b5811f; color: #054054; }
+    .lb-midia img, .lb-midia video { max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 6px; }
+    .lb-midia figcaption { color: #d4d4d8; font-size: .8rem; font-variant-numeric: tabular-nums; }
+    .lb-btn { position: fixed; z-index: 301; width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,.2); background: rgba(24,24,27,.85); color: #fff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+    .lb-btn:hover, .lb-btn:focus-visible { background: #fff; color: #09090b; outline: none; }
     .lb-close { top: 18px; right: 20px; }
     .lb-nav { top: 50%; transform: translateY(-50%); }
     .lb-nav.prev { left: 16px; }
     .lb-nav.next { right: 16px; }
-    .capa-tag { position: absolute; top: 9px; left: 9px; background: #b5811f; color: #054054; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
-    .video-tag { position: absolute; top: 9px; right: 9px; background: #054054; color: #fff; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
-    .midia-ops { display: flex; justify-content: center; gap: 4px; margin-top: 4px; }
-    .midia-ops button {
-      background: #f0f4f6; border: none; cursor: pointer; color: #054054;
-      padding: 3px; border-radius: 5px; display: inline-flex;
-    }
-    .midia-ops button:hover { background: #dde7ec; }
-    .midia-ops button.del { color: #b00; }
-    .midia-ops button.del:hover { background: rgba(187, 0, 0, 0.08); }
-    .midia-ops mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    @media (max-width: 860px) { .cms-shell { padding: 16px; } .cms-resumo { grid-template-columns: repeat(2, 1fr); } .cms-est:nth-child(odd) { border-left: none; } .cms-est:nth-child(n+3) { border-top: 1px solid var(--c-brd); } .settings-row, .form-grid { grid-template-columns: 1fr; gap: 14px; } .f-span2 { grid-column: span 1; } }
   `],
 })
 export class CmsComponent implements OnInit {
@@ -1105,6 +1076,7 @@ export class CmsComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   protected readonly auth = inject(AuthStore);
 
+  protected readonly aba = signal<AbaCms>('quartos');
   protected readonly items = signal<M.AcomodacaoCmsView[]>([]);
   protected readonly tipos = signal<M.TipoAcomodacao[]>([]);
   protected readonly carregando = signal(true);
@@ -1159,13 +1131,11 @@ export class CmsComponent implements OnInit {
   });
 
   protected readonly form = this.fb.nonNullable.group({
-    // Dados da acomodação (PMS)
     nome: ['', Validators.required],
     numero: [101, [Validators.required, Validators.min(1)]],
     idtipo_acomodacao: [null as number | null],
     capacidade: [2, [Validators.required, Validators.min(1)]],
     valor: [0],
-    // Dados editoriais (CMS)
     slug: [''],
     subtitulo: ['', Validators.required],
     descricao_curta: [''],
@@ -1186,7 +1156,6 @@ export class CmsComponent implements OnInit {
     return svg ? `data:image/svg+xml;utf8,${encodeURIComponent(svg)}` : '';
   });
 
-  // ---------- site institucional (seções hero/seo/faq) ----------
   protected readonly siteForm = this.fb.nonNullable.group({
     hero_titulo: [''],
     hero_subtitulo: [''],
@@ -1362,7 +1331,7 @@ export class CmsComponent implements OnInit {
   }
 
   valorDe(e: Event): string {
-    return (e.target as HTMLInputElement).value;
+    return (e.target as HTMLInputElement | HTMLSelectElement).value;
   }
 
   abrirNovo(): void {
@@ -1452,7 +1421,6 @@ export class CmsComponent implements OnInit {
     this.editando.set(null);
   }
 
-  // -- Comodidades ------------------------------------------------------------
   temComodidade(name: string): boolean {
     return this.comodidades().some((c) => c.name.toLowerCase() === name.toLowerCase());
   }
@@ -1491,7 +1459,6 @@ export class CmsComponent implements OnInit {
     );
   }
 
-  // -- Persistência unificada (PMS + CMS + Publicação) ------------------------
   async salvar(publicarDepois: boolean): Promise<void> {
     const v = this.form.getRawValue();
     if (!v.nome.trim()) {
@@ -1514,7 +1481,7 @@ export class CmsComponent implements OnInit {
         valor: Number(v.valor) || 0,
         capacidade: Number(v.capacidade) || 2,
         descricao: v.descricao_curta.trim() || v.subtitulo.trim(),
-        cor: this.editando()?.cor ?? '#1a6f8a',
+        cor: this.editando()?.cor ?? '#18181b',
         version: acomId ? this.pmsVersion : undefined,
       };
 
@@ -1522,7 +1489,6 @@ export class CmsComponent implements OnInit {
         const criada = await firstValueFrom(this.api.criarAcomodacao(acomInput));
         acomId = criada.id;
         this.pmsVersion = criada.version;
-        // Cria unidade física padrão para reservas se ainda não existir
         firstValueFrom(this.api.criarQuarto(acomId, String(acomInput.numero))).catch(() => {});
       } else {
         const atualizada = await firstValueFrom(this.api.atualizarAcomodacao(acomId, acomInput));
@@ -1551,7 +1517,7 @@ export class CmsComponent implements OnInit {
 
       if (publicarDepois) {
         await firstValueFrom(this.api.statusCms(acomId, true));
-        this.notify.ok('Quarto gravado e publicado no site em tempo real!');
+        this.notify.ok('Quarto gravado e publicado no site em tempo real.');
       } else {
         this.notify.ok('Quarto gravado com sucesso.');
       }
@@ -1568,7 +1534,7 @@ export class CmsComponent implements OnInit {
   togglePublicacao(a: M.AcomodacaoCmsView, publicar: boolean): void {
     this.api.statusCms(a.id, publicar).subscribe({
       next: () => {
-        this.notify.ok(publicar ? 'Quarto publicado no site!' : 'Quarto movido para rascunho.');
+        this.notify.ok(publicar ? 'Quarto publicado no site.' : 'Quarto movido para rascunho.');
         this.carregar();
       },
       error: (e) => this.notify.erro(e),
@@ -1585,7 +1551,6 @@ export class CmsComponent implements OnInit {
     });
   }
 
-  // -- Upload & Gestão de Mídias (MinIO S3) -----------------------------------
   async upload(ev: Event): Promise<void> {
     const inputEl = ev.target as HTMLInputElement;
     const files = inputEl.files ? Array.from(inputEl.files) : [];
@@ -1593,7 +1558,6 @@ export class CmsComponent implements OnInit {
 
     let acomId = this.editando()?.id;
 
-    // Se o usuário está criando um quarto novo e já quer subir fotos antes de clicar em Salvar:
     if (!acomId) {
       const v = this.form.getRawValue();
       if (!v.nome.trim()) {
@@ -1611,7 +1575,7 @@ export class CmsComponent implements OnInit {
             valor: Number(v.valor) || 0,
             capacidade: Number(v.capacidade) || 2,
             descricao: v.subtitulo.trim() || v.nome.trim(),
-            cor: '#1a6f8a',
+            cor: '#18181b',
           }),
         );
         acomId = criada.id;
@@ -1649,7 +1613,7 @@ export class CmsComponent implements OnInit {
 
   async excluirQuarto(a: M.AcomodacaoCmsView): Promise<void> {
     const ok = await this.confirm.perguntar(
-      `Excluir o quarto ${a.nome} (Nº${a.numero})? Todo o conteúdo do site e as mídias no S3 serão apagados.`,
+      `Excluir o quarto ${a.nome} (Nº${a.numero})? Todo o conteúdo do site e as mídias armazenadas serão apagados.`,
       { titulo: 'Excluir quarto', confirmar: 'Excluir' },
     );
     if (!ok) return;
@@ -1662,8 +1626,12 @@ export class CmsComponent implements OnInit {
     });
   }
 
-  removerMidia(m: M.Midia): void {
-    if (!confirm('Remover esta mídia do quarto e do MinIO S3?')) return;
+  async removerMidia(m: M.Midia): Promise<void> {
+    const ok = await this.confirm.perguntar(
+      'Remover esta mídia da galeria e do armazenamento?',
+      { titulo: 'Remover mídia', confirmar: 'Remover' },
+    );
+    if (!ok) return;
     this.fecharPreview();
     this.api.removerMidia(m.id).subscribe({
       next: () => {
@@ -1697,15 +1665,14 @@ export class CmsComponent implements OnInit {
     });
   }
 
-  /** Tour guiado da tela (driver.js). */
   iniciarTour(): void {
+    this.aba.set('quartos');
     this.tour.iniciar([
       {
         popover: {
-          title: 'Bem-vindo ao Conteúdo do site!',
+          title: 'Conteúdo do site',
           description:
-            'Aqui você controla tudo que aparece no <b>site da pousada</b>: ' +
-            'quartos, textos, fotos e vídeos. Avance com <b>Próximo</b>.',
+            'Gerencie as <b>acomodações</b>, a <b>página inicial / SEO</b> e a <b>integração do motor</b> em abas separadas.',
         },
       },
       {
@@ -1713,19 +1680,16 @@ export class CmsComponent implements OnInit {
         popover: {
           title: 'Sincronização em tempo real',
           description:
-            'Quando esta bolinha está <b>ativa</b>, cada publicação chega ao ' +
-            'site instantaneamente — quem estiver navegando vê na hora.',
+            'Quando ativa, cada alteração publicada chega ao site imediatamente.',
           side: 'bottom',
         },
       },
       {
         element: '#tour-resumo',
         popover: {
-          title: 'Situação do site',
+          title: 'Resumo da operação',
           description:
-            '<b>No ar</b> = visível no site · <b>Rascunhos</b> = salvos mas ' +
-            'ocultos · <b>Sem fotos</b> = quartos que precisam de imagens ' +
-            '(aparecem sem capa).',
+            'Acompanhe o total de acomodações, quantas estão publicadas, em rascunho ou sem fotos.',
           side: 'bottom',
         },
       },
@@ -1734,39 +1698,26 @@ export class CmsComponent implements OnInit {
         popover: {
           title: 'Busca e filtros',
           description:
-            'Busque por <b>nome, número ou slug</b> e use os filtros ' +
-            '<b>No ar / Rascunhos</b> para enxergar só o que importa.',
+            'Filtre por nome, número ou slug e alterne entre todos, publicados e rascunhos.',
           side: 'bottom',
         },
       },
       {
         element: '#tour-tabela',
         popover: {
-          title: 'Lista de quartos',
+          title: 'Lista de acomodações',
           description:
-            'Cada linha mostra a <b>capa</b>, dados do quarto, quantas ' +
-            '<b>fotos e vídeos</b> tem, e dois controles: <b>Ativo</b> ' +
-            '(existe no sistema) e <b>No ar</b> (visível no site).',
+            'Alterne o status do sistema e da publicação direto na linha ou abra o editor completo.',
           side: 'top',
         },
       },
       {
         element: '#tour-novo',
         popover: {
-          title: 'Editor completo',
+          title: 'Editor unificado',
           description:
-            '<b>Novo quarto</b> ou <b>Editar</b> abrem o editor em 4 etapas: ' +
-            'dados e tarifa → textos do site → comodidades → fotos e vídeos. ' +
-            'Salve como rascunho ou publique direto.',
+            'Cadastre dados e tarifa, textos editoriais, comodidades e galeria de fotos e vídeos.',
           side: 'bottom',
-        },
-      },
-      {
-        popover: {
-          title: 'Pronto!',
-          description:
-            'Fluxo ideal: crie o quarto, envie as fotos, marque a capa e ' +
-            'publique. O site se atualiza sozinho, sem recarregar.',
         },
       },
     ]);
