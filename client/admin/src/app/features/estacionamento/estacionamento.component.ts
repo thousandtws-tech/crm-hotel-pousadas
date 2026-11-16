@@ -20,13 +20,14 @@ import { TourGuiado } from '@core/services/tour.service';
     <div class="page">
       <div class="est-head">
         <div class="est-titulo-grupo">
-          <h2 class="est-titulo">Estacionamento</h2>
-          <span class="est-contador" title="Total de vagas cadastradas">
-            {{ vagas().length }} {{ vagas().length === 1 ? 'vaga' : 'vagas' }}
-          </span>
-          <span class="est-livres" title="Vagas sem acomodação vinculada">
-            {{ livres() }} {{ livres() === 1 ? 'livre' : 'livres' }}
-          </span>
+          <p class="eyebrow">Cadastro</p>
+          <div class="est-titulo-linha">
+            <h2 class="est-titulo">Estacionamento</h2>
+            <span class="est-contador" title="Total de vagas e quantas estão livres">
+              {{ vagas().length }} {{ vagas().length === 1 ? 'vaga' : 'vagas' }}
+              · {{ livres() }} {{ livres() === 1 ? 'livre' : 'livres' }}
+            </span>
+          </div>
         </div>
         <div class="est-head-acoes">
           <button class="btn-tour" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
@@ -37,7 +38,7 @@ import { TourGuiado } from '@core/services/tour.service';
 
       <div class="est-info">
         <div class="est-info-card">
-          <span class="est-info-icone inf-teal"><mat-icon>local_parking</mat-icon></span>
+          <span class="est-info-icone"><mat-icon>local_parking</mat-icon></span>
           <div class="est-info-txt">
             <strong>Uma vaga por acomodação</strong>
             <p>
@@ -47,7 +48,7 @@ import { TourGuiado } from '@core/services/tour.service';
           </div>
         </div>
         <div class="est-info-card">
-          <span class="est-info-icone inf-gold"><mat-icon>link</mat-icon></span>
+          <span class="est-info-icone"><mat-icon>link</mat-icon></span>
           <div class="est-info-txt">
             <strong>Vínculo rápido</strong>
             <p>
@@ -57,7 +58,7 @@ import { TourGuiado } from '@core/services/tour.service';
           </div>
         </div>
         <div class="est-info-card">
-          <span class="est-info-icone inf-navy"><mat-icon>toggle_on</mat-icon></span>
+          <span class="est-info-icone"><mat-icon>toggle_on</mat-icon></span>
           <div class="est-info-txt">
             <strong>Desative em vez de excluir</strong>
             <p>
@@ -192,9 +193,8 @@ import { TourGuiado } from '@core/services/tour.service';
                     <td class="tc">
                       <button
                         type="button"
-                        class="status-chip badge-toggle"
-                        [class.bg-blue]="v.ativo"
-                        [class.bg-gray]="!v.ativo"
+                        class="st-chip"
+                        [class.off]="!v.ativo"
                         [title]="v.ativo ? 'Clique para desativar' : 'Clique para ativar'"
                         (click)="status(v, !v.ativo)"
                       >
@@ -205,7 +205,7 @@ import { TourGuiado } from '@core/services/tour.service';
                       <td class="tc">
                         <button
                           type="button"
-                          class="badge-acao bg-dark-blue"
+                          class="acao-btn perigo"
                           title="Excluir vaga"
                           aria-label="Excluir vaga"
                           (click)="remover(v)"
@@ -245,32 +245,32 @@ import { TourGuiado } from '@core/services/tour.service';
       display: flex; align-items: center; justify-content: space-between;
       gap: 16px; flex-wrap: wrap; margin-bottom: 14px;
     }
-    .est-titulo-grupo { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .est-titulo-grupo { display: flex; flex-direction: column; gap: 2px; }
+    .eyebrow {
+      margin: 0; font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.09em; color: #8fa3ab;
+    }
+    .est-titulo-linha { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
     .est-titulo {
       margin: 0; font-size: 1.35rem; font-weight: 700;
       color: #054054; letter-spacing: -0.01em;
     }
     .est-contador {
-      font-size: 0.78rem; font-weight: 600; color: #1a6f8a;
-      background: rgba(26, 111, 138, 0.12);
-      border-radius: 999px; padding: 3px 10px; white-space: nowrap;
-    }
-    .est-livres {
-      font-size: 0.78rem; font-weight: 600; color: #b5811f;
-      background: rgba(221, 165, 84, 0.16);
+      font-size: 0.78rem; font-weight: 600; color: #054054;
+      background: #eef4f6;
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .est-head-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
     .btn-tour {
       display: inline-flex; align-items: center; gap: 6px;
-      border: 1.5px solid #4b95ab; background: #fff;
-      color: #1a6f8a; border-radius: 4px;
+      border: 1px solid #d7e0e6; background: #fff;
+      color: #5d6d7e; border-radius: 4px;
       padding: 0 14px; min-height: 34px; cursor: pointer;
       font-size: 0.85rem; font-weight: 600;
-      transition: background .15s ease, color .15s ease;
+      transition: background .15s ease, color .15s ease, border-color .15s ease;
     }
     .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { background: #1a6f8a; color: #fff; border-color: #1a6f8a; }
+    .btn-tour:hover { border-color: #054054; color: #054054; }
 
     /* ---------- banners de informação ---------- */
     .est-info {
@@ -290,11 +290,9 @@ import { TourGuiado } from '@core/services/tour.service';
     .est-info-icone {
       width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
+      background: #eef4f6; color: #054054;
     }
     .est-info-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .inf-teal { background: rgba(26, 111, 138, 0.12); color: #1a6f8a; }
-    .inf-gold { background: rgba(221, 165, 84, 0.16); color: #b5811f; }
-    .inf-navy { background: rgba(5, 64, 84, 0.1); color: #054054; }
     .est-info-txt { min-width: 0; }
     .est-info-txt strong {
       display: block; font-size: 0.9rem; font-weight: 700;
@@ -315,7 +313,7 @@ import { TourGuiado } from '@core/services/tour.service';
     }
     .est-form-icone {
       width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
-      background: rgba(26, 111, 138, 0.12); color: #1a6f8a;
+      background: #eef4f6; color: #054054;
       display: inline-flex; align-items: center; justify-content: center;
     }
     .est-form-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
@@ -341,8 +339,8 @@ import { TourGuiado } from '@core/services/tour.service';
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .est-busca.foco {
-      border-color: #1a6f8a;
-      box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14);
+      border-color: #054054;
+      box-shadow: 0 0 0 3px rgba(5, 64, 84, 0.12);
     }
     .est-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
     .est-busca-input {
@@ -378,8 +376,8 @@ import { TourGuiado } from '@core/services/tour.service';
       background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25);
       transition: transform 0.18s;
     }
-    .est-toggle.on { border-color: #1a6f8a; color: #054054; }
-    .est-toggle.on .est-trilho { background: #1a6f8a; }
+    .est-toggle.on { border-color: #054054; color: #054054; }
+    .est-toggle.on .est-trilho { background: #054054; }
     .est-toggle.on .est-bolinha { transform: translateX(16px); }
 
     /* ---------- tabela ---------- */
@@ -419,13 +417,31 @@ import { TourGuiado } from '@core/services/tour.service';
       width: 9px; height: 9px; border-radius: 50%;
       background: #c3d2d9; flex-shrink: 0;
     }
-    .est-dot.on { background: #1a6f8a; }
+    .est-dot.on { background: #054054; }
 
     /* (mat-select estilizado globalmente em styles.css) */
 
-    .est-tabela .badge-acao { padding: 0.5em 0.68em; }
-    .est-tabela .badge-acao mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .est-tabela .status-chip { padding: 6px 14px; font-size: 0.8rem; }
+    .st-chip {
+      display: inline-flex; align-items: center;
+      border: 1px solid #d7e0e6; border-radius: 999px;
+      background: #eef4f6; color: #054054;
+      padding: 6px 14px; font-size: 0.8rem; font-weight: 600;
+      font-family: inherit; cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .st-chip:hover { border-color: #054054; }
+    .st-chip.off { background: #f4f6f8; color: #7d97a1; }
+
+    .acao-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; margin: 0 2px;
+      border: 1px solid #d7e0e6; border-radius: 7px;
+      background: #fff; color: #5d6d7e; cursor: pointer;
+      transition: border-color .15s, color .15s, background .15s;
+    }
+    .acao-btn mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .acao-btn:hover { border-color: #054054; color: #054054; }
+    .acao-btn.perigo:hover { border-color: #b3261e; color: #b3261e; background: #fdf3f2; }
 
     /* ---------- estado vazio ---------- */
     .est-vazio {
@@ -647,29 +663,30 @@ export class EstacionamentoComponent implements OnInit {
           title: 'Vincular a uma acomodação',
           description:
             'Use o seletor para escolher qual <b>acomodação</b> fica com a vaga. ' +
-            'A bolinha fica <b>teal quando vinculada</b> e cinza quando livre. ' +
+            'A bolinha fica <b>destacada quando vinculada</b> e cinza quando livre. ' +
             'A troca salva na hora.',
           side: 'top',
         },
       },
       {
-        element: 'tr.est-row .badge-toggle',
+        element: 'tr.est-row .st-chip',
         skipMissingElement: true,
         popover: {
           title: 'Ativar / desativar',
           description:
-            'Clique no selo para mudar o status: <b>teal = Ativo</b>, ' +
-            '<b>cinza = Inativo</b>. Vagas inativas não aparecem na hora da reserva.',
+            'Clique no selo para mudar o status — <b>Ativo</b> aparece ' +
+            'destacado, <b>Inativo</b> esmaecido. Vagas inativas não aparecem ' +
+            'na hora da reserva.',
           side: 'top',
         },
       },
       {
-        element: 'tr.est-row .badge-acao',
+        element: 'tr.est-row .acao-btn',
         skipMissingElement: true,
         popover: {
           title: 'Excluir vaga',
           description:
-            'O botão <b>navy</b> exclui a vaga — sempre pedindo confirmação ' +
+            'A <b>lixeira</b> exclui a vaga — sempre pedindo confirmação ' +
             'antes. Disponível apenas para administradores.',
           side: 'left',
         },
