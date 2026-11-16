@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { RelatoriosApi } from '@core/api/relatorios.api';
-import { STATUS_RESERVA } from '@core/models/reservas.models';
+import type { StatusReserva } from '@core/models/comum.models';
 import { DashboardResponse, PontoSerie, ResumoFinanceiro } from '@core/models/relatorios.models';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
@@ -284,9 +284,7 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
             <div class="mov-sec">
               <div class="mov-tit">
                 <mat-icon>login</mat-icon> Chegadas
-                <span class="mov-n" [class.mov-pend]="d.checkins_pendentes.length > 0">
-                  {{ d.checkins_pendentes.length }}
-                </span>
+                <span class="mov-n">{{ d.checkins_pendentes.length }}</span>
               </div>
               <ul class="mov-lista">
                 @for (p of d.checkins_pendentes; track p.idreserva) {
@@ -306,9 +304,7 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
             <div class="mov-sec">
               <div class="mov-tit">
                 <mat-icon>logout</mat-icon> Saídas
-                <span class="mov-n" [class.mov-pend]="d.checkouts_pendentes.length > 0">
-                  {{ d.checkouts_pendentes.length }}
-                </span>
+                <span class="mov-n">{{ d.checkouts_pendentes.length }}</span>
               </div>
               <ul class="mov-lista">
                 @for (p of d.checkouts_pendentes; track p.idreserva) {
@@ -431,7 +427,7 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
       transition: all .14s ease;
     }
     .pre-btn:hover { border-color: #1a6f8a; color: #1a6f8a; }
-    .pre-btn.ativo { background: #1a6f8a; border-color: #1a6f8a; color: #fff; }
+    .pre-btn.ativo { background: #054054; border-color: #054054; color: #fff; }
     .d-slicer-per {
       margin-left: auto; font-size: 0.78rem; color: #8a99a4;
       font-variant-numeric: tabular-nums; white-space: nowrap;
@@ -460,7 +456,6 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
       font-variant-numeric: tabular-nums;
     }
     .kpi-num.kpi-din { font-size: 1.3rem; padding-top: 4px; }
-    .kpi-num.kpi-prev { color: #1a6f8a; }
     .kpi-num.kpi-alerta { color: #b5811f; }
     .kpi-sub { font-size: 0.72rem; color: #8a99a4; }
     .kpi-bar {
@@ -469,7 +464,7 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
     }
     .kpi-bar i {
       display: block; height: 100%; border-radius: 99px;
-      background: linear-gradient(90deg, #1a6f8a, #4b95ab);
+      background: #054054;
       transition: width .4s ease;
     }
     .kpi-skel { height: 96px; }
@@ -498,7 +493,7 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
     .d-card-head h3 { margin: 0; font-size: 0.95rem; font-weight: 700; color: #054054; }
     .d-card-head small { font-size: 0.74rem; color: #8a99a4; }
     .d-card-total {
-      font-size: 1.05rem; font-weight: 800; color: #1a6f8a;
+      font-size: 1.05rem; font-weight: 800; color: #054054;
       font-variant-numeric: tabular-nums; white-space: nowrap;
     }
     .d-card app-echart { flex: 1; min-height: 230px; }
@@ -522,14 +517,13 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
       text-transform: uppercase; letter-spacing: 0.05em;
       padding: 6px 0 8px;
     }
-    .mov-tit mat-icon { font-size: 16px; width: 16px; height: 16px; color: #1a6f8a; }
+    .mov-tit mat-icon { font-size: 16px; width: 16px; height: 16px; color: #7d97a1; }
     .mov-n {
-      margin-left: auto; background: #eef4f6; color: #1a6f8a;
+      margin-left: auto; background: #054054; color: #fff;
       border-radius: 99px; min-width: 22px; height: 20px; padding: 0 7px;
       display: inline-flex; align-items: center; justify-content: center;
       font-size: 0.72rem; font-weight: 800;
     }
-    .mov-n.mov-pend { background: #f7ead2; color: #b5811f; }
     .mov-lista { list-style: none; margin: 0; padding: 0; }
     .mov-item {
       display: flex; align-items: center; gap: 10px;
@@ -769,16 +763,7 @@ export class DashboardComponent implements OnInit {
           show: true,
           width: 15,
           roundCap: true,
-          itemStyle: {
-            color: {
-              type: 'linear',
-              x: 0, y: 0, x2: 1, y2: 0,
-              colorStops: [
-                { offset: 0, color: '#054054' },
-                { offset: 1, color: '#4b95ab' },
-              ],
-            },
-          },
+          itemStyle: { color: '#054054' },
         },
         axisLine: {
           roundCap: true,
@@ -910,7 +895,7 @@ export class DashboardComponent implements OnInit {
           name: p.rotulo,
           value: num(p.valor),
           itemStyle: {
-            color: ['#054054', '#1a6f8a', '#4b95ab', '#b5811f', '#8ab4c4'][
+            color: ['#054054', '#1a6f8a', '#4b95ab', '#8ab4c4', '#b9ccd4'][
               i % 5
             ],
           },
@@ -928,14 +913,22 @@ export class DashboardComponent implements OnInit {
     return num(v);
   }
 
+  /** Status na paleta da pousada (o STATUS_RESERVA global é do legado). */
+  private readonly STATUS: Record<StatusReserva, { rotulo: string; bg: string; fg: string }> = {
+    p: { rotulo: 'Pendente', bg: '#eef2f5', fg: '#8a6200' },
+    i: { rotulo: 'Hospedado', bg: '#eef2f5', fg: '#1a6f8a' },
+    f: { rotulo: 'Finalizado', bg: '#eef2f5', fg: '#40525d' },
+    c: { rotulo: 'Cancelada', bg: '#eef2f5', fg: '#7d97a1' },
+  };
+
   statusRotulo(s: string): string {
-    return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.rotulo ?? s;
+    return this.STATUS[s as StatusReserva]?.rotulo ?? s;
   }
   statusCor(s: string): string {
-    return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.cor ?? '#7d97a1';
+    return this.STATUS[s as StatusReserva]?.bg ?? '#eef2f5';
   }
   statusTexto(s: string): string {
-    return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.texto ?? '#fff';
+    return this.STATUS[s as StatusReserva]?.fg ?? '#40525d';
   }
 
   iniciarTour(): void {
