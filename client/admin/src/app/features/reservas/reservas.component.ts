@@ -637,7 +637,7 @@ type Visao = 'lista' | 'cal' | 'mapa' | 'grupos';
   `,
   styles: `
     :host { display: block; }
-    .rv { display: flex; flex-direction: column; gap: 16px; max-width: 1440px; }
+    .rv { display: flex; flex-direction: column; gap: 16px; }
 
     /* ---------- cabeçalho ---------- */
     .rv-head {

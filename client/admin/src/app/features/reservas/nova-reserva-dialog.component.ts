@@ -12,7 +12,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { of } from 'rxjs';
 
-/** Dialog de nova reserva — fluxo: hóspede → período → disponibilidade → detalhes. */
+/** Drawer lateral de nova reserva — fluxo: hóspede → período → disponibilidade → detalhes. */
 @Component({
   selector: 'app-nova-reserva-dialog',
   imports: [ReactiveFormsModule, DecimalPipe, MatIconModule, DateInputComponent],
@@ -33,7 +33,7 @@ import { of } from 'rxjs';
           ><mat-icon>close</mat-icon></button>
         </header>
 
-        <form (submit)="$event.preventDefault(); salvar()" class="nr-form">
+        <form [formGroup]="form" (submit)="$event.preventDefault(); salvar()" class="nr-form">
           <div class="nr-body">
             <!-- ============================ hóspede ============================ -->
             <section class="nr-sec">
@@ -214,19 +214,18 @@ import { of } from 'rxjs';
   `,
   styles: `
     .ovl {
-      position: fixed; inset: 0; z-index: 60;
+      position: fixed; inset: 0; z-index: 320;
       background: rgba(5, 30, 40, 0.5); backdrop-filter: blur(2px);
-      display: flex; align-items: flex-start; justify-content: center;
-      padding: 32px 16px; overflow-y: auto;
+      display: flex; justify-content: flex-end;
     }
     .nr {
-      width: 100%; max-width: 560px;
-      background: #fff; border-radius: 16px;
-      box-shadow: 0 24px 60px rgba(5, 30, 40, 0.35);
+      width: 100%; max-width: 600px; height: 100%;
+      background: #fff;
+      box-shadow: -24px 0 60px rgba(5, 30, 40, 0.35);
       display: flex; flex-direction: column;
-      animation: entrar 0.18s ease-out;
+      animation: deslizar 0.2s ease-out;
     }
-    @keyframes entrar { from { opacity: 0; transform: translateY(10px) scale(0.99); } }
+    @keyframes deslizar { from { opacity: 0.4; transform: translateX(60px); } }
 
     .nr-head {
       display: flex; align-items: flex-start; justify-content: space-between;
@@ -250,10 +249,10 @@ import { of } from 'rxjs';
     .nr-x:hover { border-color: #1a6f8a; color: #1a6f8a; }
     .nr-x mat-icon { font-size: 17px; width: 17px; height: 17px; }
 
-    .nr-form { display: flex; flex-direction: column; min-height: 0; }
+    .nr-form { display: flex; flex-direction: column; min-height: 0; flex: 1; }
     .nr-body {
       padding: 16px 22px; display: flex; flex-direction: column; gap: 18px;
-      max-height: min(66vh, 640px); overflow-y: auto;
+      flex: 1; overflow-y: auto;
     }
     .nr-sec { display: flex; flex-direction: column; gap: 9px; }
     .nr-sec-t {
@@ -437,9 +436,7 @@ import { of } from 'rxjs';
       .ac-check, .btn-criar { transition: none; }
     }
     @media (max-width: 560px) {
-      .ovl { padding: 0; align-items: stretch; }
-      .nr { max-width: none; border-radius: 0; min-height: 100vh; }
-      .nr-body { max-height: none; }
+      .nr { max-width: none; }
       .nr-duo { grid-template-columns: 1fr; }
     }
   `,
