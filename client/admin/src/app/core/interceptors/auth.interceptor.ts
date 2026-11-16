@@ -4,13 +4,17 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, switchMap, throwError } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { AuthStore } from '@core/services/auth.store';
 
 const ROTAS_PUBLICAS = ['/auth/login', '/auth/refresh', '/auth/logout'];
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthStore);
-  const publica = ROTAS_PUBLICAS.some((p) => req.url.includes(p));
+  // Credenciais só saem para a API da pousada — chamadas a serviços
+  // externos (ViaCEP, REST Countries…) nunca carregam o Bearer.
+  const interna = req.url.startsWith(environment.apiUrl);
+  const publica = !interna || ROTAS_PUBLICAS.some((p) => req.url.includes(p));
   const token = auth.accessToken();
 
   const authed = !publica && token

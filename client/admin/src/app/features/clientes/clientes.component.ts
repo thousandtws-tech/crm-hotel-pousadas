@@ -1,5 +1,5 @@
-import { Component, inject, signal, OnInit, OnDestroy, effect, DestroyRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, inject, signal, computed, OnInit, OnDestroy, effect, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
@@ -9,7 +9,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { ClientesApi } from '@core/api/clientes.api';
+import { GeoApi } from '@core/api/geo.api';
 import { Cliente, ClienteInput } from '@core/models/clientes.models';
+import { NACIONALIDADES, PaisGeo } from '@core/models/geo.models';
 import { Confirm } from '@core/services/confirm.service';
 import { ExportacaoService, RelatorioCfg } from '@core/services/exportacao.service';
 import { Notify } from '@core/services/notify.service';
@@ -21,6 +23,11 @@ import { DocumentosModalComponent } from './documentos-modal.component';
 
 /** Recorte quadrado máximo usado também para normalizar uploads de arquivo. */
 const LADO_FOTO = 640;
+
+/** Normalização para busca de país — minúsculo e sem acentos. */
+function normPais(s: string | null | undefined): string {
+  return (s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
 
 // -- página --------------------------------------------------------------------
 
@@ -452,11 +459,17 @@ const LADO_FOTO = 640;
                   </div>
                   <div class="campo">
                     <label class="lbl" for="cli-fone">Telefone</label>
-                    <input
-                      id="cli-fone" class="input-inn" type="tel" inputmode="tel"
-                      formControlName="telefone" placeholder="(00) 00000-0000"
-                      (input)="mascaraTelefone($event)"
-                    />
+                    <div class="fone-wrap">
+                      @if (ddiAtual(); as ddi) {
+                        <span class="ddi" [title]="'DDI ' + ddi">{{ ddi }}</span>
+                      }
+                      <input
+                        id="cli-fone" class="input-inn" type="tel" inputmode="tel"
+                        [class.com-ddi]="!!ddiAtual()"
+                        formControlName="telefone" placeholder="(00) 00000-0000"
+                        (input)="mascaraTelefone($event)"
+                      />
+                    </div>
                   </div>
                 </div>
               </section>
@@ -468,7 +481,15 @@ const LADO_FOTO = 640;
                 <div class="dgrid">
                   <div class="campo">
                     <label class="lbl" for="cli-nacio">Nacionalidade</label>
-                    <input id="cli-nacio" class="input-inn" type="text" formControlName="nacionalidade" placeholder="Brasileira" />
+                    <input
+                      id="cli-nacio" class="input-inn" type="text"
+                      formControlName="nacionalidade" placeholder="Brasileira" list="nac-list"
+                    />
+                    <datalist id="nac-list">
+                      @for (n of nacionalidades; track n) {
+                        <option [value]="n"></option>
+                      }
+                    </datalist>
                   </div>
                   <div class="campo">
                     <label class="lbl" for="cli-natu">Naturalidade</label>
@@ -480,15 +501,66 @@ const LADO_FOTO = 640;
                   </div>
                   <div class="campo">
                     <label class="lbl" for="cli-cep">CEP</label>
-                    <input
-                      id="cli-cep" class="input-inn" type="text" inputmode="numeric"
-                      formControlName="cep" placeholder="00000-000"
-                      (input)="mascaraCep($event)"
-                    />
+                    <div class="cep-wrap">
+                      <input
+                        id="cli-cep" class="input-inn" type="text" inputmode="numeric"
+                        formControlName="cep" placeholder="00000-000"
+                        (input)="mascaraCep($event)"
+                      />
+                      @if (cepBuscando()) {
+                        <mat-icon class="cep-spin" aria-hidden="true">sync</mat-icon>
+                      }
+                    </div>
+                    @if (cepErro()) {
+                      <small class="cep-erro">CEP não encontrado — preencha manualmente.</small>
+                    }
                   </div>
                   <div class="campo">
-                    <label class="lbl" for="cli-pais">País</label>
-                    <input id="cli-pais" class="input-inn" type="text" formControlName="pais" placeholder="Brasil" />
+                    <label class="lbl" id="lbl-pais">País</label>
+                    <div class="pais-sel">
+                      <button
+                        type="button" class="pais-btn" aria-labelledby="lbl-pais"
+                        [attr.aria-expanded]="paisAberto()" (click)="togglePais()"
+                      >
+                        @if (paisSelecionado(); as p) {
+                          <img
+                            class="flag" [src]="bandeira(p.cca2)"
+                            [srcset]="bandeira(p.cca2, 80) + ' 2x'" alt=""
+                          />
+                        }
+                        <span class="pais-btn-txt">{{ form.controls.pais.value || 'Selecione' }}</span>
+                        <mat-icon>expand_more</mat-icon>
+                      </button>
+                      @if (paisAberto()) {
+                        <div class="pais-fechar" (click)="paisAberto.set(false)"></div>
+                        <div class="pais-drop" role="listbox" aria-label="Países">
+                          <div class="pais-busca-wrap">
+                            <mat-icon>search</mat-icon>
+                            <input
+                              type="search" [formControl]="paisBusca"
+                              placeholder="Buscar país…" aria-label="Buscar país"
+                            />
+                          </div>
+                          <div class="pais-lista">
+                            @for (p of paisesFiltrados(); track p.cca2) {
+                              <button
+                                type="button" role="option" class="pais-item"
+                                [class.sel]="p.nome === form.controls.pais.value"
+                                [attr.aria-selected]="p.nome === form.controls.pais.value"
+                                (click)="selecionarPais(p)"
+                              >
+                                <img class="flag" [src]="bandeira(p.cca2)" alt="" loading="lazy" />
+                                <span>{{ p.nome }}</span>
+                              </button>
+                            } @empty {
+                              <span class="pais-vazio">
+                                {{ paises().length ? 'Nenhum país encontrado' : 'Carregando…' }}
+                              </span>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
                   </div>
                   <div class="campo full">
                     <label class="lbl" for="cli-logr">Logradouro</label>
@@ -877,6 +949,76 @@ const LADO_FOTO = 640;
     .erro-campo { color: #dc3545; font-size: 0.74rem; font-weight: 500; }
     .input-inn.inval { border-color: #dc3545; box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.12); }
 
+    /* ---------- CEP (ViaCEP) ---------- */
+    .cep-wrap { position: relative; }
+    .cep-wrap .input-inn { padding-right: 34px; }
+    .cep-spin {
+      position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
+      font-size: 16px; width: 16px; height: 16px; color: #054054;
+      animation: cepGirar 0.9s linear infinite;
+    }
+    @keyframes cepGirar { to { transform: translateY(-50%) rotate(360deg); } }
+    .cep-erro { color: #b3261e; font-size: 0.72rem; }
+
+    /* ---------- seletor de país com bandeiras ---------- */
+    .pais-sel { position: relative; }
+    .pais-btn {
+      display: flex; align-items: center; gap: 8px; width: 100%;
+      min-height: 38px; padding: 0 10px;
+      background: #fff; border: 1px solid #d7e0e6; border-radius: 6px;
+      font-family: inherit; font-size: 0.88rem; color: #2c3a44;
+      cursor: pointer; text-align: left;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .pais-btn:hover { border-color: #054054; }
+    .pais-btn[aria-expanded="true"] {
+      border-color: #054054;
+      box-shadow: 0 0 0 3px rgba(5, 64, 84, 0.12);
+    }
+    .pais-btn mat-icon { font-size: 18px; width: 18px; height: 18px; color: #8fa3ab; flex-shrink: 0; }
+    .pais-btn-txt { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .flag {
+      width: 20px; height: 15px; object-fit: cover; border-radius: 2px;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12); flex-shrink: 0;
+    }
+    .pais-fechar { position: fixed; inset: 0; z-index: 10; }
+    .pais-drop {
+      position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 20;
+      background: #fff; border: 1px solid #d7e0e6; border-radius: 10px;
+      box-shadow: 0 14px 36px rgba(2, 20, 27, 0.18); overflow: hidden;
+      animation: sugIn 0.12s ease-out;
+    }
+    .pais-busca-wrap {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-bottom: 1px solid #eef2f5;
+    }
+    .pais-busca-wrap mat-icon { font-size: 17px; width: 17px; height: 17px; color: #8fa3ab; }
+    .pais-busca-wrap input {
+      flex: 1; border: none; outline: none; background: transparent;
+      font-family: inherit; font-size: 0.85rem; color: #2c3a44;
+    }
+    .pais-lista { max-height: 220px; overflow-y: auto; padding: 4px; }
+    .pais-item {
+      display: flex; align-items: center; gap: 10px; width: 100%;
+      border: none; background: transparent; border-radius: 7px;
+      padding: 7px 10px; cursor: pointer; text-align: left;
+      font-family: inherit; font-size: 0.86rem; color: #2c3a44;
+      transition: background .1s;
+    }
+    .pais-item:hover { background: #eef5f8; }
+    .pais-item.sel { background: #eef4f6; font-weight: 700; color: #054054; }
+    .pais-vazio { display: block; padding: 16px 12px; color: #8fa3ab; font-size: 0.82rem; text-align: center; }
+
+    /* ---------- DDI do telefone (derivado do país) ---------- */
+    .fone-wrap { position: relative; }
+    .fone-wrap .ddi {
+      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      font-size: 0.82rem; font-weight: 700; color: #054054;
+      background: #eef4f6; border-radius: 4px; padding: 2px 6px;
+      pointer-events: none;
+    }
+    .input-inn.com-ddi { padding-left: 52px; }
+
     .drawer-foot {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 13px 22px;
@@ -976,6 +1118,29 @@ export class ClientesComponent implements OnInit, OnDestroy {
     bairro: [''],
     cep: [''],
     pais: [''],
+  });
+
+  // -- geografia: ViaCEP + seletor de país com bandeiras ---------------------
+  private readonly geo = inject(GeoApi);
+  protected readonly nacionalidades = NACIONALIDADES;
+  protected readonly paises = signal<PaisGeo[]>([]);
+  protected readonly paisAberto = signal(false);
+  protected readonly paisBusca = this.fb.nonNullable.control('');
+  protected readonly cepBuscando = signal(false);
+  protected readonly cepErro = signal(false);
+  private cepReq = 0;
+  private ultimoCep = '';
+  protected readonly paisValor = toSignal(this.form.controls.pais.valueChanges, { initialValue: '' });
+  protected readonly paisBuscaValor = toSignal(this.paisBusca.valueChanges, { initialValue: '' });
+  protected readonly paisSelecionado = computed(() => {
+    const v = (this.paisValor() ?? '').trim().toLowerCase();
+    return v ? (this.paises().find((p) => p.nome.toLowerCase() === v) ?? null) : null;
+  });
+  protected readonly ddiAtual = computed(() => this.paisSelecionado()?.ddi ?? null);
+  protected readonly paisesFiltrados = computed(() => {
+    const t = normPais(this.paisBuscaValor());
+    const all = this.paises();
+    return t ? all.filter((p) => normPais(p.nome).includes(t) || p.cca2.toLowerCase() === t) : all;
   });
 
   ngOnInit(): void {
@@ -1247,6 +1412,7 @@ Use para pedidos de eliminação do titular.`,
 
   fecharModal(): void {
     this.modalAberto.set(false);
+    this.paisAberto.set(false);
     this.editando.set(null);
     this.fotoPendente.set(null);
     this.fotoRemover.set(false);
@@ -1255,9 +1421,13 @@ Use para pedidos de eliminação do titular.`,
     document.body.style.overflow = '';
   }
 
-  /** Esc fecha o drawer (sem fechar modais por cima dele, nem durante o tour). */
+  /** Esc fecha o seletor de país antes do drawer (e nunca durante o tour). */
   onEsc(): void {
     if (this.tour.ativo()) return;
+    if (this.paisAberto()) {
+      this.paisAberto.set(false);
+      return;
+    }
     if (!this.modalAberto() || this.capturando() || this.docsCliente()) return;
     this.fecharModal();
   }
@@ -1388,6 +1558,17 @@ Use para pedidos de eliminação do titular.`,
     this.fotoPendente.set(null);
     this.fotoRemover.set(false);
     this.tentouSalvar.set(false);
+    this.paisAberto.set(false);
+    this.paisBusca.setValue('');
+    this.cepBuscando.set(false);
+    this.cepErro.set(false);
+    this.ultimoCep = '';
+    if (!this.paises().length) {
+      this.geo.listarPaises().subscribe({
+        next: (l) => this.paises.set(l),
+        error: () => {},
+      });
+    }
     this.liberarPreview();
     document.body.style.overflow = 'hidden';
     setTimeout(() => document.getElementById('cli-nome')?.focus(), 260);
@@ -1491,6 +1672,62 @@ Use para pedidos de eliminação do titular.`,
     const d = el.value.replace(/\D/g, '').slice(0, 8);
     const v = d.length > 5 ? d.replace(/(\d{5})(\d{0,3})/, '$1-$2') : d;
     this.form.controls.cep.setValue(v, { emitEvent: false });
+    if (d.length === 8) this.buscarCep(d);
+    else this.ultimoCep = '';
+  }
+
+  /** CEP completo -> ViaCEP preenche endereço; falhas ficam manuais. */
+  private buscarCep(digitos: string): void {
+    if (digitos === this.ultimoCep) return;
+    this.ultimoCep = digitos;
+    const req = ++this.cepReq;
+    this.cepBuscando.set(true);
+    this.cepErro.set(false);
+    this.geo.buscarCep(digitos).subscribe({
+      next: (r) => {
+        if (req !== this.cepReq) return;
+        this.cepBuscando.set(false);
+        if (r?.erro || !r?.localidade) {
+          this.cepErro.set(true);
+          return;
+        }
+        this.form.patchValue({
+          logradouro: r.logradouro || this.form.controls.logradouro.value,
+          bairro: r.bairro || this.form.controls.bairro.value,
+          cidade: r.localidade || this.form.controls.cidade.value,
+          estado: r.uf || this.form.controls.estado.value,
+          pais: this.form.controls.pais.value || 'Brasil',
+        });
+        document.getElementById('cli-num')?.focus();
+      },
+      error: () => {
+        if (req === this.cepReq) this.cepBuscando.set(false);
+      },
+    });
+  }
+
+  // -- país (bandeiras + DDI) -----------------------------------------------
+
+  togglePais(): void {
+    this.paisAberto.update((v) => !v);
+    if (this.paisAberto()) {
+      this.paisBusca.setValue('');
+      setTimeout(() => {
+        const el = document.querySelector<HTMLInputElement>('.pais-busca-wrap input');
+        el?.focus();
+      });
+    }
+  }
+
+  selecionarPais(p: PaisGeo): void {
+    this.form.controls.pais.setValue(p.nome);
+    this.paisAberto.set(false);
+    this.paisBusca.setValue('');
+  }
+
+  /** Bandeira 40px (retina via srcset 80px) do CDN público flagcdn. */
+  bandeira(cca2: string, w = 40): string {
+    return `https://flagcdn.com/w${w}/${cca2.toLowerCase()}.png`;
   }
 
   // -- foto ---------------------------------------------------------------

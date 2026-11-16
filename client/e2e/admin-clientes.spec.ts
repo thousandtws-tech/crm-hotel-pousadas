@@ -29,6 +29,35 @@ const CLIENTES = [
   },
 ];
 
+const PNG_1PX = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+  'base64'
+);
+
+const PAISES = [
+  { cca2: 'BR', name: { common: 'Brazil' }, translations: { por: { common: 'Brasil' } }, idd: { root: '+5', suffixes: ['5'] } },
+  { cca2: 'AR', name: { common: 'Argentina' }, translations: { por: { common: 'Argentina' } }, idd: { root: '+5', suffixes: ['4'] } },
+  { cca2: 'US', name: { common: 'United States' }, translations: { por: { common: 'Estados Unidos' } }, idd: { root: '+1', suffixes: [''] } },
+];
+
+async function mockApisExternas(page: Page): Promise<void> {
+  await page.route('https://viacep.com.br/ws/**', (route) =>
+    route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({
+        cep: '88015-000', logradouro: 'Rua Felipe Schmidt', bairro: 'Centro',
+        localidade: 'Florianópolis', uf: 'SC',
+      }),
+    })
+  );
+  await page.route('https://restcountries.com/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(PAISES) })
+  );
+  await page.route('https://flagcdn.com/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'image/png', body: PNG_1PX })
+  );
+}
+
 async function mockAdminApi(page: Page): Promise<void> {
   await page.route(`${API}/auth/login`, (route) =>
     route.fulfill({
@@ -59,6 +88,7 @@ test.use({ viewport: { width: 1920, height: 1080 } });
 
 test('clientes — página minimalista + drawer de cadastro', async ({ page }) => {
   await mockAdminApi(page);
+  await mockApisExternas(page);
 
   await page.goto('/login');
   await page.locator('input[formcontrolname="login"]').fill('admin');
@@ -99,4 +129,25 @@ test('clientes — página minimalista + drawer de cadastro', async ({ page }) =
     return alvo?.closest('.drawer-foot-acoes, .mar-fab')?.className ?? 'nada';
   });
   expect(topo).toContain('drawer-foot-acoes');
+
+  // ViaCEP: CEP com 8 dígitos preenche endereço automaticamente
+  await drawer.locator('#cli-cep').fill('88015000');
+  await expect(drawer.locator('#cli-logr')).toHaveValue('Rua Felipe Schmidt');
+  await expect(drawer.locator('#cli-bairro')).toHaveValue('Centro');
+  await expect(drawer.locator('#cli-cidade')).toHaveValue('Florianópolis');
+  await expect(drawer.locator('#cli-uf')).toHaveValue('SC');
+  await expect(drawer.locator('.pais-btn-txt')).toHaveText('Brasil');
+
+  // Seletor de país com bandeiras: busca + seleção atualizam DDI do telefone
+  await drawer.locator('.pais-btn').click();
+  await expect(drawer.locator('.pais-item')).toHaveCount(3);
+  await expect(drawer.locator('.pais-item .flag').first()).toBeVisible();
+  await drawer.locator('.pais-busca-wrap input').fill('arg');
+  await expect(drawer.locator('.pais-item')).toHaveCount(1);
+  await drawer.locator('.pais-item').first().click();
+  await expect(drawer.locator('.pais-btn-txt')).toHaveText('Argentina');
+  await expect(drawer.locator('.ddi')).toHaveText('+54');
+  await expect(drawer.locator('#cli-fone')).toHaveClass(/com-ddi/);
+
+  await page.screenshot({ path: 'capturas-crm/clientes-drawer-geo.png' });
 });
