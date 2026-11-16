@@ -22,7 +22,7 @@ test('em breve — página teaser com captura de e-mail', async ({ page }) => {
   await expect(page.locator('header')).toHaveCount(0);
   await expect(page.locator('footer')).toHaveCount(0);
 
-  await expect(page.locator('.eyebrow')).toContainText('Em desenvolvimento');
+  await expect(page.locator('.fundo')).toBeVisible(); // mesmo hero da home
   await expect(page.locator('h1')).toContainText('Em breve');
   await expect(page.locator('.marca')).toBeVisible();
 

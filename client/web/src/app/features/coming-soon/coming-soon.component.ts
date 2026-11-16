@@ -12,16 +12,16 @@ import { SeoService } from '../../core/services/seo.service';
   imports: [ReactiveFormsModule, RouterLink],
   template: `
     <main class="palco">
-      <div class="brilho" aria-hidden="true"></div>
-      <div class="horizonte" aria-hidden="true"></div>
+      <img
+        src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2400&q=90"
+        alt=""
+        aria-hidden="true"
+        class="fundo"
+      />
+      <div class="overlay" aria-hidden="true"></div>
 
       <section class="conteudo">
-        <img src="/logo.svg" alt="Pousada Espírito do Mar" class="logo-white marca" />
-
-        <p class="eyebrow">
-          <span class="pulso" aria-hidden="true"></span>
-          Em desenvolvimento
-        </p>
+        <img src="/logo.svg" alt="Pousada Espírito do Mar" class="marca" />
 
         <h1>Em breve, uma nova experiência à beira-mar.</h1>
 
@@ -71,23 +71,21 @@ import { SeoService } from '../../core/services/seo.service';
       background: #032b38;
       padding: 3rem 1.5rem;
     }
-    .brilho {
+    .fundo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      filter: brightness(0.78);
+    }
+    .overlay {
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(60% 50% at 50% 38%, rgba(75, 149, 171, 0.22), transparent 70%),
-        radial-gradient(40% 30% at 50% 100%, rgba(221, 165, 84, 0.1), transparent 70%);
-      pointer-events: none;
-    }
-    .horizonte {
-      position: absolute;
-      inset-inline: 0;
-      bottom: 0;
-      height: 22vh;
-      background:
-        linear-gradient(transparent, rgba(238, 244, 246, 0.04)),
-        repeating-linear-gradient(180deg, transparent 0 18px, rgba(238, 244, 246, 0.025) 18px 19px);
-      mask-image: linear-gradient(transparent, #000);
+        linear-gradient(rgba(3, 43, 56, 0.45), rgba(3, 43, 56, 0.45)),
+        linear-gradient(to top, rgba(3, 43, 56, 0.95), rgba(3, 43, 56, 0.35) 55%, transparent);
       pointer-events: none;
     }
     .conteudo {
@@ -98,27 +96,10 @@ import { SeoService } from '../../core/services/seo.service';
       animation: subir 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
     .marca {
-      height: 4.5rem;
+      height: 9rem;
       width: auto;
-      margin: 0 auto 2.75rem;
-    }
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.55rem;
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: #dda554;
-      margin: 0 0 1.4rem;
-    }
-    .pulso {
-      width: 0.45rem;
-      height: 0.45rem;
-      border-radius: 50%;
-      background: #dda554;
-      animation: pulsar 2.4s ease-in-out infinite;
+      margin: 0 auto 2.25rem;
+      filter: brightness(0) invert(1) drop-shadow(0 4px 18px rgba(0, 0, 0, 0.45));
     }
     h1 {
       font-family: var(--font-serif);
@@ -208,12 +189,8 @@ import { SeoService } from '../../core/services/seo.service';
       from { opacity: 0; transform: translateY(18px); }
       to { opacity: 1; transform: none; }
     }
-    @keyframes pulsar {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.45; transform: scale(0.8); }
-    }
     @media (prefers-reduced-motion: reduce) {
-      .conteudo, .pulso { animation: none; }
+      .conteudo { animation: none; }
     }
     @media (max-width: 480px) {
       .captura { flex-direction: column; }
