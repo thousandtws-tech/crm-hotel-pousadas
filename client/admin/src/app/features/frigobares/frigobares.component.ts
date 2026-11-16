@@ -32,13 +32,14 @@ import { TourGuiado } from '@core/services/tour.service';
     <div class="page">
       <div class="fr-head">
         <div class="fr-titulo-grupo">
-          <h2 class="fr-titulo">Frigobares</h2>
-          <span class="fr-contador" title="Total de frigobares cadastrados">
-            {{ frigobares().length }} {{ frigobares().length === 1 ? 'frigobar' : 'frigobares' }}
-          </span>
-          <span class="fr-ativos" title="Frigobares ativos">
-            {{ ativos() }} {{ ativos() === 1 ? 'ativo' : 'ativos' }}
-          </span>
+          <p class="eyebrow">Cadastro</p>
+          <div class="fr-titulo-linha">
+            <h2 class="fr-titulo">Frigobares</h2>
+            <span class="fr-contador" title="Total de frigobares e quantos ativos">
+              {{ frigobares().length }} {{ frigobares().length === 1 ? 'frigobar' : 'frigobares' }}
+              · {{ ativos() }} {{ ativos() === 1 ? 'ativo' : 'ativos' }}
+            </span>
+          </div>
         </div>
         <div class="fr-head-acoes">
           <button class="btn-tour" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
@@ -52,7 +53,7 @@ import { TourGuiado } from '@core/services/tour.service';
 
       <div class="fr-info">
         <div class="fr-info-card">
-          <span class="fr-info-icone inf-teal"><mat-icon>kitchen</mat-icon></span>
+          <span class="fr-info-icone"><mat-icon>kitchen</mat-icon></span>
           <div class="fr-info-txt">
             <strong>Um frigobar por acomodação</strong>
             <p>
@@ -62,17 +63,17 @@ import { TourGuiado } from '@core/services/tour.service';
           </div>
         </div>
         <div class="fr-info-card">
-          <span class="fr-info-icone inf-gold"><mat-icon>add_shopping_cart</mat-icon></span>
+          <span class="fr-info-icone"><mat-icon>add_shopping_cart</mat-icon></span>
           <div class="fr-info-txt">
             <strong>Reposição sai do estoque</strong>
             <p>
-              No <b>olho teal</b> você repõe itens — a quantidade é descontada do
+              No <b>ícone de olho</b> você repõe itens — a quantidade é descontada do
               estoque automaticamente.
             </p>
           </div>
         </div>
         <div class="fr-info-card">
-          <span class="fr-info-icone inf-navy"><mat-icon>receipt_long</mat-icon></span>
+          <span class="fr-info-icone"><mat-icon>receipt_long</mat-icon></span>
           <div class="fr-info-txt">
             <strong>Consumo na conta</strong>
             <p>
@@ -168,26 +169,22 @@ import { TourGuiado } from '@core/services/tour.service';
                       @if (auth.isAdmin()) {
                         <button
                           type="button"
-                          class="status-chip badge-toggle"
-                          [class.bg-blue]="f.ativo"
-                          [class.bg-gray]="!f.ativo"
+                          class="st-chip"
+                          [class.off]="!f.ativo"
                           [title]="f.ativo ? 'Clique para desativar' : 'Clique para ativar'"
                           (click)="statusFrigobar(f, !f.ativo)"
                         >
                           {{ f.ativo ? 'Ativo' : 'Inativo' }}
                         </button>
                       } @else {
-                        <span
-                          class="status-chip"
-                          [class.bg-blue]="f.ativo"
-                          [class.bg-gray]="!f.ativo"
+                        <span class="st-chip" [class.off]="!f.ativo"
                         >{{ f.ativo ? 'Ativo' : 'Inativo' }}</span>
                       }
                     </td>
                     <td class="tc fr-acoes">
                       <button
                         type="button"
-                        class="badge-acao bg-yellow"
+                        class="acao-btn"
                         title="Editar"
                         aria-label="Editar frigobar"
                         (click)="abrirForm(f)"
@@ -196,7 +193,7 @@ import { TourGuiado } from '@core/services/tour.service';
                       </button>
                       <button
                         type="button"
-                        class="badge-acao bg-blue fr-ver"
+                        class="acao-btn fr-ver"
                         title="Ver itens e repor"
                         aria-label="Ver itens do frigobar"
                         (click)="ver(f)"
@@ -206,7 +203,7 @@ import { TourGuiado } from '@core/services/tour.service';
                       @if (auth.isAdmin()) {
                         <button
                           type="button"
-                          class="badge-acao bg-dark-blue"
+                          class="acao-btn perigo"
                           title="Excluir"
                           aria-label="Excluir frigobar"
                           (click)="excluirFrigobar(f)"
@@ -309,7 +306,7 @@ import { TourGuiado } from '@core/services/tour.service';
               <span class="drawer-req"><small class="req">*</small> Campos obrigatórios</span>
               <div class="drawer-foot-acoes">
                 <button class="btn-gray" type="button" (click)="fecharDrawer()">Cancelar</button>
-                <button class="btn-green" type="submit">
+                <button class="btn-dark-blue" type="submit">
                   <mat-icon>save</mat-icon> {{ editando() ? 'Salvar alterações' : 'Cadastrar frigobar' }}
                 </button>
               </div>
@@ -327,10 +324,7 @@ import { TourGuiado } from '@core/services/tour.service';
             <h5 id="titulo-fr" class="fr-det-titulo">
               <span class="fr-det-ic"><mat-icon>kitchen</mat-icon></span>
               {{ f.modelo || 'Frigobar #' + f.id }}
-              <span
-                class="status-chip"
-                [class.bg-blue]="f.ativo"
-                [class.bg-gray]="!f.ativo"
+              <span class="st-chip" [class.off]="!f.ativo"
               >{{ f.ativo ? 'Ativo' : 'Inativo' }}</span>
             </h5>
             <button type="button" class="close" (click)="fecharDetalhe()" aria-label="Fechar">&times;</button>
@@ -339,21 +333,21 @@ import { TourGuiado } from '@core/services/tour.service';
             <!-- Resumo do frigobar -->
             <div class="det-faixa">
               <span class="det-item">
-                <span class="det-item-ic inf-teal"><mat-icon>kitchen</mat-icon></span>
+                <span class="det-item-ic"><mat-icon>kitchen</mat-icon></span>
                 <span class="det-item-txt">
                   <small>Modelo</small>
                   <strong>{{ f.modelo || '—' }}</strong>
                 </span>
               </span>
               <span class="det-item">
-                <span class="det-item-ic inf-gold"><mat-icon>tag</mat-icon></span>
+                <span class="det-item-ic"><mat-icon>tag</mat-icon></span>
                 <span class="det-item-txt">
                   <small>Patrimônio</small>
                   <strong>{{ f.patrimonio || '—' }}</strong>
                 </span>
               </span>
               <span class="det-item">
-                <span class="det-item-ic inf-navy"><mat-icon>hotel</mat-icon></span>
+                <span class="det-item-ic"><mat-icon>hotel</mat-icon></span>
                 <span class="det-item-txt">
                   <small>Acomodação</small>
                   <strong>
@@ -362,7 +356,7 @@ import { TourGuiado } from '@core/services/tour.service';
                 </span>
               </span>
               <span class="det-item">
-                <span class="det-item-ic inf-teal"><mat-icon>inventory_2</mat-icon></span>
+                <span class="det-item-ic"><mat-icon>inventory_2</mat-icon></span>
                 <span class="det-item-txt">
                   <small>Itens no frigobar</small>
                   <strong>{{ totalItens() }} {{ totalItens() === 1 ? 'unidade' : 'unidades' }}</strong>
@@ -472,9 +466,8 @@ import { TourGuiado } from '@core/services/tour.service';
                       <td class="tc">
                         <button
                           type="button"
-                          class="status-chip badge-toggle"
-                          [class.bg-blue]="i.ativo"
-                          [class.bg-gray]="!i.ativo"
+                          class="st-chip"
+                          [class.off]="!i.ativo"
                           [title]="i.ativo ? 'Clique para desativar' : 'Clique para ativar'"
                           (click)="statusItem(i, !i.ativo)"
                         >{{ i.ativo ? 'Ativo' : 'Inativo' }}</button>
@@ -510,33 +503,33 @@ import { TourGuiado } from '@core/services/tour.service';
       display: flex; align-items: center; justify-content: space-between;
       gap: 16px; flex-wrap: wrap; margin-bottom: 14px;
     }
-    .fr-titulo-grupo { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .fr-titulo-grupo { display: flex; flex-direction: column; gap: 4px; }
+    .eyebrow {
+      margin: 0; font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.09em; color: #8fa3ab;
+    }
+    .fr-titulo-linha { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
     .fr-titulo {
       margin: 0; font-size: 1.35rem; font-weight: 700;
       color: #054054; letter-spacing: -0.01em;
     }
     .fr-contador {
-      font-size: 0.78rem; font-weight: 600; color: #1a6f8a;
-      background: rgba(26, 111, 138, 0.12);
-      border-radius: 999px; padding: 3px 10px; white-space: nowrap;
-    }
-    .fr-ativos {
-      font-size: 0.78rem; font-weight: 600; color: #b5811f;
-      background: rgba(221, 165, 84, 0.16);
+      font-size: 0.78rem; font-weight: 600; color: #054054;
+      background: #eef4f6;
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .fr-head-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
     .fr-head-acoes button { display: inline-flex; align-items: center; gap: 6px; }
     .btn-tour {
       display: inline-flex; align-items: center; gap: 6px;
-      border: 1.5px solid #4b95ab; background: #fff;
-      color: #1a6f8a; border-radius: 4px;
+      border: 1px solid #d7e0e6; background: #fff;
+      color: #5d6d7e; border-radius: 4px;
       padding: 0 14px; min-height: 34px; cursor: pointer;
       font-size: 0.85rem; font-weight: 600;
-      transition: background .15s ease, color .15s ease;
+      transition: border-color .15s ease, color .15s ease;
     }
     .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { background: #1a6f8a; color: #fff; border-color: #1a6f8a; }
+    .btn-tour:hover { border-color: #054054; color: #054054; }
 
     /* ---------- banners de informação ---------- */
     .fr-info {
@@ -556,11 +549,9 @@ import { TourGuiado } from '@core/services/tour.service';
     .fr-info-icone {
       width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
+      background: #eef4f6; color: #054054;
     }
     .fr-info-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .inf-teal { background: rgba(26, 111, 138, 0.12); color: #1a6f8a; }
-    .inf-gold { background: rgba(221, 165, 84, 0.16); color: #b5811f; }
-    .inf-navy { background: rgba(5, 64, 84, 0.1); color: #054054; }
     .fr-info-txt { min-width: 0; }
     .fr-info-txt strong {
       display: block; font-size: 0.9rem; font-weight: 700;
@@ -584,8 +575,8 @@ import { TourGuiado } from '@core/services/tour.service';
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .fr-busca.foco {
-      border-color: #1a6f8a;
-      box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14);
+      border-color: #054054;
+      box-shadow: 0 0 0 3px rgba(5, 64, 84, 0.1);
     }
     .fr-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
     .fr-busca-input {
@@ -621,8 +612,8 @@ import { TourGuiado } from '@core/services/tour.service';
       background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25);
       transition: transform 0.18s;
     }
-    .fr-toggle.on { border-color: #1a6f8a; color: #054054; }
-    .fr-toggle.on .fr-trilho { background: #1a6f8a; }
+    .fr-toggle.on { border-color: #054054; color: #054054; }
+    .fr-toggle.on .fr-trilho { background: #054054; }
     .fr-toggle.on .fr-bolinha { transform: translateX(16px); }
 
     /* ---------- tabela ---------- */
@@ -653,9 +644,28 @@ import { TourGuiado } from '@core/services/tour.service';
     .fr-cell-txt small { font-size: 0.76rem; color: #8a99a4; }
     .fr-acom { display: inline-flex; flex-direction: column; }
     .fr-acom small { font-size: 0.74rem; color: #8a99a4; }
-    .fr-tabela .badge-acao { padding: 0.5em 0.68em; }
-    .fr-tabela .badge-acao mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .fr-tabela .status-chip { padding: 6px 14px; font-size: 0.8rem; }
+    .fr-tabela .acao-btn { margin: 0 2px; }
+    .acao-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px;
+      border: 1px solid #d7e0e6; border-radius: 7px;
+      background: #fff; color: #5d6d7e; cursor: pointer;
+      transition: border-color .15s, color .15s, background .15s;
+    }
+    .acao-btn mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .acao-btn:hover { border-color: #054054; color: #054054; }
+    .acao-btn.perigo:hover { border-color: #b3261e; color: #b3261e; background: #fdf3f2; }
+    .st-chip {
+      display: inline-flex; align-items: center;
+      border: 1px solid #d7e0e6; border-radius: 999px;
+      background: #eef4f6; color: #054054;
+      padding: 6px 14px; font-size: 0.8rem; font-weight: 600;
+      font-family: inherit;
+      transition: border-color .15s, background .15s;
+    }
+    button.st-chip { cursor: pointer; }
+    button.st-chip:hover { border-color: #054054; }
+    .st-chip.off { background: #f4f6f8; color: #7d97a1; }
 
     /* ---------- estado vazio / skeleton ---------- */
     .fr-vazio {
@@ -682,13 +692,13 @@ import { TourGuiado } from '@core/services/tour.service';
 
     /* ---------- drawer lateral ---------- */
     .drawer-backdrop {
-      position: fixed; inset: 0; z-index: 200;
+      position: fixed; inset: 0; z-index: 320;
       background: rgba(5, 32, 43, 0.45);
       animation: fadeIn 0.18s ease-out;
     }
     @keyframes fadeIn { from { opacity: 0; } }
     .drawer {
-      position: fixed; top: 0; right: 0; bottom: 0; z-index: 201;
+      position: fixed; top: 0; right: 0; bottom: 0; z-index: 321;
       width: min(540px, 100vw);
       background: #f7fafb;
       box-shadow: -12px 0 40px rgba(3, 32, 43, 0.28);
@@ -724,7 +734,7 @@ import { TourGuiado } from '@core/services/tour.service';
     .dsec-tit {
       display: flex; align-items: center; gap: 7px;
       font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #1a6f8a; margin-bottom: 12px;
+      letter-spacing: 0.05em; color: #40525d; margin-bottom: 12px;
     }
     .dsec-tit mat-icon { font-size: 17px; width: 17px; height: 17px; }
     .dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
@@ -742,7 +752,7 @@ import { TourGuiado } from '@core/services/tour.service';
     }
     .drawer-req { font-size: 0.76rem; color: #8a99a4; }
     .drawer-foot-acoes { display: flex; gap: 8px; }
-    .drawer-foot-acoes .btn-green,
+    .drawer-foot-acoes .btn-dark-blue,
     .drawer-foot-acoes .btn-gray {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 0.5rem 1rem;
@@ -760,6 +770,7 @@ import { TourGuiado } from '@core/services/tour.service';
     .input-group-inn .input-inn { border-radius: 0 4px 4px 0; flex: 1; }
 
     /* ---------- modal detalhe do frigobar ---------- */
+    .overlay { z-index: 310; }
     .modal-fr { max-width: 860px; width: calc(100vw - 32px); }
     .modal-fr .modal-body { max-height: 78vh; overflow-y: auto; }
     .fr-det-titulo { display: flex; align-items: center; gap: 10px; }
@@ -772,7 +783,7 @@ import { TourGuiado } from '@core/services/tour.service';
     .modal-fr h4 {
       display: flex; align-items: center; gap: 6px;
       font-size: 0.82rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #1a6f8a; margin: 18px 0 10px;
+      letter-spacing: 0.05em; color: #40525d; margin: 18px 0 10px;
     }
     .modal-fr h4 mat-icon { font-size: 17px; width: 17px; height: 17px; }
     .det-dica {
@@ -784,14 +795,15 @@ import { TourGuiado } from '@core/services/tour.service';
     .det-faixa {
       display: flex; flex-wrap: wrap; align-items: center;
       gap: 10px 24px;
-      background: linear-gradient(135deg, #f2f8fb 0%, #f7faf6 100%);
-      border: 1px solid #dce8ee; border-radius: 12px;
+      background: #f7fafb;
+      border: 1px solid #e3eaef; border-radius: 12px;
       padding: 12px 18px; margin: 0 0 4px;
     }
     .det-item { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
     .det-item-ic {
       width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
+      background: #eef4f6; color: #054054;
     }
     .det-item-ic mat-icon { font-size: 17px; width: 17px; height: 17px; }
     .det-item-txt { display: flex; flex-direction: column; line-height: 1.15; }
@@ -823,8 +835,8 @@ import { TourGuiado } from '@core/services/tour.service';
     .fr-itens-wrap { overflow-x: auto; border-radius: 8px; }
     .fr-tabela-itens .fr-item-nome { color: #054054; font-size: 0.9rem; }
     .fr-cat {
-      font-size: 0.78rem; font-weight: 600; color: #1a6f8a;
-      background: rgba(26, 111, 138, 0.1);
+      font-size: 0.78rem; font-weight: 600; color: #5d6d7e;
+      background: #eef4f6;
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .fr-valor { font-variant-numeric: tabular-nums; font-weight: 600; color: #054054; }
@@ -835,13 +847,13 @@ import { TourGuiado } from '@core/services/tour.service';
     }
     .qtd-btn {
       width: 26px; height: 26px; border-radius: 50%;
-      border: none; background: #fff; color: #1a6f8a; cursor: pointer;
+      border: none; background: #fff; color: #054054; cursor: pointer;
       display: inline-flex; align-items: center; justify-content: center;
       box-shadow: 0 1px 3px rgba(5, 64, 84, 0.15);
       transition: background 0.15s, color 0.15s;
     }
     .qtd-btn mat-icon { font-size: 15px; width: 15px; height: 15px; }
-    .qtd-btn:hover { background: #1a6f8a; color: #fff; }
+    .qtd-btn:hover { background: #054054; color: #fff; }
     .qtd-num {
       min-width: 22px; text-align: center; font-size: 0.92rem;
       font-variant-numeric: tabular-nums; color: #054054;
@@ -1255,20 +1267,20 @@ export class FrigobaresComponent implements OnInit {
           popover: {
             title: 'Itens e reposição',
             description:
-              'O <b>olho teal</b> abre o frigobar: veja os itens, ajuste ' +
+              'O <b>ícone de olho</b> abre o frigobar: veja os itens, ajuste ' +
               'quantidades com <b>−</b>/<b>+</b> e reponha produtos — a baixa ' +
               'sai do estoque na hora.',
             side: 'left',
           },
         },
         {
-          element: 'tr.fr-row .badge-toggle',
+          element: 'tr.fr-row .st-chip',
           skipMissingElement: true,
           popover: {
             title: 'Ativar / desativar',
             description:
-              'Clique no selo para mudar o status: <b>teal = Ativo</b>, ' +
-              '<b>cinza = Inativo</b>. Frigobares inativos ficam fora de uso.',
+              'Clique no selo para mudar o status entre <b>Ativo</b> e ' +
+              '<b>Inativo</b>. Frigobares inativos ficam fora de uso.',
             side: 'top',
           },
         },
@@ -1278,8 +1290,8 @@ export class FrigobaresComponent implements OnInit {
           popover: {
             title: 'Ações do frigobar',
             description:
-              '<b>Dourado</b> edita os dados · <b>olho teal</b> abre os itens · ' +
-              '<b>navy</b> exclui (remove também os itens, sempre com confirmação).',
+              '<b>Lápis</b> edita os dados · <b>olho</b> abre os itens · ' +
+              '<b>lixeira</b> exclui (remove também os itens, sempre com confirmação).',
             side: 'left',
           },
         },

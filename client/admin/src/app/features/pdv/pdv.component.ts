@@ -751,7 +751,7 @@ function rotuloComanda(c: ComandaView): string {
     .pdv-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; padding: 8px 4px 0; }
     .eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #4b95ab; margin: 0 0 4px; }
     .eyebrow.sm { font-size: 0.66rem; }
-    .titulo { margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.9rem; font-weight: 600; color: #054054; line-height: 1.1; }
+    .titulo { margin: 0; font-size: 1.35rem; font-weight: 700; color: #054054; line-height: 1.1; letter-spacing: -0.01em; }
     .sub { margin: 4px 0 0; font-size: 0.86rem; color: #7d97a1; }
 
     /* ---------- abas ---------- */
@@ -827,7 +827,7 @@ function rotuloComanda(c: ComandaView): string {
     /* ---------- catálogo ---------- */
     .cat-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     .cat-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-    .cat-head h3 { margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.45rem; font-weight: 600; color: #054054; }
+    .cat-head h3 { margin: 0; font-size: 1.05rem; font-weight: 700; color: #054054; }
     .cat-sub { margin: 3px 0 0; font-size: 0.82rem; color: #7d97a1; }
     .pill-gold { flex-shrink: 0; font-size: 0.72rem; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: #fdf3e2; color: #92670b; border: 1px solid #f3d9a8; }
     .cats { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -855,7 +855,7 @@ function rotuloComanda(c: ComandaView): string {
     /* ---------- comanda ---------- */
     .com-card { padding: 18px; display: flex; flex-direction: column; gap: 14px; position: sticky; top: 12px; }
     .cc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-    .cc-head h3 { margin: 2px 0 0; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.5rem; font-weight: 600; color: #054054; }
+    .cc-head h3 { margin: 2px 0 0; font-size: 1.1rem; font-weight: 700; color: #054054; }
     .cc-head h3 small { font-family: 'Manrope', sans-serif; font-size: 0.78rem; color: #8a99a4; font-weight: 500; }
     .cc-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.78rem; color: #5d6d7e; padding-bottom: 12px; border-bottom: 1px solid #e3eaef; }
     .cc-meta span { display: inline-flex; align-items: center; gap: 4px; }
@@ -884,7 +884,7 @@ function rotuloComanda(c: ComandaView): string {
     .cc-total { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
     .cc-total strong { font-size: 0.9rem; color: #33424c; display: block; }
     .cc-total small { font-size: 0.72rem; color: #8a99a4; }
-    .cc-total-vl { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.7rem; font-weight: 700; color: #054054; }
+    .cc-total-vl { font-size: 1.5rem; font-weight: 800; color: #054054; font-variant-numeric: tabular-nums; }
     .btn-prim.block, .btn-ghost-danger.block, .btn-gray.block, .btn-outline.block { width: 100%; justify-content: center; padding: 12px; font-size: 0.88rem; }
     .btn-outline { gap: 7px; border: 1px solid #054054; background: #fff; color: #054054; font-weight: 700; padding: 10px 18px; border-radius: 9px; }
     .btn-outline:hover:not(:disabled) { background: #eef4f6; }

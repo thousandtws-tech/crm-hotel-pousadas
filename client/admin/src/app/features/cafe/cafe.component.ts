@@ -190,10 +190,11 @@ type FiltroPresenca = 'todas' | 'aguardando' | 'presentes';
 
     .cafe-head { display: flex; align-items: flex-start; justify-content: space-between;
       gap: 16px; flex-wrap: wrap; }
-    .eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
-      text-transform: uppercase; color: #4b95ab; margin: 0 0 4px; }
-    .titulo { margin: 0; font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 1.9rem; font-weight: 600; color: #054054; line-height: 1.1;
+    .eyebrow { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: #8fa3ab; margin: 0 0 4px; }
+    .titulo { margin: 0;
+      font-size: 1.35rem; font-weight: 700; color: #054054; line-height: 1.1;
+      letter-spacing: -0.01em;
       display: flex; align-items: center; gap: 12px; }
     .sub { margin: 4px 0 0; font-size: 0.86rem; color: #7d97a1; }
 
@@ -212,7 +213,7 @@ type FiltroPresenca = 'todas' | 'aguardando' | 'presentes';
     .dia-input app-date { width: 150px; }
     .dia-input ::ng-deep .dw-txt { border: 0; outline: none; box-shadow: none; font-size: 0.88rem;
       font-weight: 600; color: #33424c; background: transparent; height: 44px; }
-    .hoje { border: 0; background: transparent; color: #4b95ab; font-size: 0.76rem;
+    .hoje { border: 0; background: transparent; color: #5d6d7e; font-size: 0.76rem;
       font-weight: 700; cursor: pointer; padding: 2px 4px; }
     .hoje:hover { color: #054054; }
 
@@ -223,8 +224,8 @@ type FiltroPresenca = 'todas' | 'aguardando' | 'presentes';
       justify-content: space-between; gap: 10px; }
     .stat-l { font-size: 0.8rem; font-weight: 600; color: #5d6d7e; }
     .stat p { margin: 6px 0 0; display: flex; align-items: baseline; gap: 7px; }
-    .stat strong { font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 2rem; font-weight: 700; color: #054054; line-height: 1; }
+    .stat strong {
+      font-size: 1.5rem; font-weight: 700; color: #054054; line-height: 1; }
     .stat small { font-size: 0.78rem; color: #8a99a4; }
     .stat-ico { width: 40px; height: 40px; border-radius: 10px;
       background: #eef4f6; display: flex; align-items: center;
@@ -233,8 +234,8 @@ type FiltroPresenca = 'todas' | 'aguardando' | 'presentes';
 
     .sec-head { display: flex; align-items: baseline; justify-content: space-between;
       gap: 10px; }
-    .sec-head h3 { margin: 0; font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 1.5rem; font-weight: 600; color: #054054; }
+    .sec-head h3 { margin: 0;
+      font-size: 1.05rem; font-weight: 700; color: #054054; }
     .sec-head span { font-size: 0.78rem; color: #7d97a1; }
 
     .quadro-card { background: #fff; border: 1px solid #e3eaef; border-radius: 12px;
@@ -246,7 +247,7 @@ type FiltroPresenca = 'todas' | 'aguardando' | 'presentes';
       flex: 1; min-width: 240px; max-width: 520px; }
     .inp { border: 1px solid #d7e0e6; border-radius: 9px; padding: 11px 14px;
       font-size: 0.88rem; background: #fff; color: #33424c; }
-    .inp:focus { outline: 2px solid #1a6f8a; border-color: #1a6f8a; }
+    .inp:focus { outline: 2px solid rgba(5, 64, 84, 0.25); border-color: #054054; }
     .seg { display: inline-flex; gap: 4px; }
     .seg-btn { border: 1px solid #d7e0e6; background: #fff; border-radius: 9px;
       padding: 9px 14px; font-size: 0.8rem; font-weight: 600; color: #5d6d7e;
@@ -314,7 +315,7 @@ type FiltroPresenca = 'todas' | 'aguardando' | 'presentes';
     .qtd { min-width: 40px; text-align: center; font-size: 1.4rem;
       font-weight: 800; font-variant-numeric: tabular-nums; color: #054054; }
     .confirmar { flex: 1; min-height: 40px; border: 0; border-radius: 9px;
-      background: #198754; color: #fff; font-size: 0.82rem; font-weight: 700;
+      background: #054054; color: #fff; font-size: 0.82rem; font-weight: 700;
       display: inline-flex; align-items: center; justify-content: center;
       gap: 6px; cursor: pointer; padding: 0 12px; }
     .confirmar:disabled { opacity: .55; }

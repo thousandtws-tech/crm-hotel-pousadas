@@ -224,18 +224,19 @@ type FiltroStatus = 'todos' | PdvItemStatus;
     /* ---------- cabeçalho ---------- */
     .kds-head { display: flex; align-items: flex-start; justify-content: space-between;
       gap: 16px; flex-wrap: wrap; }
-    .eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
-      text-transform: uppercase; color: #4b95ab; margin: 0 0 4px; }
-    .titulo { margin: 0; font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 1.9rem; font-weight: 600; color: #054054; line-height: 1.1;
+    .eyebrow { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: #8fa3ab; margin: 0 0 4px; }
+    .titulo { margin: 0;
+      font-size: 1.35rem; font-weight: 700; color: #054054; line-height: 1.1;
+      letter-spacing: -0.01em;
       display: flex; align-items: center; gap: 12px; }
     .sub { margin: 4px 0 0; font-size: 0.86rem; color: #7d97a1; }
 
     .stats { display: flex; gap: 10px; }
     .stat { background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
       padding: 10px 20px; display: flex; align-items: center; gap: 10px; }
-    .stat strong { font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 1.9rem; font-weight: 700; color: #054054; line-height: 1; }
+    .stat strong {
+      font-size: 1.5rem; font-weight: 700; color: #054054; line-height: 1; }
     .stat span { font-size: 0.8rem; color: #5d6d7e; font-weight: 600; }
     .stat.prontos { background: #e9f4ec; border-color: #d2e8d8; }
 
@@ -278,14 +279,14 @@ type FiltroStatus = 'todos' | PdvItemStatus;
     .col-head { display: flex; align-items: center; justify-content: space-between; }
     .col-id { display: flex; align-items: center; gap: 8px; }
     .col-id mat-icon { color: #054054; font-size: 20px; width: 20px; height: 20px; }
-    .col-id h3 { margin: 0; font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 1.35rem; font-weight: 600; color: #054054; }
+    .col-id h3 { margin: 0;
+      font-size: 1.05rem; font-weight: 700; color: #054054; }
     .col-count { font-size: 0.78rem; font-weight: 800; color: #054054;
       background: #eef4f6; border-radius: 8px; padding: 4px 10px; }
     .col-pronto .col-count { background: #e3f3e6; color: #198754; }
     .col-ajuda { margin: 3px 0 12px; font-size: 0.76rem; color: #8a99a4; }
     .col-cards { display: flex; flex-direction: column; gap: 14px; }
-    .col-vazia { border: 1px dashed #ddd4c4; border-radius: 12px;
+    .col-vazia { border: 1px dashed #d7e0e6; border-radius: 12px;
       padding: 26px 14px; text-align: center; font-size: 0.8rem; color: #8fa3ab;
       background: rgba(255,255,255,.5); }
 
@@ -298,8 +299,8 @@ type FiltroStatus = 'todos' | PdvItemStatus;
       color: #8a99a4; }
     .t-dest { display: flex; align-items: center; gap: 9px; }
     .t-dest mat-icon { color: #054054; font-size: 22px; width: 22px; height: 22px; }
-    .t-dest strong { font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 1.3rem; font-weight: 600; color: #33424c; }
+    .t-dest strong {
+      font-size: 1.05rem; font-weight: 700; color: #33424c; }
     .t-tempo { display: flex; align-items: center; gap: 6px; margin: 0;
       font-size: 0.76rem; color: #7d97a1; }
     .t-tempo mat-icon { font-size: 15px; width: 15px; height: 15px; }
