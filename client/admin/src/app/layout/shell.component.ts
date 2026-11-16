@@ -367,7 +367,7 @@ const NAV: NavItem[] = [
     }
     .pagina-titulo {
       margin: 0;
-      font-family: var(--font-display);
+      font-family: var(--font-body);
       font-size: 1.45rem;
       font-weight: 600;
       letter-spacing: 0.01em;
