@@ -104,7 +104,7 @@ const DIA_MS = 86_400_000;
             } @else {
               @for (r of chegadas(); track r.id) {
                 <div class="row">
-                  <span class="av" [style.background]="avatarCor(r)">{{ iniciais(r.cliente_nome) }}</span>
+                  <span class="av">{{ iniciais(r.cliente_nome) }}</span>
                   <span class="row-txt">
                     <strong>{{ r.cliente_nome }}</strong>
                     <small>
@@ -143,7 +143,7 @@ const DIA_MS = 86_400_000;
             } @else {
               @for (r of saidas(); track r.id) {
                 <a class="row link" [routerLink]="['/reservas', r.id]">
-                  <span class="av av-out" [style.background]="avatarCor(r)">{{ iniciais(r.cliente_nome) }}</span>
+                  <span class="av">{{ iniciais(r.cliente_nome) }}</span>
                   <span class="row-txt">
                     <strong>{{ r.cliente_nome }}</strong>
                     <small>{{ r.acomodacao_nome }} Nº{{ r.acomodacao_numero }} · sai hoje</small>
@@ -173,7 +173,7 @@ const DIA_MS = 86_400_000;
             } @else {
               @for (r of naCasa(); track r.id) {
                 <a class="row link" [routerLink]="['/reservas', r.id]">
-                  <span class="av av-casa" [style.background]="avatarCor(r)">{{ iniciais(r.cliente_nome) }}</span>
+                  <span class="av">{{ iniciais(r.cliente_nome) }}</span>
                   <span class="row-txt">
                     <strong>{{ r.cliente_nome }}</strong>
                     <small>{{ r.acomodacao_nome }} Nº{{ r.acomodacao_numero }}</small>
@@ -261,7 +261,7 @@ const DIA_MS = 86_400_000;
   `,
   styles: `
     :host { display: block; }
-    .fd { display: flex; flex-direction: column; gap: 16px; max-width: 1440px; }
+    .fd { display: flex; flex-direction: column; gap: 16px; }
 
     /* ---------- cabeçalho ---------- */
     .fd-head {
@@ -336,17 +336,14 @@ const DIA_MS = 86_400_000;
       display: flex; align-items: center; justify-content: center;
     }
     .stat-ico mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .ico-in { background: #e3f3e6; color: #146c2e; }
-    .ico-out { background: #fdeadb; color: #b2560a; }
-    .ico-casa { background: #e4eef5; color: #1a6f8a; }
-    .ico-atn { background: #f6efdd; color: #8a6200; }
+    .ico-in, .ico-out, .ico-casa, .ico-atn { background: #eef4f6; color: #054054; }
     .stat-bar {
       margin-top: 8px; height: 6px; border-radius: 99px;
       background: #e9f0f4; overflow: hidden;
     }
     .stat-bar i {
       display: block; height: 100%; border-radius: 99px;
-      background: linear-gradient(90deg, #1a6f8a, #4b95ab);
+      background: #1a6f8a;
       transition: width 0.4s ease;
     }
 
@@ -377,9 +374,7 @@ const DIA_MS = 86_400_000;
       font-size: 0.74rem; font-weight: 800; color: #fff;
       font-variant-numeric: tabular-nums;
     }
-    .p-arr { background: #146c2e; }
-    .p-out { background: #b2560a; }
-    .p-casa { background: #1a6f8a; }
+    .p-arr, .p-out, .p-casa { background: #054054; }
 
     /* ---------- linhas de hóspedes ---------- */
     .row {
@@ -408,11 +403,11 @@ const DIA_MS = 86_400_000;
     .btn-ck {
       flex: none; display: inline-flex; align-items: center; gap: 6px;
       min-height: 42px; padding: 0 18px; border: none; border-radius: 10px;
-      background: #146c2e; color: #fff; font-family: inherit;
+      background: #054054; color: #fff; font-family: inherit;
       font-size: 0.85rem; font-weight: 700; cursor: pointer;
       transition: background 0.15s, transform 0.12s;
     }
-    .btn-ck:hover:not(:disabled) { background: #0f5624; transform: translateY(-1px); }
+    .btn-ck:hover:not(:disabled) { background: #1a6f8a; transform: translateY(-1px); }
     .btn-ck:disabled { opacity: 0.55; }
     .btn-ck mat-icon { font-size: 17px; width: 17px; height: 17px; }
 
@@ -459,10 +454,9 @@ const DIA_MS = 86_400_000;
       max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .qt-livre { border-left-color: #2e9e5b; }
-    .qt-livre b { color: #146c2e; }
-    .qt-ocup { border-left-color: #4b95ab; background: #f0f7fa; }
-    .qt-pend { border-left-color: #d4a017; background: #fdf8ec; }
-    .qt-bloq { border-left-color: #555f66; background: #f2f4f5; opacity: 0.85; }
+    .qt-ocup { border-left-color: #4b95ab; }
+    .qt-pend { border-left-color: #d4a017; }
+    .qt-bloq { border-left-color: #555f66; opacity: 0.8; }
     .qt-bloq b, .qt-bloq small { color: #8a99a4; }
     .qt-flags { display: flex; gap: 5px; margin-top: 4px; }
     .flg {
@@ -471,8 +465,7 @@ const DIA_MS = 86_400_000;
       border-radius: 8px; padding: 1px 6px;
     }
     .flg mat-icon { font-size: 12px; width: 12px; height: 12px; }
-    .flg.lm { background: #efe9fa; color: #5b3fa0; }
-    .flg.mn { background: #fdeadb; color: #b2560a; }
+    .flg.lm, .flg.mn { background: #f0f2f4; color: #5d6d7e; }
 
     /* ---------- skeleton ---------- */
     .skel {
@@ -618,14 +611,6 @@ export class RecepcaoComponent implements OnInit {
   iniciais(nome: string): string {
     const p = nome.trim().split(/\s+/).filter(Boolean);
     return ((p[0]?.[0] ?? '') + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase() || '?';
-  }
-
-  /** Cor do avatar derivada do nome — estável entre recargas. */
-  avatarCor(r: ReservaResumo): string {
-    const cores = ['#1a6f8a', '#4b95ab', '#146c2e', '#8a6200', '#5b3fa0', '#054054'];
-    let h = 0;
-    for (const ch of r.cliente_nome) h = (h * 31 + ch.charCodeAt(0)) % 997;
-    return cores[h % cores.length];
   }
 
   diarias(r: ReservaResumo): number {
