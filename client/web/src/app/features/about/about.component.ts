@@ -56,10 +56,10 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
               />
             </div>
 
-            <!-- Floating stat chip -->
+            <!-- Floating location chip -->
             <div class="absolute top-6 -left-1 sm:left-6 bg-[#032B38] text-white rounded-xl px-4 py-3 shadow-[0_10px_28px_rgba(3,43,56,0.35)]">
-              <span class="font-serif text-2xl sm:text-3xl text-[#DDA554] leading-none block">200m</span>
-              <span class="text-[10px] uppercase tracking-[0.12em] text-white/75">da Praia do Peró</span>
+              <span class="font-serif text-2xl sm:text-3xl text-[#DDA554] leading-none block">Peró</span>
+              <span class="text-[10px] uppercase tracking-[0.12em] text-white/75">Bairro · Cabo Frio, RJ</span>
             </div>
           </div>
 
@@ -82,19 +82,19 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
               </p>
             </div>
 
-            <!-- Stats row -->
+            <!-- Verifiable facts row -->
             <div class="grid grid-cols-3 gap-4 sm:gap-6 py-5 border-y border-[#DCE6EA] mb-8">
               <div>
-                <span class="font-serif text-3xl sm:text-4xl text-[#054054] leading-none block">4,9</span>
-                <span class="text-[10px] uppercase tracking-[0.12em] text-[#536B73] mt-1 block">Avaliação dos hóspedes</span>
+                <span class="font-serif text-3xl sm:text-4xl text-[#054054] leading-none block">13h</span>
+                <span class="text-[10px] uppercase tracking-[0.12em] text-[#536B73] mt-1 block">Check-in de referência</span>
               </div>
               <div>
-                <span class="font-serif text-3xl sm:text-4xl text-[#054054] leading-none block">10+</span>
-                <span class="text-[10px] uppercase tracking-[0.12em] text-[#536B73] mt-1 block">Anos de hospitalidade</span>
+                <span class="font-serif text-3xl sm:text-4xl text-[#054054] leading-none block">11h</span>
+                <span class="text-[10px] uppercase tracking-[0.12em] text-[#536B73] mt-1 block">Check-out de referência</span>
               </div>
               <div>
-                <span class="font-serif text-3xl sm:text-4xl text-[#054054] leading-none block">100%</span>
-                <span class="text-[10px] uppercase tracking-[0.12em] text-[#536B73] mt-1 block">Quartos climatizados</span>
+                <span class="font-serif text-3xl sm:text-4xl text-[#054054] leading-none block">2–4</span>
+                <span class="text-[10px] uppercase tracking-[0.12em] text-[#536B73] mt-1 block">Hóspedes por quarto</span>
               </div>
             </div>
 
@@ -176,7 +176,7 @@ export class AboutComponent implements OnInit {
     this.seoService.updateSeo({
       title: 'Sobre a Pousada Espírito do Mar | Hospedagem no Peró, Cabo Frio',
       description: 'Conheça a Pousada Espírito do Mar, localizada no bairro Peró, em Cabo Frio (RJ). Estrutura com piscina externa, café da manhã e fácil acesso à Praia do Peró.',
-      url: 'https://pousadaespiritodomar.com.br/sobre'
+      url: `${HOTEL_CONFIG.siteUrl}/sobre`
     });
   }
 

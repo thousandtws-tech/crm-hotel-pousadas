@@ -85,7 +85,7 @@ function mapItem(a: AcomodacaoPublica): Accommodation {
 
 // Conteúdo de contingência (cache embutido): usado apenas se a API estiver
 // indisponível — mantém a página apresentável em vez de uma seção vazia.
-const FALLBACK: Accommodation[] = [
+export const FALLBACK_ACCOMMODATIONS: Accommodation[] = [
   {
     id: 'acc-1',
     slug: 'quarto-duplo-standard',
@@ -236,7 +236,10 @@ export class AccommodationService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
   private readonly http = inject(HttpClient);
-  private readonly accommodationsState = signal<Accommodation[]>(FALLBACK);
+  // Começa vazio: o FALLBACK só entra se a API estiver realmente indisponível —
+  // uma resposta bem-sucedida (mesmo vazia) é o estado autoritativo do CMS.
+  private readonly accommodationsState = signal<Accommodation[]>([]);
+  private readonly loadingState = signal<boolean>(true);
   private socket: Socket | null = null;
   private canal: Channel | null = null;
   private refetchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -246,6 +249,7 @@ export class AccommodationService {
   };
 
   public readonly accommodations = this.accommodationsState.asReadonly();
+  public readonly loading = this.loadingState.asReadonly();
   public readonly featuredAccommodations = computed(() =>
     this.accommodationsState().filter((item) => item.featured).sort((a, b) => a.order - b.order)
   );
@@ -275,7 +279,13 @@ export class AccommodationService {
       const dados = await firstValueFrom(this.http.get<AcomodacaoPublica[]>(`${API}/publico/acomodacoes`));
       this.accommodationsState.set(dados.map(mapItem));
     } catch {
-      // API indisponível → mantém o estado atual (ou FALLBACK inicial).
+      // API indisponível → mantém o estado atual; se nada foi carregado ainda,
+      // usa o FALLBACK de contingência para não deixar a página vazia.
+      if (this.accommodationsState().length === 0) {
+        this.accommodationsState.set(FALLBACK_ACCOMMODATIONS);
+      }
+    } finally {
+      this.loadingState.set(false);
     }
   }
 

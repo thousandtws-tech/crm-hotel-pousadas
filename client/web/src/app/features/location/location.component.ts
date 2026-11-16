@@ -118,7 +118,7 @@ export class LocationComponent implements OnInit {
     this.seoService.updateSeo({
       title: 'Localização no Peró, Cabo Frio | Pousada Espírito do Mar',
       description: 'Saiba onde fica a Pousada Espírito do Mar, no bairro Peró, em Cabo Frio (RJ), próxima à Praia do Peró e a opções de comércio e gastronomia.',
-      url: 'https://pousadaespiritodomar.com.br/localizacao'
+      url: `${HOTEL_CONFIG.siteUrl}/localizacao`
     });
   }
 

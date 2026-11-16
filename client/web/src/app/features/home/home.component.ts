@@ -6,12 +6,14 @@ import { FeaturedAccommodationsComponent } from './components/featured-accommoda
 import { FeaturedExperiencesComponent } from './components/featured-experiences/featured-experiences.component';
 import { VisualBreakComponent } from './components/visual-break/visual-break.component';
 import { GalleryPreviewComponent } from './components/gallery-preview/gallery-preview.component';
+import { TestimonialsComponent } from './components/testimonials/testimonials.component';
 import { LocationPreviewComponent } from './components/location-preview/location-preview.component';
 import { StatsStripComponent } from './components/stats-strip/stats-strip.component';
 import { PhoneCtaComponent } from './components/phone-cta/phone-cta.component';
 import { FaqComponent } from './components/faq/faq.component';
 import { SeoService } from '../../core/services/seo.service';
 import { SiteContentService } from '../../core/services/site-content.service';
+import { HOTEL_CONFIG } from '../../core/config/hotel-config';
 
 const DEFAULT_SEO_TITLE = 'Pousada Espírito do Mar | Hospedagem no Peró, Cabo Frio';
 const DEFAULT_SEO_DESC =
@@ -29,6 +31,7 @@ const DEFAULT_SEO_KEYWORDS =
     FeaturedExperiencesComponent,
     VisualBreakComponent,
     GalleryPreviewComponent,
+    TestimonialsComponent,
     LocationPreviewComponent,
     StatsStripComponent,
     PhoneCtaComponent,
@@ -46,6 +49,7 @@ const DEFAULT_SEO_KEYWORDS =
     <app-stats-strip></app-stats-strip>
     <app-visual-break></app-visual-break>
     <app-gallery-preview></app-gallery-preview>
+    <app-testimonials></app-testimonials>
     <app-location-preview></app-location-preview>
     <app-phone-cta></app-phone-cta>
     <app-faq></app-faq>
@@ -64,7 +68,7 @@ export class HomeComponent implements OnInit {
         exactTitle: Boolean(seo?.titulo),
         description: seo?.descricao || DEFAULT_SEO_DESC,
         keywords: seo?.keywords || DEFAULT_SEO_KEYWORDS,
-        url: 'https://espiritodomar.com.br/',
+        url: `${HOTEL_CONFIG.siteUrl}/`,
       });
     });
   }

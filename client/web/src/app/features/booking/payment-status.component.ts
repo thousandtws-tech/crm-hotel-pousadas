@@ -100,7 +100,7 @@ export class PaymentStatusComponent implements OnInit, OnDestroy {
     this.seoService.updateSeo({
       title: 'Status do Pagamento | Pousada Espírito do Mar',
       description: 'Acompanhamento do pagamento da sua reserva.',
-      url: 'https://espiritodomar.com.br/reserva/pagamento'
+      url: `${HOTEL_CONFIG.siteUrl}/reserva/pagamento`
     });
     const token = this.route.snapshot.queryParamMap.get('token');
     if (!token) {

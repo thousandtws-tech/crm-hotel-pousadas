@@ -146,7 +146,7 @@ const POSTS: BlogPost[] = [
         titulo: 'Resumindo',
         paragrafos: [
           'Sol e agito: dezembro a fevereiro. Custo-benefício e sossego: março a junho e setembro a novembro. Mar mais cristalino e famílias: julho.',
-          'Em qualquer época, a Pousada Espírito do Mar fica a 200m da Praia do Peró — consulte a disponibilidade para as datas do seu roteiro.',
+          'Em qualquer época, a Pousada Espírito do Mar fica no bairro Peró, com fácil acesso à praia — consulte a disponibilidade para as datas do seu roteiro.',
         ],
       },
     ],

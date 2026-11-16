@@ -2,6 +2,7 @@ import { Component, afterNextRender, ElementRef, inject, DestroyRef, OnInit } fr
 import { RouterLink } from '@angular/router';
 import { AccommodationService } from '../../core/services/accommodation.service';
 import { SeoService } from '../../core/services/seo.service';
+import { HOTEL_CONFIG } from '../../core/config/hotel-config';
 import { IconComponent } from '../../shared/components/icons/icon.component';
 import { MotionService } from '../../core/services/motion.service';
 
@@ -35,11 +36,38 @@ import { MotionService } from '../../core/services/motion.service';
       <div class="container-editorial">
         <h2 id="suites-list-title" class="sr-only">Lista de Acomodações</h2>
 
+        @if (accommodationService.loading()) {
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8" aria-busy="true" aria-label="Carregando acomodações">
+            @for (ph of [1, 2, 3]; track ph) {
+              <div class="bg-white border border-[#DCE6EA] rounded-xl overflow-hidden">
+                <div class="aspect-[4/3] bg-[#EEF3F5] animate-pulse"></div>
+                <div class="p-5 sm:p-6 space-y-3">
+                  <div class="h-2.5 w-1/3 bg-[#EEF3F5] animate-pulse rounded"></div>
+                  <div class="h-5 w-2/3 bg-[#EEF3F5] animate-pulse rounded"></div>
+                  <div class="h-3 w-full bg-[#EEF3F5] animate-pulse rounded"></div>
+                </div>
+              </div>
+            }
+          </div>
+        } @else if (accommodationService.accommodations().length === 0) {
+          <div class="max-w-md mx-auto text-center py-10">
+            <span class="w-12 h-12 rounded-full bg-[#EEF4F6] text-[#054054] flex items-center justify-center mx-auto mb-5">
+              <app-icon name="bed" [size]="20"></app-icon>
+            </span>
+            <h2 class="font-serif text-2xl text-[#054054] mb-3">Catálogo em atualização</h2>
+            <p class="type-body text-sm text-[#536B73] mb-6">
+              As categorias de acomodação estão sendo atualizadas no momento. Consulte a disponibilidade diretamente com a recepção.
+            </p>
+            <a [href]="'tel:' + hotelConfig.phoneHref" class="btn-primary">
+              <span>Ligar: {{ hotelConfig.phone }}</span>
+            </a>
+          </div>
+        } @else {
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           @for (acc of accommodationService.accommodations(); track acc.id) {
             <article class="suite-article group flex flex-col bg-white border border-[#DCE6EA] rounded-xl overflow-hidden shadow-[0_6px_24px_rgba(5,64,84,0.05)] hover:shadow-[0_16px_44px_rgba(5,64,84,0.12)] transition-shadow">
 
-              <!-- Photo + rating badge -->
+              <!-- Photo + capacity badge -->
               <a [routerLink]="['/acomodacoes', acc.slug]" class="block editorial-image-container aspect-[4/3] relative">
                 <img
                   [src]="acc.coverImage"
@@ -48,8 +76,8 @@ import { MotionService } from '../../core/services/motion.service';
                   class="w-full h-full object-cover"
                 />
                 <span class="absolute top-4 right-4 z-10 inline-flex items-center gap-1.5 bg-[#032B38]/85 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full">
-                  <app-icon name="star" [size]="12" class="text-[#DDA554]"></app-icon>
-                  4,9
+                  <app-icon name="users" [size]="12" class="text-[#DDA554]"></app-icon>
+                  Até {{ acc.guests }} hóspedes
                 </span>
               </a>
 
@@ -88,9 +116,9 @@ import { MotionService } from '../../core/services/motion.service';
                 <!-- Price + CTA -->
                 <div class="flex items-center justify-between gap-4 mt-auto">
                   <div class="flex flex-col">
-                    <span class="type-caption text-[#536B73] text-[10px]">A partir de</span>
+                    <span class="type-caption text-[#536B73] text-[10px]">Tarifa</span>
                     <span class="font-serif text-xl text-[#054054]">
-                      {{ acc.priceLabel }}<span class="text-xs text-[#536B73] font-normal">/noite</span>
+                      {{ acc.priceLabel }}
                     </span>
                   </div>
                   <a
@@ -106,12 +134,14 @@ import { MotionService } from '../../core/services/motion.service';
             </article>
           }
         </div>
+        }
 
       </div>
     </section>
   `
 })
 export class AccommodationsListComponent implements OnInit {
+  public readonly hotelConfig = HOTEL_CONFIG;
   public readonly accommodationService = inject(AccommodationService);
   private readonly seoService = inject(SeoService);
   private readonly el = inject(ElementRef);
@@ -128,7 +158,7 @@ export class AccommodationsListComponent implements OnInit {
     this.seoService.updateSeo({
       title: 'Acomodações | Pousada Espírito do Mar no Peró, Cabo Frio',
       description: 'Conheça as acomodações da Pousada Espírito do Mar, no Peró, Cabo Frio: quartos duplos, triplos (incluindo unidades com varanda) e quádruplos com ar-condicionado e TV.',
-      url: 'https://pousadaespiritodomar.com.br/acomodacoes'
+      url: `${HOTEL_CONFIG.siteUrl}/acomodacoes`
     });
   }
 

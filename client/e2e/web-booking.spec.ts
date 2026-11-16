@@ -75,7 +75,7 @@ test.describe('web — jornada de reserva', () => {
     await page.locator('select[name="guests"]').selectOption('2');
 
     // 02 · acomodação — card renderizado a partir da fixture da API
-    const card = page.locator('div.cursor-pointer', { hasText: 'Quarto E2E' });
+    const card = page.locator('[role="radio"]', { hasText: 'Quarto E2E' });
     await card.click();
 
     // 03 · dados do hóspede
@@ -122,7 +122,7 @@ test.describe('web — jornada de reserva', () => {
     await page.goto('/reservar');
     await page.locator('input[name="checkIn"]').fill('2026-12-10');
     await page.locator('input[name="checkOut"]').fill('2026-12-14');
-    await page.locator('div.cursor-pointer', { hasText: 'Quarto E2E' }).click();
+    await page.locator('[role="radio"]', { hasText: 'Quarto E2E' }).click();
     await page.locator('input[name="guestName"]').fill('Maria Teste E2E');
     await page.locator('input[name="guestEmail"]').fill('e2e@example.com');
     await page.locator('input[name="guestPhone"]').fill('(22) 99999-0000');

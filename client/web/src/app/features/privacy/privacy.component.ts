@@ -244,7 +244,7 @@ export class PrivacyComponent implements OnInit {
     this.seoService.updateSeo({
       title: 'Política de Privacidade & LGPD — Pousada Espírito do Mar',
       description: 'Conheça nossa Política de Privacidade e o tratamento de dados pessoais em total conformidade com a Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018).',
-      url: 'https://pousadaespiritodomar.com.br/privacidade'
+      url: `${HOTEL_CONFIG.siteUrl}/privacidade`
     });
   }
 

@@ -175,6 +175,7 @@ import { MotionService } from '../../core/services/motion.service';
                       type="date"
                       [ngModel]="checkIn()"
                       (ngModelChange)="checkIn.set($event)"
+                      [min]="todayIso"
                       name="checkIn"
                       required
                       class="w-full bg-[#F7F5F0] border border-[#DCE6EA] p-3 text-sm text-[#054054] focus:outline-none focus:border-[#054054]"
@@ -188,6 +189,7 @@ import { MotionService } from '../../core/services/motion.service';
                       type="date"
                       [ngModel]="checkOut()"
                       (ngModelChange)="checkOut.set($event)"
+                      [min]="minCheckOutIso()"
                       name="checkOut"
                       required
                       class="w-full bg-[#F7F5F0] border border-[#DCE6EA] p-3 text-sm text-[#054054] focus:outline-none focus:border-[#054054]"
@@ -218,13 +220,24 @@ import { MotionService } from '../../core/services/motion.service';
                   <div class="py-3 border-y border-[#DCE6EA] flex justify-between items-center text-xs text-[#536B73]">
                     <span>Período selecionado</span>
                     <span class="font-serif text-base text-[#054054] font-medium">
-                      {{ nights() }} {{ nights() === 1 ? 'diária' : 'diárias' }}
+                      @if (datesValid()) {
+                        {{ nights() }} {{ nights() === 1 ? 'diária' : 'diárias' }}
+                      } @else {
+                        Informe as datas
+                      }
                     </span>
                   </div>
 
+                  @if (dateError()) {
+                    <p class="p-3 bg-[#FFF8F6] border border-[#C65D47] text-xs text-[#9E3B26]" role="alert">
+                      {{ dateError() }}
+                    </p>
+                  }
+
                   <button
                     type="submit"
-                    class="w-full btn-primary cursor-pointer"
+                    [disabled]="!datesValid()"
+                    class="w-full btn-primary cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     Consultar disponibilidade
                   </button>
@@ -244,6 +257,13 @@ import { MotionService } from '../../core/services/motion.service';
             </aside>
 
           </div>
+        </div>
+      </section>
+    } @else if (accommodationService.loading()) {
+      <section class="py-44 text-center bg-[#F7F5F0]" aria-busy="true" aria-label="Carregando acomodação">
+        <div class="max-w-md mx-auto px-6 space-y-4">
+          <div class="h-8 w-2/3 mx-auto bg-[#EEF3F5] animate-pulse rounded"></div>
+          <div class="h-4 w-full bg-[#EEF3F5] animate-pulse rounded"></div>
         </div>
       </section>
     } @else {
@@ -299,7 +319,7 @@ export class AccommodationDetailComponent implements OnInit {
           title: `${item.name} | Pousada Espírito do Mar, Cabo Frio`,
           description: `${item.shortDescription} Hospedagem no bairro Peró, em Cabo Frio. Consulte a disponibilidade.`,
           image: item.coverImage,
-          url: `https://pousadaespiritodomar.com.br/acomodacoes/${item.slug}`
+          url: `${HOTEL_CONFIG.siteUrl}/acomodacoes/${item.slug}`
         });
       }
     });
@@ -350,12 +370,51 @@ export class AccommodationDetailComponent implements OnInit {
   public readonly checkOut = signal<string>(this.bookingService.filter().checkOut);
   public readonly guests = signal<number>(this.bookingService.filter().guests);
 
-  public readonly nights = computed(() => {
-    const start = new Date(this.checkIn()).getTime();
-    const end = new Date(this.checkOut()).getTime();
-    const diff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-    return diff > 0 ? diff : 1;
+  public readonly todayIso = this.toIsoDate(new Date());
+  public readonly minCheckOutIso = computed(() => {
+    const base = this.checkIn() || this.todayIso;
+    const d = new Date(`${base}T00:00:00`);
+    d.setDate(d.getDate() + 1);
+    return this.toIsoDate(d);
   });
+
+  public readonly datesValid = computed(() => {
+    const ci = this.checkIn();
+    const co = this.checkOut();
+    if (!ci || !co) return false;
+    const start = new Date(`${ci}T00:00:00`).getTime();
+    const end = new Date(`${co}T00:00:00`).getTime();
+    if (Number.isNaN(start) || Number.isNaN(end)) return false;
+    const today = new Date(`${this.todayIso}T00:00:00`).getTime();
+    return start >= today && end > start;
+  });
+
+  public readonly dateError = computed(() => {
+    const ci = this.checkIn();
+    const co = this.checkOut();
+    if (!ci || !co) return 'Informe as datas de check-in e check-out.';
+    const start = new Date(`${ci}T00:00:00`).getTime();
+    const end = new Date(`${co}T00:00:00`).getTime();
+    if (Number.isNaN(start) || Number.isNaN(end)) return 'As datas informadas não são válidas.';
+    const today = new Date(`${this.todayIso}T00:00:00`).getTime();
+    if (start < today) return 'O check-in não pode ser anterior a hoje.';
+    if (end <= start) return 'O check-out deve ser posterior ao check-in.';
+    return '';
+  });
+
+  public readonly nights = computed(() => {
+    if (!this.datesValid()) return 0;
+    const start = new Date(`${this.checkIn()}T00:00:00`).getTime();
+    const end = new Date(`${this.checkOut()}T00:00:00`).getTime();
+    return Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+  });
+
+  private toIsoDate(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
 
   public ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -384,7 +443,7 @@ export class AccommodationDetailComponent implements OnInit {
 
   public onBookSuite(): void {
     const acc = this.accommodation();
-    if (!acc) return;
+    if (!acc || !this.datesValid()) return;
 
     this.bookingService.updateFilter({
       checkIn: this.checkIn(),

@@ -54,7 +54,7 @@ export class SeoService {
       '@type': 'LodgingBusiness',
       name: HOTEL_CONFIG.businessName,
       description: HOTEL_CONFIG.description,
-      url: 'https://pousadaespiritodomar.com.br/',
+      url: `${HOTEL_CONFIG.siteUrl}/`,
       telephone: HOTEL_CONFIG.phoneFormatted,
       checkinTime: '13:00',
       checkoutTime: '11:00',

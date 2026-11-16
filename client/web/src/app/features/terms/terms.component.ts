@@ -189,7 +189,7 @@ export class TermsComponent implements OnInit {
     this.seoService.updateSeo({
       title: 'Informações & Condições de Hospedagem | Pousada Espírito do Mar',
       description: 'Consulte as orientações gerais de hospedagem, horários de check-in e check-out e informações de reserva na Pousada Espírito do Mar, no Peró, Cabo Frio.',
-      url: 'https://pousadaespiritodomar.com.br/termos-de-reserva'
+      url: `${HOTEL_CONFIG.siteUrl}/termos-de-reserva`
     });
   }
 

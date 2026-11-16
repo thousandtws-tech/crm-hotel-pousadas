@@ -11,6 +11,7 @@ export const HOTEL_CONFIG = {
   description:
     'Na Pousada Espírito do Mar, você encontra uma opção de hospedagem em Cabo Frio para aproveitar o litoral com tranquilidade. Localizada no bairro Peró, a pousada oferece fácil acesso à praia e uma estrutura pensada para seus dias de descanso.',
   legalName: 'Pousada Espírito do Mar',
+  siteUrl: 'https://pousadaespiritodomar.com.br',
   phone: '(22) 2644-3077',
   phoneFormatted: '+55-22-2644-3077',
   phoneHref: '+552226443077',

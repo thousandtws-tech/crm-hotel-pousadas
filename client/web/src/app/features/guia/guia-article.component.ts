@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BlogService, BlogPost } from '../../core/services/blog.service';
 import { SeoService } from '../../core/services/seo.service';
 import { IconComponent } from '../../shared/components/icons/icon.component';
+import { HOTEL_CONFIG } from '../../core/config/hotel-config';
 
 @Component({
   selector: 'app-guia-article',
@@ -55,7 +56,7 @@ import { IconComponent } from '../../shared/components/icons/icon.component';
             <!-- CTA -->
             <div class="mt-12 bg-[#032B38] rounded-xl p-7 sm:p-10 text-center">
               <h2 class="font-serif text-2xl sm:text-3xl text-white mb-3">
-                Hospede-se a 200m da Praia do Peró
+                Hospede-se perto da Praia do Peró
               </h2>
               <p class="text-sm text-white/75 font-light max-w-md mx-auto mb-6">
                 Quartos climatizados, piscina e café da manhã — consulte a disponibilidade para as datas da sua viagem.
@@ -132,7 +133,7 @@ export class GuiaArticleComponent implements OnInit {
           description: p.resumo,
           keywords: p.keywords,
           image: p.imagem,
-          url: `https://espiritodomar.com.br/guia/${p.slug}`,
+          url: `${HOTEL_CONFIG.siteUrl}/guia/${p.slug}`,
         });
         this.injectJsonLd(p);
       }
@@ -154,7 +155,7 @@ export class GuiaArticleComponent implements OnInit {
       datePublished: p.data,
       author: { '@type': 'Organization', name: 'Pousada Espírito do Mar' },
       publisher: { '@type': 'Organization', name: 'Pousada Espírito do Mar' },
-      mainEntityOfPage: `https://espiritodomar.com.br/guia/${p.slug}`,
+      mainEntityOfPage: `${HOTEL_CONFIG.siteUrl}/guia/${p.slug}`,
     });
     this.doc.head.appendChild(script);
   }

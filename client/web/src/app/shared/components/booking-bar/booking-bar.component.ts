@@ -97,9 +97,17 @@ export class BookingBarComponent {
     setTimeout(() => checkOutPicker.open(), 160);
   }
 
+  public readonly dateError = signal<string>('');
+
   public onCheckAvailability(): void {
     const checkIn = this.formatDate(this.checkIn());
     const checkOut = this.formatDate(this.checkOut());
+
+    if (!checkIn || !checkOut) {
+      this.dateError.set('Selecione as datas de chegada e partida para consultar a disponibilidade.');
+      return;
+    }
+    this.dateError.set('');
 
     this.bookingService.updateFilter({
       checkIn,

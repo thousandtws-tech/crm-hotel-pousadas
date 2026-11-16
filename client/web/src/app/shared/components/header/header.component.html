@@ -23,18 +23,9 @@
     <!-- Desktop Navigation Links -->
     <nav class="hidden lg:flex items-center gap-7 xl:gap-9" aria-label="Navegação Principal">
       <a
-        routerLink="/"
-        routerLinkActive="nav-active text-[#DDA554] font-medium"
-        [routerLinkActiveOptions]="{ exact: true }"
-        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
-        [class]="isScrolled() ? 'text-[#054054]' : 'text-white/90'"
-      >
-        Início
-      </a>
-      <a
         routerLink="/acomodacoes"
         routerLinkActive="nav-active text-[#DDA554] font-medium"
-        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
+        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554]"
         [class]="isScrolled() ? 'text-[#054054]' : 'text-white/90'"
       >
         Acomodações
@@ -42,7 +33,7 @@
       <a
         routerLink="/experiencias"
         routerLinkActive="nav-active text-[#DDA554] font-medium"
-        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
+        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554]"
         [class]="isScrolled() ? 'text-[#054054]' : 'text-white/90'"
       >
         Estrutura
@@ -50,7 +41,7 @@
       <a
         routerLink="/galeria"
         routerLinkActive="nav-active text-[#DDA554] font-medium"
-        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
+        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554]"
         [class]="isScrolled() ? 'text-[#054054]' : 'text-white/90'"
       >
         Galeria
@@ -58,7 +49,7 @@
       <a
         routerLink="/sobre"
         routerLinkActive="nav-active text-[#DDA554] font-medium"
-        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
+        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554]"
         [class]="isScrolled() ? 'text-[#054054]' : 'text-white/90'"
       >
         A Pousada
@@ -66,23 +57,15 @@
       <a
         routerLink="/localizacao"
         routerLinkActive="nav-active text-[#DDA554] font-medium"
-        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
+        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554]"
         [class]="isScrolled() ? 'text-[#054054]' : 'text-white/90'"
       >
         Localização
       </a>
       <a
-        routerLink="/guia"
-        routerLinkActive="nav-active text-[#DDA554] font-medium"
-        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
-        [class]="isScrolled() ? 'text-[#054054]' : 'text-white/90'"
-      >
-        Guia
-      </a>
-      <a
         routerLink="/contato"
         routerLinkActive="nav-active text-[#DDA554] font-medium"
-        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554] focus:outline-none"
+        class="nav-link-editorial text-[11px] uppercase tracking-[0.16em] py-1 hover:text-[#DDA554]"
         [class]="isScrolled() ? 'text-[#054054]' : 'text-white/90'"
       >
         Contato
@@ -93,22 +76,24 @@
     <div class="flex items-center gap-4">
       <a
         routerLink="/reservar"
-        class="hidden sm:inline-flex items-center justify-center px-5 py-2 text-[10px] tracking-[0.18em] uppercase font-medium transition-all duration-300 focus:outline-none"
+        class="hidden sm:inline-flex items-center justify-center px-5 py-2.5 text-[10px] tracking-[0.18em] uppercase font-medium transition-all duration-300"
         [class]="isScrolled()
           ? 'bg-[#054054] text-white border border-[#054054] hover:bg-[#DDA554] hover:border-[#DDA554] hover:text-[#054054]'
-          : 'bg-white/10 text-white border border-white/35 backdrop-blur-sm hover:bg-[#DDA554] hover:border-[#DDA554] hover:text-[#ffff]'"
+          : 'bg-white/10 text-white border border-white/35 backdrop-blur-sm hover:bg-[#DDA554] hover:border-[#DDA554] hover:text-[#054054]'"
       >
-        Reservar
+        Consultar disponibilidade
       </a>
 
       <!-- Mobile Menu Trigger -->
       <button
         type="button"
         (click)="toggleMobileMenu()"
-        class="lg:hidden p-1.5 transition-colors duration-200 focus:outline-none"
+        class="lg:hidden p-1.5 transition-colors duration-200"
         [class]="isScrolled() ? 'text-[#054054]' : 'text-white'"
         [attr.aria-expanded]="isMobileMenuOpen()"
+        aria-controls="mobile-nav-dialog"
         aria-label="Abrir menu de navegação"
+        #menuTrigger
       >
         <app-icon name="menu" [size]="22"></app-icon>
       </button>
@@ -119,10 +104,13 @@
 <!-- Fullscreen Brand Mobile Menu -->
 @if (isMobileMenuOpen()) {
   <div
+    id="mobile-nav-dialog"
     class="fixed inset-0 z-50 bg-[#032B38] text-[#F7F5F0] flex flex-col justify-between p-6 sm:p-12 overflow-y-auto animate-fadeIn"
     role="dialog"
     aria-modal="true"
     aria-label="Menu principal"
+    tabindex="-1"
+    #mobileDialog
   >
     <!-- Top Bar inside Modal -->
     <div class="flex items-center justify-between border-b border-white/10 pb-5">
@@ -132,7 +120,7 @@
       <button
         type="button"
         (click)="closeMobileMenu()"
-        class="p-2 text-white/70 hover:text-white transition-colors focus:outline-none"
+        class="p-2 text-white/70 hover:text-white transition-colors"
         aria-label="Fechar menu"
       >
         <app-icon name="x" [size]="24"></app-icon>

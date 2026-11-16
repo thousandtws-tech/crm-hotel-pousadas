@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BlogService } from '../../core/services/blog.service';
 import { SeoService } from '../../core/services/seo.service';
+import { HOTEL_CONFIG } from '../../core/config/hotel-config';
 import { IconComponent } from '../../shared/components/icons/icon.component';
 
 @Component({
@@ -81,7 +82,7 @@ export class GuiaListComponent implements OnInit {
       title: 'Guia do Peró e Cabo Frio | Pousada Espírito do Mar',
       description:
         'Dicas de praias, passeios e planejamento em Cabo Frio e na Região dos Lagos: Praia do Peró, gastronomia, melhor época para visitar.',
-      url: 'https://espiritodomar.com.br/guia',
+      url: `${HOTEL_CONFIG.siteUrl}/guia`,
     });
   }
 }

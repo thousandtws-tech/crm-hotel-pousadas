@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { BookingService } from '../../core/services/booking.service';
 import { PaymentService, TipoPagamento } from '../../core/services/payment.service';
 import { AccommodationService } from '../../core/services/accommodation.service';
+import { Accommodation } from '../../core/models/accommodation.model';
 import { SeoService } from '../../core/services/seo.service';
 import { IconComponent } from '../../shared/components/icons/icon.component';
 import { HOTEL_CONFIG } from '../../core/config/hotel-config';
@@ -58,6 +59,7 @@ import { MotionService } from '../../core/services/motion.service';
                       type="date"
                       [ngModel]="checkIn()"
                       (ngModelChange)="checkIn.set($event)"
+                      [min]="todayIso"
                       name="checkIn"
                       class="w-full bg-[#F7F5F0] border border-[#DCE6EA] p-3 text-sm text-[#054054] focus:outline-none focus:border-[#054054]"
                     />
@@ -70,6 +72,7 @@ import { MotionService } from '../../core/services/motion.service';
                       type="date"
                       [ngModel]="checkOut()"
                       (ngModelChange)="checkOut.set($event)"
+                      [min]="minCheckOutIso()"
                       name="checkOut"
                       class="w-full bg-[#F7F5F0] border border-[#DCE6EA] p-3 text-sm text-[#054054] focus:outline-none focus:border-[#054054]"
                     />
@@ -94,8 +97,20 @@ import { MotionService } from '../../core/services/motion.service';
 
                 <div class="mt-4 pt-4 border-t border-[#DCE6EA] text-xs text-[#536B73] flex items-center justify-between">
                   <span>Duração:</span>
-                  <span class="font-medium text-[#054054]">{{ calculatedNights() }} {{ calculatedNights() === 1 ? 'diária' : 'diárias' }}</span>
+                  <span class="font-medium text-[#054054]">
+                    @if (datesValid()) {
+                      {{ calculatedNights() }} {{ calculatedNights() === 1 ? 'diária' : 'diárias' }}
+                    } @else {
+                      —
+                    }
+                  </span>
                 </div>
+
+                @if (dateError()) {
+                  <p class="mt-3 p-3 bg-[#FFF8F6] border border-[#C65D47] text-xs text-[#9E3B26]" role="alert">
+                    {{ dateError() }}
+                  </p>
+                }
               </div>
 
               <!-- Step 2: Choose Accommodation -->
@@ -103,14 +118,35 @@ import { MotionService } from '../../core/services/motion.service';
                 <span class="type-eyebrow text-[#DDA554] block mb-2">02 · Categoria</span>
                 <h2 class="font-serif text-2xl text-[#054054] mb-4 sm:mb-5">Escolha a acomodação</h2>
 
-                <div class="space-y-3">
+                @if (accommodationService.loading()) {
+                  <div class="space-y-3" aria-busy="true" aria-label="Carregando acomodações">
+                    @for (ph of [1, 2, 3]; track ph) {
+                      <div class="p-4 border border-[#DCE6EA] flex items-center gap-4">
+                        <div class="w-16 h-16 bg-[#EEF3F5] animate-pulse rounded"></div>
+                        <div class="flex-1 space-y-2">
+                          <div class="h-4 w-1/3 bg-[#EEF3F5] animate-pulse rounded"></div>
+                          <div class="h-3 w-1/2 bg-[#EEF3F5] animate-pulse rounded"></div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                } @else if (accommodationService.accommodations().length === 0) {
+                  <p class="type-body text-sm text-[#536B73] p-4 bg-[#EEF3F5] border border-[#DCE6EA]">
+                    O catálogo de acomodações está em atualização. Ligue para {{ hotelConfig.phone }} para consultar as categorias disponíveis.
+                  </p>
+                }
+
+                <div class="space-y-3" role="radiogroup" aria-label="Categorias de acomodação">
                   @for (acc of accommodationService.accommodations(); track acc.id) {
-                    <div
+                    <button
+                      type="button"
+                      role="radio"
+                      [attr.aria-checked]="selectedSuiteSlug() === acc.slug"
                       (click)="selectedSuiteSlug.set(acc.slug)"
-                      class="p-3.5 sm:p-4 border transition-all duration-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer"
-                      [class]="selectedSuiteSlug() === acc.slug
-                        ? 'border-[#054054] bg-[#EEF3F5]'
-                        : 'border-[#DCE6EA] hover:border-[#054054]/40'"
+                      [class]="'w-full text-left p-3.5 sm:p-4 border transition-all duration-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer ' +
+                        (selectedSuiteSlug() === acc.slug
+                          ? 'border-[#054054] bg-[#EEF3F5]'
+                          : 'border-[#DCE6EA] hover:border-[#054054]/40')"
                     >
                       <div class="flex items-center gap-4">
                         <img [src]="acc.coverImage" [alt]="acc.name + ' (imagem ilustrativa)'" class="w-16 h-16 object-cover flex-shrink-0" />
@@ -125,7 +161,7 @@ import { MotionService } from '../../core/services/motion.service';
                           {{ acc.priceLabel }}
                         </span>
                       </div>
-                    </div>
+                    </button>
                   }
                 </div>
               </div>
@@ -277,11 +313,11 @@ import { MotionService } from '../../core/services/motion.service';
                   <div class="space-y-2 text-xs text-[#536B73] mb-5 pb-5 border-b border-[#DCE6EA]">
                     <div class="flex justify-between">
                       <span>Período:</span>
-                      <span class="text-[#054054] font-medium">{{ checkIn() }} a {{ checkOut() }}</span>
+                      <span class="text-[#054054] font-medium">{{ formatDateBr(checkIn()) }} a {{ formatDateBr(checkOut()) }}</span>
                     </div>
                     <div class="flex justify-between">
                       <span>Diárias:</span>
-                      <span class="text-[#054054] font-medium">{{ calculatedNights() }}</span>
+                      <span class="text-[#054054] font-medium">{{ datesValid() ? calculatedNights() : '—' }}</span>
                     </div>
                     <div class="flex justify-between">
                       <span>Hóspedes:</span>
@@ -319,7 +355,7 @@ import { MotionService } from '../../core/services/motion.service';
             <span class="type-eyebrow text-[#DDA554] block mb-2">Reserva &amp; Consulta Registrada</span>
             <h2 class="font-serif text-3xl text-[#054054] mb-4">Agradecemos o seu contato</h2>
             <p class="type-body text-sm max-w-md mx-auto mb-8">
-              {{ serverMessage() || ('Registramos seu interesse na categoria ' + (selectedAccommodation().name || '') + '.') }}
+              {{ serverMessage() || ('Registramos seu interesse na categoria ' + (selectedAccommodation()?.name || 'selecionada') + '.') }}
             </p>
 
             @if (reservaToken()) {
@@ -447,22 +483,69 @@ export class BookingComponent implements OnInit {
     });
   }
 
-  public readonly calculatedNights = computed(() => {
-    const start = new Date(this.checkIn()).getTime();
-    const end = new Date(this.checkOut()).getTime();
-    const diff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-    return diff > 0 ? diff : 1;
+  public readonly todayIso = this.toIsoDate(new Date());
+
+  public readonly minCheckOutIso = computed(() => {
+    const base = this.checkIn() || this.todayIso;
+    const d = new Date(`${base}T00:00:00`);
+    d.setDate(d.getDate() + 1);
+    return this.toIsoDate(d);
   });
 
-  public readonly selectedAccommodation = computed(() => {
+  /** Datas válidas: ambas preenchidas, check-in não no passado, saída após entrada. */
+  public readonly datesValid = computed(() => {
+    const ci = this.checkIn();
+    const co = this.checkOut();
+    if (!ci || !co) return false;
+    const start = new Date(`${ci}T00:00:00`).getTime();
+    const end = new Date(`${co}T00:00:00`).getTime();
+    if (Number.isNaN(start) || Number.isNaN(end)) return false;
+    const today = new Date(`${this.todayIso}T00:00:00`).getTime();
+    return start >= today && end > start;
+  });
+
+  public readonly dateError = computed(() => {
+    const ci = this.checkIn();
+    const co = this.checkOut();
+    if (!ci || !co) return 'Informe as datas de check-in e check-out para consultar a disponibilidade.';
+    const start = new Date(`${ci}T00:00:00`).getTime();
+    const end = new Date(`${co}T00:00:00`).getTime();
+    if (Number.isNaN(start) || Number.isNaN(end)) return 'As datas informadas não são válidas.';
+    const today = new Date(`${this.todayIso}T00:00:00`).getTime();
+    if (start < today) return 'A data de check-in não pode ser anterior a hoje.';
+    if (end <= start) return 'A data de check-out deve ser posterior à data de check-in.';
+    return '';
+  });
+
+  public readonly calculatedNights = computed(() => {
+    if (!this.datesValid()) return 0;
+    const start = new Date(`${this.checkIn()}T00:00:00`).getTime();
+    const end = new Date(`${this.checkOut()}T00:00:00`).getTime();
+    return Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+  });
+
+  public readonly selectedAccommodation = computed<Accommodation | undefined>(() => {
     return this.accommodationService.getBySlug(this.selectedSuiteSlug()) || this.accommodationService.accommodations()[0];
   });
+
+  private toIsoDate(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  public formatDateBr(iso: string): string {
+    if (!iso) return '—';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  }
 
   public ngOnInit(): void {
     this.seoService.updateSeo({
       title: 'Consultar Disponibilidade | Pousada Espírito do Mar, Cabo Frio',
       description: 'Consulte a disponibilidade de hospedagem na Pousada Espírito do Mar, localizada no bairro Peró, em Cabo Frio (RJ).',
-      url: 'https://pousadaespiritodomar.com.br/reservar'
+      url: `${HOTEL_CONFIG.siteUrl}/reservar`
     });
 
     this.route.queryParamMap.subscribe((params) => {
@@ -479,11 +562,21 @@ export class BookingComponent implements OnInit {
   }
 
   public async onSubmitBooking(): Promise<void> {
+    if (this.isLoading()) return;
+    if (!this.datesValid()) {
+      this.errorMessage.set(this.dateError());
+      return;
+    }
     if (!this.guestName() || !this.guestEmail() || !this.guestPhone()) return;
+
+    const acc = this.selectedAccommodation();
+    if (!acc) {
+      this.errorMessage.set('Selecione uma categoria de acomodação para continuar.');
+      return;
+    }
 
     this.isLoading.set(true);
     this.errorMessage.set('');
-    const acc = this.selectedAccommodation();
 
     const resp = await this.bookingService.submitBookingRequest({
       checkIn: this.checkIn(),

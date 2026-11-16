@@ -8,8 +8,8 @@ import {
   inject,
   signal
 } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatSelectModule } from '@angular/material/select';
@@ -25,7 +25,7 @@ interface SelectOption {
 
 @Component({
   selector: 'app-contact',
-  imports: [FormsModule, RouterLink, IconComponent, MatDatepickerModule, MatSelectModule],
+  imports: [DatePipe, FormsModule, IconComponent, MatDatepickerModule, MatSelectModule],
   template: `
     <!-- Header Hero -->
     <header class="contact-page-header relative pt-32 pb-16 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24 bg-[#032B38] text-white overflow-hidden">
@@ -349,32 +349,46 @@ interface SelectOption {
 
                 <div class="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <p class="text-xs text-[#536B73] leading-relaxed max-w-sm">
-                    Seus dados são utilizados exclusivamente para responder à sua solicitação de atendimento, conforme nossa
-                    <a routerLink="/privacidade" class="underline hover:text-[#054054]">Política de Privacidade</a>.
+                    O formulário prepara sua consulta: após revisar, ligue para a recepção e informe os dados — o atendimento da pousada é feito por telefone.
                   </p>
 
                   <button
                     type="submit"
                     class="btn-primary px-8 py-4 cursor-pointer shrink-0"
                   >
-                    <span>Enviar Solicitação</span>
+                    <span>Preparar consulta</span>
                     <app-icon name="arrow-right" [size]="13"></app-icon>
                   </button>
                 </div>
               </form>
             } @else {
-              <div class="p-8 sm:p-10 bg-[#FCFBF9] border border-[#DDA554]/50 text-center flex flex-col items-center">
+              <div class="p-6 sm:p-8 bg-[#FCFBF9] border border-[#DDA554]/50 flex flex-col">
                 <span class="w-12 h-12 rounded-full bg-[#EEF4F6] text-[#1A6F8A] flex items-center justify-center mb-4">
                   <app-icon name="check" [size]="22"></app-icon>
                 </span>
-                <span class="type-eyebrow text-[#DDA554] block mb-1">Atendimento Registrado</span>
+                <span class="type-eyebrow text-[#DDA554] block mb-1">Consulta preparada</span>
                 <h3 class="font-serif text-2xl sm:text-3xl text-[#054054] mb-3 font-normal">
-                  Recebemos sua mensagem
+                  Ligue para a recepção com estes dados
                 </h3>
-                <p class="type-body text-sm text-[#536B73] max-w-md mb-6 leading-relaxed">
-                  Sua solicitação foi registrada em nosso sistema. Caso deseje atendimento imediato para garantir disponibilidade de datas, entre em contato pelo telefone <strong class="text-[#054054]">{{ hotelConfig.phone }}</strong>.
+                <p class="type-body text-sm text-[#536B73] mb-5 leading-relaxed">
+                  O canal oficial de atendimento da pousada é o telefone <strong class="text-[#054054]">{{ hotelConfig.phone }}</strong>. Leia o resumo abaixo ao atendente para agilizar sua solicitação.
                 </p>
-                <div class="flex flex-wrap items-center justify-center gap-4">
+
+                <dl class="text-left text-xs text-[#054054] bg-white border border-[#DCE6EA] p-4 sm:p-5 mb-6 space-y-2">
+                  <div class="flex gap-2"><dt class="font-semibold shrink-0 w-28">Nome:</dt><dd>{{ name() }}</dd></div>
+                  <div class="flex gap-2"><dt class="font-semibold shrink-0 w-28">E-mail:</dt><dd>{{ email() }}</dd></div>
+                  @if (phone()) {
+                    <div class="flex gap-2"><dt class="font-semibold shrink-0 w-28">Telefone:</dt><dd>{{ phone() }}</dd></div>
+                  }
+                  <div class="flex gap-2"><dt class="font-semibold shrink-0 w-28">Assunto:</dt><dd>{{ subjectLabel() }}</dd></div>
+                  @if (preferredCheckIn()) {
+                    <div class="flex gap-2"><dt class="font-semibold shrink-0 w-28">Chegada prevista:</dt><dd>{{ preferredCheckIn() | date: 'dd/MM/yyyy' }}</dd></div>
+                  }
+                  <div class="flex gap-2"><dt class="font-semibold shrink-0 w-28">Hóspedes:</dt><dd>{{ guestsLabel() }}</dd></div>
+                  <div class="flex gap-2"><dt class="font-semibold shrink-0 w-28">Mensagem:</dt><dd class="whitespace-pre-line">{{ message() }}</dd></div>
+                </dl>
+
+                <div class="flex flex-wrap items-center gap-4">
                   <a [href]="'tel:' + hotelConfig.phoneHref" class="btn-primary">
                     <app-icon name="phone" [size]="14"></app-icon>
                     <span>Ligar {{ hotelConfig.phone }}</span>
@@ -384,7 +398,7 @@ interface SelectOption {
                     (click)="resetForm()"
                     class="btn-secondary cursor-pointer"
                   >
-                    <span>Enviar nova mensagem</span>
+                    <span>Editar dados</span>
                   </button>
                 </div>
               </div>
@@ -514,6 +528,14 @@ export class ContactComponent implements OnInit {
     { label: '4 Hóspedes ou mais', value: '4' }
   ];
 
+  public readonly subjectLabel = computed(
+    () => this.subjectOptions.find((o) => o.value === this.subject())?.label ?? this.subject()
+  );
+
+  public readonly guestsLabel = computed(
+    () => this.guestOptions.find((o) => o.value === this.guestsCount())?.label ?? this.guestsCount()
+  );
+
   public readonly selectedCategory = signal<string>('Todas');
   public readonly openFaqIndex = signal<number | null>(0);
 
@@ -548,7 +570,7 @@ export class ContactComponent implements OnInit {
       title: 'Contato & FAQ | Pousada Espírito do Mar no Peró, Cabo Frio',
       description:
         'Entre em contato com a Pousada Espírito do Mar, no bairro Peró, Cabo Frio (RJ). Tire suas dúvidas sobre localização, acomodações, horários e reservas.',
-      url: 'https://pousadaespiritodomar.com.br/contato'
+      url: `${HOTEL_CONFIG.siteUrl}/contato`
     });
   }
 

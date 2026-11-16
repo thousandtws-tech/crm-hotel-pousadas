@@ -1,4 +1,4 @@
-import { Component, afterNextRender, ElementRef, inject, DestroyRef } from '@angular/core';
+import { Component, afterNextRender, ElementRef, inject, DestroyRef, computed } from '@angular/core';
 import { MotionService } from '../../../../core/services/motion.service';
 import { AccommodationService } from '../../../../core/services/accommodation.service';
 
@@ -10,11 +10,11 @@ interface Stat {
 @Component({
   selector: 'app-stats-strip',
   template: `
-    <section class="relative bg-[#032B38] py-12 sm:py-16 lg:py-18 overflow-hidden" aria-label="A pousada em números">
+    <section class="relative bg-[#032B38] py-12 sm:py-16 lg:py-18 overflow-hidden" aria-label="Informações da pousada">
       <div class="absolute inset-0 bg-gradient-to-r from-[#032B38] via-[#054054]/40 to-[#032B38]"></div>
       <div class="relative container-editorial">
         <div class="stats-grid grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
-          @for (s of stats; track s.rotulo) {
+          @for (s of stats(); track s.rotulo) {
             <div class="stat-item flex flex-col items-center text-center">
               <span class="font-serif text-4xl sm:text-5xl lg:text-6xl text-[#DDA554] leading-none mb-2">
                 {{ s.valor }}
@@ -36,12 +36,26 @@ export class StatsStripComponent {
   private readonly motion = inject(MotionService);
   private readonly accommodations = inject(AccommodationService);
 
-  protected readonly stats: Stat[] = [
-    { valor: String(this.accommodations.accommodations().length || 6), rotulo: 'Acomodações climatizadas' },
-    { valor: '200m', rotulo: 'Da Praia do Peró' },
-    { valor: '4,9', rotulo: 'Avaliação dos hóspedes' },
-    { valor: '10+', rotulo: 'Anos de hospitalidade' },
-  ];
+  // Apenas dados verificáveis: catálogo real + horários divulgados pela recepção.
+  protected readonly stats = computed<Stat[]>(() => {
+    const lista = this.accommodations.accommodations();
+    const carregando = this.accommodations.loading();
+    const capacidades = lista.map((a) => a.guests).filter((n) => n > 0);
+    const min = capacidades.length ? Math.min(...capacidades) : 0;
+    const max = capacidades.length ? Math.max(...capacidades) : 0;
+    return [
+      {
+        valor: carregando ? '—' : String(lista.length),
+        rotulo: 'Categorias de acomodação',
+      },
+      {
+        valor: carregando || !lista.length ? '—' : min && max && min !== max ? `${min}–${max}` : String(max || '—'),
+        rotulo: 'Hóspedes por quarto',
+      },
+      { valor: '13h', rotulo: 'Check-in de referência' },
+      { valor: '11h', rotulo: 'Check-out de referência' },
+    ];
+  });
 
   constructor() {
     afterNextRender(() => {

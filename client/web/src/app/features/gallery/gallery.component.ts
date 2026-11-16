@@ -4,6 +4,7 @@ import { GalleryCategory, GalleryItem } from '../../core/models/gallery-item.mod
 import { LightboxComponent } from '../../shared/components/lightbox/lightbox.component';
 import { SeoService } from '../../core/services/seo.service';
 import { MotionService } from '../../core/services/motion.service';
+import { HOTEL_CONFIG } from '../../core/config/hotel-config';
 
 @Component({
   selector: 'app-gallery',
@@ -121,7 +122,7 @@ export class GalleryComponent implements OnInit {
     this.seoService.updateSeo({
       title: 'Galeria | Pousada Espírito do Mar no Peró, Cabo Frio',
       description: 'Conheça os ambientes de referência da Pousada Espírito do Mar, localizada no bairro Peró, em Cabo Frio (RJ).',
-      url: 'https://pousadaespiritodomar.com.br/galeria'
+      url: `${HOTEL_CONFIG.siteUrl}/galeria`
     });
   }
 

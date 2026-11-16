@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { App } from './app';
 import { HOTEL_CONFIG } from './core/config/hotel-config';
-import { AccommodationService } from './core/services/accommodation.service';
+import { FALLBACK_ACCOMMODATIONS } from './core/services/accommodation.service';
 import { TestimonialService } from './core/services/testimonial.service';
 import { HeroComponent } from './features/home/components/hero/hero.component';
 
@@ -38,10 +38,11 @@ describe('App & Authentic Copy Verification', () => {
 
   it('should not expose synthetic testimonials or fictitious luxury suite prices', () => {
     const testimonialService = TestBed.inject(TestimonialService);
-    const accommodationService = TestBed.inject(AccommodationService);
 
     expect(testimonialService.testimonials().length).toBe(0);
-    for (const acc of accommodationService.accommodations()) {
+    // Catálogo de contingência exibido quando a API está indisponível:
+    // não pode conter tarifas inventadas nem nomes de suítes fictícias.
+    for (const acc of FALLBACK_ACCOMMODATIONS) {
       expect(acc.price).toBeNull();
       expect(acc.priceLabel).toBe('Sob consulta');
       expect(acc.name).not.toMatch(/Ocean Front|Villa Presidencial|Bungalow/i);

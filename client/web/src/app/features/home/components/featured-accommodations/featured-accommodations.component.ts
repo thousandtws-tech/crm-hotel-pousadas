@@ -1,6 +1,7 @@
 import { Component, afterNextRender, ElementRef, inject, DestroyRef } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AccommodationService } from '../../../../core/services/accommodation.service';
+import { HOTEL_CONFIG } from '../../../../core/config/hotel-config';
 import { IconComponent } from '../../../../shared/components/icons/icon.component';
 import { MotionService } from '../../../../core/services/motion.service';
 
@@ -28,7 +29,32 @@ import { MotionService } from '../../../../core/services/motion.service';
 
         <!-- Editorial Accommodation Layout -->
         <div class="space-y-12 sm:space-y-14 lg:space-y-16">
-          
+
+          @if (accommodationService.loading()) {
+            <div class="aspect-[16/10] lg:aspect-[21/9] bg-white/60 border border-[#DCE6EA] animate-pulse" aria-busy="true" aria-label="Carregando acomodações"></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-10" aria-hidden="true">
+              @for (ph of [1, 2]; track ph) {
+                <div class="bg-white border border-[#DCE6EA] rounded-xl overflow-hidden">
+                  <div class="aspect-[4/3] bg-[#EEF3F5] animate-pulse"></div>
+                  <div class="p-5 sm:p-6 space-y-3">
+                    <div class="h-2.5 w-1/3 bg-[#EEF3F5] animate-pulse rounded"></div>
+                    <div class="h-5 w-2/3 bg-[#EEF3F5] animate-pulse rounded"></div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else if (accommodationService.accommodations().length === 0) {
+            <div class="max-w-md mx-auto text-center py-6">
+              <h3 class="font-serif text-2xl text-[#054054] mb-3">Catálogo em atualização</h3>
+              <p class="type-body text-sm text-[#536B73] mb-6">
+                As categorias de acomodação estão sendo atualizadas. Consulte a disponibilidade diretamente com a recepção.
+              </p>
+              <a [href]="'tel:' + hotelPhoneHref" class="btn-primary">
+                <span>Ligar: {{ hotelPhone }}</span>
+              </a>
+            </div>
+          }
+
           <!-- Primary Featured Room -->
           @if (accommodationService.accommodations()[0]; as master) {
             <article class="master-suite-article group">
@@ -40,8 +66,8 @@ import { MotionService } from '../../../../core/services/motion.service';
                   class="master-img parallax-image w-full h-full object-cover"
                 />
                 <span class="absolute top-4 right-4 z-10 inline-flex items-center gap-1.5 bg-[#032B38]/85 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full">
-                  <app-icon name="star" [size]="12" class="text-[#DDA554]"></app-icon>
-                  4,9
+                  <app-icon name="users" [size]="12" class="text-[#DDA554]"></app-icon>
+                  Até {{ master.guests }} hóspedes
                 </span>
               </a>
 
@@ -95,8 +121,8 @@ import { MotionService } from '../../../../core/services/motion.service';
                     class="w-full h-full object-cover"
                   />
                   <span class="absolute top-4 right-4 z-10 inline-flex items-center gap-1.5 bg-[#032B38]/85 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full">
-                    <app-icon name="star" [size]="12" class="text-[#DDA554]"></app-icon>
-                    4,9
+                    <app-icon name="users" [size]="12" class="text-[#DDA554]"></app-icon>
+                    Até {{ acc.guests }} hóspedes
                   </span>
                 </a>
 
@@ -129,9 +155,9 @@ import { MotionService } from '../../../../core/services/motion.service';
 
                   <div class="flex items-center justify-between gap-4 mt-auto">
                     <div class="flex flex-col">
-                      <span class="type-caption text-[#536B73] text-[10px]">A partir de</span>
+                      <span class="type-caption text-[#536B73] text-[10px]">Tarifa</span>
                       <span class="font-serif text-xl text-[#054054]">
-                        {{ acc.priceLabel }}<span class="text-xs text-[#536B73] font-normal">/noite</span>
+                        {{ acc.priceLabel }}
                       </span>
                     </div>
                     <a [routerLink]="['/acomodacoes', acc.slug]" class="btn-secondary !px-4 !py-2.5 text-xs shrink-0">
@@ -152,6 +178,8 @@ import { MotionService } from '../../../../core/services/motion.service';
 })
 export class FeaturedAccommodationsComponent {
   public readonly accommodationService = inject(AccommodationService);
+  public readonly hotelPhone = HOTEL_CONFIG.phone;
+  public readonly hotelPhoneHref = HOTEL_CONFIG.phoneHref;
   private readonly el = inject(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly motion = inject(MotionService);

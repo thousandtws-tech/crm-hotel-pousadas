@@ -101,5 +101,9 @@
         </button>
       </div>
     </div>
+
+    @if (dateError()) {
+      <p class="mt-3 text-xs text-[#9E3B26]" role="alert">{{ dateError() }}</p>
+    }
   </div>
 </div>

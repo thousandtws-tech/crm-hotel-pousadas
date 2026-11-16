@@ -108,7 +108,7 @@ export class ExperiencesComponent implements OnInit {
     this.seoService.updateSeo({
       title: 'Estrutura & Comodidades | Pousada Espírito do Mar, Cabo Frio',
       description: 'Conheça a estrutura da Pousada Espírito do Mar no Peró, Cabo Frio: piscina externa, café da manhã, Wi-Fi, estacionamento e quartos climatizados.',
-      url: 'https://pousadaespiritodomar.com.br/experiencias'
+      url: `${HOTEL_CONFIG.siteUrl}/experiencias`
     });
   }
 
