@@ -7,7 +7,9 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY client/web/package.json client/web/package-lock.json ./
-RUN npm ci
+# npm ci do npm 10 (node:22-alpine) não valida a resolução aninhada dos
+# bindings wasm opcionais (@emnapi/*) — npm install usa o mesmo lockfile.
+RUN npm install --no-audit --no-fund
 COPY client/web/ .
 RUN npm run build
 
