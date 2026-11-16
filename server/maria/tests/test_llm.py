@@ -47,12 +47,14 @@ class _FakeResponses:
         self._tentativas = tentativas
         self.modelos: list[str] = []
 
-    async def create(self, model: str, **_: Any):
+    async def create(self, model: str, **kwargs: Any):
         self.modelos.append(model)
         t = self._tentativas[len(self.modelos) - 1]
         if isinstance(t, Exception):
             raise t
-        return _FakeStream(t)
+        if kwargs.get("stream"):
+            return _FakeStream(t)
+        return t  # chamada síncrona (rolling summary, judge…)
 
 
 class _FakeClient:
@@ -185,3 +187,61 @@ def test_historico_desligado_nao_acumula(api, admin):
         assert orq._historico == []
     finally:
         s.maria_history_enabled = antigo
+
+
+# ----------------------------------------------------- rolling summary --
+
+def test_pares_descartados_viram_material(api, admin):
+    s = get_settings()
+    antigo = s.maria_history_max_turns
+    s.maria_history_max_turns = 1
+    try:
+        orq = Orquestrador(api, admin)
+        orq._client = _FakeClient([])
+        orq._lembra("reserva do joão?", "a 12, suíte 4")
+        orq._lembra("e o check-in?", "feito às 14h")
+        assert orq._para_resumir == ["U: reserva do joão?", "A: a 12, suíte 4"]
+    finally:
+        s.maria_history_max_turns = antigo
+
+
+def test_resumo_entra_no_contexto(api, admin):
+    s = get_settings()
+    ant_turnos = s.maria_history_max_turns
+    ant_sum = s.maria_summary_enabled
+    s.maria_history_max_turns = 1
+    s.maria_summary_enabled = True
+    try:
+        orq = _orq(api, admin, [
+            SimpleNamespace(output_text="João tinha reserva 12 na suíte 4."),
+        ])
+        orq._lembra("reserva do joão?", "a 12, suíte 4")
+        orq._lembra("e o check-in?", "feito às 14h")
+        msgs = asyncio.run(orq._contexto("e o checkout dele?"))
+        resumos = [m["content"] for m in msgs if m["role"] == "developer"
+                   and "Resumo da conversa" in m["content"]]
+        assert resumos and "suíte 4" in resumos[0]
+        assert orq._resumo == "João tinha reserva 12 na suíte 4."
+        assert orq._para_resumir == []
+    finally:
+        s.maria_history_max_turns = ant_turnos
+        s.maria_summary_enabled = ant_sum
+
+
+def test_summary_desligada_descarta_sem_chamar(api, admin):
+    s = get_settings()
+    ant_turnos = s.maria_history_max_turns
+    ant_sum = s.maria_summary_enabled
+    s.maria_history_max_turns = 1
+    s.maria_summary_enabled = False
+    try:
+        orq = _orq(api, admin, [])
+        orq._lembra("p1", "r1")
+        orq._lembra("p2", "r2")
+        msgs = asyncio.run(orq._contexto("p3"))
+        assert orq._para_resumir == []
+        assert orq._resumo is None
+        assert all("Resumo da conversa" not in str(m) for m in msgs)
+    finally:
+        s.maria_history_max_turns = ant_turnos
+        s.maria_summary_enabled = ant_sum

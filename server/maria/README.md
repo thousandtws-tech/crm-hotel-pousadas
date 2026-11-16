@@ -33,6 +33,42 @@ reconhecimento curto ("deixa eu ver aqui…") — sem silêncio percebido.
 - **Viés de vocabulário no STT**: `OPENAI_TRANSCRIPTION_PROMPT` envia
   termos do domínio (check-in, FNRH, frigobar…) para a transcrição,
   elevando a precisão em fala rápida e sotaques.
+- **Cache de leituras na sessão**: a mesma tool com os mesmos args
+  dentro de `MARIA_TOOL_CACHE_TTL_SECS` reutiliza o resultado — menos
+  latência e menos carga na API. Qualquer escrita invalida o cache.
+- **Rolling summary**: pares cortados do histórico são condensados pelo
+  LLM numa nota de contexto (`MARIA_SUMMARY_ENABLED`) em vez de sumir —
+  sessões longas não perdem os fatos já ditos.
+
+## Servidor MCP (`POST /mcp`)
+
+As tools também são expostas via **Model Context Protocol** — qualquer
+cliente MCP (Claude, IDEs, outros agentes) opera o sistema com as
+mesmas regras do canal de voz.
+
+- Transporte Streamable HTTP **stateless**: JSON-RPC 2.0 em
+  `POST /mcp` (`initialize`, `tools/list`, `tools/call`, `ping`,
+  notificações → 202). Batches aceitos; `GET /mcp` responde 405.
+- Auth: `Authorization: Bearer <jwt do sistema>` por request — cada
+  chamada executa com as permissões daquele funcionário (RBAC intacto).
+- Escrita: `preparar_*` → `confirmar_acao` funciona entre requests —
+  pendências ficam em store por usuário com TTL de 15 min.
+
+Exemplo (Claude Code / mcp client):
+
+```json
+{"mcpServers": {"maria": {
+  "url": "https://<host>/mcp",
+  "headers": {"Authorization": "Bearer <jwt>"}
+}}}
+```
+
+## Evals — LLM-as-judge
+
+`python -m evals.run_evals --judge` adiciona uma segunda opinião de
+modelo por caso: **fidelidade** (só afirma o que as tools devolveram?),
+**naturalidade para voz** (falável, sem markdown, concisa) e
+**utilidade**. Médias saem no resumo do relatório.
 
 ## Rodando
 

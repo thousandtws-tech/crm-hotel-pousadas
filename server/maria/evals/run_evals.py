@@ -12,6 +12,12 @@ Uso:
     set OPENAI_API_KEY=sk-...          (Windows) | export OPENAI_API_KEY=...
     python -m evals.run_evals [--dataset evals/dataset.json] [--nivel N]
                               [--limite K] [--saida evals/report.json]
+                              [--judge] [--judge-model gpt-4o-mini]
+
+--judge: LLM-as-judge — um segundo modelo pontua a resposta final em
+fidelidade (só afirma o que as tools devolveram?), naturalidade para
+voz (falável, sem markdown, concisa) e utilidade. Custa uma chamada
+extra por caso — por isso fica fora do caminho padrão.
 
 Sem chave OpenAI, sai com erro explicando — os testes unitários
 (tests/) já cobrem o dispatch offline.
@@ -92,6 +98,67 @@ async def _sem_result(_: str, __: dict) -> None:
     pass
 
 
+# --------------------------------------------------------- LLM-as-judge --
+
+JUDGE_PROMPT = """Você é um avaliador rigoroso de respostas de assistentes de
+voz. Analise a RESPOSTA que a assistente deu à PERGUNTA, considerando o que
+as FERRAMENTAS realmente devolveram.
+
+Dê notas inteiras de 0 a 5:
+- fidelidade: a resposta só afirma o que as ferramentas devolveram?
+  Inventar números, nomes ou fatos = 0. Omitir informação não conta contra.
+- voz: a frase é falável — curta, natural, sem markdown, listas, tabelas
+  ou símbolos? (a resposta é lida em voz alta por TTS)
+- utilidade: responde a intenção real? oferece próximo passo quando faz
+  sentido? não enche linguiça?
+
+Responda SOMENTE um objeto JSON:
+{"fidelidade":N,"voz":N,"utilidade":N,"comentario":"até 20 palavras"}"""
+
+
+async def julgar(client, caso: dict, r: dict, modelo: str) -> dict:
+    """LLM-as-judge: nota a resposta final contra os dados das tools."""
+    if "erro" in r:
+        return {"judge_erro": "turno falhou"}
+    tools_ctx = [
+        {"name": t["name"],
+         "ok": t.get("ok"),
+         "result": json.dumps(t.get("result"), ensure_ascii=False)[:1500]}
+        for t in r.get("tools_full", [])
+    ]
+    payload = {
+        "pergunta": caso["pergunta"],
+        "resposta": r.get("resposta", ""),
+        "ferramentas": tools_ctx,
+    }
+    try:
+        resp = await client.responses.create(
+            model=modelo,
+            input=[
+                {"role": "developer", "content": JUDGE_PROMPT},
+                {"role": "user",
+                 "content": json.dumps(payload, ensure_ascii=False)},
+            ],
+        )
+        texto = (getattr(resp, "output_text", None) or "").strip()
+        inicio, fim = texto.find("{"), texto.rfind("}")
+        return json.loads(texto[inicio:fim + 1])
+    except Exception as e:  # noqa: BLE001 — judge falha não derruba o eval
+        return {"judge_erro": str(e)[:200]}
+
+
+def _medias_judge(notas: list[dict]) -> dict:
+    campos = ("fidelidade", "voz", "utilidade")
+    validas = [j for j in notas if "judge_erro" not in j]
+    if not validas:
+        return {}
+    return {
+        "casos_avaliados": len(validas),
+        **{c: round(sum(j.get(c, 0) for j in validas) / len(validas), 2)
+           for c in campos},
+    }
+
+
 async def roda_caso(caso: dict, ator: Ator) -> dict:
     orq = Orquestrador(StubApi(), ator)
     inicio = time.perf_counter()
@@ -165,6 +232,9 @@ async def main() -> int:
                     help="só casos deste nível (1 admin, 2 gerente, 3 recepção)")
     ap.add_argument("--limite", type=int, default=None)
     ap.add_argument("--saida", default="evals/report.json")
+    ap.add_argument("--judge", action="store_true",
+                    help="LLM-as-judge pontua fidelidade/voz/utilidade")
+    ap.add_argument("--judge-model", default="gpt-4o-mini")
     args = ap.parse_args()
 
     if not get_settings().openai_api_key:
@@ -177,13 +247,24 @@ async def main() -> int:
     if args.limite:
         casos = casos[: args.limite]
 
+    juiz = None
+    if args.judge:
+        from openai import AsyncOpenAI
+        juiz = AsyncOpenAI(api_key=get_settings().openai_api_key,
+                           timeout=60)
+
     resultados = []
+    notas = []
     for caso in casos:
         ator = Ator(idfuncionario=1, login="eval", nome="Avaliador",
                     nivel=caso.get("nivel", 3))
         r = await roda_caso(caso, ator)
         veredito = avalia(caso, r)
         r.update(veredito)
+        if juiz:
+            nota = await julgar(juiz, caso, r, args.judge_model)
+            r["judge"] = nota
+            notas.append(nota)
         r.pop("tools_full", None)
         marca = "PASS" if r["passou"] else "FAIL"
         print(f"{marca}  {caso['id']:<28} {r['motivo']}")
@@ -200,6 +281,9 @@ async def main() -> int:
         "modelo": get_settings().openai_llm_model,
         "reasoning": get_settings().openai_llm_reasoning_effort,
     }
+    if juiz:
+        resumo["judge"] = {"modelo": args.judge_model, **_medias_judge(notas)}
+        print(json.dumps(resumo["judge"], ensure_ascii=False, indent=2))
     print(json.dumps(resumo, ensure_ascii=False, indent=2))
     Path(args.saida).write_text(
         json.dumps({"resumo": resumo, "casos": resultados},

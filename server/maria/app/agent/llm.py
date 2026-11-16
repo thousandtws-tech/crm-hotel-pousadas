@@ -30,6 +30,13 @@ OnToolStatus = Callable[[str], Awaitable[None]]
 
 MAX_TOOL_ROUNDS = 6
 
+_RESUMO_PROMPT = (
+    "Você condensa o histórico de uma conversa de voz para manter contexto. "
+    "Resuma em até 6 linhas de texto corrido (sem marcadores), preservando "
+    "fatores operacionais: números de reserva, nomes de hóspedes/clientes, "
+    "datas, valores, ações já confirmadas e preferências ditas pelo usuário."
+)
+
 
 class _FalhaStream(RuntimeError):
     """Falha do lado do provedor no meio do stream (evento
@@ -58,6 +65,8 @@ class Orquestrador:
             max_retries=s.openai_max_retries,
         )
         self._historico: list[dict[str, Any]] = []
+        self._resumo: str | None = None
+        self._para_resumir: list[str] = []
         self._cancelado = False
 
     def cancelar(self) -> None:
@@ -98,8 +107,45 @@ class Orquestrador:
                         ),
                     }
                 )
+        if s.maria_summary_enabled:
+            await self._resumir_pendentes()
+        if self._resumo:
+            msgs.append(
+                {
+                    "role": "developer",
+                    "content": (
+                        "Resumo da conversa até aqui (contexto — confirme "
+                        "com ferramentas antes de agir sobre ele):\n"
+                        + self._resumo
+                    ),
+                }
+            )
         msgs.extend(self._historico)
         return msgs
+
+    async def _resumir_pendentes(self) -> None:
+        """Rolling summary: condensa o que saiu do histórico numa nota de
+        contexto, em vez de deixar os turnos antigos sumirem de vez."""
+        if not self._para_resumir:
+            return
+        material = "\n".join(self._para_resumir)
+        if self._resumo:
+            material = f"[resumo anterior]\n{self._resumo}\n" \
+                f"[trechos novos]\n{material}"
+        self._para_resumir = []
+        try:
+            resp = await self._client.responses.create(
+                model=get_settings().openai_llm_model,
+                input=[
+                    {"role": "developer", "content": _RESUMO_PROMPT},
+                    {"role": "user", "content": material[:8000]},
+                ],
+            )
+            novo = (getattr(resp, "output_text", None) or "").strip()
+            self._resumo = (novo or material[-1500:])[:4000]
+        except Exception:
+            log.exception("summarizer falhou — cai no recorte bruto")
+            self._resumo = material[-1500:]
 
     def _lembra(self, pergunta: str, resposta: str) -> None:
         s = get_settings()
@@ -109,6 +155,7 @@ class Orquestrador:
         self._historico.append({"role": "assistant", "content": resposta})
         limite = s.maria_history_max_turns * 2
         if len(self._historico) > limite:
+            self._descartar(self._historico[:-limite])
             self._historico = self._historico[-limite:]
         # orçamento por tamanho — turnos longos (respostas com muito
         # dado) não estouram a janela mesmo dentro do limite de turnos
@@ -116,7 +163,21 @@ class Orquestrador:
             len(self._historico) > 2
             and _chars_historico(self._historico) > s.maria_history_max_chars
         ):
+            self._descartar(self._historico[:2])
             del self._historico[:2]
+
+    def _descartar(self, msgs: list[dict[str, Any]]) -> None:
+        """Pares que saem do histórico viram material de resumo (rolling
+        summary) — não desaparecem de vez."""
+        if not get_settings().maria_summary_enabled:
+            return
+        for m in msgs:
+            papel = "U" if m.get("role") == "user" else "A"
+            self._para_resumir.append(f"{papel}: {m.get('content', '')}")
+        # o material bruto também tem teto — o resumo resume, não acumula
+        while (len(self._para_resumir) > 1
+               and sum(len(x) for x in self._para_resumir) > 8000):
+            self._para_resumir.pop(0)
 
     async def responder(
         self,

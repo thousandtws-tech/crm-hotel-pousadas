@@ -77,6 +77,14 @@ class Settings(BaseSettings):
     # (ex.: 200 reservas) não consomem a janela inteira. O resultado
     # completo segue gravado no diário de turnos (dataset).
     maria_tool_result_max_chars: int = 6000
+    # Cache de leituras na sessão: a mesma pergunta repetida (mesma tool +
+    # mesmos args) reutiliza o resultado por N segundos — menos latência e
+    # menos chamadas à API. Qualquer escrita/alteração invalida tudo.
+    maria_tool_cache_enabled: bool = True
+    maria_tool_cache_ttl_secs: float = 45.0
+    # Rolling summary: pares cortados do histórico são resumidos pelo LLM
+    # em vez de sumirem — preserva contexto de sessões longas.
+    maria_summary_enabled: bool = True
     maria_timezone: str = "America/Sao_Paulo"
     # Memória persistente (aprendizado no dia a dia)
     maria_memory_enabled: bool = True

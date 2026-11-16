@@ -86,9 +86,12 @@ app.add_middleware(
 )
 
 
-from .rotas_ia import router as ia_router
+# Routers registrados após o app existir (import tardio intencional).
+from .mcp import router as mcp_router  # noqa: E402
+from .rotas_ia import router as ia_router  # noqa: E402
 
 app.include_router(ia_router)
+app.include_router(mcp_router)
 
 
 @app.get("/healthz")

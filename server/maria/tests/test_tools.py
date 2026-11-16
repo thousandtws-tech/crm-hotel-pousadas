@@ -1,6 +1,7 @@
 """Testes do ToolExecutor — RBAC, fluxo preparar→confirmar, dispatch."""
 
 from app.tools import TOOLS, ToolExecutor, _data
+from tests.conftest import FakeApi
 
 # ------------------------------------------------------------- schemas --
 
@@ -255,3 +256,76 @@ def test_toda_tool_tem_rotulo_amigavel():
     for t in TOOLS:
         rotulo = rotulo_tool(t["name"])
         assert rotulo and t["name"] not in rotulo, t["name"]
+
+
+# ---------------------------------------------------- cache de sessão --
+
+def _api_checkins():
+    return FakeApi(rotas={
+        ("get", "/reservas"): {"items": [{"id": 1}], "total": 1},
+    })
+
+
+async def test_leitura_repetida_usa_cache(admin):
+    """Mesma tool + mesmos args dentro do TTL → uma chamada à API só."""
+    api = _api_checkins()
+    ex = ToolExecutor(api, admin)
+    await ex.run("get_checkins", {})
+    await ex.run("get_checkins", {})
+    chamadas = [c for c in api.calls if c[1].startswith("/reservas")]
+    assert len(chamadas) == 1
+
+
+async def test_args_diferentes_nao_cacheiam(admin):
+    api = _api_checkins()
+    ex = ToolExecutor(api, admin)
+    await ex.run("get_checkins", {})
+    await ex.run("get_checkins", {"de": "ontem"})
+    chamadas = [c for c in api.calls if c[1].startswith("/reservas")]
+    assert len(chamadas) == 2
+
+
+async def test_escrita_invalida_cache(admin):
+    api = _api_checkins()
+    ex = ToolExecutor(api, admin)
+    await ex.run("get_checkins", {})
+    # preparar_* não é leitura → invalida o cache da sessão
+    await ex.run("preparar_cancelamento",
+                 {"idreserva": 1, "motivo": "x"})
+    await ex.run("get_checkins", {})
+    chamadas = [c for c in api.calls if c[1].startswith("/reservas")]
+    assert len(chamadas) == 2
+
+
+async def test_cache_desligado_chama_sempre(api, admin):
+    from app.config import get_settings
+    s = get_settings()
+    antigo = s.maria_tool_cache_enabled
+    s.maria_tool_cache_enabled = False
+    api = _api_checkins()
+    try:
+        ex = ToolExecutor(api, admin)
+        await ex.run("get_checkins", {})
+        await ex.run("get_checkins", {})
+        chamadas = [c for c in api.calls if c[1].startswith("/reservas")]
+        assert len(chamadas) == 2
+    finally:
+        s.maria_tool_cache_enabled = antigo
+
+
+async def test_erro_nao_fica_cacheado(api, admin):
+    """5xx transitório não pode grudar por 45s no cache."""
+    from app.infra.api_client import ApiError
+    falho = _api_checkins()
+    ex = ToolExecutor(falho, admin)
+    falho.rotas = {
+        ("get", "/reservas"): ApiError(500, "down"),
+    }
+    r1 = await ex.run("get_checkins", {})
+    assert r1.get("erro")
+    falho.rotas = {
+        ("get", "/reservas"): {"items": [], "total": 0},
+    }
+    r2 = await ex.run("get_checkins", {})
+    assert not r2.get("erro")
+    assert len(falho.calls) == 2
