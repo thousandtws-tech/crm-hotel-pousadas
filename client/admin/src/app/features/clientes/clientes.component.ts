@@ -42,10 +42,13 @@ const LADO_FOTO = 640;
     <div class="page">
       <div class="cli-head">
         <div class="cli-titulo-grupo">
-          <h2 class="cli-titulo">Clientes</h2>
-          <span class="cli-contador" title="Total de clientes cadastrados">
-            {{ total() }} {{ total() === 1 ? 'hóspede' : 'hóspedes' }}
-          </span>
+          <p class="eyebrow">Cadastro</p>
+          <div class="cli-titulo-linha">
+            <h2 class="cli-titulo">Clientes</h2>
+            <span class="cli-contador" title="Total de clientes cadastrados">
+              {{ total() }} {{ total() === 1 ? 'hóspede' : 'hóspedes' }}
+            </span>
+          </div>
         </div>
         <div class="cli-head-acoes">
           <button class="btn-tour" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
@@ -57,24 +60,24 @@ const LADO_FOTO = 640;
           </button>
           <mat-menu #menuRel="matMenu" class="menu-rel">
             <button mat-menu-item (click)="exportar('pdf')" id="tour-rel-pdf">
-              <mat-icon class="rel-ic ic-pdf">picture_as_pdf</mat-icon>
+              <mat-icon class="rel-ic">picture_as_pdf</mat-icon>
               <span>PDF <small>documento formatado</small></span>
             </button>
             <button mat-menu-item (click)="exportar('xlsx')">
-              <mat-icon class="rel-ic ic-xls">table_view</mat-icon>
+              <mat-icon class="rel-ic">table_view</mat-icon>
               <span>Excel <small>planilha .xlsx</small></span>
             </button>
             <button mat-menu-item (click)="exportar('doc')">
-              <mat-icon class="rel-ic ic-doc">article</mat-icon>
+              <mat-icon class="rel-ic">article</mat-icon>
               <span>Word <small>documento .doc</small></span>
             </button>
             <mat-divider />
             <button mat-menu-item (click)="exportar('email')">
-              <mat-icon class="rel-ic ic-mail">mail</mat-icon>
+              <mat-icon class="rel-ic">mail</mat-icon>
               <span>E-mail <small>abre seu app de e-mail</small></span>
             </button>
             <button mat-menu-item (click)="exportar('whats')">
-              <mat-icon class="rel-ic ic-whats">chat</mat-icon>
+              <mat-icon class="rel-ic">chat</mat-icon>
               <span>WhatsApp <small>resumo formatado</small></span>
             </button>
           </mat-menu>
@@ -86,7 +89,7 @@ const LADO_FOTO = 640;
 
       <div class="cli-info">
         <div class="cli-info-card">
-          <span class="cli-info-icone inf-teal"><mat-icon>badge</mat-icon></span>
+          <span class="cli-info-icone"><mat-icon>badge</mat-icon></span>
           <div class="cli-info-txt">
             <strong>Cadastro completo</strong>
             <p>
@@ -96,7 +99,7 @@ const LADO_FOTO = 640;
           </div>
         </div>
         <div class="cli-info-card">
-          <span class="cli-info-icone inf-gold"><mat-icon>public</mat-icon></span>
+          <span class="cli-info-icone"><mat-icon>public</mat-icon></span>
           <div class="cli-info-txt">
             <strong>Hóspedes vindos do site</strong>
             <p>
@@ -106,7 +109,7 @@ const LADO_FOTO = 640;
           </div>
         </div>
         <div class="cli-info-card">
-          <span class="cli-info-icone inf-navy"><mat-icon>shield</mat-icon></span>
+          <span class="cli-info-icone"><mat-icon>shield</mat-icon></span>
           <div class="cli-info-txt">
             <strong>Exclusão protegida</strong>
             <p>
@@ -174,10 +177,7 @@ const LADO_FOTO = 640;
                       (mousedown)="$event.preventDefault()"
                       (click)="selecionarSugestao(s)"
                     >
-                      <span
-                        class="avatar-sm sug-avatar"
-                        [style.background]="avatarCor(s.id)"
-                      >
+                      <span class="avatar-sm sug-avatar">
                         @if (fotos().get(s.id); as url) {
                           <img [src]="url" alt="" />
                         } @else {
@@ -253,7 +253,7 @@ const LADO_FOTO = 640;
                   <tr class="cli-row">
                     <td>
                       <div class="cli-cell">
-                        <span class="avatar-sm" [style.background]="avatarCor(c.id)">
+                        <span class="avatar-sm">
                           @if (fotos().get(c.id); as url) {
                             <img [src]="url" alt="" />
                           } @else {
@@ -280,9 +280,8 @@ const LADO_FOTO = 640;
                     <td class="tc">
                       <button
                         type="button"
-                        class="status-chip badge-toggle"
-                        [class.bg-blue]="c.ativo"
-                        [class.bg-gray]="!c.ativo"
+                        class="st-chip"
+                        [class.off]="!c.ativo"
                         [title]="c.ativo ? 'Clique para desativar' : 'Clique para ativar'"
                         (click)="toggleStatus(c, !c.ativo)"
                       >
@@ -292,7 +291,7 @@ const LADO_FOTO = 640;
                     <td class="tc cli-acoes">
                       <button
                         type="button"
-                        class="badge-acao bg-yellow"
+                        class="acao-btn"
                         title="Editar"
                         aria-label="Editar cliente"
                         (click)="abrirForm(c)"
@@ -301,7 +300,7 @@ const LADO_FOTO = 640;
                       </button>
                       <button
                         type="button"
-                        class="badge-acao bg-blue"
+                        class="acao-btn"
                         title="Documentos e fichas FNRH"
                         aria-label="Documentos e fichas FNRH"
                         (click)="docsCliente.set(c)"
@@ -310,7 +309,7 @@ const LADO_FOTO = 640;
                       </button>
                       <button
                         type="button"
-                        class="badge-acao bg-purple"
+                        class="acao-btn"
                         title="Anonimizar dados (LGPD — direito de eliminação)"
                         aria-label="Anonimizar dados do cliente"
                         (click)="anonimizar(c)"
@@ -319,7 +318,7 @@ const LADO_FOTO = 640;
                       </button>
                       <button
                         type="button"
-                        class="badge-acao bg-dark-blue"
+                        class="acao-btn perigo"
                         title="Excluir"
                         aria-label="Excluir cliente"
                         (click)="excluir(c)"
@@ -523,7 +522,7 @@ const LADO_FOTO = 640;
               <span class="drawer-req"><small class="req">*</small> Campos obrigatórios</span>
               <div class="drawer-foot-acoes">
                 <button class="btn-gray" type="button" (click)="fecharModal()">Cancelar</button>
-                <button class="btn-green" type="submit">
+                <button class="btn-dark-blue" type="submit">
                   <mat-icon>save</mat-icon> {{ editando() ? 'Salvar alterações' : 'Cadastrar cliente' }}
                 </button>
               </div>
@@ -550,35 +549,35 @@ const LADO_FOTO = 640;
       display: flex; align-items: center; justify-content: space-between;
       gap: 16px; flex-wrap: wrap; margin-bottom: 14px;
     }
-    .cli-titulo-grupo { display: flex; align-items: baseline; gap: 10px; }
+    .cli-titulo-grupo { display: flex; flex-direction: column; gap: 2px; }
+    .eyebrow {
+      margin: 0; font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.09em; color: #8fa3ab;
+    }
+    .cli-titulo-linha { display: flex; align-items: baseline; gap: 10px; }
     .cli-titulo {
       margin: 0; font-size: 1.35rem; font-weight: 700;
       color: #054054; letter-spacing: -0.01em;
     }
     .cli-contador {
-      font-size: 0.78rem; font-weight: 600; color: #1a6f8a;
-      background: rgba(26, 111, 138, 0.12);
+      font-size: 0.78rem; font-weight: 600; color: #054054;
+      background: #eef4f6;
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .cli-head-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
     .rel-seta { font-size: 16px !important; width: 16px !important; height: 16px !important; margin-left: 2px; }
-    .rel-ic { font-size: 19px !important; width: 19px !important; height: 19px !important; }
-    .ic-pdf { color: #c0392b; }
-    .ic-xls { color: #1e8449; }
-    .ic-doc { color: #2e6da4; }
-    .ic-mail { color: #1a6f8a; }
-    .ic-whats { color: #25a244; }
+    .rel-ic { font-size: 19px !important; width: 19px !important; height: 19px !important; color: #5d6d7e; }
     [mat-menu-item] small { display: block; font-size: 0.68rem; color: #8a99a4; font-weight: 400; line-height: 1.3; }
     .btn-tour {
       display: inline-flex; align-items: center; gap: 6px;
-      border: 1.5px solid #4b95ab; background: #fff;
-      color: #1a6f8a; border-radius: 4px;
+      border: 1px solid #d7e0e6; background: #fff;
+      color: #5d6d7e; border-radius: 4px;
       padding: 0 14px; min-height: 34px; cursor: pointer;
       font-size: 0.85rem; font-weight: 600;
-      transition: background .15s ease, color .15s ease;
+      transition: background .15s ease, color .15s ease, border-color .15s ease;
     }
     .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { background: #1a6f8a; color: #fff; border-color: #1a6f8a; }
+    .btn-tour:hover { border-color: #054054; color: #054054; }
 
     /* ---------- banners de informação ---------- */
     .cli-info {
@@ -593,16 +592,13 @@ const LADO_FOTO = 640;
     }
     .cli-info-card:hover {
       box-shadow: 0 6px 18px rgba(5, 64, 84, 0.08);
-      transform: translateY(-1px);
     }
     .cli-info-icone {
       width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
+      background: #eef4f6; color: #054054;
     }
     .cli-info-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .inf-teal { background: rgba(26, 111, 138, 0.12); color: #1a6f8a; }
-    .inf-gold { background: rgba(221, 165, 84, 0.16); color: #b5811f; }
-    .inf-navy { background: rgba(5, 64, 84, 0.1); color: #054054; }
     .cli-info-txt { min-width: 0; }
     .cli-info-txt strong {
       display: block; font-size: 0.9rem; font-weight: 700;
@@ -629,8 +625,8 @@ const LADO_FOTO = 640;
       margin-left: 1.3rem;
     }
     .cli-busca.foco {
-      border-color: #1a6f8a;
-      box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14);
+      border-color: #054054;
+      box-shadow: 0 0 0 3px rgba(5, 64, 84, 0.12);
     }
     .cli-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
     .cli-busca-input {
@@ -671,7 +667,7 @@ const LADO_FOTO = 640;
       font-family: inherit; transition: background 0.1s;
     }
     .sug-item:hover, .sug-item.sel { background: #eef5f8; }
-    .sug-item.sel .sug-go { opacity: 1; color: #1a6f8a; }
+    .sug-item.sel .sug-go { opacity: 1; color: #054054; }
     .sug-avatar { width: 36px; height: 36px; }
     .sug-txt {
       display: flex; flex-direction: column; line-height: 1.3;
@@ -682,7 +678,7 @@ const LADO_FOTO = 640;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .sug-txt mark {
-      background: rgba(221, 165, 84, 0.35); color: #054054;
+      background: #dce9ee; color: #054054;
       border-radius: 3px; padding: 0 1px;
     }
     .sug-txt small { color: #7d97a1; font-size: 0.76rem; }
@@ -721,8 +717,8 @@ const LADO_FOTO = 640;
       background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25);
       transition: transform 0.18s;
     }
-    .cli-toggle.on { border-color: #1a6f8a; color: #054054; }
-    .cli-toggle.on .cli-trilho { background: #1a6f8a; }
+    .cli-toggle.on { border-color: #054054; color: #054054; }
+    .cli-toggle.on .cli-trilho { background: #054054; }
     .cli-toggle.on .cli-bolinha { transform: translateX(16px); }
 
     /* ---------- tabela ---------- */
@@ -756,7 +752,10 @@ const LADO_FOTO = 640;
       border-radius: 50%; overflow: hidden; flex-shrink: 0;
       color: #fff; font-weight: 700;
     }
-    .avatar-sm { width: 42px; height: 42px; }
+    .avatar-sm {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, #1a6f8a, #4b95ab);
+    }
     .avatar-iniciais { font-size: 0.8rem; letter-spacing: 0.02em; }
     .avatar-lg { width: 72px; height: 72px; border: 1px solid #d7e0e6; background: #eef2f5; color: #adb5bd; }
     .avatar-lg mat-icon { font-size: 40px; width: 40px; height: 40px; }
@@ -765,16 +764,34 @@ const LADO_FOTO = 640;
     .mono { font-variant-numeric: tabular-nums; color: #40525d; }
     .tag-site {
       display: inline-flex; align-items: center; gap: 4px;
-      font-size: 0.72rem; font-weight: 600; color: #1a6f8a;
-      background: rgba(26, 111, 138, 0.1);
+      font-size: 0.72rem; font-weight: 600; color: #054054;
+      background: #eef4f6;
       border-radius: 999px; padding: 3px 9px;
     }
     .tag-site mat-icon { font-size: 13px; width: 13px; height: 13px; }
 
+    .st-chip {
+      display: inline-flex; align-items: center;
+      border: 1px solid #d7e0e6; border-radius: 999px;
+      background: #eef4f6; color: #054054;
+      padding: 6px 14px; font-size: 0.8rem; font-weight: 600;
+      font-family: inherit; cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .st-chip:hover { border-color: #054054; }
+    .st-chip.off { background: #f4f6f8; color: #7d97a1; }
+
     .cli-acoes { white-space: nowrap; }
-    .cli-tabela .badge-acao { padding: 0.5em 0.68em; }
-    .cli-tabela .badge-acao mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .cli-tabela .status-chip { padding: 6px 14px; font-size: 0.8rem; }
+    .acao-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; margin: 0 2px;
+      border: 1px solid #d7e0e6; border-radius: 7px;
+      background: #fff; color: #5d6d7e; cursor: pointer;
+      transition: border-color .15s, color .15s, background .15s;
+    }
+    .acao-btn mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .acao-btn:hover { border-color: #054054; color: #054054; }
+    .acao-btn.perigo:hover { border-color: #b3261e; color: #b3261e; background: #fdf3f2; }
 
     /* ---------- estado vazio ---------- */
     .cli-vazio {
@@ -803,13 +820,13 @@ const LADO_FOTO = 640;
 
     /* ---------- drawer lateral ---------- */
     .drawer-backdrop {
-      position: fixed; inset: 0; z-index: 200;
+      position: fixed; inset: 0; z-index: 320;
       background: rgba(5, 32, 43, 0.45);
       animation: fadeIn 0.18s ease-out;
     }
     @keyframes fadeIn { from { opacity: 0; } }
     .drawer {
-      position: fixed; top: 0; right: 0; bottom: 0; z-index: 201;
+      position: fixed; top: 0; right: 0; bottom: 0; z-index: 321;
       width: min(560px, 100vw);
       background: #f7fafb;
       box-shadow: -12px 0 40px rgba(3, 32, 43, 0.28);
@@ -847,7 +864,7 @@ const LADO_FOTO = 640;
     .dsec-tit {
       display: flex; align-items: center; gap: 7px;
       font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #1a6f8a; margin-bottom: 12px;
+      letter-spacing: 0.05em; color: #40525d; margin-bottom: 12px;
     }
     .dsec-tit mat-icon { font-size: 17px; width: 17px; height: 17px; }
     .dsec-sub { margin: -6px 0 12px; font-size: 0.76rem; color: #8a99a4; }
@@ -869,7 +886,7 @@ const LADO_FOTO = 640;
     .drawer-req { font-size: 0.76rem; color: #8a99a4; }
     .drawer-req .req { color: #dc3545; }
     .drawer-foot-acoes { display: flex; gap: 8px; }
-    .drawer-foot-acoes .btn-green,
+    .drawer-foot-acoes .btn-dark-blue,
     .drawer-foot-acoes .btn-gray {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 0.5rem 1rem;
@@ -1076,12 +1093,6 @@ export class ClientesComponent implements OnInit, OnDestroy {
     const a = partes[0].charAt(0);
     const b = partes.length > 1 ? partes[partes.length - 1].charAt(0) : '';
     return (a + b).toUpperCase();
-  }
-
-  /** Cor estável do avatar a partir do id — tons da paleta da pousada. */
-  avatarCor(id: number): string {
-    const cores = ['#054054', '#1a6f8a', '#4b95ab', '#b5811f', '#2e7d5b', '#7c5cb8'];
-    return cores[id % cores.length];
   }
 
   /** CPFs gerados automaticamente pelo site (SITE-…) viram selo amigável. */
@@ -1327,12 +1338,12 @@ Use para pedidos de eliminação do titular.`,
           },
         },
         {
-          element: 'tr.cli-row .badge-toggle',
+          element: 'tr.cli-row .st-chip',
           skipMissingElement: true,
           popover: {
             title: 'Ativar / desativar',
             description:
-              'Clique no selo para mudar o status: <b>teal = Ativo</b>, <b>cinza = Inativo</b>. ' +
+              'Clique no selo para alternar entre <b>Ativo</b> e <b>Inativo</b>. ' +
               'Clientes inativos não entram em novas reservas.',
             side: 'top',
           },
@@ -1343,8 +1354,8 @@ Use para pedidos de eliminação do titular.`,
           popover: {
             title: 'Ações do cliente',
             description:
-              '<b>Dourado</b> edita os dados · <b>teal</b> abre os documentos e a ficha ' +
-              'FNRH · <b>navy</b> exclui o cadastro (sempre com confirmação).',
+              'Os ícones permitem <b>editar</b> os dados, abrir os <b>documentos e a ficha ' +
+              'FNRH</b>, <b>anonimizar</b> (LGPD) e <b>excluir</b> o cadastro (sempre com confirmação).',
             side: 'left',
           },
         },

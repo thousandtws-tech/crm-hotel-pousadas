@@ -169,25 +169,25 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
                     </td>
                     <td class="linha-acoes">
                       <button
-                        type="button" class="badge-acao bg-dark-blue" title="Digitalizar pela câmera"
+                        type="button" class="acao-btn" title="Digitalizar pela câmera"
                         aria-label="Digitalizar pela câmera" (click)="docScan.set(d)"
                       ><mat-icon>photo_camera</mat-icon></button>
                       <button
-                        type="button" class="badge-acao bg-dark-blue" title="Enviar arquivo de imagem"
+                        type="button" class="acao-btn" title="Enviar arquivo de imagem"
                         aria-label="Enviar arquivo de imagem" (click)="alvoArquivo.set(d); arq.click()"
                       ><mat-icon>upload</mat-icon></button>
                       @if (d.tem_scan) {
                         <button
-                          type="button" class="badge-acao bg-yellow" title="Remover scan"
+                          type="button" class="acao-btn" title="Remover scan"
                           aria-label="Remover scan" (click)="removerScan(d)"
                         ><mat-icon>hide_image</mat-icon></button>
                       }
                       <button
-                        type="button" class="badge-acao bg-yellow" title="Editar dados"
+                        type="button" class="acao-btn" title="Editar dados"
                         aria-label="Editar dados" (click)="editar(d)"
                       ><mat-icon>edit</mat-icon></button>
                       <button
-                        type="button" class="badge-acao bg-danger" title="Excluir documento"
+                        type="button" class="acao-btn perigo" title="Excluir documento"
                         aria-label="Excluir documento" (click)="excluir(d)"
                       ><mat-icon>delete</mat-icon></button>
                     </td>
@@ -266,7 +266,7 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
                 @if (editando()) {
                   <button type="button" class="btn-gray" (click)="cancelarEdicao()">Cancelar</button>
                 }
-                <button type="submit" class="btn-green" [disabled]="form.invalid">
+                <button type="submit" class="btn-dark-blue" [disabled]="form.invalid">
                   <mat-icon>save</mat-icon> {{ editando() ? 'Salvar' : 'Adicionar' }}
                 </button>
               </div>
@@ -294,8 +294,8 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
                       <td>{{ f.motivo_viagem ?? '—' }}</td>
                       <td class="linha-acoes">
                         <button
-                          type="button" class="badge-acao bg-dark-blue" title="Imprimir ficha"
-                          (click)="imprimirFnrh(f)"
+                          type="button" class="acao-btn" title="Imprimir ficha"
+                          aria-label="Imprimir ficha" (click)="imprimirFnrh(f)"
                         ><mat-icon>print</mat-icon></button>
                       </td>
                     </tr>
@@ -328,8 +328,8 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
     }
   `,
   styles: `
-    .overlay-doc { z-index: 105; }
-    .overlay-zoom { z-index: 115; }
+    .overlay-doc { z-index: 330; }
+    .overlay-zoom { z-index: 340; }
     .modal-doc { max-width: 780px; }
     .modal-body { gap: 12px; }
     .center { display: grid; place-items: center; padding: 32px; }
@@ -350,7 +350,7 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
       padding: 14px 16px; border: 1px dashed #c3d2d9; border-radius: 10px;
       background: #f7fafb; color: #5d6d7e;
     }
-    .vazio mat-icon { color: #4b95ab; font-size: 28px; width: 28px; height: 28px; }
+    .vazio mat-icon { color: #adb5bd; font-size: 28px; width: 28px; height: 28px; }
     .vazio div { display: flex; flex-direction: column; gap: 2px; }
     .vazio strong { color: #054054; font-size: 0.88rem; }
     .vazio span { font-size: 0.8rem; }
@@ -372,13 +372,22 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
       border: 1px solid #f0dcb4; border-radius: 8px; padding: 6px 10px;
     }
     .aviso-dup mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .bg-danger { background: #c0392b; color: #fff; }
+    .acao-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; margin: 0 2px;
+      border: 1px solid #d7e0e6; border-radius: 7px;
+      background: #fff; color: #5d6d7e; cursor: pointer;
+      transition: border-color .15s, color .15s, background .15s;
+    }
+    .acao-btn mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .acao-btn:hover { border-color: #054054; color: #054054; }
+    .acao-btn.perigo:hover { border-color: #b3261e; color: #b3261e; background: #fdf3f2; }
     .doc-form-acoes { display: flex; justify-content: flex-end; gap: 8px; }
     .lbl2 { font-size: 0.78rem; font-weight: 600; color: #374151; display: flex; flex-direction: column; gap: 6px; }
     .req { color: #dc3545; margin-left: 2px; }
     .uf { text-transform: uppercase; }
     @media (max-width: 700px) { .doc-grid, .doc-grid:has(app-date) { grid-template-columns: 1fr 1fr; } }
-    .btn-green:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-dark-blue:disabled { opacity: .5; cursor: not-allowed; }
     .zoom-box { position: relative; max-width: 90vw; max-height: 90vh; }
     .zoom-box img { max-width: 90vw; max-height: 86vh; border-radius: 6px; display: block; }
     .zoom-close { position: absolute; top: -12px; right: -12px; }
