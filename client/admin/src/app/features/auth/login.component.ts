@@ -71,7 +71,15 @@ import { AuthStore } from '@core/services/auth.store';
             </button>
           </form>
         </div>
-        <p class="login-foot">INNJOY · Sistema de gestão hoteleira</p>
+        <nav class="login-foot" aria-label="Links legais">
+          <a href="https://espiritodomar.com.br/privacidade" target="_blank" rel="noopener">
+            Privacidade &amp; LGPD
+          </a>
+          <span aria-hidden="true">·</span>
+          <a href="https://espiritodomar.com.br/termos-de-reserva" target="_blank" rel="noopener">
+            Termos de Reserva
+          </a>
+        </nav>
       </div>
     </div>
   `,
@@ -254,11 +262,20 @@ import { AuthStore } from '@core/services/auth.store';
     .btn-entrar:disabled { opacity: 0.55; cursor: default; }
 
     .login-foot {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
       margin: 0;
       font-size: 0.74rem;
       letter-spacing: 0.05em;
       color: #8fa3ab;
     }
+    .login-foot a {
+      color: inherit;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .login-foot a:hover { color: #054054; text-decoration: underline; }
 
     @media (min-width: 861px) {
       .login-image { display: block; }
@@ -271,6 +288,7 @@ import { AuthStore } from '@core/services/auth.store';
           center / cover no-repeat #032b38;
       }
       .login-foot { color: rgba(255, 255, 255, 0.6); }
+      .login-foot a:hover { color: #fff; }
     }
   `,
 })
