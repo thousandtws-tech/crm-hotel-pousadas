@@ -236,7 +236,7 @@ type Visao = 'lista' | 'cal' | 'mapa' | 'grupos';
                     <tr class="rs-row">
                       <td>
                         <div class="rv-cell">
-                          <span class="rv-avatar" [style.background]="avatarCor(r)">{{ iniciais(r.cliente_nome) }}</span>
+                          <span class="rv-avatar">{{ iniciais(r.cliente_nome) }}</span>
                           <span class="rv-cell-txt">
                             <strong>{{ r.cliente_nome }}</strong>
                             <small>
@@ -729,10 +729,7 @@ type Visao = 'lista' | 'cal' | 'mapa' | 'grupos';
       background: #eef4f6; color: #054054;
       display: flex; align-items: center; justify-content: center;
     }
-    .ico-in { background: #e3f3e6; color: #146c2e; }
-    .ico-out { background: #fdeadb; color: #b2560a; }
-    .ico-casa { background: #e4eef5; color: #1a6f8a; }
-    .ico-atn { background: #f6efdd; color: #8a6200; }
+    .ico-in, .ico-out, .ico-casa, .ico-atn { background: #eef4f6; color: #054054; }
 
     /* ---------- card principal ---------- */
     .fd-card {
@@ -873,11 +870,11 @@ type Visao = 'lista' | 'cal' | 'mapa' | 'grupos';
     .btn-ck {
       display: inline-flex; align-items: center; gap: 5px;
       min-height: 30px; padding: 0 12px; border: none; border-radius: 8px;
-      background: #146c2e; color: #fff; font-family: inherit;
+      background: #054054; color: #fff; font-family: inherit;
       font-size: 0.76rem; font-weight: 700; cursor: pointer;
       transition: background 0.15s, transform 0.12s; white-space: nowrap;
     }
-    .btn-ck:hover:not(:disabled) { background: #0f5624; transform: translateY(-1px); }
+    .btn-ck:hover:not(:disabled) { background: #1a6f8a; transform: translateY(-1px); }
     .btn-ck:disabled { opacity: 0.55; }
     /* tamanhos de ícones compartilhados */
     .seg-btn mat-icon, .rv-tabela .badge-acao mat-icon { font-size: 17px; width: 17px; height: 17px; }
@@ -960,16 +957,13 @@ type Visao = 'lista' | 'cal' | 'mapa' | 'grupos';
       border-radius: 8px; padding: 2px 8px;
     }
     .tg mat-icon { font-size: 12px; width: 12px; height: 12px; }
-    .tg-livre { background: #e4f6e8; color: #146c2e; }
-    .tg-ocup { background: #e4eef5; color: #1a6f8a; }
-    .tg-pend { background: #fdf3d7; color: #8a6200; }
-    .tg-bloq { background: #e4e4e4; color: #444; }
-    .tg-limp { background: #efe9fa; color: #5b3fa0; }
-    .tg-man { background: #fdeadb; color: #b2560a; }
+    .tg-livre, .tg-ocup, .tg-pend, .tg-bloq, .tg-limp, .tg-man {
+      background: #f0f2f4; color: #5d6d7e;
+    }
     .qt-livre { border-left-color: #2e9e5b; }
-    .qt-ocup { border-left-color: #4b95ab; background: #f0f7fa; }
-    .qt-pend { border-left-color: #d4a017; background: #fdf8ec; }
-    .qt-bloq { border-left-color: #555f66; background: #f2f4f5; opacity: 0.85; }
+    .qt-ocup { border-left-color: #4b95ab; }
+    .qt-pend { border-left-color: #d4a017; }
+    .qt-bloq { border-left-color: #555f66; opacity: 0.8; }
     .qt-bloq b, .qt-bloq small { color: #8a99a4; }
     .qt-acoes { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
     .qt-btn {
@@ -1288,10 +1282,10 @@ export class ReservasComponent implements OnInit {
 
   /** Status na paleta da pousada (o STATUS_RESERVA global é do legado). */
   private readonly STATUS: Record<StatusReserva, { rotulo: string; bg: string; fg: string }> = {
-    p: { rotulo: 'Pendente', bg: '#f6efdd', fg: '#8a6200' },
-    i: { rotulo: 'Hospedado', bg: '#e4eef5', fg: '#1a6f8a' },
+    p: { rotulo: 'Pendente', bg: '#eef2f5', fg: '#8a6200' },
+    i: { rotulo: 'Hospedado', bg: '#eef2f5', fg: '#1a6f8a' },
     f: { rotulo: 'Finalizado', bg: '#eef2f5', fg: '#40525d' },
-    c: { rotulo: 'Cancelada', bg: '#f2f4f5', fg: '#7d97a1' },
+    c: { rotulo: 'Cancelada', bg: '#eef2f5', fg: '#7d97a1' },
   };
 
   constructor() {
@@ -1705,14 +1699,6 @@ export class ReservasComponent implements OnInit {
     const a = partes[0]?.[0] ?? '?';
     const b = partes.length > 1 ? partes[partes.length - 1][0] : '';
     return (a + b).toUpperCase();
-  }
-
-  /** Cor do avatar derivada do nome — estável entre recargas. */
-  avatarCor(r: ReservaResumo): string {
-    const cores = ['#1a6f8a', '#4b95ab', '#146c2e', '#8a6200', '#5b3fa0', '#054054'];
-    let h = 0;
-    for (const ch of r.cliente_nome) h = (h * 31 + ch.charCodeAt(0)) % 997;
-    return cores[h % cores.length];
   }
 
   primeiroNome(nome: string): string {
