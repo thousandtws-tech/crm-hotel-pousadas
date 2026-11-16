@@ -149,5 +149,18 @@ test('clientes — página minimalista + drawer de cadastro', async ({ page }) =
   await expect(drawer.locator('.ddi')).toHaveText('+54');
   await expect(drawer.locator('#cli-fone')).toHaveClass(/com-ddi/);
 
+  // Nacionalidade: combobox filtrável estilizado (sem datalist nativo)
+  const nacio = drawer.locator('#cli-nacio');
+  await nacio.click();
+  await expect(drawer.locator('#nac-lista')).toBeVisible();
+  await page.screenshot({
+    path: 'capturas-crm/clientes-nac-combo.png',
+    clip: { x: 1440, y: 380, width: 460, height: 320 },
+  });
+  await nacio.fill('port');
+  await expect(drawer.locator('#nac-lista .pais-item')).toHaveCount(1);
+  await drawer.locator('#nac-lista .pais-item').first().click();
+  await expect(nacio).toHaveValue('Portuguesa');
+
   await page.screenshot({ path: 'capturas-crm/clientes-drawer-geo.png' });
 });

@@ -481,15 +481,38 @@ function normPais(s: string | null | undefined): string {
                 <div class="dgrid">
                   <div class="campo">
                     <label class="lbl" for="cli-nacio">Nacionalidade</label>
-                    <input
-                      id="cli-nacio" class="input-inn" type="text"
-                      formControlName="nacionalidade" placeholder="Brasileira" list="nac-list"
-                    />
-                    <datalist id="nac-list">
-                      @for (n of nacionalidades; track n) {
-                        <option [value]="n"></option>
+                    <div class="nac-sel">
+                      <input
+                        id="cli-nacio" class="input-inn" type="text"
+                        formControlName="nacionalidade" placeholder="Brasileira"
+                        autocomplete="off" role="combobox"
+                        [attr.aria-expanded]="nacAberto() && nacFiltradas().length > 0"
+                        aria-controls="nac-lista"
+                        [attr.aria-activedescendant]="nacIdx() >= 0 ? 'nac-' + nacIdx() : null"
+                        (focus)="abrirNac()"
+                        (input)="abrirNac()"
+                        (keydown)="teclaNac($event)"
+                      />
+                      @if (nacAberto() && nacFiltradas().length) {
+                        <div class="pais-fechar" (click)="nacAberto.set(false)"></div>
+                        <div class="pais-drop" id="nac-lista" role="listbox" aria-label="Nacionalidades">
+                          <div class="pais-lista">
+                            @for (n of nacFiltradas(); track n; let i = $index) {
+                              <button
+                                type="button" role="option" id="nac-{{ i }}"
+                                class="pais-item"
+                                [class.sel]="i === nacIdx() || n === form.controls.nacionalidade.value"
+                                [attr.aria-selected]="i === nacIdx()"
+                                (mousedown)="$event.preventDefault()"
+                                (click)="selecionarNac(n)"
+                              >
+                                <span>{{ n }}</span>
+                              </button>
+                            }
+                          </div>
+                        </div>
                       }
-                    </datalist>
+                    </div>
                   </div>
                   <div class="campo">
                     <label class="lbl" for="cli-natu">Naturalidade</label>
@@ -1009,6 +1032,9 @@ function normPais(s: string | null | undefined): string {
     .pais-item.sel { background: #eef4f6; font-weight: 700; color: #054054; }
     .pais-vazio { display: block; padding: 16px 12px; color: #8fa3ab; font-size: 0.82rem; text-align: center; }
 
+    /* ---------- nacionalidade: mesmo padrão do seletor ---------- */
+    .nac-sel { position: relative; }
+
     /* ---------- DDI do telefone (derivado do país) ---------- */
     .fone-wrap { position: relative; }
     .fone-wrap .ddi {
@@ -1141,6 +1167,17 @@ export class ClientesComponent implements OnInit, OnDestroy {
     const t = normPais(this.paisBuscaValor());
     const all = this.paises();
     return t ? all.filter((p) => normPais(p.nome).includes(t) || p.cca2.toLowerCase() === t) : all;
+  });
+
+  // -- nacionalidade: combobox filtrável (mesmo padrão do seletor de país) ---
+  protected readonly nacAberto = signal(false);
+  protected readonly nacIdx = signal(-1);
+  protected readonly nacValor = toSignal(this.form.controls.nacionalidade.valueChanges, {
+    initialValue: '',
+  });
+  protected readonly nacFiltradas = computed(() => {
+    const t = normPais(this.nacValor());
+    return t ? this.nacionalidades.filter((n) => normPais(n).includes(t)) : [...this.nacionalidades];
   });
 
   ngOnInit(): void {
@@ -1428,6 +1465,10 @@ Use para pedidos de eliminação do titular.`,
       this.paisAberto.set(false);
       return;
     }
+    if (this.nacAberto()) {
+      this.nacAberto.set(false);
+      return;
+    }
     if (!this.modalAberto() || this.capturando() || this.docsCliente()) return;
     this.fecharModal();
   }
@@ -1560,6 +1601,8 @@ Use para pedidos de eliminação do titular.`,
     this.tentouSalvar.set(false);
     this.paisAberto.set(false);
     this.paisBusca.setValue('');
+    this.nacAberto.set(false);
+    this.nacIdx.set(-1);
     this.cepBuscando.set(false);
     this.cepErro.set(false);
     this.ultimoCep = '';
@@ -1728,6 +1771,41 @@ Use para pedidos de eliminação do titular.`,
   /** Bandeira 40px (retina via srcset 80px) do CDN público flagcdn. */
   bandeira(cca2: string, w = 40): string {
     return `https://flagcdn.com/w${w}/${cca2.toLowerCase()}.png`;
+  }
+
+  // -- nacionalidade: dropdown filtrável ------------------------------------
+
+  abrirNac(): void {
+    this.nacAberto.set(true);
+    this.nacIdx.set(-1);
+  }
+
+  selecionarNac(n: string): void {
+    this.form.controls.nacionalidade.setValue(n);
+    this.nacAberto.set(false);
+    this.nacIdx.set(-1);
+  }
+
+  teclaNac(e: KeyboardEvent): void {
+    const lista = this.nacFiltradas();
+    if (e.key === 'Escape') {
+      this.nacAberto.set(false);
+      return;
+    }
+    if (!this.nacAberto() || !lista.length) {
+      if (e.key === 'ArrowDown') this.abrirNac();
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      this.nacIdx.set(Math.min(this.nacIdx() + 1, lista.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      this.nacIdx.set(Math.max(this.nacIdx() - 1, 0));
+    } else if (e.key === 'Enter' && this.nacIdx() >= 0 && this.nacIdx() < lista.length) {
+      e.preventDefault();
+      this.selecionarNac(lista[this.nacIdx()]);
+    }
   }
 
   // -- foto ---------------------------------------------------------------
