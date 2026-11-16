@@ -17,8 +17,8 @@ from openai import APIError, AsyncOpenAI
 from ..config import get_settings
 from ..infra import memory
 from ..infra.api_client import PousadaApi
-from ..infra.resilience import breaker
 from ..infra.auth import Ator
+from ..infra.resilience import breaker
 from ..telemetry.metrics import Uso
 from ..tools import TOOLS, ToolExecutor
 from .prompts import SYSTEM_PROMPT
@@ -110,6 +110,13 @@ class Orquestrador:
         limite = s.maria_history_max_turns * 2
         if len(self._historico) > limite:
             self._historico = self._historico[-limite:]
+        # orçamento por tamanho — turnos longos (respostas com muito
+        # dado) não estouram a janela mesmo dentro do limite de turnos
+        while (
+            len(self._historico) > 2
+            and _chars_historico(self._historico) > s.maria_history_max_chars
+        ):
+            del self._historico[:2]
 
     async def responder(
         self,
@@ -134,52 +141,54 @@ class Orquestrador:
         if s.openai_llm_reasoning_effort.lower() not in ("", "none"):
             kwargs["reasoning"] = {"effort": s.openai_llm_reasoning_effort}
 
+        modelos = [s.openai_llm_model]
+        if s.openai_llm_fallback_model:
+            modelos.append(s.openai_llm_fallback_model)
+
         for _ in range(MAX_TOOL_ROUNDS):
             if self._cancelado:
                 break
 
-            # circuito aberto → falha na hora, sem esperar o timeout do SDK
-            br = breaker("openai-llm")
-            with br.vigiar():
-                stream = await self._client.responses.create(
-                    model=s.openai_llm_model,
-                    input=input_msgs,
-                    tools=TOOLS,
-                    stream=True,
-                    **kwargs,
-                )
-
+            # Modelo principal → fallback: a segunda tentativa só roda
+            # se nada foi emitido ainda — texto parcial já falado/streamed
+            # não pode ser repetido (duplicaria na voz e na tela). Calls
+            # coletadas num stream que falhou ainda não executaram —
+            # refazer o turno não tem efeito colateral.
             calls: list[dict[str, Any]] = []
             final = None
-            try:
-                async for ev in stream:
-                    if self._cancelado:
-                        break
-                    t = ev.type
-                    if t == "response.output_text.delta":
-                        saida_total += ev.delta
-                        await on_text(ev.delta)
-                    elif t == "response.output_item.done":
-                        item = ev.item
-                        if getattr(item, "type", None) == "function_call":
-                            chamadas += 1
-                            calls.append(
-                                {
-                                    "call_id": item.call_id,
-                                    "name": item.name,
-                                    "arguments": item.arguments,
-                                }
-                            )
-                    elif t == "response.completed":
-                        final = ev.response
-                    elif t in ("response.failed", "response.incomplete", "error"):
-                        det = getattr(getattr(ev, "response", None), "error", None) or ev
-                        raise _FalhaStream(f"resposta LLM falhou: {det}")
-            except (APIError, _FalhaStream) as exc:
-                # falha do provedor no meio do stream conta no breaker;
-                # exceções do callback on_text (TTS/UI) não são da OpenAI
-                br.falha(exc)
-                raise
+            # texto emitido na(s) tentativa(s) desta rodada — sobrevive a
+            # exceções do stream (deltas já saíram p/ TTS/UI antes da queda)
+            emissao = {"texto": ""}
+            br = breaker("openai-llm")
+            for mi, modelo in enumerate(modelos):
+                if self._cancelado:
+                    break
+                try:
+                    # circuito aberto → falha na hora, sem esperar o timeout do SDK
+                    with br.vigiar():
+                        stream = await self._client.responses.create(
+                            model=modelo,
+                            input=input_msgs,
+                            tools=TOOLS,
+                            stream=True,
+                            **kwargs,
+                        )
+                    calls, final, chamadas = await self._consumir(
+                        stream, on_text, chamadas, emissao)
+                    if mi > 0:
+                        log.info("%sresposta veio do modelo fallback %s",
+                                 tag, modelo)
+                    break
+                except (APIError, _FalhaStream) as exc:
+                    # falha do provedor no meio do stream conta no breaker;
+                    # exceções do callback on_text (TTS/UI) não são da OpenAI
+                    br.falha(exc)
+                    if emissao["texto"] or mi == len(modelos) - 1:
+                        raise
+                    log.warning(
+                        "%smodelo %s falhou antes de emitir — fallback %s",
+                        tag, modelo, modelos[mi + 1])
+            saida_total += emissao["texto"]
 
             if final is not None and getattr(final, "usage", None):
                 Uso.tokens(final.usage)
@@ -273,7 +282,8 @@ class Orquestrador:
                     {
                         "type": "function_call_output",
                         "call_id": f["call"]["call_id"],
-                        "output": json.dumps(f["resultado"], ensure_ascii=False),
+                        "output": _saida_para_contexto(
+                            f["resultado"], s.maria_tool_result_max_chars),
                     }
                 )
 
@@ -284,6 +294,62 @@ class Orquestrador:
             tools=tools_log,
             usage=uso_total,
         )
+
+    async def _consumir(
+        self,
+        stream: Any,
+        on_text: OnText,
+        chamadas: int,
+        emissao: dict[str, str],
+    ) -> tuple[list[dict[str, Any]], Any, int]:
+        """Consome o stream de uma resposta: devolve (calls, response
+        final, total de function_calls). `emissao["texto"]` acumula os
+        deltas emitidos — inclusive os anteriores à queda do stream."""
+        calls: list[dict[str, Any]] = []
+        final = None
+        async for ev in stream:
+            if self._cancelado:
+                break
+            t = ev.type
+            if t == "response.output_text.delta":
+                emissao["texto"] += ev.delta
+                await on_text(ev.delta)
+            elif t == "response.output_item.done":
+                item = ev.item
+                if getattr(item, "type", None) == "function_call":
+                    chamadas += 1
+                    calls.append(
+                        {
+                            "call_id": item.call_id,
+                            "name": item.name,
+                            "arguments": item.arguments,
+                        }
+                    )
+            elif t == "response.completed":
+                final = ev.response
+            elif t in ("response.failed", "response.incomplete", "error"):
+                det = getattr(getattr(ev, "response", None), "error", None) or ev
+                raise _FalhaStream(f"resposta LLM falhou: {det}")
+        return calls, final, chamadas
+
+
+def _chars_historico(msgs: list[dict[str, Any]]) -> int:
+    return sum(len(str(m.get("content", ""))) for m in msgs)
+
+
+def _saida_para_contexto(resultado: Any, max_chars: int) -> str:
+    """Serializa a saída da tool para o contexto, com corte.
+
+    O modelo não precisa de 200 linhas de uma lista para responder por
+    voz — o resultado completo segue gravado no diário de turnos.
+    """
+    out = json.dumps(resultado, ensure_ascii=False)
+    if len(out) <= max_chars:
+        return out
+    return out[:max_chars] + (
+        '… [resultado truncado no contexto — resuma o essencial '
+        'ou refine a busca com filtros]'
+    )
 
 
 def _item_para_dict(item: Any) -> dict[str, Any]:

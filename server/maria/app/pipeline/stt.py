@@ -78,6 +78,14 @@ class OpenAiStt:
                         "transcription": {
                             "model": s.openai_transcription_model,
                             "language": "pt",
+                            # viés de vocabulário do domínio (check-in,
+                            # frigobar, FNRH…) — melhora a transcrição de
+                            # termos da operação em fala rápida
+                            **(
+                                {"prompt": s.openai_transcription_prompt}
+                                if s.openai_transcription_prompt
+                                else {}
+                            ),
                         },
                         "turn_detection": turn_detection,
                         **(

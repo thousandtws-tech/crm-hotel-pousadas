@@ -18,6 +18,22 @@ Ao conectar, a MAR IA fala uma saudação personalizada (período do dia +
 primeiro nome do usuário). Enquanto ferramentas rodam, ela fala um
 reconhecimento curto ("deixa eu ver aqui…") — sem silêncio percebido.
 
+## Resiliência e contexto
+
+- **Fallback de modelo**: se `OPENAI_LLM_MODEL` falha antes de emitir o
+  primeiro token, o turno é refeito em `OPENAI_LLM_FALLBACK_MODEL`.
+  Texto parcial nunca é reemitido — o retry só acontece com zero deltas
+  enviados (calls coletadas num stream que caiu ainda não executaram,
+  então refazer não tem efeito colateral).
+- **Orçamento de contexto**: histórico limita por turnos
+  (`MARIA_HISTORY_MAX_TURNS`) *e* por tamanho
+  (`MARIA_HISTORY_MAX_CHARS`); cada saída de ferramenta devolvida ao
+  modelo é cortada em `MARIA_TOOL_RESULT_MAX_CHARS` — listas grandes
+  não consomem a janela inteira.
+- **Viés de vocabulário no STT**: `OPENAI_TRANSCRIPTION_PROMPT` envia
+  termos do domínio (check-in, FNRH, frigobar…) para a transcrição,
+  elevando a precisão em fala rápida e sotaques.
+
 ## Rodando
 
 ```bash

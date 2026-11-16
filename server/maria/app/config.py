@@ -28,10 +28,23 @@ class Settings(BaseSettings):
     # Esforço de raciocínio da Responses API: low = TTFT bem menor
     # (ideal p/ voz). Use "none" para desativar o parâmetro.
     openai_llm_reasoning_effort: str = "low"
+    # Modelo reserva do LLM — se a chamada do modelo principal falha
+    # antes do primeiro token emitido, o turno é refeito neste modelo
+    # (idealmente menor/mais barato, ex.: gpt-5-mini). Vazio = sem fallback.
+    openai_llm_fallback_model: str = ""
     # Modelo da sessão realtime (vai na query ?model=) — versão GA.
     openai_realtime_model: str = "gpt-realtime-mini"
     # Modelo de transcrição (vai em audio.input.transcription.model)
     openai_transcription_model: str = "gpt-4o-transcribe"
+    # Dica de vocabulário p/ a transcrição — termos do domínio aumentam
+    # a precisão do STT em fala rápida e sotaques (vai em
+    # audio.input.transcription.prompt).
+    openai_transcription_prompt: str = (
+        "Conversa em português do Brasil sobre gestão de pousada: "
+        "check-in, check-out, reserva, hóspede, suíte, diária, frigobar, "
+        "comanda, PDV, caixa, sangria, FNRH, café da manhã, estoque, "
+        "Pousada Espírito do Mar, Maria."
+    )
     openai_server_vad: bool = True
     # VAD server-side: silêncio curto = resposta mais rápida ao fim da fala.
     openai_vad_threshold: float = 0.5
@@ -56,6 +69,14 @@ class Settings(BaseSettings):
     maria_default_language: str = "pt-BR"
     maria_history_enabled: bool = True
     maria_history_max_turns: int = 12
+    # Teto de contexto: o histórico também é cortado por tamanho —
+    # turnos longos (respostas com muitos dados) não estouram o orçamento
+    # mesmo dentro do limite de turnos.
+    maria_history_max_chars: int = 24000
+    # Corte por saída de ferramenta devolvida ao modelo — listas grandes
+    # (ex.: 200 reservas) não consomem a janela inteira. O resultado
+    # completo segue gravado no diário de turnos (dataset).
+    maria_tool_result_max_chars: int = 6000
     maria_timezone: str = "America/Sao_Paulo"
     # Memória persistente (aprendizado no dia a dia)
     maria_memory_enabled: bool = True
