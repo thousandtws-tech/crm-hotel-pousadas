@@ -307,11 +307,6 @@ const NAV: NavItem[] = [
           }
         }
       </nav>
-
-      <div class="nav_rodape" [title]="rt.online() ? 'Tempo real ativo' : 'Reconectando'">
-        <span class="rt-dot" [class.rt-on]="rt.online()"></span>
-        <span class="nav_name">{{ rt.online() ? 'Tempo real ativo' : 'Reconectando…' }}</span>
-      </div>
     </aside>
 
     <main class="content" [class.content-open]="aberta()">
@@ -628,33 +623,8 @@ const NAV: NavItem[] = [
       }
     }
 
-    /* ----- rodapé: estado do tempo real ----- */
-    .nav_rodape {
-      flex: none;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      height: 44px;
-      padding-left: 30px;
-      border-top: 1px solid rgba(255, 255, 255, 0.07);
-      color: var(--inn-link);
-      font-size: 0.72rem;
-      white-space: nowrap;
-    }
-    .rt-dot {
-      flex: none;
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: #d9a441;
-    }
-    .rt-dot.rt-on {
-      background: #3ecf8e;
-      animation: rt-pulse 2s ease-in-out infinite;
-    }
-    @keyframes rt-pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(62, 207, 142, 0.5); }
-      50% { box-shadow: 0 0 0 5px rgba(62, 207, 142, 0); }
-    }
+
+
 
     /* =====================================================================
        CONTEÚDO
@@ -709,7 +679,6 @@ const NAV: NavItem[] = [
 
     @media (prefers-reduced-motion: reduce) {
       .l-navbar, .header, .content, .nav_filhos, .nav_arrow, .scrim { transition: none; }
-      .rt-dot.rt-on { animation: none; }
     }
   `,
 })

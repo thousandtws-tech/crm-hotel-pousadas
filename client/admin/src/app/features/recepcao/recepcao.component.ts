@@ -19,12 +19,7 @@ const DIA_MS = 86_400_000;
       <header class="fd-head">
         <div>
           <p class="eyebrow">Front Desk</p>
-          <h2 class="titulo">
-            Recepção
-            <span class="live" [class.live-on]="rt.online()" role="status">
-              <i></i>{{ rt.online() ? 'Ao vivo' : 'Reconectando…' }}
-            </span>
-          </h2>
+          <h2 class="titulo">Recepção</h2>
           <p class="sub">{{ hoje | date: "EEEE, d 'de' MMMM 'de' yyyy" }}</p>
         </div>
         <div class="fd-acoes">
@@ -278,16 +273,6 @@ const DIA_MS = 86_400_000;
       display: flex; align-items: center; gap: 12px;
     }
     .sub { margin: 4px 0 0; font-size: 0.86rem; color: #7d97a1; text-transform: capitalize; }
-    .live {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-family: var(--font-body); font-size: 0.7rem; font-weight: 700;
-      letter-spacing: 0.05em; padding: 4px 11px; border-radius: 999px;
-      background: #fbeaea; color: #dc3545;
-    }
-    .live i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-    .live-on { background: #e3f3e6; color: #198754; }
-    .live-on i { animation: pulso 2s infinite; }
-    @keyframes pulso { 50% { opacity: 0.5; } }
 
     .fd-acoes { display: flex; gap: 8px; align-items: center; }
     .btn-ghost {
@@ -478,7 +463,7 @@ const DIA_MS = 86_400_000;
     .skel-qt { height: 72px; }
 
     @media (prefers-reduced-motion: reduce) {
-      .skel, .live-on i { animation: none; }
+      .skel { animation: none; }
       .qt, .btn-ck, .row.link { transition: none; }
     }
     @media (max-width: 640px) {

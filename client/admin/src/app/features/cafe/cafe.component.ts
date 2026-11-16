@@ -22,11 +22,7 @@ type FiltroPresenca = 'todas' | 'aguardando' | 'presentes';
       <header class="cafe-head">
         <div>
           <p class="eyebrow">Operação</p>
-          <h2 class="titulo">Café da Manhã
-            <span class="live" [class.live-on]="rt.online()" role="status">
-              <i></i>{{ rt.online() ? 'Ao vivo' : 'Reconectando…' }}
-            </span>
-          </h2>
+          <h2 class="titulo">Café da Manhã</h2>
           <p class="sub">Encontre a reserva e registre a presença no café.</p>
         </div>
         <div class="dia-box">
@@ -200,14 +196,8 @@ type FiltroPresenca = 'todas' | 'aguardando' | 'presentes';
       font-size: 1.9rem; font-weight: 600; color: #054054; line-height: 1.1;
       display: flex; align-items: center; gap: 12px; }
     .sub { margin: 4px 0 0; font-size: 0.86rem; color: #7d97a1; }
-    .live { display: inline-flex; align-items: center; gap: 6px;
-      font-family: 'Manrope', sans-serif; font-size: 0.7rem; font-weight: 700;
-      letter-spacing: 0.05em; padding: 4px 11px; border-radius: 999px;
-      background: #fbeaea; color: #dc3545; }
-    .live i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-    .live-on { background: #e3f3e6; color: #198754; }
-    .live-on i { animation: pulso 2s infinite; }
-    @keyframes pulso { 50% { opacity: .5; } }
+
+
 
     .dia-box { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
     .lbl { font-size: 0.72rem; font-weight: 600; color: #5d6d7e; }

@@ -73,14 +73,6 @@ type AbaCms = 'quartos' | 'site' | 'widget';
           <p class="cms-sub">Gerencie acomodações, páginas institucionais, SEO e integração do motor de reservas.</p>
         </div>
         <div class="cms-acoes">
-          <span
-            class="rt-pill"
-            [class.on]="rt.online()"
-            [title]="rt.online() ? 'Publicações chegam ao site instantaneamente' : 'Sem conexão em tempo real'"
-          >
-            <span class="dot"></span>
-            {{ rt.online() ? 'Tempo real ativo' : 'Reconectando…' }}
-          </span>
           <button class="btn-ghost" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
             Tutorial
           </button>
@@ -932,9 +924,7 @@ type AbaCms = 'quartos' | 'site' | 'widget';
     .cms-titulo { font-size: 1.35rem !important; letter-spacing: -.02em; line-height: 1.25; }
     .cms-sub { margin: 4px 0 0; font-size: .84rem; color: var(--c-txt); line-height: 1.45; }
     .cms-acoes, .aside-actions, .foot-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .rt-pill { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--c-brd); background: var(--c-sub); color: var(--c-ink3); font-size: .76rem; font-weight: 500; }
-    .rt-pill .dot, .pill-toggle .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: #a1a1aa; }
-    .rt-pill.on .dot { background: var(--c-ink); }
+    .pill-toggle .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: #a1a1aa; }
     .btn-primary, .btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 6px; font: 500 .82rem var(--font-body); cursor: pointer; text-decoration: none; white-space: nowrap; }
     .btn-primary { background: #18181b; color: #fff; border: 1px solid #18181b; }
     .btn-primary:hover:not(:disabled) { background: #27272a; border-color: #27272a; color: #fff; }
@@ -1746,15 +1736,8 @@ export class CmsComponent implements OnInit {
             'Gerencie as <b>acomodações</b>, a <b>página inicial / SEO</b> e a <b>integração do motor</b> em abas separadas.',
         },
       },
-      {
-        element: '.rt-pill',
-        popover: {
-          title: 'Sincronização em tempo real',
-          description:
-            'Quando ativa, cada alteração publicada chega ao site imediatamente.',
-          side: 'bottom',
-        },
-      },
+
+
       {
         element: '#tour-resumo',
         popover: {

@@ -53,12 +53,7 @@ type Visao = 'lista' | 'cal' | 'mapa' | 'grupos';
       <header class="rv-head">
         <div>
           <p class="eyebrow">Central de reservas</p>
-          <h2 class="titulo">
-            Reservas
-            <span class="live" [class.live-on]="rt.online()" role="status">
-              <i></i>{{ rt.online() ? 'Ao vivo' : 'Reconectando…' }}
-            </span>
-          </h2>
+          <h2 class="titulo">Reservas</h2>
           <p class="sub">{{ hojeExtenso }}</p>
         </div>
         <div class="rv-acoes">
@@ -654,16 +649,6 @@ type Visao = 'lista' | 'cal' | 'mapa' | 'grupos';
       display: flex; align-items: center; gap: 12px;
     }
     .sub { margin: 4px 0 0; font-size: 0.86rem; color: #7d97a1; text-transform: capitalize; }
-    .live {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-family: var(--font-body); font-size: 0.7rem; font-weight: 700;
-      letter-spacing: 0.05em; padding: 4px 11px; border-radius: 999px;
-      background: #fbeaea; color: #dc3545;
-    }
-    .live i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-    .live-on { background: #e3f3e6; color: #198754; }
-    .live-on i { animation: pulso 2s infinite; }
-    @keyframes pulso { 50% { opacity: 0.5; } }
 
     .rv-acoes { display: flex; gap: 8px; align-items: center; }
     .btn-ghost {
@@ -1139,7 +1124,7 @@ type Visao = 'lista' | 'cal' | 'mapa' | 'grupos';
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .skel, .live-on i { animation: none; }
+      .skel { animation: none; }
       .qt, .btn-ck, .stat-btn, .rv-tabela tbody tr { transition: none; }
     }
     @media (max-width: 700px) {
