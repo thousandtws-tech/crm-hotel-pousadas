@@ -2,6 +2,10 @@ import { Routes } from '@angular/router';
 
 export const routes: Routes = [
   {
+    path: 'em-breve',
+    loadComponent: () => import('./features/coming-soon/coming-soon.component').then((m) => m.ComingSoonComponent)
+  },
+  {
     path: '',
     loadComponent: () => import('./layout/public-layout.component').then((m) => m.PublicLayoutComponent),
     children: [
