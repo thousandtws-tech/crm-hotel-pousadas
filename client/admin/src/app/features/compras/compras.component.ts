@@ -959,10 +959,7 @@ interface LinhaPedido {
     .kpi-card:hover { border-color: #054054; transform: translateY(-1px); }
     .kpi-card.ativo { border-color: #054054; box-shadow: 0 0 0 1px #054054; background: #f9fcfd; }
     .kpi-ic { width: 42px; height: 42px; border-radius: 11px; display: grid; place-items: center; flex-shrink: 0; }
-    .kpi-pend { background: #eef4f6; color: #054054; }
-    .kpi-parc { background: #fdf3e2; color: #92670b; }
-    .kpi-rec { background: #e3f3e6; color: #198754; }
-    .kpi-forn { background: #eef4f6; color: #054054; }
+    .kpi-pend, .kpi-parc, .kpi-rec, .kpi-forn { background: #eef4f6; color: #054054; }
     .kpi-txt { display: flex; flex-direction: column; gap: 2px; }
     .kpi-val { font-size: 20px; font-weight: 800; color: #054054; line-height: 1.1; }
     .kpi-val small { font-size: 13px; font-weight: 600; color: #7d97a1; margin-left: 2px; }
