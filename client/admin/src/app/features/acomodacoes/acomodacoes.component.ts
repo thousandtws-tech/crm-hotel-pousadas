@@ -35,13 +35,14 @@ type Modal = 'tipos' | 'quarto' | null;
     <div class="page">
       <div class="acm-head">
         <div class="acm-titulo-grupo">
-          <h2 class="acm-titulo">Acomodações</h2>
-          <span class="acm-contador" title="Total de acomodações cadastradas">
-            {{ items().length }} {{ items().length === 1 ? 'acomodação' : 'acomodações' }}
-          </span>
-          <span class="acm-ativas" title="Acomodações ativas">
-            {{ ativas() }} {{ ativas() === 1 ? 'ativa' : 'ativas' }}
-          </span>
+          <p class="eyebrow">Cadastro</p>
+          <div class="acm-titulo-linha">
+            <h2 class="acm-titulo">Acomodações</h2>
+            <span class="acm-contador" title="Total de acomodações e quantas estão ativas">
+              {{ items().length }} {{ items().length === 1 ? 'acomodação' : 'acomodações' }}
+              · {{ ativas() }} {{ ativas() === 1 ? 'ativa' : 'ativas' }}
+            </span>
+          </div>
         </div>
         <div class="acm-head-acoes">
           <button class="btn-tour" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
@@ -58,7 +59,7 @@ type Modal = 'tipos' | 'quarto' | null;
 
       <div class="acm-info">
         <div class="acm-info-card">
-          <span class="acm-info-icone inf-teal"><mat-icon>hotel</mat-icon></span>
+          <span class="acm-info-icone"><mat-icon>hotel</mat-icon></span>
           <div class="acm-info-txt">
             <strong>O que é uma acomodação</strong>
             <p>
@@ -68,17 +69,17 @@ type Modal = 'tipos' | 'quarto' | null;
           </div>
         </div>
         <div class="acm-info-card">
-          <span class="acm-info-icone inf-gold"><mat-icon>meeting_room</mat-icon></span>
+          <span class="acm-info-icone"><mat-icon>meeting_room</mat-icon></span>
           <div class="acm-info-txt">
             <strong>Quartos físicos</strong>
             <p>
-              No <b>olho teal</b> de cada linha você gerencia os quartos reais e
+              No <b>olho</b> de cada linha você gerencia os quartos reais e
               o histórico de tarifas.
             </p>
           </div>
         </div>
         <div class="acm-info-card">
-          <span class="acm-info-icone inf-navy"><mat-icon>palette</mat-icon></span>
+          <span class="acm-info-icone"><mat-icon>palette</mat-icon></span>
           <div class="acm-info-txt">
             <strong>Tipos e cor do calendário</strong>
             <p>
@@ -188,26 +189,22 @@ type Modal = 'tipos' | 'quarto' | null;
                       @if (auth.isAdmin()) {
                         <button
                           type="button"
-                          class="status-chip badge-toggle"
-                          [class.bg-blue]="a.ativo"
-                          [class.bg-gray]="!a.ativo"
+                          class="st-chip badge-toggle"
+                          [class.off]="!a.ativo"
                           [title]="a.ativo ? 'Clique para desativar' : 'Clique para ativar'"
                           (click)="statusAcomodacao(a, !a.ativo)"
                         >
                           {{ a.ativo ? 'Ativo' : 'Inativo' }}
                         </button>
                       } @else {
-                        <span
-                          class="status-chip"
-                          [class.bg-blue]="a.ativo"
-                          [class.bg-gray]="!a.ativo"
+                        <span class="st-chip estatico" [class.off]="!a.ativo"
                         >{{ a.ativo ? 'Ativo' : 'Inativo' }}</span>
                       }
                     </td>
                     <td class="tc acm-acoes">
                       <button
                         type="button"
-                        class="badge-acao bg-yellow"
+                        class="acao-btn"
                         title="Editar"
                         aria-label="Editar acomodação"
                         (click)="abrirForm(a)"
@@ -216,7 +213,7 @@ type Modal = 'tipos' | 'quarto' | null;
                       </button>
                       <button
                         type="button"
-                        class="badge-acao bg-blue acm-ver"
+                        class="acao-btn acm-ver"
                         title="Quartos físicos e tarifas"
                         aria-label="Ver quartos físicos e tarifas"
                         (click)="visualizar(a)"
@@ -226,7 +223,7 @@ type Modal = 'tipos' | 'quarto' | null;
                       @if (auth.isAdmin()) {
                         <button
                           type="button"
-                          class="badge-acao bg-dark-blue"
+                          class="acao-btn perigo"
                           title="Excluir"
                           aria-label="Excluir acomodação"
                           (click)="excluirAcomodacao(a)"
@@ -269,10 +266,7 @@ type Modal = 'tipos' | 'quarto' | null;
             <h5 id="titulo-detalhe" class="det-titulo">
               <span class="acm-dot" [style.background]="a.cor || '#8fa3ab'"></span>
               {{ a.nome }} — Nº {{ a.numero }}
-              <span
-                class="status-chip det-status"
-                [class.bg-blue]="a.ativo"
-                [class.bg-gray]="!a.ativo"
+              <span class="st-chip estatico det-status" [class.off]="!a.ativo"
               >{{ a.ativo ? 'Ativa' : 'Inativa' }}</span>
             </h5>
             <button
@@ -288,14 +282,14 @@ type Modal = 'tipos' | 'quarto' | null;
             <!-- Resumo da acomodação -->
             <div class="det-faixa">
               <span class="det-item">
-                <span class="det-item-ic inf-teal"><mat-icon>category</mat-icon></span>
+                <span class="det-item-ic"><mat-icon>category</mat-icon></span>
                 <span class="det-item-txt">
                   <small>Tipo</small>
                   <strong>{{ tipoNome(a.idtipo_acomodacao) }}</strong>
                 </span>
               </span>
               <span class="det-item">
-                <span class="det-item-ic inf-gold"><mat-icon>payments</mat-icon></span>
+                <span class="det-item-ic"><mat-icon>payments</mat-icon></span>
                 <span class="det-item-txt">
                   <small>Diária</small>
                   <strong>
@@ -304,21 +298,21 @@ type Modal = 'tipos' | 'quarto' | null;
                 </span>
               </span>
               <span class="det-item">
-                <span class="det-item-ic inf-navy"><mat-icon>group</mat-icon></span>
+                <span class="det-item-ic"><mat-icon>group</mat-icon></span>
                 <span class="det-item-txt">
                   <small>Capacidade</small>
                   <strong>{{ a.capacidade }} {{ a.capacidade === 1 ? 'pessoa' : 'pessoas' }}</strong>
                 </span>
               </span>
               <span class="det-item">
-                <span class="det-item-ic inf-teal"><mat-icon>meeting_room</mat-icon></span>
+                <span class="det-item-ic"><mat-icon>meeting_room</mat-icon></span>
                 <span class="det-item-txt">
                   <small>Quartos</small>
                   <strong>{{ quartosAtivos() }} de {{ quartos().length }} ativos</strong>
                 </span>
               </span>
               <span class="det-item">
-                <span class="det-item-ic inf-gold"><mat-icon>local_parking</mat-icon></span>
+                <span class="det-item-ic"><mat-icon>local_parking</mat-icon></span>
                 <span class="det-item-txt">
                   <small>Vagas</small>
                   <strong
@@ -345,9 +339,8 @@ type Modal = 'tipos' | 'quarto' | null;
                   <strong>{{ q.numero }}</strong>
                   <button
                     type="button"
-                    class="status-chip badge-toggle"
-                    [class.bg-blue]="q.ativo"
-                    [class.bg-gray]="!q.ativo"
+                    class="st-chip"
+                    [class.off]="!q.ativo"
                     [title]="q.ativo ? 'Clique para desativar' : 'Clique para ativar'"
                     (click)="statusQuarto(q, !q.ativo)"
                   >{{ q.ativo ? 'Ativo' : 'Inativo' }}</button>
@@ -388,7 +381,7 @@ type Modal = 'tipos' | 'quarto' | null;
                         @if (t.vigente_ate) {
                           {{ t.vigente_ate | date: 'dd/MM/yyyy' }}
                         } @else {
-                          <span class="status-chip bg-blue">vigente</span>
+                          <span class="st-chip estatico">vigente</span>
                         }
                       </td>
                     </tr>
@@ -567,7 +560,7 @@ type Modal = 'tipos' | 'quarto' | null;
               <span class="drawer-req"><small class="req">*</small> Campos obrigatórios</span>
               <div class="drawer-foot-acoes">
                 <button class="btn-gray" type="button" (click)="fecharDrawer()">Cancelar</button>
-                <button class="btn-green" type="submit">
+                <button class="btn-dark-blue" type="submit">
                   <mat-icon>save</mat-icon> {{ editando() ? 'Salvar alterações' : 'Cadastrar acomodação' }}
                 </button>
               </div>
@@ -595,7 +588,7 @@ type Modal = 'tipos' | 'quarto' | null;
                 class="input-inn" type="text" [formControl]="novoTipo"
                 placeholder="Ex.: Suíte" aria-label="Nome do tipo de acomodação"
               />
-              <button class="btn-green" type="submit" [disabled]="novoTipo.invalid">Cadastrar</button>
+              <button class="btn-dark-blue" type="submit" [disabled]="novoTipo.invalid">Cadastrar</button>
             </form>
             <table class="plain bordered">
               <thead>
@@ -617,8 +610,8 @@ type Modal = 'tipos' | 'quarto' | null;
                     </td>
                     <td>
                       <button
-                        type="button" class="status-chip badge-toggle"
-                        [class.bg-blue]="t.ativo" [class.bg-gray]="!t.ativo"
+                        type="button" class="st-chip"
+                        [class.off]="!t.ativo"
                         [title]="t.ativo ? 'Clique para desativar' : 'Clique para ativar'"
                         (click)="statusTipo(t, !t.ativo)"
                       >
@@ -627,27 +620,27 @@ type Modal = 'tipos' | 'quarto' | null;
                     </td>
                     <td class="tc">
                       @if (editandoTipo() === t.id) {
-                        <button type="button" class="badge-acao bg-blue" title="Salvar" (click)="salvarTipo(t)">
+                        <button type="button" class="acao-btn" title="Salvar" (click)="salvarTipo(t)">
                           <mat-icon>check</mat-icon>
                         </button>
-                        <button type="button" class="badge-acao bg-gray" title="Cancelar" (click)="editandoTipo.set(null)">
+                        <button type="button" class="acao-btn" title="Cancelar" (click)="editandoTipo.set(null)">
                           <mat-icon>close</mat-icon>
                         </button>
                       } @else {
                         <button
-                          type="button" class="badge-acao bg-yellow" title="Editar"
+                          type="button" class="acao-btn" title="Editar"
                           (click)="editarTipo(t)"
                         >
                           <mat-icon>edit</mat-icon>
                         </button>
                         <button
-                          type="button" class="badge-acao bg-green" title="Preço por ocupação"
+                          type="button" class="acao-btn" title="Preço por ocupação"
                           aria-label="Preço por ocupação" (click)="toggleTarifas(t)"
                         >
                           <mat-icon>attach_money</mat-icon>
                         </button>
                         <button
-                          type="button" class="badge-acao bg-dark-blue" title="Excluir"
+                          type="button" class="acao-btn perigo" title="Excluir"
                           aria-label="Excluir tipo" (click)="excluirTipo(t)"
                         >
                           <mat-icon>delete</mat-icon>
@@ -681,7 +674,7 @@ type Modal = 'tipos' | 'quarto' | null;
                                 />
                               </label>
                               <button
-                                type="button" class="badge-acao bg-gray" title="Remover faixa"
+                                type="button" class="acao-btn" title="Remover faixa"
                                 (click)="remFaixa($index)"
                               >
                                 <mat-icon>close</mat-icon>
@@ -691,7 +684,7 @@ type Modal = 'tipos' | 'quarto' | null;
                           <div class="fx-acoes">
                             <button type="button" class="mc-btn" (click)="addFaixa()">+ faixa</button>
                             <button
-                              type="button" class="btn-green" [disabled]="salvandoFaixas()"
+                              type="button" class="btn-dark-blue" [disabled]="salvandoFaixas()"
                               (click)="salvarFaixas(t)"
                             >
                               {{ salvandoFaixas() ? 'Salvando…' : 'Salvar faixas' }}
@@ -733,7 +726,7 @@ type Modal = 'tipos' | 'quarto' | null;
               />
             </div>
             <div class="modal-foot">
-              <button class="btn-green" type="submit" [disabled]="quartoNumero.invalid">
+              <button class="btn-dark-blue" type="submit" [disabled]="quartoNumero.invalid">
                 <mat-icon>save</mat-icon> Cadastrar
               </button>
             </div>
@@ -748,19 +741,19 @@ type Modal = 'tipos' | 'quarto' | null;
       display: flex; align-items: center; justify-content: space-between;
       gap: 16px; flex-wrap: wrap; margin-bottom: 14px;
     }
-    .acm-titulo-grupo { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .acm-titulo-grupo { display: flex; flex-direction: column; gap: 2px; }
+    .eyebrow {
+      margin: 0; font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.09em; color: #8fa3ab;
+    }
+    .acm-titulo-linha { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
     .acm-titulo {
       margin: 0; font-size: 1.35rem; font-weight: 700;
       color: #054054; letter-spacing: -0.01em;
     }
     .acm-contador {
-      font-size: 0.78rem; font-weight: 600; color: #1a6f8a;
-      background: rgba(26, 111, 138, 0.12);
-      border-radius: 999px; padding: 3px 10px; white-space: nowrap;
-    }
-    .acm-ativas {
-      font-size: 0.78rem; font-weight: 600; color: #b5811f;
-      background: rgba(221, 165, 84, 0.16);
+      font-size: 0.78rem; font-weight: 600; color: #054054;
+      background: #eef4f6;
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .acm-head-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -769,14 +762,14 @@ type Modal = 'tipos' | 'quarto' | null;
     }
     .btn-tour {
       display: inline-flex; align-items: center; gap: 6px;
-      border: 1.5px solid #4b95ab; background: #fff;
-      color: #1a6f8a; border-radius: 4px;
+      border: 1px solid #d7e0e6; background: #fff;
+      color: #5d6d7e; border-radius: 4px;
       padding: 0 14px; min-height: 34px; cursor: pointer;
       font-size: 0.85rem; font-weight: 600;
-      transition: background .15s ease, color .15s ease;
+      transition: background .15s ease, color .15s ease, border-color .15s ease;
     }
     .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { background: #1a6f8a; color: #fff; border-color: #1a6f8a; }
+    .btn-tour:hover { border-color: #054054; color: #054054; }
 
     /* ---------- banners de informação ---------- */
     .acm-info {
@@ -796,11 +789,9 @@ type Modal = 'tipos' | 'quarto' | null;
     .acm-info-icone {
       width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
+      background: #eef4f6; color: #054054;
     }
     .acm-info-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .inf-teal { background: rgba(26, 111, 138, 0.12); color: #1a6f8a; }
-    .inf-gold { background: rgba(221, 165, 84, 0.16); color: #b5811f; }
-    .inf-navy { background: rgba(5, 64, 84, 0.1); color: #054054; }
     .acm-info-txt { min-width: 0; }
     .acm-info-txt strong {
       display: block; font-size: 0.9rem; font-weight: 700;
@@ -826,8 +817,8 @@ type Modal = 'tipos' | 'quarto' | null;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .acm-busca.foco {
-      border-color: #1a6f8a;
-      box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14);
+      border-color: #054054;
+      box-shadow: 0 0 0 3px rgba(5, 64, 84, 0.12);
     }
     .acm-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
     .acm-busca-input {
@@ -863,8 +854,8 @@ type Modal = 'tipos' | 'quarto' | null;
       background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25);
       transition: transform 0.18s;
     }
-    .acm-toggle.on { border-color: #1a6f8a; color: #054054; }
-    .acm-toggle.on .acm-trilho { background: #1a6f8a; }
+    .acm-toggle.on { border-color: #054054; color: #054054; }
+    .acm-toggle.on .acm-trilho { background: #054054; }
     .acm-toggle.on .acm-bolinha { transform: translateX(16px); }
 
     /* ---------- tabela ---------- */
@@ -884,7 +875,7 @@ type Modal = 'tipos' | 'quarto' | null;
     }
     .acm-row { transition: background 0.12s; }
     .acm-row:hover { background: #f4f8fa; }
-    .acm-row.sel { background: rgba(26, 111, 138, 0.07); }
+    .acm-row.sel { background: #eef4f6; }
     .acm-row:last-child td { border-bottom: none; }
     .tc { text-align: center; }
     .acm-th-nome { min-width: 260px; }
@@ -902,8 +893,8 @@ type Modal = 'tipos' | 'quarto' | null;
       overflow: hidden; text-overflow: ellipsis;
     }
     .acm-tipo {
-      font-size: 0.78rem; font-weight: 600; color: #1a6f8a;
-      background: rgba(26, 111, 138, 0.1);
+      font-size: 0.78rem; font-weight: 600; color: #40525d;
+      background: #eef2f5;
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .acm-valor { font-variant-numeric: tabular-nums; font-weight: 600; color: #054054; }
@@ -913,9 +904,30 @@ type Modal = 'tipos' | 'quarto' | null;
     }
     .acm-cap mat-icon { font-size: 17px; width: 17px; height: 17px; color: #8fa3ab; }
 
-    .acm-tabela .badge-acao { padding: 0.5em 0.68em; }
-    .acm-tabela .badge-acao mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .acm-tabela .status-chip { padding: 6px 14px; font-size: 0.8rem; }
+    /* chip de status neutro — clicável só onde faz sentido */
+    .st-chip {
+      display: inline-flex; align-items: center;
+      border: 1px solid #d7e0e6; border-radius: 999px;
+      background: #eef4f6; color: #054054;
+      padding: 6px 14px; font-size: 0.8rem; font-weight: 600;
+      font-family: inherit; cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .st-chip:hover { border-color: #054054; }
+    .st-chip.off { background: #f4f6f8; color: #7d97a1; }
+    .st-chip.estatico { cursor: default; }
+    .st-chip.estatico:hover { border-color: #d7e0e6; }
+
+    .acao-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; margin: 0 2px;
+      border: 1px solid #d7e0e6; border-radius: 7px;
+      background: #fff; color: #5d6d7e; cursor: pointer;
+      transition: border-color .15s, color .15s, background .15s;
+    }
+    .acao-btn mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .acao-btn:hover { border-color: #054054; color: #054054; }
+    .acao-btn.perigo:hover { border-color: #b3261e; color: #b3261e; background: #fdf3f2; }
 
     /* ---------- estado vazio ---------- */
     .acm-vazio {
@@ -952,7 +964,7 @@ type Modal = 'tipos' | 'quarto' | null;
     .modal-detalhe h4 {
       display: flex; align-items: center; gap: 6px;
       font-size: 0.82rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #1a6f8a; margin: 18px 0 10px;
+      letter-spacing: 0.05em; color: #40525d; margin: 18px 0 10px;
     }
     .modal-detalhe h4 mat-icon { font-size: 17px; width: 17px; height: 17px; }
     .det-dica {
@@ -964,8 +976,8 @@ type Modal = 'tipos' | 'quarto' | null;
     .det-faixa {
       display: flex; flex-wrap: wrap; align-items: center;
       gap: 10px 24px;
-      background: linear-gradient(135deg, #f2f8fb 0%, #f7faf6 100%);
-      border: 1px solid #dce8ee; border-radius: 12px;
+      background: #f7fafb;
+      border: 1px solid #e3eaef; border-radius: 12px;
       padding: 12px 18px; margin: 14px 0 4px;
     }
     .det-item {
@@ -974,6 +986,7 @@ type Modal = 'tipos' | 'quarto' | null;
     .det-item-ic {
       width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
+      background: #eef4f6; color: #054054;
     }
     .det-item-ic mat-icon { font-size: 17px; width: 17px; height: 17px; }
     .det-item-txt { display: flex; flex-direction: column; line-height: 1.15; }
@@ -999,7 +1012,7 @@ type Modal = 'tipos' | 'quarto' | null;
       color: #8fa3ab; padding: 0;
     }
     .chip-del mat-icon { font-size: 15px; width: 15px; height: 15px; }
-    .chip-del:hover { color: #054054; }
+    .chip-del:hover { color: #b3261e; }
     .btn-add-quarto {
       display: inline-flex; align-items: center; gap: 5px;
       padding: 0.4rem 0.8rem; font-size: 0.84rem;
@@ -1019,18 +1032,22 @@ type Modal = 'tipos' | 'quarto' | null;
       display: flex; justify-content: flex-end;
       padding: 10px 14px; border-top: 1px solid #d7e0e6;
     }
-    .modal-foot .btn-green { display: inline-flex; align-items: center; gap: 6px; }
+    .modal-foot .btn-dark-blue { display: inline-flex; align-items: center; gap: 6px; }
     .modal-foot mat-icon { font-size: 15px; width: 15px; height: 15px; }
+
+    /* modais da tela acima da sidebar (110) e da bolha MAR IA (300);
+       confirm global sobe para 400 no styles.css */
+    .overlay { z-index: 310; }
 
     /* ---------- drawer lateral ---------- */
     .drawer-backdrop {
-      position: fixed; inset: 0; z-index: 200;
+      position: fixed; inset: 0; z-index: 320;
       background: rgba(5, 32, 43, 0.45);
       animation: fadeIn 0.18s ease-out;
     }
     @keyframes fadeIn { from { opacity: 0; } }
     .drawer {
-      position: fixed; top: 0; right: 0; bottom: 0; z-index: 201;
+      position: fixed; top: 0; right: 0; bottom: 0; z-index: 321;
       width: min(540px, 100vw);
       background: #f7fafb;
       box-shadow: -12px 0 40px rgba(3, 32, 43, 0.28);
@@ -1067,7 +1084,7 @@ type Modal = 'tipos' | 'quarto' | null;
     .dsec-tit {
       display: flex; align-items: center; gap: 7px;
       font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #1a6f8a; margin-bottom: 12px;
+      letter-spacing: 0.05em; color: #40525d; margin-bottom: 12px;
     }
     .dsec-tit mat-icon { font-size: 17px; width: 17px; height: 17px; }
     .dsec-sub { margin: -6px 0 12px; font-size: 0.76rem; color: #8a99a4; }
@@ -1095,7 +1112,7 @@ type Modal = 'tipos' | 'quarto' | null;
     .input-group-inn .input-inn { border-radius: 0 4px 4px 0; flex: 1; }
     .input-group-inn.mb { margin-bottom: 12px; }
     .input-group-inn.mb .input-inn { border-radius: 4px 0 0 4px; border-right: 0; }
-    .input-group-inn.mb .btn-green { border-radius: 0 4px 4px 0; }
+    .input-group-inn.mb .btn-dark-blue { border-radius: 0 4px 4px 0; }
     .check-inn { display: flex; align-items: center; gap: 6px; font-size: 0.84rem; color: #40525d; }
 
     /* tarifa por ocupação — linha expansível na tabela de tipos */
@@ -1105,10 +1122,9 @@ type Modal = 'tipos' | 'quarto' | null;
     .fx-linha { display: flex; align-items: flex-end; gap: 10px; }
     .fx-inp { width: 110px; }
     .fx-acoes { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
-    .bg-green { background: #1e8e5a; }
     .dl { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: #5d6d7e; }
-    .mc-btn { font-size: 0.75rem; padding: 5px 12px; border: 1px solid #d7e0e6; border-radius: 6px; background: #fff; color: #1a6f8a; cursor: pointer; }
-    .mc-btn:hover { border-color: #1a6f8a; }
+    .mc-btn { font-size: 0.75rem; padding: 5px 12px; border: 1px solid #d7e0e6; border-radius: 6px; background: #fff; color: #40525d; cursor: pointer; }
+    .mc-btn:hover { border-color: #054054; color: #054054; }
 
     .drawer-foot {
       display: flex; align-items: center; justify-content: space-between;
@@ -1118,7 +1134,7 @@ type Modal = 'tipos' | 'quarto' | null;
     }
     .drawer-req { font-size: 0.76rem; color: #8a99a4; }
     .drawer-foot-acoes { display: flex; gap: 8px; }
-    .drawer-foot-acoes .btn-green,
+    .drawer-foot-acoes .btn-dark-blue,
     .drawer-foot-acoes .btn-gray {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 0.5rem 1rem;
@@ -1655,7 +1671,7 @@ export class AcomodacoesComponent implements OnInit {
           popover: {
             title: 'Quartos físicos e tarifas',
             description:
-              'O <b>olho teal</b> abre a janela da acomodação: cadastre quartos ' +
+              'O <b>olho</b> abre a janela da acomodação: cadastre quartos ' +
               'reais, ative/desative cada um e veja o histórico de tarifas.',
             side: 'left',
           },
@@ -1666,8 +1682,9 @@ export class AcomodacoesComponent implements OnInit {
           popover: {
             title: 'Ativar / desativar',
             description:
-              'Clique no selo para mudar o status: <b>teal = Ativo</b>, ' +
-              '<b>cinza = Inativo</b>. Acomodações inativas não aparecem para reserva.',
+              'Clique no selo para mudar o status — <b>Ativo</b> aparece ' +
+              'destacado, <b>Inativo</b> esmaecido. Acomodações inativas não ' +
+              'aparecem para reserva.',
             side: 'top',
           },
         },
@@ -1677,9 +1694,9 @@ export class AcomodacoesComponent implements OnInit {
           popover: {
             title: 'Ações da acomodação',
             description:
-              '<b>Dourado</b> edita os dados · <b>olho teal</b> abre quartos e ' +
-              'tarifas · <b>navy</b> exclui (apaga também quartos e fotos do site, ' +
-              'sempre com confirmação).',
+              '<b>Lápis</b> edita os dados · <b>olho</b> abre quartos e ' +
+              'tarifas · <b>lixeira</b> exclui (apaga também quartos e fotos ' +
+              'do site, sempre com confirmação).',
             side: 'left',
           },
         },

@@ -292,7 +292,7 @@ tr.clickable {
 }
 
 /* Confirmação é sempre a camada mais alta — abre sobre qualquer modal. */
-.overlay.overlay-confirm { z-index: 200; }
+.overlay.overlay-confirm { z-index: 400; }
 
 /* ===== modal Bootstrap-like (modal-content/header/body do legado) ======= */
 .overlay {
