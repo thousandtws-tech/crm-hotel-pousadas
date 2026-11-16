@@ -1,4 +1,5 @@
-import { Component, computed, inject, signal, OnInit, effect } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, effect, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -24,6 +25,7 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
       <!-- ================= Cabeçalho ================= -->
       <div class="est-head">
         <div>
+          <p class="eyebrow">Configurações</p>
           <h2 class="est-titulo">Estabelecimento</h2>
           <p class="est-sub">Dados da pousada usados em comprovantes, documentos e na impressão térmica</p>
         </div>
@@ -71,17 +73,17 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
       </div>
 
       <!-- ================= Formulários ================= -->
-      <div class="row-cards">
+      <div class="est-secoes">
         <div class="inner-card est-card">
           <div class="est-card-head">
-            <span class="est-card-ic tint-teal"><mat-icon>badge</mat-icon></span>
+            <span class="est-card-ic"><mat-icon>badge</mat-icon></span>
             <div>
               <h4>Dados da hospedagem</h4>
               <small>Saem no cabeçalho de comprovantes e documentos</small>
             </div>
           </div>
           <form [formGroup]="dados" class="form">
-            <div class="duo">
+            <div class="grid-3">
               <label class="lbl">
                 CNPJ
                 <input class="input-inn" type="text" formControlName="cnpj" placeholder="00.000.000/0000-00" />
@@ -90,26 +92,26 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                 Telefone
                 <input class="input-inn" type="text" formControlName="telefone" placeholder="(22) 0000-0000" />
               </label>
-            </div>
-            <label class="lbl">
-              Razão social
-              <input class="input-inn" type="text" formControlName="razao_social" placeholder="Nome jurídico da pousada" />
-            </label>
-            <label class="lbl">
-              E-mail
-              <input class="input-inn" type="email" formControlName="email" placeholder="contato@pousada.com.br" />
-            </label>
-            <div class="duo">
-              <label class="lbl">
-                Site
-                <input class="input-inn" type="text" formControlName="site" placeholder="www.pousada.com.br" />
-              </label>
               <label class="lbl">
                 Celular / WhatsApp
                 <input class="input-inn" type="text" formControlName="celular" placeholder="(22) 90000-0000" />
               </label>
             </div>
             <div class="duo">
+              <label class="lbl">
+                Razão social
+                <input class="input-inn" type="text" formControlName="razao_social" placeholder="Nome jurídico da pousada" />
+              </label>
+              <label class="lbl">
+                E-mail
+                <input class="input-inn" type="email" formControlName="email" placeholder="contato@pousada.com.br" />
+              </label>
+            </div>
+            <div class="grid-3">
+              <label class="lbl">
+                Site
+                <input class="input-inn" type="text" formControlName="site" placeholder="www.pousada.com.br" />
+              </label>
               <label class="lbl">
                 Taxa early check-in (R$)
                 <input class="input-inn" type="number" min="0" step="0.01" formControlName="taxa_early" placeholder="0,00" />
@@ -119,7 +121,7 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                 <input class="input-inn" type="number" min="0" step="0.01" formControlName="taxa_late" placeholder="0,00" />
               </label>
             </div>
-            <fieldset class="concierge-fields">
+            <fieldset class="fld">
               <legend>Concierge Inná — o que a IA pode responder ao hóspede</legend>
               <div class="duo">
                 <label class="lbl">
@@ -131,7 +133,7 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                   <input class="input-inn" type="text" formControlName="wifi_senha" placeholder="bemvindo2026" />
                 </label>
               </div>
-              <div class="duo">
+              <div class="grid-3">
                 <label class="lbl">
                   Horário de check-in
                   <input class="input-inn" type="text" formControlName="horario_checkin" placeholder="a partir das 14h" />
@@ -140,11 +142,11 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                   Horário de check-out
                   <input class="input-inn" type="text" formControlName="horario_checkout" placeholder="até as 12h" />
                 </label>
+                <label class="lbl">
+                  Horário do café da manhã
+                  <input class="input-inn" type="text" formControlName="horario_cafe" placeholder="7h às 10h no salão principal" />
+                </label>
               </div>
-              <label class="lbl">
-                Horário do café da manhã
-                <input class="input-inn" type="text" formControlName="horario_cafe" placeholder="7h às 10h no salão principal" />
-              </label>
               <label class="lbl">
                 Serviços e informações (piscina, estacionamento, passeios…)
                 <textarea class="input-inn" rows="3" formControlName="info_servicos" placeholder="Piscina das 8h às 20h; estacionamento gratuito;…"></textarea>
@@ -152,18 +154,20 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
             </fieldset>
             <fieldset class="fld">
               <legend>Conformidade legal — CDC, LGPD e MTur</legend>
-              <label class="lbl">
-                Cadastur (MTur)
-                <input class="input-inn" type="text" formControlName="cadastur" placeholder="Nº do cadastro no Ministério do Turismo" />
-              </label>
-              <label class="lbl">
-                E-mail do encarregado de dados (DPO — LGPD)
-                <input class="input-inn" type="email" formControlName="dpo_email" placeholder="privacidade@pousada.com.br" />
-              </label>
-              <label class="lbl">
-                Retenção de dados do hóspede (anos)
-                <input class="input-inn" type="number" min="1" max="30" formControlName="retencao_dados_anos" />
-              </label>
+              <div class="grid-3">
+                <label class="lbl">
+                  Cadastur (MTur)
+                  <input class="input-inn" type="text" formControlName="cadastur" placeholder="Nº do cadastro no Ministério do Turismo" />
+                </label>
+                <label class="lbl">
+                  E-mail do encarregado de dados (DPO — LGPD)
+                  <input class="input-inn" type="email" formControlName="dpo_email" placeholder="privacidade@pousada.com.br" />
+                </label>
+                <label class="lbl">
+                  Retenção de dados do hóspede (anos)
+                  <input class="input-inn" type="number" min="1" max="30" formControlName="retencao_dados_anos" />
+                </label>
+              </div>
               <label class="lbl lbl-check">
                 <input type="checkbox" formControlName="fnrh_assinatura" />
                 Exigir assinatura desenhada do hóspede na pré-ficha (FNRH)
@@ -204,41 +208,41 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
 
         <div class="inner-card est-card">
           <div class="est-card-head">
-            <span class="est-card-ic tint-navy"><mat-icon>location_on</mat-icon></span>
+            <span class="est-card-ic"><mat-icon>location_on</mat-icon></span>
             <div>
               <h4>Endereço da hospedagem</h4>
               <small>Usado em documentos fiscais e na ficha do hóspede</small>
             </div>
           </div>
           <form [formGroup]="endereco" class="form">
-            <div class="duo">
+            <div class="grid-end">
               <label class="lbl">
                 CEP
                 <input class="input-inn" type="text" formControlName="cep" placeholder="00000-000" />
+              </label>
+              <label class="lbl">
+                Logradouro
+                <input class="input-inn" type="text" formControlName="logradouro" placeholder="Rua, avenida…" />
+              </label>
+              <label class="lbl">
+                Número
+                <input class="input-inn" type="text" formControlName="numero" placeholder="123" />
+              </label>
+              <label class="lbl">
+                Complemento
+                <input class="input-inn" type="text" formControlName="complemento" placeholder="Opcional" />
+              </label>
+            </div>
+            <div class="duo">
+              <label class="lbl">
+                Bairro
+                <input class="input-inn" type="text" formControlName="bairro" placeholder="Centro" />
               </label>
               <label class="lbl">
                 Cidade
                 <input class="input-inn" type="text" formControlName="cidade" placeholder="Cabo Frio" />
               </label>
             </div>
-            <label class="lbl">
-              Logradouro
-              <input class="input-inn" type="text" formControlName="logradouro" placeholder="Rua, avenida…" />
-            </label>
-            <div class="num-comp">
-              <label class="lbl num">
-                Número
-                <input class="input-inn" type="text" formControlName="numero" placeholder="123" />
-              </label>
-              <label class="lbl comp">
-                Complemento
-                <input class="input-inn" type="text" formControlName="complemento" placeholder="Opcional" />
-              </label>
-            </div>
-            <label class="lbl">
-              Bairro
-              <input class="input-inn" type="text" formControlName="bairro" placeholder="Centro" />
-            </label>
             <div class="end">
               <button class="btn-dark-blue" type="button" (click)="salvarEndereco()" [disabled]="salvando()">
                 <mat-icon>save</mat-icon> {{ salvando() ? 'Salvando…' : 'Gravar endereço' }}
@@ -252,7 +256,7 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
       <div class="inner-card est-card" id="tour-imp">
         <div class="est-card-head com-acao">
           <div class="est-card-head-grupo">
-            <span class="est-card-ic tint-gold"><mat-icon>print</mat-icon></span>
+            <span class="est-card-ic"><mat-icon>print</mat-icon></span>
             <div>
               <h4>Impressoras por setor</h4>
               <small>Comprovantes saem na <b>padrão</b>; pedidos de consumo saem na impressora do setor da categoria</small>
@@ -281,7 +285,7 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                     · detectada por {{ d.origem }}
                   </span>
                 </div>
-                <button class="btn-green mini" type="button" (click)="abrirRegistro(d)">Registrar</button>
+                <button class="btn-dark-blue mini" type="button" (click)="abrirRegistro(d)">Registrar</button>
                 <button class="btn-gray mini" type="button" (click)="ignorar(d)">Ignorar</button>
               </div>
             }
@@ -319,8 +323,7 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                   </td>
                   <td class="tc">
                     <button
-                      class="status-chip clickable"
-                      [class.on]="p.ativa"
+                      class="st-chip clickable"
                       [class.off]="!p.ativa"
                       type="button"
                       title="Clique para alternar"
@@ -329,11 +332,11 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                   </td>
                   <td class="tc">
                     <div class="est-acoes-linha">
-                      <button class="acao navy" type="button" title="Imprimir página de teste"
+                      <button class="acao-btn" type="button" title="Imprimir página de teste"
                               (click)="testar(p)"><mat-icon>print</mat-icon></button>
-                      <button class="acao gold" type="button" title="Editar"
+                      <button class="acao-btn" type="button" title="Editar"
                               (click)="abrirImpressora(p)"><mat-icon>edit</mat-icon></button>
-                      <button class="acao navy" type="button" title="Excluir"
+                      <button class="acao-btn perigo" type="button" title="Excluir"
                               (click)="removerImpressora(p)"><mat-icon>delete</mat-icon></button>
                     </div>
                   </td>
@@ -405,7 +408,7 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
           </div>
           <div class="modal-foot">
             <button class="btn-gray" type="button" (click)="modalImp.set(false)">Cancelar</button>
-            <button class="btn-green" type="button" [disabled]="salvando() || impForm.invalid" (click)="salvarImpressora()">
+            <button class="btn-dark-blue" type="button" [disabled]="salvando() || impForm.invalid" (click)="salvarImpressora()">
               <mat-icon>save</mat-icon> {{ impEditando() ? 'Salvar alterações' : 'Cadastrar' }}
             </button>
           </div>
@@ -455,7 +458,7 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
           </div>
           <div class="modal-foot">
             <button class="btn-gray" type="button" (click)="modalReg.set(null)">Cancelar</button>
-            <button class="btn-green" type="button" [disabled]="salvando() || regForm.invalid" (click)="registrar()">
+            <button class="btn-dark-blue" type="button" [disabled]="salvando() || regForm.invalid" (click)="registrar()">
               <mat-icon>save</mat-icon> Registrar
             </button>
           </div>
@@ -499,7 +502,7 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
           <div class="modal-foot">
             <button class="btn-gray" type="button" (click)="modalLogo.set(false)">Cancelar</button>
             <button
-              class="btn-green" type="button"
+              class="btn-dark-blue" type="button"
               [disabled]="!logoArquivo() || enviando()"
               (click)="enviarLogo()"
             >
@@ -520,74 +523,68 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
       border-bottom: 1px solid #e3eaef;
     }
     .est-titulo { margin: 0; font-size: 1.5rem; font-weight: 800; color: #054054; letter-spacing: -0.02em; }
-    .est-sub { margin: 2px 0 0; font-size: 0.82rem; color: #7d97a1; }
+    .est-sub { margin: 4px 0 0; font-size: 0.82rem; color: #7d97a1; }
     .est-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
     .est-acoes button { display: inline-flex; align-items: center; gap: 6px; }
-    .concierge-fields {
-      border: 1px dashed #cfd9df; border-radius: 8px;
+    .fld {
+      border: 1px solid #e3eaef; border-radius: 8px;
       padding: 12px 14px 14px; margin: 4px 0 0;
       display: flex; flex-direction: column; gap: 10px;
     }
-    .concierge-fields legend {
-      font-size: 0.78rem; font-weight: 600; color: #5d6d7e; padding: 0 6px;
+    .fld legend {
+      font-size: 0.74rem; font-weight: 700; color: #536b73; padding: 0 6px;
+      text-transform: uppercase; letter-spacing: 0.05em;
     }
     .btn-tour {
       display: inline-flex; align-items: center; gap: 6px;
-      border: 1.5px solid #d7e0e6; background: #fff;
-      color: #5d6d7e; border-radius: 4px;
+      border: 1px solid #dce6ea; background: #fff;
+      color: #536b73; border-radius: 6px;
       padding: 0 14px; min-height: 34px; cursor: pointer;
       font-size: 0.85rem; font-weight: 600; font-family: inherit;
       transition: border-color .15s ease, color .15s ease;
     }
     .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { border-color: #1a6f8a; color: #1a6f8a; }
+    .btn-tour:hover { border-color: #054054; color: #054054; }
 
     /* ---------- checklist ---------- */
     .est-check {
       display: flex; align-items: center; gap: 8px 26px; flex-wrap: wrap;
       background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
-      padding: 14px 20px; margin-bottom: 16px;
+      padding: 12px 18px; margin-bottom: 16px;
     }
     .est-check-tit {
       display: inline-flex; align-items: center; gap: 7px;
-      font-size: 0.74rem; font-weight: 700; color: #054054;
+      font-size: 0.72rem; font-weight: 700; color: #536b73;
       text-transform: uppercase; letter-spacing: 0.06em;
       padding-right: 18px; border-right: 1px solid #eef2f5;
     }
-    .est-check-tit mat-icon { font-size: 17px; width: 17px; height: 17px; color: #1a6f8a; }
+    .est-check-tit mat-icon { font-size: 17px; width: 17px; height: 17px; color: #8fa3ab; }
     .est-check-item {
       display: inline-flex; align-items: center; gap: 9px;
     }
-    .est-check-item > mat-icon { font-size: 20px; width: 20px; height: 20px; color: #b5811f; }
-    .est-check-item.ok > mat-icon { color: #1a6f8a; }
+    .est-check-item > mat-icon { font-size: 19px; width: 19px; height: 19px; color: #92670b; }
+    .est-check-item.ok > mat-icon { color: #198754; }
     .est-check-item span { display: flex; flex-direction: column; }
-    .est-check-item b { font-size: 0.82rem; color: #054054; }
-    .est-check-item small { font-size: 0.7rem; color: #8a99a4; }
+    .est-check-item b { font-size: 0.82rem; color: #054054; font-weight: 600; }
+    .est-check-item small { font-size: 0.7rem; color: #8fa3ab; }
 
     /* ---------- cards de formulário ---------- */
-    .row-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
+    .est-secoes { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem; }
     .est-card { padding: 0; }
     .est-card-head {
       display: flex; align-items: center; gap: 12px;
-      padding: 14px 18px; border-bottom: 1px solid #eef2f5;
+      padding: 13px 18px; border-bottom: 1px solid #eef2f5;
     }
     .est-card-head.com-acao { justify-content: space-between; flex-wrap: wrap; }
     .est-card-head-grupo { display: flex; align-items: center; gap: 12px; }
     .est-card-ic {
-      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+      width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
+      background: #eef4f6; color: #054054;
     }
-    .est-card-ic mat-icon { font-size: 21px; width: 21px; height: 21px; }
-    .tint-teal { background: rgba(26, 111, 138, 0.1); color: #1a6f8a; }
-    .tint-gold { background: rgba(221, 165, 84, 0.14); color: #b5811f; }
-    .tint-navy { background: rgba(5, 64, 84, 0.08); color: #054054; }
+    .est-card-ic mat-icon { font-size: 18px; width: 18px; height: 18px; }
     .est-card-head h4 { margin: 0; font-size: 0.95rem; font-weight: 700; color: #054054; }
-    .est-card-head small { font-size: 0.74rem; color: #8a99a4; }
+    .est-card-head small { font-size: 0.74rem; color: #8fa3ab; }
     .est-card form { padding: 16px 18px 18px; }
     .form { display: flex; flex-direction: column; gap: 12px; }
     .lbl {
@@ -596,92 +593,96 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
     }
     .lbl .req, .f-lbl .req { color: #dc3545; }
     .lbl-check { flex-direction: row; align-items: center; gap: 8px; font-weight: 500; }
+    .lbl-check input[type='checkbox'], .lbl.check input[type='checkbox'] { accent-color: #054054; }
     .f-field { display: flex; flex-direction: column; gap: 4px; }
     .f-lbl { font-size: 0.82rem; font-weight: 600; color: #40525d; }
     .f-mat { width: 100%; }
     .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .hint { font-size: 0.73rem; color: #8a99a4; font-weight: 400; align-self: end; padding-bottom: 10px; }
+    .grid-end { display: grid; grid-template-columns: 140px 2fr 110px 1fr; gap: 10px; }
+    .hint { font-size: 0.73rem; color: #8fa3ab; font-weight: 400; align-self: end; padding-bottom: 10px; }
     .porta-inn { margin-top: 20px; }
-    .num-comp { display: grid; grid-template-columns: 120px 1fr; gap: 10px; }
     .end { display: flex; justify-content: flex-end; }
     .end button { display: inline-flex; align-items: center; gap: 6px; }
     .check { flex-direction: row !important; align-items: center; gap: 9px; font-weight: 400 !important; cursor: pointer; }
-    .est-dica { font-size: 0.73rem; color: #8a99a4; font-weight: 400; }
+    .est-dica { font-size: 0.73rem; color: #8fa3ab; font-weight: 400; }
+    @media (max-width: 900px) {
+      .grid-3, .grid-end, .duo { grid-template-columns: 1fr; }
+    }
 
     /* ---------- auto-descoberta ---------- */
     .desc-box {
-      margin: 0 0 14px; border: 1.5px dashed #b5851f; border-radius: 10px;
-      background: #fdf8ec; padding: 10px 12px;
+      margin: 0 0 14px; border: 1px solid #dce6ea; border-radius: 8px;
+      background: #f4f8fa; padding: 10px 12px;
     }
     .desc-head {
       display: flex; align-items: center; gap: 8px;
-      font-size: 0.84rem; color: #7a5b13; margin-bottom: 8px;
+      font-size: 0.84rem; color: #054054; margin-bottom: 8px; font-weight: 600;
     }
-    .desc-head span { color: #a08a55; font-weight: 400; }
-    .desc-head mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    .desc-head b { font-weight: 600; }
+    .desc-head span { color: #536b73; font-weight: 400; }
+    .desc-head mat-icon { font-size: 18px; width: 18px; height: 18px; color: #92670b; }
     .desc-linha {
       display: flex; align-items: center; gap: 10px;
-      padding: 7px 4px; border-top: 1px solid #f0e6cc;
+      padding: 7px 4px; border-top: 1px solid #e3eaef;
     }
-    .desc-ic { color: #1a6f8a; font-size: 20px; width: 20px; height: 20px; }
-    .desc-ic.usb { color: #b5811f; }
+    .desc-ic { color: #8fa3ab; font-size: 20px; width: 20px; height: 20px; }
     .desc-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     .desc-info b { font-size: 0.86rem; color: #23404e; }
-    .desc-info span { font-size: 0.75rem; color: #8a99a4; }
-    .btn-green.mini, .btn-gray.mini { padding: 6px 12px; font-size: 0.78rem; border-radius: 7px; }
+    .desc-info span { font-size: 0.75rem; color: #8fa3ab; }
+    .btn-dark-blue.mini, .btn-gray.mini { padding: 6px 12px; font-size: 0.78rem; border-radius: 7px; }
 
     /* ---------- tabela impressoras ---------- */
     .est-tabela-wrap { overflow-x: auto; padding: 0 18px 18px; }
     .est-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
     .est-tabela thead th {
-      background: #f4f8fa; color: #40525d;
-      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; padding: 12px 14px; text-align: left;
-      border-bottom: 2px solid #e3eaef; white-space: nowrap;
+      background: #f4f8fa; color: #536b73;
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; padding: 10px 14px; text-align: left;
+      border-bottom: 1px solid #e3eaef; white-space: nowrap;
     }
     .est-tabela tbody td {
-      padding: 12px 14px; border-bottom: 1px solid #eef2f5;
+      padding: 10px 14px; border-bottom: 1px solid #eef2f5;
       vertical-align: middle; color: #33424c;
     }
     .est-tabela tbody tr:hover { background: #f7fafb; }
     .est-tabela .tc { text-align: center; }
-    .td-nome { font-weight: 700; color: #054054; white-space: nowrap; }
-    .td-nome mat-icon { font-size: 16px; width: 16px; height: 16px; vertical-align: -3px; color: #1a6f8a; margin-right: 7px; }
-    .td-ip { font-family: monospace; font-size: 0.82rem; color: #5d6d7e; white-space: nowrap; }
-    .est-chip-setor {
-      display: inline-flex; background: #eef4f6; color: #1a6f8a;
-      border-radius: 999px; padding: 3px 12px;
-      font-size: 0.78rem; font-weight: 700; text-transform: capitalize;
-    }
-    .est-chip-padrao {
+    .td-nome { font-weight: 600; color: #054054; white-space: nowrap; }
+    .td-nome mat-icon { font-size: 16px; width: 16px; height: 16px; vertical-align: -3px; color: #8fa3ab; margin-right: 7px; }
+    .td-ip { font-family: monospace; font-size: 0.82rem; color: #536b73; white-space: nowrap; }
+    .est-chip-setor, .est-chip-padrao {
       display: inline-flex; align-items: center; gap: 4px;
-      background: rgba(221, 165, 84, 0.15); color: #b5811f;
+      background: #eef4f6; color: #054054;
       border-radius: 999px; padding: 3px 12px;
-      font-size: 0.75rem; font-weight: 700; white-space: nowrap;
+      font-size: 0.75rem; font-weight: 600; white-space: nowrap;
     }
+    .est-chip-setor { font-size: 0.78rem; text-transform: capitalize; }
     .est-chip-padrao mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .est-acoes-linha { display: inline-flex; gap: 5px; }
-    .acao {
+    .est-acoes-linha { display: inline-flex; gap: 4px; }
+    .acao-btn {
       display: inline-flex; align-items: center; justify-content: center;
-      border: none; border-radius: 6px; width: 30px; height: 30px;
-      cursor: pointer; transition: filter .14s;
+      border: none; background: none; border-radius: 6px; width: 30px; height: 30px;
+      cursor: pointer; color: #536b73; transition: background .14s, color .14s;
     }
-    .acao mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .acao:hover { filter: brightness(1.12); }
-    .acao.navy { background: #054054; color: #fff; }
-    .acao.gold { background: #b5811f; color: #054054; }
-    .status-chip.clickable { cursor: pointer; border: none; font-family: inherit; }
-    .status-chip.on { background: #1a6f8a; color: #fff; }
-    .status-chip.off { background: #7d97a1; color: #fff; }
+    .acao-btn mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .acao-btn:hover { background: #eef4f6; color: #054054; }
+    .acao-btn.perigo:hover { background: #fbeaea; color: #b3343a; }
+    .st-chip {
+      display: inline-flex; align-items: center; justify-content: center;
+      border: none; border-radius: 999px; padding: 4px 14px;
+      background: #eef4f6; color: #054054;
+      font-size: 0.75rem; font-weight: 600; font-family: inherit;
+    }
+    .st-chip.clickable { cursor: pointer; }
+    .st-chip.off { background: #f4f8fa; color: #8fa3ab; }
     .est-vazio {
-      text-align: center; color: #8a99a4; padding: 34px !important; font-size: 0.86rem;
+      text-align: center; color: #8fa3ab; padding: 34px !important; font-size: 0.86rem;
     }
     .est-vazio mat-icon { display: block; margin: 0 auto 8px; font-size: 30px; width: 30px; height: 30px; color: #c3d2d9; }
 
     /* ---------- modais ---------- */
     .overlay {
-      position: fixed; inset: 0; z-index: 100;
+      position: fixed; inset: 0; z-index: 310;
       background: rgba(5, 64, 84, 0.45);
       display: flex; align-items: flex-start; justify-content: center;
       padding: 2rem 1rem; backdrop-filter: blur(2px);
@@ -701,10 +702,10 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
       margin: 0; font-size: 1rem; font-weight: 700; color: #054054;
       display: inline-flex; align-items: center; gap: 8px;
     }
-    .modal-head h5 mat-icon { font-size: 19px; width: 19px; height: 19px; color: #1a6f8a; }
+    .modal-head h5 mat-icon { font-size: 19px; width: 19px; height: 19px; color: #054054; }
     .modal-head .close {
       border: none; background: #eef2f5; border-radius: 50%;
-      width: 28px; height: 28px; cursor: pointer; color: #5d6d7e;
+      width: 28px; height: 28px; cursor: pointer; color: #536b73;
       display: inline-flex; align-items: center; justify-content: center; padding: 0;
     }
     .modal-head .close:hover { background: #d7e0e6; }
@@ -719,7 +720,7 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
     .modal-foot button { display: inline-flex; align-items: center; gap: 6px; }
     .modal-foot mat-icon { font-size: 16px; width: 16px; height: 16px; }
     .logo-box {
-      border: 1px dashed #c5d6de; border-radius: 10px;
+      border: 1px dashed #dce6ea; border-radius: 10px;
       min-height: 140px; display: flex; align-items: center; justify-content: center;
       background: #f7fafb; padding: 14px;
     }
@@ -728,13 +729,13 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
     .logo-vazia mat-icon { font-size: 38px; width: 38px; height: 38px; }
     .est-upload {
       display: flex; align-items: center; justify-content: center; gap: 8px;
-      border: 1.5px dashed #1a6f8a; border-radius: 10px;
+      border: 1.5px dashed #c6d6dd; border-radius: 10px;
       padding: 13px 16px; cursor: pointer;
-      font-size: 0.85rem; font-weight: 600; color: #1a6f8a;
-      transition: background .14s;
+      font-size: 0.85rem; font-weight: 600; color: #054054;
+      transition: background .14s, border-color .14s;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .est-upload:hover { background: rgba(26, 111, 138, 0.06); }
+    .est-upload:hover { background: #f4f8fa; border-color: #054054; }
     .est-upload mat-icon { font-size: 19px; width: 19px; height: 19px; flex-shrink: 0; }
   `,
 })
@@ -815,14 +816,8 @@ export class EstabelecimentoComponent implements OnInit {
     cep: [''],
   });
 
-  protected readonly dadosOk = computed(() => {
-    const v = this.dados.value;
-    return !!(v.razao_social?.trim() && v.cnpj?.trim());
-  });
-  protected readonly endOk = computed(() => {
-    const v = this.endereco.value;
-    return !!(v.logradouro?.trim() && v.cidade?.trim() && v.cep?.trim());
-  });
+  protected readonly dadosOk = signal(false);
+  protected readonly endOk = signal(false);
   protected readonly impOk = computed(() =>
     this.impressoras().some((p) => p.padrao && p.ativa),
   );
@@ -832,6 +827,13 @@ export class EstabelecimentoComponent implements OnInit {
   });
 
   constructor() {
+    const destroy = inject(DestroyRef);
+    this.dados.valueChanges.pipe(takeUntilDestroyed(destroy)).subscribe((v) => {
+      this.dadosOk.set(!!(v.razao_social?.trim() && v.cnpj?.trim()));
+    });
+    this.endereco.valueChanges.pipe(takeUntilDestroyed(destroy)).subscribe((v) => {
+      this.endOk.set(!!(v.logradouro?.trim() && v.cidade?.trim() && v.cep?.trim()));
+    });
     let ultimo = -1;
     effect(() => {
       const v = this.rt.mudanca('impressora', 'categoria_estoque', 'impressora_descoberta');
@@ -1159,13 +1161,13 @@ export class EstabelecimentoComponent implements OnInit {
           title: 'Checklist de configuração',
           description:
             'Os 4 itens essenciais: <b>dados fiscais</b>, <b>endereço</b>, ' +
-            '<b>logo</b> e <b>impressora padrão</b>. Verde = pronto; ' +
-            'dourado = pendente.',
+            '<b>logo</b> e <b>impressora padrão</b>. O ícone verde indica ' +
+            'item pronto; o de alerta indica pendência.',
           side: 'bottom',
         },
       },
       {
-        element: '.row-cards',
+        element: '.est-secoes',
         popover: {
           title: 'Dados da pousada',
           description:
