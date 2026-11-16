@@ -7,6 +7,9 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY client/web/package.json client/web/package-lock.json ./
+# lockfile gerado por npm 12 (dev local) — npm 10 do node:22-alpine não valida
+# a resolução aninhada dos bindings wasm (@emnapi/*); alinha a toolchain.
+RUN npm install -g npm@12
 RUN npm ci
 COPY client/web/ .
 RUN npm run build
