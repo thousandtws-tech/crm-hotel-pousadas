@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { OperadorasApi } from '@core/api/operadoras.api';
@@ -17,7 +17,8 @@ import * as M from '@core/models';
     <div class="pag">
       <div class="cab">
         <div>
-          <h1>Operadoras</h1>
+          <p class="eyebrow">Parcerias B2B</p>
+          <h2 class="titulo">Operadoras</h2>
           <p class="sub">Parceiros B2B — tarifa net, extranet por token e faturamento segregado.</p>
         </div>
         <button type="button" class="btn-pri" (click)="abrirForm(null)">
@@ -27,59 +28,125 @@ import * as M from '@core/models';
 
       @if (carregando()) {
         <p class="vazio">Carregando…</p>
-      } @else if (operadoras().length === 0) {
-        <div class="inner-card vazio-card">
-          <mat-icon>handshake</mat-icon>
-          <p>Nenhuma operadora cadastrada. Cadastre a primeira para liberar a extranet.</p>
-        </div>
       } @else {
-        <div class="inner-card">
-          <table class="tab">
-            <thead>
-              <tr>
-                <th>Operadora</th>
-                <th>Comissão</th>
-                <th>Contato</th>
-                <th>Status</th>
-                <th class="ac">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (o of operadoras(); track o.id) {
-                <tr [class.inativa]="!o.ativa">
-                  <td>
-                    <strong>{{ o.nome }}</strong>
-                    @if (o.notas) { <span class="mini notas">{{ o.notas }}</span> }
-                  </td>
-                  <td>{{ o.comissao_pct }}% net</td>
-                  <td>
-                    @if (o.contato) { <span class="mini">{{ o.contato }}<br /></span> }
-                    <span class="mini">{{ o.email ?? '—' }} · {{ o.telefone ?? '—' }}</span>
-                  </td>
-                  <td>
-                    <span class="pill" [class.pill-off]="!o.ativa">
-                      {{ o.ativa ? 'Ativa' : 'Inativa' }}
-                    </span>
-                  </td>
-                  <td class="ac">
-                    <button type="button" class="mini-btn" (click)="verToken(o)" title="Ver token da extranet">
-                      <mat-icon>key</mat-icon> Token
-                    </button>
-                    <button type="button" class="mini-btn" (click)="abrirFaturamento(o)" title="Faturamento segregado">
-                      <mat-icon>receipt_long</mat-icon> Faturamento
-                    </button>
-                    <button type="button" class="mini-btn" (click)="abrirForm(o)" title="Editar">
-                      <mat-icon>edit</mat-icon>
-                    </button>
-                    <button type="button" class="mini-btn" [class.perigo]="o.ativa"
-                            (click)="alternar(o)" [title]="o.ativa ? 'Desativar' : 'Reativar'">
-                      <mat-icon>{{ o.ativa ? 'block' : 'check_circle' }}</mat-icon>
-                    </button>
-                  </td>
+        @if (operadoras().length) {
+          <div class="kpis">
+            <div class="kpi">
+              <div class="kpi-top">
+                <span class="kpi-lbl">Cadastradas</span>
+                <span class="kpi-ic"><mat-icon>handshake</mat-icon></span>
+              </div>
+              <strong class="kpi-num">{{ operadoras().length }}</strong>
+              <span class="kpi-sub">operadoras no total</span>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top">
+                <span class="kpi-lbl">Ativas</span>
+                <span class="kpi-ic"><mat-icon>check_circle</mat-icon></span>
+              </div>
+              <strong class="kpi-num">{{ ativas() }}</strong>
+              <span class="kpi-sub">com extranet liberada</span>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top">
+                <span class="kpi-lbl">Inativas</span>
+                <span class="kpi-ic"><mat-icon>block</mat-icon></span>
+              </div>
+              <strong class="kpi-num">{{ inativas() }}</strong>
+              <span class="kpi-sub">acesso suspenso</span>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top">
+                <span class="kpi-lbl">Comissão média</span>
+                <span class="kpi-ic"><mat-icon>percent</mat-icon></span>
+              </div>
+              <strong class="kpi-num">{{ comissaoMedia() }}</strong>
+              <span class="kpi-sub">sobre tarifa net · ativas</span>
+            </div>
+          </div>
+        }
+
+        @if (operadoras().length === 0) {
+          <div class="inner-card vazio-card">
+            <mat-icon>handshake</mat-icon>
+            <p>Nenhuma operadora cadastrada. Cadastre a primeira para liberar a extranet.</p>
+          </div>
+        } @else {
+          <div class="inner-card">
+            <table class="tab">
+              <thead>
+                <tr>
+                  <th>Operadora</th>
+                  <th>Comissão</th>
+                  <th>Contato</th>
+                  <th>Status</th>
+                  <th class="ac">Ações</th>
                 </tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (o of operadoras(); track o.id) {
+                  <tr [class.inativa]="!o.ativa">
+                    <td>
+                      <strong>{{ o.nome }}</strong>
+                      @if (o.notas) { <span class="mini notas">{{ o.notas }}</span> }
+                    </td>
+                    <td>{{ o.comissao_pct }}% net</td>
+                    <td>
+                      @if (o.contato) { <span class="mini">{{ o.contato }}<br /></span> }
+                      <span class="mini">{{ o.email ?? '—' }} · {{ o.telefone ?? '—' }}</span>
+                    </td>
+                    <td>
+                      <span class="pill" [class.pill-off]="!o.ativa">
+                        {{ o.ativa ? 'Ativa' : 'Inativa' }}
+                      </span>
+                    </td>
+                    <td class="ac">
+                      <button type="button" class="mini-btn" (click)="verToken(o)" title="Ver token da extranet">
+                        <mat-icon>key</mat-icon> Token
+                      </button>
+                      <button type="button" class="mini-btn" (click)="abrirFaturamento(o)" title="Faturamento segregado">
+                        <mat-icon>receipt_long</mat-icon> Faturamento
+                      </button>
+                      <button type="button" class="mini-btn" (click)="abrirForm(o)" title="Editar">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button type="button" class="mini-btn" [class.perigo]="o.ativa"
+                              (click)="alternar(o)" [title]="o.ativa ? 'Desativar' : 'Reativar'">
+                        <mat-icon>{{ o.ativa ? 'block' : 'check_circle' }}</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <div class="como">
+          <h3>Como funciona</h3>
+          <div class="como-grid">
+            <div class="como-passo">
+              <span class="como-ic"><mat-icon>handshake</mat-icon></span>
+              <div>
+                <strong>1 · Cadastre o parceiro</strong>
+                <p>Defina a comissão sobre a tarifa net e os contatos comerciais da operadora.</p>
+              </div>
+            </div>
+            <div class="como-passo">
+              <span class="como-ic"><mat-icon>key</mat-icon></span>
+              <div>
+                <strong>2 · Compartilhe o token</strong>
+                <p>Cada operadora recebe uma credencial de extranet para consultar e registrar reservas pela API.</p>
+              </div>
+            </div>
+            <div class="como-passo">
+              <span class="como-ic"><mat-icon>receipt_long</mat-icon></span>
+              <div>
+                <strong>3 · Acompanhe o faturamento</strong>
+                <p>Veja por período quantas reservas cada parceiro gerou e o total net a repassar.</p>
+              </div>
+            </div>
+          </div>
         </div>
       }
 
@@ -192,8 +259,54 @@ import * as M from '@core/models';
   styles: `
     .pag { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
     .cab { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
-    .cab h1 { margin: 0; font-size: 1.4rem; color: #054054; }
+    .eyebrow {
+      margin: 0; font-size: 0.72rem; font-weight: 700; color: #4b95ab;
+      text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .titulo { margin: 2px 0 0; font-size: 1.4rem; font-weight: 600; color: #054054; }
     .sub { margin: 4px 0 0; font-size: 0.82rem; color: #5d6d7e; }
+
+    /* ---------- KPIs ---------- */
+    .kpis {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .kpi {
+      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
+      padding: 14px 16px 13px; display: flex; flex-direction: column; gap: 4px;
+    }
+    .kpi-top { display: flex; justify-content: space-between; align-items: center; }
+    .kpi-lbl {
+      font-size: 0.66rem; font-weight: 700; color: #7d97a1;
+      text-transform: uppercase; letter-spacing: 0.07em;
+    }
+    .kpi-ic {
+      width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+      background: #eef4f6; color: #054054;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .kpi-ic mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .kpi-num {
+      font-size: 1.5rem; font-weight: 800; color: #054054;
+      line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
+    }
+    .kpi-sub { font-size: 0.72rem; color: #8a99a4; }
+
+    /* ---------- como funciona ---------- */
+    .como { background: #fff; border: 1px solid #e3eaef; border-radius: 10px; padding: 16px 18px; }
+    .como h3 {
+      margin: 0 0 12px; font-size: 0.95rem; font-weight: 700; color: #054054;
+    }
+    .como-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+    .como-passo { display: flex; gap: 12px; align-items: flex-start; }
+    .como-ic {
+      width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+      background: #eef4f6; color: #054054;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .como-ic mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    .como-passo strong { display: block; font-size: 0.84rem; color: #33424c; margin-bottom: 2px; }
+    .como-passo p { margin: 0; font-size: 0.78rem; color: #7d97a1; line-height: 1.45; }
     .vazio { color: #7d97a1; }
     .vazio-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px; color: #7d97a1; }
     .vazio-card mat-icon { font-size: 40px; width: 40px; height: 40px; }
@@ -248,6 +361,19 @@ export class OperadorasComponent implements OnInit {
   protected readonly modalFat = signal<M.FaturamentoOperadora | null>(null);
   protected readonly fatDe = signal(this.mesPassado());
   protected readonly fatAte = signal(this.hoje());
+
+  protected readonly ativas = computed(
+    () => this.operadoras().filter((o) => o.ativa).length,
+  );
+  protected readonly inativas = computed(
+    () => this.operadoras().length - this.ativas(),
+  );
+  protected readonly comissaoMedia = computed(() => {
+    const ativas = this.operadoras().filter((o) => o.ativa);
+    if (!ativas.length) return '—';
+    const soma = ativas.reduce((acc, o) => acc + Number(o.comissao_pct || 0), 0);
+    return `${(soma / ativas.length).toFixed(1).replace('.', ',')}%`;
+  });
 
   protected readonly form = this.fb.nonNullable.group({
     nome: ['', [Validators.required, Validators.minLength(3)]],
