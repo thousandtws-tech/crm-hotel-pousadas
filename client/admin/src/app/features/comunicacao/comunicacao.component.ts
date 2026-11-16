@@ -285,7 +285,9 @@ const PAPEL_ROTULO: Record<number, string> = { 1: 'Admin', 2: 'Gerente', 3: 'Tod
     .st-falhou,.st-expirada,.st-cancelado,.st-escalado,.st-urgente{background:#fde3e3;color:#a32}
     .linha-urgente td{background:#fff5f5}
     .sel{margin:0 .5rem;padding:.3rem .5rem;border:1px solid #ddd;border-radius:6px;font-size:.82rem}
+    .sel:focus-visible,.modal textarea:focus-visible{outline:2px solid #054054;outline-offset:0}
     .chk{display:flex;align-items:center;gap:.25rem;font-size:.7rem;margin:.1rem 0;cursor:pointer}
+    .chk input{accent-color:#054054;width:.95rem;height:.95rem;cursor:pointer}
     .btn-mini{font-size:.72rem;padding:.3rem .7rem;border-radius:6px;border:1px solid var(--borda,#ccd);background:#fff;cursor:pointer}
     .vazio{color:var(--mut,#667);font-size:.85rem;padding:.5rem 0;text-align:center}
     .overlay{position:fixed;inset:0;background:rgba(10,15,20,.45);display:flex;align-items:center;justify-content:center;z-index:310}
