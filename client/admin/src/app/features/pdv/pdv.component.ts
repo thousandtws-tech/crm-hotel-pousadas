@@ -48,9 +48,6 @@ function rotuloComanda(c: ComandaView): string {
           <h2 class="titulo">PDV &amp; Comandas</h2>
           <p class="sub">Mesas, quartos e balcão. Tudo para atender sem complicar.</p>
         </div>
-        <button type="button" class="btn-prim" (click)="novaMesa.set(!novaMesa())">
-          <mat-icon>add</mat-icon> Nova mesa
-        </button>
       </header>
       <nav class="abas" aria-label="Seções do PDV">
         @for (a of abas; track a.id) {
@@ -62,157 +59,51 @@ function rotuloComanda(c: ComandaView): string {
 
       <!-- =========================================== aba: mesas · workspace -->
       @if (aba() === 'mesas') {
-        <div class="atend">
+        @if (!comanda()) {
+          <!-- ============ VISÃO SALÃO — grade de atendimentos ============ -->
+          <div class="salao">
+            <div class="salao-tools card0">
+              <div class="seg3" role="group" aria-label="Tipo de atendimento">
+                @for (t of tiposAtend; track t.id) {
+                  <button type="button" class="seg3-btn" [class.ativo]="tipoAtend() === t.id"
+                          (click)="tipoAtend.set(t.id)">{{ t.rotulo }}</button>
+                }
+              </div>
+              <div class="salao-busca">
+                <mat-icon>search</mat-icon>
+                <input class="salao-inp" type="search" placeholder="Mesa, quarto ou comanda"
+                       [value]="buscaAtend()"
+                       (input)="buscaAtend.set($any($event.target).value)"
+                       aria-label="Buscar mesa, quarto ou comanda" autocomplete="off" />
+              </div>
+              @if (tipoAtend() !== 'balcao') {
+                <select class="inp sm" [value]="filtroLista()" aria-label="Filtrar atendimentos"
+                        (change)="filtroLista.set($any($event.target).value)">
+                  <option value="todas">
+                    {{ tipoAtend() === 'mesa' ? 'Todas as mesas' : 'Todos os quartos' }}</option>
+                  <option value="livre">
+                    {{ tipoAtend() === 'mesa' ? 'Livres' : 'Sem comanda' }}</option>
+                  <option value="ocupada">Com consumo</option>
+                </select>
+              }
+              @if (tipoAtend() === 'mesa') {
+                <button type="button" class="btn-mini-cta" (click)="novaMesa.set(!novaMesa())">
+                  <mat-icon>add</mat-icon> Nova mesa
+                </button>
+              }
+            </div>
 
-          <!-- ---------- coluna 1 · atendimentos ---------- -->
-          <aside class="ates card0" aria-label="Atendimentos">
-            <header class="ates-head">
-              <h3>Atendimentos</h3>
-              <button type="button" class="icon-btn" (click)="novaMesa.set(!novaMesa())"
-                      aria-label="Nova mesa" title="Nova mesa">
-                <mat-icon>tune</mat-icon>
-              </button>
-            </header>
-
-            @if (novaMesa()) {
-              <form class="mini-form" [formGroup]="mesaForm" (ngSubmit)="criarMesa()">
+            @if (novaMesa() && tipoAtend() === 'mesa') {
+              <form class="mini-form salao-mesa-form" [formGroup]="mesaForm" (ngSubmit)="criarMesa()">
                 <input class="inp" formControlName="numero" placeholder="Número/nome *" aria-label="Número da mesa" />
                 <input class="inp n" formControlName="lugares" type="number" min="1" placeholder="Lugares" aria-label="Lugares" />
-                <button class="btn-prim" type="submit" [disabled]="mesaForm.invalid" aria-label="Criar mesa">
-                  <mat-icon>check</mat-icon>
+                <button class="btn-prim" type="submit" [disabled]="mesaForm.invalid">
+                  <mat-icon>check</mat-icon> Criar mesa
                 </button>
               </form>
             }
 
-            <div class="seg3" role="group" aria-label="Tipo de atendimento">
-              @for (t of tiposAtend; track t.id) {
-                <button type="button" class="seg3-btn" [class.ativo]="tipoAtend() === t.id"
-                        (click)="tipoAtend.set(t.id)">{{ t.rotulo }}</button>
-              }
-            </div>
-
-            <label class="lbl">Buscar atendimento</label>
-            <input class="inp" placeholder="Mesa ou comanda" [value]="buscaAtend()"
-                   (input)="buscaAtend.set($any($event.target).value)"
-                   aria-label="Buscar mesa ou comanda" />
-
-            @if (tipoAtend() !== 'balcao') {
-              <select class="inp" [value]="filtroLista()" aria-label="Filtrar atendimentos"
-                      (change)="filtroLista.set($any($event.target).value)">
-                <option value="todas">
-                  {{ tipoAtend() === 'mesa' ? 'Todas as mesas' : 'Todos os quartos' }}</option>
-                <option value="livre">
-                  {{ tipoAtend() === 'mesa' ? 'Livres' : 'Sem comanda' }}</option>
-                <option value="ocupada">Com consumo</option>
-              </select>
-            }
-
-            <div class="lista">
-              @if (tipoAtend() === 'mesa') {
-                @for (m of mesasVisiveis(); track m.id) {
-                  <div class="at-card" [class.sel]="selecionada(m.idcomanda, m.id)"
-                       [class.ocupada]="m.idcomanda !== null">
-                    <button type="button" class="at-main" (click)="clicarMesa(m)"
-                            [attr.aria-label]="'Mesa ' + m.numero">
-                      <mat-icon>table_restaurant</mat-icon>
-                      <span class="at-id">
-                        <strong>Mesa {{ m.numero }}</strong>
-                        <span class="at-chip" [class.livre]="m.idcomanda === null">
-                          {{ m.idcomanda === null ? 'Livre' : 'Com consumo' }}
-                        </span>
-                      </span>
-                      <span class="at-right">
-                        @if (selecionada(m.idcomanda, m.id)) {
-                          <small class="at-tag">Selecionada</small>
-                        }
-                        <span class="at-val">{{ m.idcomanda === null ? '—' : fmt(m.total_aberto) }}</span>
-                      </span>
-                    </button>
-                    <button type="button" class="mesa-toggle" (click)="toggleMesa(m)"
-                            [disabled]="m.idcomanda !== null"
-                            [attr.aria-label]="'Desativar mesa ' + m.numero"
-                            [title]="m.idcomanda !== null ? 'Feche a comanda antes de desativar a mesa.' : 'Desativar mesa'">
-                      <mat-icon>power_settings_new</mat-icon>
-                    </button>
-                  </div>
-                } @empty {
-                  <p class="vazio">Nenhuma mesa encontrada.</p>
-                }
-                @if (mesasInativas().length) {
-                  <details class="inativas">
-                    <summary>Mesas inativas ({{ mesasInativas().length }})</summary>
-                    @for (m of mesasInativas(); track m.id) {
-                      <div class="at-card inativa">
-                        <span class="at-main">
-                          <mat-icon>table_restaurant</mat-icon>
-                          <span class="at-id"><strong>Mesa {{ m.numero }}</strong>
-                            <span class="at-chip">Inativa</span></span>
-                          <button type="button" class="mesa-toggle on" (click)="toggleMesa(m)"
-                                  [attr.aria-label]="'Reativar mesa ' + m.numero" title="Reativar mesa">
-                            <mat-icon>power_settings_new</mat-icon>
-                          </button>
-                        </span>
-                      </div>
-                    }
-                  </details>
-                }
-              }
-
-              @if (tipoAtend() === 'quarto') {
-                @for (r of quartosVisiveis(); track r.idquarto) {
-                  <div class="at-card" [class.sel]="comandaDoQuarto(r.quarto_numero)?.id === comanda()?.id"
-                       [class.ocupada]="comandaDoQuarto(r.quarto_numero) !== undefined">
-                    <button type="button" class="at-main" (click)="clicarQuarto(r)"
-                            [attr.aria-label]="'Quarto ' + r.quarto_numero">
-                      <mat-icon>king_bed</mat-icon>
-                      <span class="at-id">
-                        <strong>Quarto {{ r.quarto_numero }}</strong>
-                        <small class="at-sub">{{ r.cliente_nome }}</small>
-                        <span class="at-chip" [class.livre]="!comandaDoQuarto(r.quarto_numero)">
-                          {{ comandaDoQuarto(r.quarto_numero) ? 'Com consumo' : 'Em estadia' }}
-                        </span>
-                      </span>
-                      <span class="at-right">
-                        @if (comandaDoQuarto(r.quarto_numero)?.id === comanda()?.id) {
-                          <small class="at-tag">Selecionada</small>
-                        }
-                        <span class="at-val">
-                          @if (comandaDoQuarto(r.quarto_numero); as cq) { {{ fmt(cq.total_itens) }} } @else { — }
-                        </span>
-                      </span>
-                    </button>
-                  </div>
-                } @empty {
-                  <p class="vazio">Nenhum quarto em estadia.</p>
-                }
-              }
-
-              @if (tipoAtend() === 'balcao') {
-                <button type="button" class="at-card novo" (click)="novoBalcao()">
-                  <mat-icon>add</mat-icon> Nova comanda de balcão
-                </button>
-                @for (c of balcaoVisiveis(); track c.id) {
-                  <div class="at-card ocupada" [class.sel]="comanda()?.id === c.id">
-                    <button type="button" class="at-main" (click)="abrirDetalhe(c.id)"
-                            [attr.aria-label]="rotulo(c)">
-                      <mat-icon>storefront</mat-icon>
-                      <span class="at-id">
-                        <strong>{{ rotulo(c) }}</strong>
-                        <span class="at-chip">Aberta</span>
-                      </span>
-                      <span class="at-right">
-                        @if (comanda()?.id === c.id) { <small class="at-tag">Selecionada</small> }
-                        <span class="at-val">{{ fmt(c.total_itens) }}</span>
-                      </span>
-                    </button>
-                  </div>
-                } @empty {
-                  <p class="vazio">Nenhuma comanda de balcão aberta.</p>
-                }
-              }
-            </div>
-
-            <!-- abertura rápida -->
+            <!-- abertura rápida — tocou num atendimento livre -->
             @if (selecao(); as sel) {
               <form class="quick" [formGroup]="abrirForm" (ngSubmit)="abrirComanda()">
                 <p class="quick-t">
@@ -242,25 +133,128 @@ function rotuloComanda(c: ComandaView): string {
               </form>
             }
 
-            <p class="ates-nota">Selecione um atendimento para acessar a comanda ou iniciar um novo.</p>
-          </aside>
-
-          <!-- ---------- coluna 2 · catálogo ---------- -->
-          <section class="cat-col" aria-label="Adicionar produtos">
-            <header class="cat-head">
-              <div>
-                <h3>Adicionar produtos</h3>
-                <p class="cat-sub">
-                  {{ comanda() ? 'Inclua itens na comanda ' + rotulo(comanda()!) + '.' : 'Selecione um atendimento para lançar itens.' }}
-                </p>
+            <!-- grade de tiles -->
+            @if (tipoAtend() === 'mesa') {
+              <div class="tiles" role="list" aria-label="Mesas">
+                @for (m of mesasVisiveis(); track m.id) {
+                  <div class="tile" role="listitem"
+                       [class.ocupada]="m.idcomanda !== null"
+                       [class.sel]="selecionada(m.idcomanda, m.id)">
+                    <button type="button" class="tile-main" (click)="clicarMesa(m)"
+                            [attr.aria-label]="'Mesa ' + m.numero + (m.idcomanda !== null ? ' — com consumo' : ' — livre')">
+                      <span class="tile-num">{{ m.numero }}</span>
+                      <span class="tile-meta">
+                        <mat-icon>event_seat</mat-icon> {{ m.lugares }}
+                      </span>
+                      <span class="tile-status">{{ m.idcomanda === null ? 'Livre' : 'Com consumo' }}</span>
+                      <span class="tile-val">{{ m.idcomanda === null ? '' : fmt(m.total_aberto) }}</span>
+                    </button>
+                    <button type="button" class="mesa-toggle" (click)="toggleMesa(m)"
+                            [disabled]="m.idcomanda !== null"
+                            [attr.aria-label]="'Desativar mesa ' + m.numero"
+                            [title]="m.idcomanda !== null ? 'Feche a comanda antes de desativar a mesa.' : 'Desativar mesa'">
+                      <mat-icon>power_settings_new</mat-icon>
+                    </button>
+                  </div>
+                } @empty {
+                  <p class="vazio tile-vazio">Nenhuma mesa encontrada.</p>
+                }
               </div>
-              <span class="pill-gold">Catálogo</span>
-            </header>
+              @if (mesasInativas().length) {
+                <details class="inativas">
+                  <summary>Mesas inativas ({{ mesasInativas().length }})</summary>
+                  <div class="tiles">
+                    @for (m of mesasInativas(); track m.id) {
+                      <div class="tile inativa">
+                        <span class="tile-main">
+                          <span class="tile-num">{{ m.numero }}</span>
+                          <span class="tile-meta"><mat-icon>event_seat</mat-icon> {{ m.lugares }}</span>
+                          <span class="tile-status">Inativa</span>
+                        </span>
+                        <button type="button" class="mesa-toggle on" (click)="toggleMesa(m)"
+                                [attr.aria-label]="'Reativar mesa ' + m.numero" title="Reativar mesa">
+                          <mat-icon>power_settings_new</mat-icon>
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </details>
+              }
+            }
+
+            @if (tipoAtend() === 'quarto') {
+              <div class="tiles" role="list" aria-label="Quartos em estadia">
+                @for (r of quartosVisiveis(); track r.idquarto) {
+                  @if (comandaDoQuarto(r.quarto_numero); as cq) {
+                    <button type="button" class="tile ocupada"
+                            [class.sel]="cq.id === comanda()?.id"
+                            (click)="clicarQuarto(r)"
+                            [attr.aria-label]="'Quarto ' + r.quarto_numero + ' — com consumo'">
+                      <span class="tile-num">{{ r.quarto_numero }}</span>
+                      <span class="tile-meta tile-nome">{{ r.cliente_nome }}</span>
+                      <span class="tile-status">Com consumo</span>
+                      <span class="tile-val">{{ fmt(cq.total_itens) }}</span>
+                    </button>
+                  } @else {
+                    <button type="button" class="tile"
+                            [class.sel]="selecao()?.tipo === 'quarto' && selecao()?.id === r.idquarto"
+                            (click)="clicarQuarto(r)"
+                            [attr.aria-label]="'Quarto ' + r.quarto_numero + ' — em estadia'">
+                      <span class="tile-num">{{ r.quarto_numero }}</span>
+                      <span class="tile-meta tile-nome">{{ r.cliente_nome }}</span>
+                      <span class="tile-status">Em estadia</span>
+                      <span class="tile-val"></span>
+                    </button>
+                  }
+                } @empty {
+                  <p class="vazio tile-vazio">Nenhum quarto em estadia.</p>
+                }
+              </div>
+            }
+
+            @if (tipoAtend() === 'balcao') {
+              <div class="tiles" role="list" aria-label="Comandas de balcão">
+                <button type="button" class="tile novo" (click)="novoBalcao()">
+                  <mat-icon>add</mat-icon>
+                  <span>Nova comanda<br>de balcão</span>
+                </button>
+                @for (c of balcaoVisiveis(); track c.id) {
+                  <button type="button" class="tile ocupada"
+                          [class.sel]="comanda()?.id === c.id"
+                          (click)="abrirDetalhe(c.id)" [attr.aria-label]="rotulo(c)">
+                    <span class="tile-num"><mat-icon>storefront</mat-icon></span>
+                    <span class="tile-meta tile-nome">{{ rotulo(c) }}</span>
+                    <span class="tile-status">Aberta</span>
+                    <span class="tile-val">{{ fmt(c.total_itens) }}</span>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        } @else {
+          <!-- ============ VISÃO PEDIDO — catálogo + comanda ============ -->
+          <div class="atend">
+            <button type="button" class="cc-voltar voltar-salao" (click)="fecharDetalhe()">
+              <mat-icon>arrow_back</mat-icon> Voltar ao salão
+            </button>
+
+            <!-- ---------- catálogo ---------- -->
+            <section class="cat-col" aria-label="Adicionar produtos">
+              <header class="cat-head">
+                <div>
+                  <h3>Adicionar produtos</h3>
+                  <p class="cat-sub">
+                    {{ comanda() ? 'Inclua itens na comanda ' + rotulo(comanda()!) + '.' : 'Selecione um atendimento para lançar itens.' }}
+                  </p>
+                </div>
+                <span class="pill-gold">Catálogo</span>
+              </header>
 
             @if (comanda(); as com) {
               @if (com.status === 'aberta') {
-                <label class="lbl">Buscar produto</label>
-                <input class="inp" placeholder="Digite o nome ou código do produto" [value]="buscaProd()"
+                <label class="lbl" for="busca-prod">Buscar produto</label>
+                <input class="inp" id="busca-prod" type="search"
+                       placeholder="Digite o nome ou código do produto" [value]="buscaProd()"
                        (input)="buscaProd.set($any($event.target).value)"
                        aria-label="Buscar produto" />
 
@@ -306,16 +300,11 @@ function rotuloComanda(c: ComandaView): string {
                   <p>Comanda {{ com.status }} — itens não podem ser alterados.</p>
                 </div>
               }
-            } @else {
-              <div class="sem-atend">
-                <mat-icon>point_of_sale</mat-icon>
-                <p>Selecione um atendimento ao lado para abrir a comanda e lançar produtos.</p>
-              </div>
             }
           </section>
 
-          <!-- ---------- coluna 3 · comanda ---------- -->
-          <aside class="com-card card0" aria-label="Comanda">
+            <!-- ---------- comanda ---------- -->
+            <aside class="com-card card0" aria-label="Comanda">
             @if (comanda(); as com) {
               <header class="cc-head">
                 <div>
@@ -395,7 +384,7 @@ function rotuloComanda(c: ComandaView): string {
                     Cancelar comanda
                   </button>
                   <button type="button" class="cc-voltar" (click)="fecharDetalhe()">
-                    <mat-icon>arrow_back</mat-icon> Voltar aos atendimentos
+                    <mat-icon>arrow_back</mat-icon> Voltar ao salão
                   </button>
                 } @else {
                   <button type="button" class="btn-gray block" (click)="fecharDetalhe()">
@@ -403,16 +392,10 @@ function rotuloComanda(c: ComandaView): string {
                   </button>
                 }
               </footer>
-
-            } @else {
-              <div class="cc-vazio grande">
-                <mat-icon>receipt_long</mat-icon>
-                <strong>Nenhum atendimento selecionado</strong>
-                <span>Escolha uma mesa, quarto ou balcão ao lado para ver a comanda.</span>
-              </div>
             }
-          </aside>
-        </div>
+            </aside>
+          </div>
+        }
       }
 
       <!-- ============ modal · fechamento ============ -->
@@ -764,346 +747,227 @@ function rotuloComanda(c: ComandaView): string {
     </div>
   `,
   styles: `
-    .page { padding: 4px 6px 40px; max-width: 1440px; background: transparent;
-      border: 0; box-shadow: none; }
-
-    /* ---------- cabeçalho da operação (padrão Espírito do Mar) ---------- */
-    .pdv-head { display: flex; justify-content: space-between; align-items: flex-end;
-      gap: 16px; flex-wrap: wrap; padding: 8px 4px 0; }
-    .eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
-      text-transform: uppercase; color: #4b95ab; margin: 0 0 4px; }
+    .page { padding: 4px 6px 40px; background: transparent; border: 0; box-shadow: none; }
+    .pdv-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; padding: 8px 4px 0; }
+    .eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #4b95ab; margin: 0 0 4px; }
     .eyebrow.sm { font-size: 0.66rem; }
-    .titulo { margin: 0; font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 1.9rem; font-weight: 600; color: #054054; line-height: 1.1; }
+    .titulo { margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.9rem; font-weight: 600; color: #054054; line-height: 1.1; }
     .sub { margin: 4px 0 0; font-size: 0.86rem; color: #7d97a1; }
 
-    /* ---------- abas — linha com underline ativo ---------- */
-    .abas { display: flex; gap: 4px; border-bottom: 1px solid #e5ded2;
-      margin: 14px 0 18px; padding: 0 4px; }
-    .aba { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px;
-      border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px;
-      background: transparent; color: #5d6d7e;
-      font-weight: 600; font-size: 0.86rem; cursor: pointer; }
-    .aba mat-icon { font-size: 19px; width: 19px; height: 19px; }
-    .aba:hover { color: #054054; }
-    .aba.ativa { color: #054054; border-bottom-color: #054054; }
+    /* ---------- abas ---------- */
+    .abas { display: flex; gap: 4px; border-bottom: 1px solid #e5ded2; margin: 14px 0 18px; padding: 0 4px; }
+    .aba { gap: 8px; padding: 12px 18px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: transparent; color: #5d6d7e; font-weight: 600; font-size: 0.86rem; }
+    .aba:hover, .aba.ativa { color: #054054; }
+    .aba.ativa { border-bottom-color: #054054; }
     .aba:focus-visible { outline: 2px solid #1a6f8a; outline-offset: 2px; }
 
-    .card { background: #fff; border: 1px solid #e3eaef; border-radius: 12px;
-      padding: 18px 20px; margin-bottom: 16px; }
-    .card-head { display: flex; justify-content: space-between; align-items: center;
-      gap: 12px; margin-bottom: 14px; }
-    .card-head h3 { margin: 0; font-size: 1rem; font-weight: 700; color: #054054;
-      display: flex; align-items: center; gap: 8px; }
+    .card { background: #fff; border: 1px solid #e3eaef; border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
+    .card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .card-head h3 { margin: 0; font-size: 1rem; font-weight: 700; color: #054054; display: flex; align-items: center; gap: 8px; }
     .card-head small { color: #8a99a4; }
     .card0 { background: #fff; border: 1px solid #e3eaef; border-radius: 12px; }
 
-    /* ================= workspace 3 colunas ================= */
-    .atend { display: grid; grid-template-columns: 300px minmax(0, 1fr) 400px;
-      gap: 18px; align-items: start; }
-    @media (max-width: 1180px) {
-      .atend { grid-template-columns: 300px minmax(0, 1fr); }
-      .com-card { grid-column: 1 / -1; }
-    }
-    @media (max-width: 760px) {
-      .atend { grid-template-columns: 1fr; }
-    }
+    /* ---------- visão pedido · catálogo + comanda ---------- */
+    .atend { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 18px; align-items: start; }
+    .voltar-salao { grid-column: 1 / -1; justify-self: start; }
+    @media (max-width: 980px) { .atend { grid-template-columns: 1fr; } }
 
-    /* ---------- coluna 1 · atendimentos ---------- */
-    .ates { padding: 16px; display: flex; flex-direction: column; gap: 12px;
-      position: sticky; top: 12px; }
-    .ates-head { display: flex; align-items: center; justify-content: space-between; }
-    .ates-head h3 { margin: 0; font-size: 1.05rem; font-weight: 700; color: #33424c; }
-    .icon-btn { border: 0; background: transparent; color: #5d6d7e; width: 34px;
-      height: 34px; border-radius: 8px; display: inline-flex; align-items: center;
-      justify-content: center; cursor: pointer; }
-    .icon-btn:hover { background: #eef2f5; color: #054054; }
+    /* ---------- visão salão · grade de atendimentos ---------- */
+    .salao { display: flex; flex-direction: column; gap: 14px; }
+    .salao-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 14px; }
+    .salao-tools .seg3 { flex: 0 1 320px; min-width: 250px; }
     .seg3 { display: flex; background: #eef2f5; border-radius: 9px; padding: 3px; }
-    .seg3-btn { flex: 1; border: 0; background: transparent; padding: 7px 4px;
-      border-radius: 7px; font-size: 0.78rem; font-weight: 600; color: #5d6d7e;
-      cursor: pointer; }
-    .seg3-btn.ativo { background: #fff; color: #054054;
-      box-shadow: 0 1px 3px rgba(5,64,84,.12); }
+    .seg3-btn { flex: 1; border: 0; background: transparent; padding: 7px 4px; border-radius: 7px; font-size: 0.78rem; font-weight: 600; color: #5d6d7e; cursor: pointer; }
+    .seg3-btn.ativo { background: #fff; color: #054054; box-shadow: 0 1px 3px rgba(5,64,84,.12); }
+    .salao-busca { flex: 1; min-width: 190px; display: flex; align-items: center; gap: 8px; border: 1px solid #d7e0e6; border-radius: 9px; padding: 0 12px; background: #fff; }
+    .salao-busca:focus-within { outline: 2px solid #1a6f8a; border-color: #1a6f8a; }
+    .salao-busca mat-icon { color: #8a99a4; }
+    .salao-inp { flex: 1; border: 0; outline: 0; padding: 9px 0; font-size: 0.88rem; background: transparent; color: #33424c; }
+    .salao-mesa-form { margin-bottom: 0; }
 
-    .lista { display: flex; flex-direction: column; gap: 8px; max-height: 430px;
-      overflow-y: auto; }
-    .at-card { position: relative; border: 1px solid #e8e2d6; border-radius: 10px;
-      background: #fff; }
-    .at-card.ocupada { border-color: #cfe0e7; }
-    .at-card.sel { border-color: #054054; box-shadow: 0 0 0 1px #054054 inset; }
-    .at-card.novo { display: flex; align-items: center; justify-content: center;
-      gap: 8px; padding: 11px; border-style: dashed; color: #054054;
-      font-weight: 600; font-size: 0.82rem; cursor: pointer; }
-    .at-card.novo:hover { background: #f6fafb; }
-    .at-main { display: flex; align-items: center; gap: 10px; width: 100%;
-      padding: 11px 12px; border: 0; background: transparent; cursor: pointer;
-      text-align: left; }
-    .at-main mat-icon { color: #054054; font-size: 20px; width: 20px; height: 20px; }
-    .at-card.inativa .at-main { cursor: default; opacity: .65; }
-    .at-id { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .at-id strong { font-size: 0.88rem; color: #33424c; }
-    .at-sub { font-size: 0.74rem; color: #8a99a4; white-space: nowrap;
-      overflow: hidden; text-overflow: ellipsis; }
-    .at-chip { align-self: flex-start; font-size: 0.68rem; font-weight: 700;
-      padding: 2px 8px; border-radius: 999px; background: #e8f2f6; color: #054054; }
-    .at-chip.livre { background: #e3f3e6; color: #198754; }
-    .at-right { display: flex; flex-direction: column; align-items: flex-end;
-      gap: 3px; flex-shrink: 0; }
-    .at-tag { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.05em;
-      text-transform: uppercase; color: #4b95ab; }
-    .at-val { font-size: 0.85rem; font-weight: 700; color: #054054;
-      white-space: nowrap; }
-    .mesa-toggle { position: absolute; top: 8px; right: 8px; width: 24px;
-      height: 24px; border: 0; border-radius: 6px; background: transparent;
-      color: #a5b6bf; cursor: pointer; display: inline-flex; align-items: center;
-      justify-content: center; opacity: 0; transition: opacity .15s; }
-    .at-card:hover .mesa-toggle, .mesa-toggle:focus-visible,
-    .at-card.inativa .mesa-toggle { opacity: 1; }
+    /* tiles — padrão floor plan dos PDVs */
+    .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    .tile { position: relative; background: #fff; border: 1px solid #e3eaef; border-left: 4px solid #198754; border-radius: 12px; transition: box-shadow .15s, border-color .15s; }
+    .tile.ocupada { border-left-color: #054054; }
+    .tile:hover { box-shadow: 0 3px 10px rgba(5,64,84,.10); }
+    .tile.sel { border-color: #054054; border-left-color: #054054; box-shadow: 0 0 0 1px #054054 inset; }
+    .tile.inativa { border-left-color: #c9d4da; opacity: .65; }
+    .tile-main, button.tile { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 104px; padding: 13px 15px; cursor: pointer; text-align: left; font: inherit; color: inherit; }
+    .tile-main { width: 100%; border: 0; background: transparent; }
+    .tile-num { font-size: 1.25rem; font-weight: 800; color: #33424c; line-height: 1.15; display: inline-flex; align-items: center; }
+    .tile-num mat-icon { color: #5d6d7e; }
+    .tile-meta { display: inline-flex; align-items: center; gap: 4px; font-size: 0.74rem; color: #8a99a4; max-width: 100%; }
+    .tile-nome { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tile-status { margin-top: auto; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #198754; }
+    .tile.ocupada .tile-status { color: #054054; }
+    .tile.inativa .tile-status { color: #8a99a4; }
+    .tile-val { font-size: 0.92rem; font-weight: 800; color: #054054; min-height: 1.15em; }
+    .tile.novo { border-style: dashed; border-left-width: 1px; align-items: center; justify-content: center; gap: 6px; color: #5d6d7e; font-weight: 600; font-size: 0.82rem; }
+    .tile.novo:hover { color: #054054; border-color: #9fb6bf; background: #f6fafb; box-shadow: none; }
+    .tile-vazio { grid-column: 1 / -1; }
+
+    .mesa-toggle { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: #a5b6bf; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s; }
+    .tile:hover .mesa-toggle, .mesa-toggle:focus-visible, .tile.inativa .mesa-toggle { opacity: 1; }
     .mesa-toggle:hover:not(:disabled) { background: #fbeaea; color: #dc3545; }
+    .mesa-toggle.on { opacity: 1; }
     .mesa-toggle.on:hover { background: #e3f3e6; color: #198754; }
     .mesa-toggle:disabled { cursor: not-allowed; color: #cfd9de; }
-    .mesa-toggle mat-icon { font-size: 15px; width: 15px; height: 15px; }
     .mesa-toggle:focus-visible { outline: 2px solid #1a6f8a; }
     .inativas { border-top: 1px dashed #e3eaef; padding-top: 10px; }
-    .inativas summary { cursor: pointer; font-size: 0.78rem; font-weight: 600;
-      color: #7d97a1; margin-bottom: 8px; }
-    .inativas .at-card { margin-top: 8px; }
+    .inativas summary { cursor: pointer; font-size: 0.78rem; font-weight: 600; color: #7d97a1; margin-bottom: 10px; }
 
-    .quick { border-top: 1px solid #e3eaef; padding-top: 12px;
-      display: flex; flex-direction: column; gap: 10px; }
-    .quick-t { display: flex; align-items: center; gap: 7px; margin: 0;
-      font-size: 0.84rem; font-weight: 700; color: #054054; }
-    .quick-t mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .quick-acoes { display: flex; justify-content: flex-end; gap: 8px; }
-    .ates-nota { margin: 2px 0 0; font-size: 0.74rem; color: #8fa3ab;
-      line-height: 1.45; }
+    /* abertura rápida — painel horizontal */
+    .quick { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; background: #fff; border: 1px solid #e3eaef; border-radius: 12px; padding: 14px 16px; }
+    .quick-t { flex-basis: 100%; display: flex; align-items: center; gap: 7px; margin: 0; font-size: 0.88rem; font-weight: 700; color: #054054; }
+    .quick .inp { width: auto; min-width: 220px; }
+    .quick .lbl { flex: 1; min-width: 180px; }
+    .quick .lbl .inp { width: 100%; min-width: 0; }
+    .quick-acoes { display: flex; gap: 8px; margin-left: auto; }
 
-    /* ---------- coluna 2 · catálogo ---------- */
+    /* ---------- catálogo ---------- */
     .cat-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-    .cat-head { display: flex; justify-content: space-between; align-items: flex-start;
-      gap: 12px; }
-    .cat-head h3 { margin: 0; font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 1.45rem; font-weight: 600; color: #054054; }
+    .cat-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .cat-head h3 { margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.45rem; font-weight: 600; color: #054054; }
     .cat-sub { margin: 3px 0 0; font-size: 0.82rem; color: #7d97a1; }
-    .pill-gold { flex-shrink: 0; font-size: 0.72rem; font-weight: 700;
-      padding: 5px 12px; border-radius: 999px; background: #fdf3e2;
-      color: #92670b; border: 1px solid #f3d9a8; }
+    .pill-gold { flex-shrink: 0; font-size: 0.72rem; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: #fdf3e2; color: #92670b; border: 1px solid #f3d9a8; }
     .cats { display: flex; gap: 8px; flex-wrap: wrap; }
-    .cat-pill { border: 1px solid #d7e0e6; background: #fff; border-radius: 9px;
-      padding: 8px 15px; font-size: 0.8rem; font-weight: 600; color: #5d6d7e;
-      cursor: pointer; }
+    .cat-pill { border: 1px solid #d7e0e6; background: #fff; border-radius: 9px; padding: 8px 15px; font-size: 0.8rem; font-weight: 600; color: #5d6d7e; }
     .cat-pill:hover { border-color: #4b95ab; color: #054054; }
     .cat-pill.ativo { background: #054054; border-color: #054054; color: #fff; }
-    .produtos { display: grid; grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
-      gap: 12px; }
-    .prod { background: #fff; border: 1px solid #e3eaef; border-radius: 12px;
-      padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+    .produtos { display: grid; grid-template-columns: repeat(auto-fill, minmax(255px, 1fr)); gap: 12px; }
+    .prod { background: #fff; border: 1px solid #e3eaef; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
     .prod-desc { display: flex; flex-direction: column; gap: 3px; }
     .prod-desc strong { font-size: 0.92rem; color: #33424c; }
     .prod-desc small { font-size: 0.76rem; color: #8a99a4; }
-    .prod-rod { display: flex; align-items: center; justify-content: space-between;
-      gap: 10px; }
+    .prod-rod { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .prod-preco { font-size: 0.95rem; font-weight: 800; color: #054054; }
-    .btn-add { display: inline-flex; align-items: center; gap: 5px;
-      border: 1px solid #054054; background: #fff; color: #054054;
-      font-weight: 600; font-size: 0.8rem; padding: 8px 13px; border-radius: 9px;
-      cursor: pointer; }
+    .btn-add { gap: 5px; border: 1px solid #054054; background: #fff; color: #054054; font-weight: 600; font-size: 0.8rem; padding: 8px 13px; border-radius: 9px; }
     .btn-add:hover:not(:disabled) { background: #054054; color: #fff; }
     .btn-add:disabled { opacity: .45; cursor: default; }
-    .btn-add mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .info-card { display: flex; gap: 12px; align-items: flex-start;
-      background: #eef4f6; border: 1px solid #d3e4ec; border-radius: 12px;
-      padding: 14px 16px; }
-    .info-card mat-icon { color: #054054; font-size: 19px; width: 19px;
-      height: 19px; margin-top: 2px; }
+    .info-card { display: flex; gap: 12px; align-items: flex-start; background: #eef4f6; border: 1px solid #d3e4ec; border-radius: 12px; padding: 14px 16px; }
+    .info-card mat-icon { color: #054054; margin-top: 2px; }
     .info-card strong { font-size: 0.86rem; color: #054054; }
     .info-card p { margin: 3px 0 0; font-size: 0.78rem; color: #5d6d7e; }
-    .sem-atend { background: #fff; border: 1px dashed #ddd4c4; border-radius: 12px;
-      padding: 44px 24px; text-align: center; color: #8a99a4;
-      display: flex; flex-direction: column; align-items: center; gap: 8px; }
-    .sem-atend mat-icon { font-size: 30px; width: 30px; height: 30px;
-      color: #b9c4cb; }
+    .sem-atend { background: #fff; border: 1px dashed #ddd4c4; border-radius: 12px; padding: 44px 24px; text-align: center; color: #8a99a4; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .sem-atend mat-icon { color: #b9c4cb; }
     .sem-atend p { margin: 0; font-size: 0.88rem; max-width: 340px; }
 
-    /* ---------- coluna 3 · comanda ---------- */
-    .com-card { padding: 18px; display: flex; flex-direction: column; gap: 14px;
-      position: sticky; top: 12px; }
-    .cc-head { display: flex; align-items: flex-start; justify-content: space-between;
-      gap: 10px; }
-    .cc-head h3 { margin: 2px 0 0; font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 1.5rem; font-weight: 600; color: #054054; }
-    .cc-head h3 small { font-family: 'Manrope', sans-serif; font-size: 0.78rem;
-      color: #8a99a4; font-weight: 500; }
-    .cc-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-      font-size: 0.78rem; color: #5d6d7e; padding-bottom: 12px;
-      border-bottom: 1px solid #e3eaef; }
+    /* ---------- comanda ---------- */
+    .com-card { padding: 18px; display: flex; flex-direction: column; gap: 14px; position: sticky; top: 12px; }
+    .cc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .cc-head h3 { margin: 2px 0 0; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.5rem; font-weight: 600; color: #054054; }
+    .cc-head h3 small { font-family: 'Manrope', sans-serif; font-size: 0.78rem; color: #8a99a4; font-weight: 500; }
+    .cc-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.78rem; color: #5d6d7e; padding-bottom: 12px; border-bottom: 1px solid #e3eaef; }
     .cc-meta span { display: inline-flex; align-items: center; gap: 4px; }
-    .cc-meta mat-icon { font-size: 15px; width: 15px; height: 15px; }
     .cc-ped-head { display: flex; align-items: baseline; justify-content: space-between; }
     .cc-ped-head h4 { margin: 0; font-size: 0.92rem; font-weight: 700; color: #33424c; }
     .cc-ped-head span { font-size: 0.74rem; color: #8a99a4; }
-    .cc-consumo { background: #eef4f6; border-radius: 10px; padding: 12px 14px;
-      margin: 10px 0; }
-    .cc-consumo > div { display: flex; justify-content: space-between;
-      align-items: baseline; }
+    .cc-consumo { background: #eef4f6; border-radius: 10px; padding: 12px 14px; margin: 10px 0; }
+    .cc-consumo > div { display: flex; justify-content: space-between; align-items: baseline; }
     .cc-consumo strong { font-size: 0.84rem; color: #054054; }
     .cc-total-sm { font-weight: 800; color: #054054; }
-    .cc-consumo p { margin: 5px 0 0; font-size: 0.74rem; color: #5d6d7e;
-      line-height: 1.45; }
-    .cc-itens { list-style: none; margin: 0; padding: 0; display: flex;
-      flex-direction: column; }
-    .cc-itens li { display: flex; align-items: center; gap: 10px;
-      padding: 9px 2px; border-bottom: 1px solid #f2f7f9; }
+    .cc-consumo p { margin: 5px 0 0; font-size: 0.74rem; color: #5d6d7e; line-height: 1.45; }
+    .cc-itens { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+    .cc-itens li { display: flex; align-items: center; gap: 10px; padding: 9px 2px; border-bottom: 1px solid #f2f7f9; }
     .cc-itens li:last-child { border-bottom: 0; }
     .cc-itens li.cancelado { opacity: .5; }
-    .cc-qtd { flex-shrink: 0; font-size: 0.8rem; font-weight: 800; color: #054054;
-      background: #eef2f5; border-radius: 7px; padding: 5px 8px; min-width: 38px;
-      text-align: center; }
+    .cc-qtd { flex-shrink: 0; font-size: 0.8rem; font-weight: 800; color: #054054; background: #eef2f5; border-radius: 7px; padding: 5px 8px; min-width: 38px; text-align: center; }
     .cc-item { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
     .cc-item strong { font-size: 0.86rem; color: #33424c; }
-    .cc-item small { font-size: 0.74rem; color: #8a99a4; display: inline-flex;
-      align-items: center; gap: 8px; }
+    .cc-item small { font-size: 0.74rem; color: #8a99a4; display: inline-flex; align-items: center; gap: 8px; }
     .cc-acoes { display: inline-flex; flex-shrink: 0; }
-    .cc-vazio { display: flex; flex-direction: column; align-items: center;
-      gap: 6px; padding: 20px !important; text-align: center;
-      border: 1px dashed #ddd4c4 !important; border-radius: 10px; }
-    .cc-vazio mat-icon { color: #b9c4cb; font-size: 24px; width: 24px;
-      height: 24px; }
+    .cc-vazio { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 20px !important; text-align: center; border: 1px dashed #ddd4c4 !important; border-radius: 10px; }
+    .cc-vazio mat-icon { color: #b9c4cb; }
     .cc-vazio strong { font-size: 0.86rem; color: #5d6d7e; }
     .cc-vazio span { font-size: 0.74rem; color: #8a99a4; }
-    .cc-vazio.grande { margin: auto; padding: 40px 22px !important; }
-    .cc-foot { display: flex; flex-direction: column; gap: 9px;
-      border-top: 1px solid #e3eaef; padding-top: 14px; }
-    .cc-total { display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 4px; }
+    .cc-foot { display: flex; flex-direction: column; gap: 9px; border-top: 1px solid #e3eaef; padding-top: 14px; }
+    .cc-total { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
     .cc-total strong { font-size: 0.9rem; color: #33424c; display: block; }
     .cc-total small { font-size: 0.72rem; color: #8a99a4; }
-    .cc-total-vl { font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 1.7rem; font-weight: 700; color: #054054; }
-    .btn-prim.block, .btn-ghost-danger.block, .btn-gray.block,
-    .btn-outline.block { width: 100%; justify-content: center; padding: 12px;
-      font-size: 0.88rem; }
-    .btn-outline { display: inline-flex; align-items: center; gap: 7px;
-      border: 1px solid #054054; background: #fff; color: #054054;
-      font-weight: 700; padding: 10px 18px; border-radius: 9px; cursor: pointer; }
+    .cc-total-vl { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.7rem; font-weight: 700; color: #054054; }
+    .btn-prim.block, .btn-ghost-danger.block, .btn-gray.block, .btn-outline.block { width: 100%; justify-content: center; padding: 12px; font-size: 0.88rem; }
+    .btn-outline { gap: 7px; border: 1px solid #054054; background: #fff; color: #054054; font-weight: 700; padding: 10px 18px; border-radius: 9px; }
     .btn-outline:hover:not(:disabled) { background: #eef4f6; }
     .btn-outline:disabled { opacity: .45; cursor: default; }
-    .btn-outline mat-icon { font-size: 18px; width: 18px; height: 18px; }
     .cc-nota { margin: 0; font-size: 0.72rem; color: #8fa3ab; text-align: center; }
-    .btn-ghost-danger { display: inline-flex; align-items: center; gap: 7px;
-      border: 1px solid #e7c8c6; background: #fff; color: #dc3545;
-      font-weight: 600; font-size: 0.85rem; padding: 10px 18px;
-      border-radius: 8px; cursor: pointer; }
+    .btn-ghost-danger { gap: 7px; border: 1px solid #e7c8c6; background: #fff; color: #dc3545; font-weight: 600; font-size: 0.85rem; padding: 10px 18px; border-radius: 8px; }
     .btn-ghost-danger:hover:not(:disabled) { background: #fbeaea; }
     .btn-ghost-danger:disabled { opacity: .55; cursor: default; }
-    .cc-voltar { border: 0; background: transparent; color: #5d6d7e;
-      font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center;
-      justify-content: center; gap: 6px; cursor: pointer; padding: 6px; }
+    .cc-voltar { border: 0; background: transparent; color: #5d6d7e; font-size: 0.8rem; font-weight: 600; justify-content: center; gap: 6px; padding: 6px; }
     .cc-voltar:hover { color: #054054; }
-    .cc-voltar mat-icon { font-size: 16px; width: 16px; height: 16px; }
 
-    /* ---------- formulários compartilhados ---------- */
-    .mini-form, .ab-form { display: flex; gap: 10px; align-items: center;
-      flex-wrap: wrap; padding: 12px; background: #f4f8fa; border-radius: 10px;
-      margin-bottom: 14px; }
-    .ates .mini-form { margin-bottom: 0; }
+    /* ---------- formulários ---------- */
+    .mini-form, .ab-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px; background: #f4f8fa; border-radius: 10px; margin-bottom: 14px; }
     .ab-form { flex-direction: column; align-items: stretch; }
     .ab-campos { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
     .filtros { display: flex; gap: 8px; align-items: center; }
-
-    .lbl { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem;
-      font-weight: 600; color: #5d6d7e; }
+    .lbl { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; font-weight: 600; color: #5d6d7e; }
     .lbl.grow, .grow { flex: 1; min-width: 160px; }
-    .inp { border: 1px solid #d7e0e6; border-radius: 8px; padding: 9px 12px;
-      font-size: 0.88rem; background: #fff; color: #33424c; width: 100%; }
-    .ates .inp, .cat-col .inp { background: #fff; }
+    .inp { border: 1px solid #d7e0e6; border-radius: 8px; padding: 9px 12px; font-size: 0.88rem; background: #fff; color: #33424c; width: 100%; }
     .inp:focus { outline: 2px solid #1a6f8a; border-color: #1a6f8a; }
     .inp.n { width: 110px; }
     .inp.sm { padding: 7px 10px; font-size: 0.82rem; width: auto; }
 
-    .btn-prim { display: inline-flex; align-items: center; gap: 7px; border: 0;
-      background: #054054; color: #fff; font-weight: 600; font-size: 0.85rem;
-      padding: 10px 18px; border-radius: 9px; cursor: pointer; }
+    .btn-prim { gap: 7px; border: 0; background: #054054; color: #fff; font-weight: 600; font-size: 0.85rem; padding: 10px 18px; border-radius: 9px; }
     .btn-prim:hover:not(:disabled) { background: #042f3d; }
     .btn-prim:disabled { opacity: 0.55; cursor: default; }
-    .btn-gray { display: inline-flex; align-items: center; gap: 7px;
-      border: 1px solid #d7e0e6; background: #fff; color: #5d6d7e;
-      font-weight: 600; font-size: 0.85rem; padding: 10px 18px;
-      border-radius: 9px; cursor: pointer; }
-    .btn-danger { display: inline-flex; align-items: center; gap: 7px; border: 0;
-      background: #fbeaea; color: #dc3545; font-weight: 600; font-size: 0.85rem;
-      padding: 10px 18px; border-radius: 9px; cursor: pointer; }
+    .btn-gray { gap: 7px; border: 1px solid #d7e0e6; background: #fff; color: #5d6d7e; font-weight: 600; font-size: 0.85rem; padding: 10px 18px; border-radius: 9px; }
+    .btn-danger { gap: 7px; border: 0; background: #fbeaea; color: #dc3545; font-weight: 600; font-size: 0.85rem; padding: 10px 18px; border-radius: 9px; }
     .btn-danger:hover:not(:disabled) { background: #f5d5d3; }
-    .btn-mini-cta { display: inline-flex; align-items: center; gap: 6px; border: 0;
-      background: #e8f2f6; color: #054054; font-weight: 600; font-size: 0.8rem;
-      padding: 8px 14px; border-radius: 9px; cursor: pointer; }
-    .btn-mini { border: 0; border-radius: 6px; width: 28px; height: 28px;
-      display: inline-flex; align-items: center; justify-content: center;
-      cursor: pointer; margin-left: 2px; }
-    .btn-mini mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .btn-mini-cta { gap: 6px; border: 0; background: #e8f2f6; color: #054054; font-weight: 600; font-size: 0.8rem; padding: 8px 14px; border-radius: 9px; }
+    .btn-prim, .btn-gray, .btn-danger, .btn-mini-cta, .btn-outline, .btn-ghost-danger, .btn-add, .seg-btn, .cc-voltar, .aba, .cat-pill { display: inline-flex; align-items: center; cursor: pointer; }
+    .btn-mini { border: 0; border-radius: 6px; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin-left: 2px; }
     .btn-mini.ok { background: #e3f3e6; color: #198754; }
     .btn-mini.dan { background: #fbeaea; color: #dc3545; }
 
     .seg { display: inline-flex; gap: 6px; }
-    .seg-btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 16px;
-      border: 1px solid #d7e0e6; border-radius: 9px; background: #fff;
-      color: #5d6d7e; font-weight: 600; font-size: 0.83rem; cursor: pointer; }
+    .seg-btn { gap: 7px; padding: 9px 16px; border: 1px solid #d7e0e6; border-radius: 9px; background: #fff; color: #5d6d7e; font-weight: 600; font-size: 0.83rem; }
     .seg-btn.ativo { background: #054054; color: #fff; border-color: #054054; }
 
     .tab-wrap { overflow-x: auto; }
     .tab { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
-    .tab th { text-align: left; padding: 10px 10px; color: #054054; font-size: 0.74rem;
-      text-transform: uppercase; letter-spacing: .04em; border-bottom: 2px solid #eef2f5; }
+    .tab th { text-align: left; padding: 10px; color: #054054; font-size: 0.74rem; text-transform: uppercase; letter-spacing: .04em; border-bottom: 2px solid #eef2f5; }
     .tab td { padding: 10px; border-bottom: 1px solid #f1f5f7; vertical-align: middle; }
     .tab .r { text-align: right; }
     .linha-comanda { cursor: pointer; }
     .linha-comanda:hover td { background: #f6fafc; }
     .linha-cancelada td { opacity: 0.55; }
     .cat { color: #8a99a4; }
-    .cat::before { content: ' · '; }
-    .mot { display: block; color: #dc3545; font-size: 0.75rem; }
 
-    .chip { display: inline-block; padding: 3px 10px; border-radius: 999px;
-      font-size: 0.72rem; font-weight: 700; text-transform: capitalize; }
+    .chip { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; text-transform: capitalize; }
     .chip-aberta, .chip-pendente { background: #f7ead2; color: #92670b; }
     .chip-em_preparo { background: #dbeafe; color: #1d4ed8; }
     .chip-fechada, .chip-entregue, .chip-pronto { background: #e3f3e6; color: #198754; }
     .chip-cancelada, .chip-cancelado { background: #fbeaea; color: #dc3545; }
 
-    .fechar { margin-top: 4px; padding: 16px; background: #f0f7fa;
-      border: 1px solid #d3e4ec; border-radius: 10px; }
-    .fechar h4 { margin: 0 0 12px; display: flex; align-items: center; gap: 8px;
-      color: #054054; font-size: 0.95rem; }
+    .fechar { margin-top: 4px; padding: 16px; background: #f0f7fa; border: 1px solid #d3e4ec; border-radius: 10px; }
+    .fechar h4 { margin: 0 0 12px; display: flex; align-items: center; gap: 8px; color: #054054; font-size: 0.95rem; }
     .fechar-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
     .fechar-total { font-size: 0.88rem; color: #5d6d7e; margin: 12px 0; }
     .fechar-total strong { color: #054054; font-size: 1rem; }
     .fechar-acoes { display: flex; justify-content: flex-end; gap: 10px; }
-    .modal-head h5 { display: flex; align-items: center; gap: 8px;
-      color: #054054; }
-    .modal-head h5 mat-icon { font-size: 19px; width: 19px; height: 19px; }
+    .modal-head h5 { display: flex; align-items: center; gap: 8px; color: #054054; }
 
     .kpi { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
-    .kpi-item { flex: 1; min-width: 150px; background: #f4f8fa; border: 1px solid #e3eaef;
-      border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+    .kpi-item { flex: 1; min-width: 150px; background: #f4f8fa; border: 1px solid #e3eaef; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }
     .kpi-num { font-size: 1.15rem; font-weight: 800; color: #054054; }
     .kpi-num.neg { color: #dc3545; }
-    .kpi-lbl { font-size: 0.74rem; color: #7d97a1; display: inline-flex;
-      align-items: center; gap: 5px; }
-    .kpi-lbl mat-icon { font-size: 14px; width: 14px; height: 14px; }
+    .kpi-lbl { font-size: 0.74rem; color: #7d97a1; display: inline-flex; align-items: center; gap: 5px; }
     .pago { color: #198754; font-size: 0.74rem; }
-
-    .vazio { text-align: center; color: #8a99a4; padding: 22px !important;
-      font-size: 0.85rem; }
-
-    .pag { display: flex; align-items: center; justify-content: center;
-      gap: 14px; padding-top: 12px; font-size: 0.82rem; color: #7d97a1; }
+    .vazio { text-align: center; color: #8a99a4; padding: 22px !important; font-size: 0.85rem; }
+    .pag { display: flex; align-items: center; justify-content: center; gap: 14px; padding-top: 12px; font-size: 0.82rem; color: #7d97a1; }
     .pag button:disabled { opacity: 0.45; cursor: default; }
+    .cancel-aviso { display: flex; align-items: center; gap: 6px; margin: 0 0 12px; font-size: 0.82rem; color: #8a5a56; }
 
-    .fechar.cancel { background: #fdf3f2; border-color: #f0d4d2; }
-    .cancel-aviso { display: flex; align-items: center; gap: 6px; margin: 0 0 12px;
-      font-size: 0.82rem; color: #8a5a56; }
-    .cancel-aviso mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .fechar.cancel .inp { margin-bottom: 12px; width: 100%; }
+    /* mat-icon — tamanhos agrupados */
+    .aba mat-icon, .salao-busca mat-icon, .info-card mat-icon, .modal-head h5 mat-icon { font-size: 19px; width: 19px; height: 19px; }
+    .quick-t mat-icon, .btn-outline mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    .btn-add mat-icon, .btn-mini mat-icon, .cc-voltar mat-icon, .cancel-aviso mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .cc-meta mat-icon, .mesa-toggle mat-icon { font-size: 15px; width: 15px; height: 15px; }
+    .tile-meta mat-icon, .kpi-lbl mat-icon { font-size: 14px; width: 14px; height: 14px; }
+    .tile-num mat-icon { font-size: 22px; width: 22px; height: 22px; }
+    .tile.novo mat-icon, .cc-vazio mat-icon { font-size: 24px; width: 24px; height: 24px; }
+    .sem-atend mat-icon { font-size: 30px; width: 30px; height: 30px; }
   `,
 })
 export class PdvComponent implements OnInit {
