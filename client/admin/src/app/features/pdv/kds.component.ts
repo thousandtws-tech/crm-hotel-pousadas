@@ -420,7 +420,7 @@ export class KdsComponent implements OnInit, OnDestroy {
   /** Etapas do kanban — mesma ordem do quadro. */
   private readonly etapas: { status: PdvItemStatus; rotulo: string; ajuda: string; icone: string }[] = [
     { status: 'pendente', rotulo: 'A fazer', ajuda: 'Comece pelos pedidos mais antigos', icone: 'assignment' },
-    { status: 'em_preparo', rotulo: 'Em preparo', ajuda: 'Marque quando estiver pronto', icone: 'skillet' },
+    { status: 'em_preparo', rotulo: 'Em preparo', ajuda: 'Marque quando estiver pronto', icone: 'soup_kitchen' },
     { status: 'pronto', rotulo: 'Prontos', ajuda: 'Aguardando retirada · não entregues', icone: 'done_all' },
   ];
 
@@ -565,7 +565,7 @@ export class KdsComponent implements OnInit, OnDestroy {
   }
 
   private icone(tipo: FilaItemView['comanda_tipo']): string {
-    return tipo === 'mesa' ? 'table_restaurant' : tipo === 'quarto' ? 'bed_double' : 'storefront';
+    return tipo === 'mesa' ? 'table_restaurant' : tipo === 'quarto' ? 'king_bed' : 'storefront';
   }
 
   private bip(): void {

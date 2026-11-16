@@ -61,7 +61,7 @@ const LADO_FOTO = 640;
               <span>PDF <small>documento formatado</small></span>
             </button>
             <button mat-menu-item (click)="exportar('xlsx')">
-              <mat-icon class="rel-ic ic-xls">table</mat-icon>
+              <mat-icon class="rel-ic ic-xls">table_view</mat-icon>
               <span>Excel <small>planilha .xlsx</small></span>
             </button>
             <button mat-menu-item (click)="exportar('doc')">

@@ -85,7 +85,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
         </div>
         <div class="fn-est">
           <span class="fn-est-num">{{ porNivel(3) }}</span>
-          <span class="fn-est-lbl"><mat-icon>concierge</mat-icon> Recepção</span>
+          <span class="fn-est-lbl"><mat-icon>room_service</mat-icon> Recepção</span>
         </div>
         <div class="fn-est">
           <span class="fn-est-num">{{ porNivel(2) }}</span>
@@ -720,7 +720,7 @@ export class FuncionariosComponent implements OnInit {
     return n === 1 ? 'Administrador' : n === 2 ? 'Gerente' : 'Recepção';
   }
   nivelIcone(n: number): string {
-    return n === 1 ? 'admin_panel_settings' : n === 2 ? 'manage_accounts' : 'concierge';
+    return n === 1 ? 'admin_panel_settings' : n === 2 ? 'manage_accounts' : 'room_service';
   }
 
   iniciais(nome: string | null | undefined): string {

@@ -6,8 +6,6 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatIconModule } from '@angular/material/icon';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -31,6 +29,9 @@ const COL_W = 52;
 /** Quantidade de dias visíveis no mapa. */
 const JANELA_DIAS = 14;
 
+type Visao = 'lista' | 'cal' | 'mapa' | 'grupos';
+
+/** Reservas — central de reservas com 4 visões: lista, calendário, mapa e grupos. */
 @Component({
   selector: 'app-reservas',
   providers: [provideNativeDateAdapter()],
@@ -41,84 +42,100 @@ const JANELA_DIAS = 14;
     ReactiveFormsModule,
     MatPaginatorModule,
     MatIconModule,
-    MatButtonToggleModule,
-    MatChipsModule,
     MatDatepickerModule,
     MatFormFieldModule,
     MatInputModule,
     NovaReservaDialogComponent,
   ],
   template: `
-    <div class="page">
-      <div class="rs-head">
-        <div class="rs-titulo-grupo">
-          <h2 class="rs-titulo">Reservas</h2>
-          <p class="rs-data">{{ hojeExtenso }}</p>
+    <div class="rv">
+      <!-- ============================ cabeçalho ============================ -->
+      <header class="rv-head">
+        <div>
+          <p class="eyebrow">Central de reservas</p>
+          <h2 class="titulo">
+            Reservas
+            <span class="live" [class.live-on]="rt.online()" role="status">
+              <i></i>{{ rt.online() ? 'Ao vivo' : 'Reconectando…' }}
+            </span>
+          </h2>
+          <p class="sub">{{ hojeExtenso }}</p>
         </div>
-        <div class="rs-head-acoes">
-          <button class="btn-tour" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
-            <mat-icon>school</mat-icon> Tutorial
+        <div class="rv-acoes">
+          <button class="btn-ghost" type="button" (click)="iniciarTour()" title="Ver tutorial da tela" aria-label="Ver tutorial da tela">
+            <mat-icon>school</mat-icon>
           </button>
-          <button id="tour-nova" class="btn-dark-blue" type="button" (click)="novaReserva()">
-            <mat-icon>calendar_month</mat-icon> Nova reserva
+          <button class="btn-ghost" type="button" (click)="atualizar()" [disabled]="carregando()" title="Atualizar" aria-label="Atualizar">
+            <mat-icon>refresh</mat-icon>
+          </button>
+          <button id="tour-nova" class="btn-pri" type="button" (click)="novaReserva()">
+            <mat-icon>add</mat-icon> Nova reserva
           </button>
         </div>
+      </header>
+
+      <!-- ============================ KPIs do dia ============================ -->
+      <div id="tour-kpis" class="stats">
+        <button type="button" class="stat stat-btn" (click)="atalho('chegadas')" title="Ver chegadas previstas para hoje">
+          <div class="stat-txt">
+            <span class="stat-l">Chegadas hoje</span>
+            <p><strong [class.stat-warn]="chegadasHoje() > 0">{{ chegadasHoje() }}</strong>
+              <small>{{ chegadasHoje() === 1 ? 'reserva' : 'reservas' }}</small></p>
+          </div>
+          <span class="stat-ico ico-in"><mat-icon>luggage</mat-icon></span>
+        </button>
+        <button type="button" class="stat stat-btn" (click)="atalho('saidas')" title="Ver hospedados com saída hoje">
+          <div class="stat-txt">
+            <span class="stat-l">Saídas hoje</span>
+            <p><strong [class.stat-warn]="saidasHoje() > 0">{{ saidasHoje() }}</strong>
+              <small>{{ saidasHoje() === 1 ? 'saída' : 'saídas' }}</small></p>
+          </div>
+          <span class="stat-ico ico-out"><mat-icon>meeting_room</mat-icon></span>
+        </button>
+        <button type="button" class="stat stat-btn" (click)="atalho('hospedados')" title="Ver hóspedes na pousada agora">
+          <div class="stat-txt">
+            <span class="stat-l">Hospedados</span>
+            <p><strong>{{ hospedados() }}</strong>
+              <small>{{ hospedados() === 1 ? 'reserva ativa' : 'reservas ativas' }}</small></p>
+          </div>
+          <span class="stat-ico ico-casa"><mat-icon>king_bed</mat-icon></span>
+        </button>
+        <button type="button" class="stat stat-btn" (click)="atalho('pendentes')" title="Ver reservas pendentes">
+          <div class="stat-txt">
+            <span class="stat-l">Pendentes</span>
+            <p><strong>{{ pendentes() }}</strong>
+              <small>{{ pendentes() === 1 ? 'reserva' : 'reservas' }}</small></p>
+          </div>
+          <span class="stat-ico ico-atn"><mat-icon>schedule</mat-icon></span>
+        </button>
       </div>
 
-      <!-- Resumo operacional do dia — recepção de hotel -->
-      <div id="tour-kpis" class="rs-resumo">
-        <button type="button" class="rs-est" (click)="atalho('chegadas')" title="Ver chegadas previstas para hoje">
-          <span class="rs-est-num">{{ chegadasHoje() }}</span>
-          <span class="rs-est-lbl"><mat-icon>login</mat-icon> Chegadas hoje</span>
-        </button>
-        <button type="button" class="rs-est" (click)="atalho('saidas')" title="Ver hospedados com saída hoje">
-          <span class="rs-est-num">{{ saidasHoje() }}</span>
-          <span class="rs-est-lbl"><mat-icon>logout</mat-icon> Saídas hoje</span>
-        </button>
-        <button type="button" class="rs-est" (click)="atalho('hospedados')" title="Ver hóspedes na pousada agora">
-          <span class="rs-est-num">{{ hospedados() }}</span>
-          <span class="rs-est-lbl"><mat-icon>hotel</mat-icon> Hospedados</span>
-        </button>
-        <button type="button" class="rs-est" (click)="atalho('pendentes')" title="Ver reservas pendentes">
-          <span class="rs-est-num">{{ pendentes() }}</span>
-          <span class="rs-est-lbl"><mat-icon>schedule</mat-icon> Pendentes</span>
-        </button>
-        <span class="rs-resumo-info">
-          <mat-icon>info</mat-icon> Clique num número para filtrar
-        </span>
-      </div>
-
-      <div class="inner-card rs-card">
-        <div class="rs-toolbar">
-          <mat-button-toggle-group
-            id="tour-visao"
-            class="rs-visao"
-            [value]="visao()"
-            (change)="mudarVisao($event.value)"
-            aria-label="Alternar visualização"
-          >
-            <mat-button-toggle value="lista">
-              <mat-icon>view_list</mat-icon> Lista
-            </mat-button-toggle>
-            <mat-button-toggle value="cal">
-              <mat-icon>calendar_view_week</mat-icon> Calendário
-            </mat-button-toggle>
-            <mat-button-toggle value="mapa">
-              <mat-icon>domain</mat-icon> Mapa
-            </mat-button-toggle>
-            <mat-button-toggle value="grupos">
-              <mat-icon>groups</mat-icon> Grupos
-            </mat-button-toggle>
-          </mat-button-toggle-group>
+      <!-- ============================ card principal ============================ -->
+      <section class="fd-card rv-card">
+        <div class="rv-toolbar">
+          <div id="tour-visao" class="seg" role="tablist" aria-label="Alternar visualização">
+            @for (v of visoes; track v.id) {
+              <button
+                type="button"
+                role="tab"
+                class="seg-btn"
+                [class.ativo]="visao() === v.id"
+                [attr.aria-selected]="visao() === v.id"
+                (click)="mudarVisao(v.id)"
+              >
+                <mat-icon>{{ v.icone }}</mat-icon> {{ v.rotulo }}
+              </button>
+            }
+          </div>
 
           @if (visao() === 'lista') {
-            <div id="tour-busca" class="rs-busca" [class.foco]="buscaFoco()">
-              <mat-icon class="rs-busca-icone">search</mat-icon>
+            <div id="tour-busca" class="rv-busca" [class.foco]="buscaFoco()">
+              <mat-icon class="rv-busca-icone">search</mat-icon>
               <input
-                class="rs-busca-input"
+                class="rv-busca-input"
                 type="search"
                 [formControl]="fBusca"
-                placeholder="Buscar por hóspede, acomodação ou nº da reserva…"
+                placeholder="Hóspede, acomodação ou nº da reserva…"
                 aria-label="Buscar reserva"
                 autocomplete="off"
                 (focus)="buscaFoco.set(true)"
@@ -127,7 +144,7 @@ const JANELA_DIAS = 14;
               @if (fBusca.value) {
                 <button
                   type="button"
-                  class="rs-limpar"
+                  class="rv-limpar"
                   aria-label="Limpar busca"
                   (click)="fBusca.setValue('')"
                 ><mat-icon>close</mat-icon></button>
@@ -147,24 +164,24 @@ const JANELA_DIAS = 14;
             </mat-form-field>
             @if (rangeAtiva()) {
               <button
-                type="button" class="rs-limpa-range"
+                type="button" class="btn-linha"
                 (click)="limparRange()" title="Limpar período"
               >
-                <mat-icon>date_range</mat-icon> Limpar período
+                <mat-icon>date_range</mat-icon> Limpar
               </button>
             }
-          } @else {
-            <div class="rs-nav">
-              <button type="button" class="rs-nav-btn" (click)="nav(-7)" aria-label="Voltar 7 dias">
+          } @else if (visao() === 'cal') {
+            <div class="rv-nav">
+              <button type="button" class="rv-nav-btn" (click)="nav(-7)" aria-label="Voltar 7 dias">
                 <mat-icon>chevron_left</mat-icon>
               </button>
-              <button type="button" class="rs-nav-hoje" (click)="irHoje()">
+              <button type="button" class="rv-nav-hoje" (click)="irHoje()">
                 <mat-icon>today</mat-icon> Hoje
               </button>
-              <button type="button" class="rs-nav-btn" (click)="nav(7)" aria-label="Avançar 7 dias">
+              <button type="button" class="rv-nav-btn" (click)="nav(7)" aria-label="Avançar 7 dias">
                 <mat-icon>chevron_right</mat-icon>
               </button>
-              <span class="rs-nav-periodo">
+              <span class="rv-nav-periodo">
                 {{ dias()[0] | date: 'dd/MM' }} — {{ dias()[JANELA_DIAS - 1] | date: 'dd/MM/yyyy' }}
               </span>
             </div>
@@ -172,25 +189,23 @@ const JANELA_DIAS = 14;
         </div>
 
         @if (visao() === 'lista') {
-          <mat-chip-listbox
-            id="tour-status"
-            class="rs-status"
-            [value]="fStatus()"
-            (change)="filtrarStatus($event.value ?? '')"
-            aria-label="Filtrar por status"
-          >
-            <mat-chip-option value="">Todas</mat-chip-option>
-            <mat-chip-option value="p">Pendente</mat-chip-option>
-            <mat-chip-option value="i">Hospedado</mat-chip-option>
-            <mat-chip-option value="f">Finalizado</mat-chip-option>
-            <mat-chip-option value="c">Cancelada</mat-chip-option>
-          </mat-chip-listbox>
+          <div id="tour-status" class="pills" role="group" aria-label="Filtrar por status">
+            @for (s of statusFiltro; track s.id) {
+              <button
+                type="button"
+                class="pf"
+                [class.on]="fStatus() === s.id"
+                [attr.aria-pressed]="fStatus() === s.id"
+                (click)="filtrarStatus(s.id)"
+              >{{ s.rotulo }}</button>
+            }
+          </div>
         }
 
         <!-- ==================== VISÃO: LISTA ==================== -->
         @if (visao() === 'lista') {
-          <div id="tour-tabela" class="rs-tabela-wrap">
-            <table class="rs-tabela">
+          <div id="tour-tabela" class="rv-tabela-wrap">
+            <table class="rv-tabela">
               <thead>
                 <tr>
                   <th>Hóspede</th>
@@ -220,9 +235,9 @@ const JANELA_DIAS = 14;
                   @for (r of items(); track r.id) {
                     <tr class="rs-row">
                       <td>
-                        <div class="rs-cell">
-                          <span class="rs-avatar">{{ iniciais(r.cliente_nome) }}</span>
-                          <span class="rs-cell-txt">
+                        <div class="rv-cell">
+                          <span class="rv-avatar" [style.background]="avatarCor(r)">{{ iniciais(r.cliente_nome) }}</span>
+                          <span class="rv-cell-txt">
                             <strong>{{ r.cliente_nome }}</strong>
                             <small>
                               Reserva Nº{{ r.id }} ·
@@ -233,19 +248,19 @@ const JANELA_DIAS = 14;
                         </div>
                       </td>
                       <td>
-                        <div class="rs-cell">
+                        <div class="rv-cell">
                           <span
-                            class="rs-dot"
+                            class="rv-dot"
                             [style.background]="r.acomodacao_cor || '#8fa3ab'"
                           ></span>
-                          <span class="rs-cell-txt">
-                            <strong class="rs-acom-nome">{{ r.acomodacao_nome }}</strong>
+                          <span class="rv-cell-txt">
+                            <strong class="rv-acom-nome">{{ r.acomodacao_nome }}</strong>
                             <small>Nº {{ r.acomodacao_numero }}</small>
                           </span>
                         </div>
                       </td>
                       <td>
-                        <div class="rs-periodo">
+                        <div class="rv-periodo">
                           <strong>
                             {{ parseDia(r.entradaprevista) | date: 'dd/MM' }}
                             <mat-icon>arrow_forward</mat-icon>
@@ -253,27 +268,40 @@ const JANELA_DIAS = 14;
                           </strong>
                           <small>
                             {{ noites(r) }} {{ noites(r) === 1 ? 'noite' : 'noites' }}
-                            @if (emCurso(r)) { · <b class="rs-hj">em curso</b> }
-                            @if (chegaHoje(r)) { · <b class="rs-hj">chega hoje</b> }
+                            @if (emCurso(r)) { · <b class="rv-hj">em curso</b> }
+                            @if (chegaHoje(r)) { · <b class="rv-hj">chega hoje</b> }
                           </small>
                         </div>
                       </td>
                       <td>
-                        <span class="rs-valor">R$ {{ num(r.valordiaria) | number: '1.2-2' }}</span>
+                        <span class="rv-valor">R$ {{ num(r.valordiaria) | number: '1.2-2' }}</span>
                         @if (r.valor_estadia !== null) {
-                          <small class="rs-total">
+                          <small class="rv-total">
                             total R$ {{ num(r.valor_estadia) | number: '1.2-2' }}
                           </small>
                         }
                       </td>
                       <td class="tc">
                         <span
-                          class="rs-st"
+                          class="rv-st"
                           [style.background]="st(r.status).bg"
                           [style.color]="st(r.status).fg"
                         >{{ st(r.status).rotulo }}</span>
                       </td>
-                      <td class="tc rs-acoes">
+                      <td class="tc rv-acoes">
+                        @if (chegaHoje(r)) {
+                          <button
+                            type="button"
+                            class="btn-ck"
+                            title="Fazer check-in"
+                            aria-label="Fazer check-in de {{ r.cliente_nome }}"
+                            [disabled]="aguardando() === r.id"
+                            (click)="checkin(r)"
+                          >
+                            <mat-icon>key</mat-icon>
+                            {{ aguardando() === r.id ? '…' : 'Check-in' }}
+                          </button>
+                        }
                         <a
                           class="badge-acao bg-blue rs-ver"
                           title="Abrir reserva"
@@ -297,7 +325,7 @@ const JANELA_DIAS = 14;
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="6" class="rs-vazio">
+                      <td colspan="6" class="rv-vazio">
                         <mat-icon>event_busy</mat-icon>
                         <p>
                           {{ temFiltro()
@@ -305,8 +333,8 @@ const JANELA_DIAS = 14;
                             : 'Nenhuma reserva registrada ainda.' }}
                         </p>
                         @if (!temFiltro()) {
-                          <button class="btn-dark-blue" type="button" (click)="novaReserva()">
-                            <mat-icon>calendar_month</mat-icon> Criar a primeira reserva
+                          <button class="btn-pri" type="button" (click)="novaReserva()">
+                            <mat-icon>add</mat-icon> Criar a primeira reserva
                           </button>
                         }
                       </td>
@@ -352,7 +380,7 @@ const JANELA_DIAS = 14;
                     <div class="tape-track"><span class="skel skel-bar"></span></div>
                   </div>
                 } @empty {
-                  <div class="tape-vazio">
+                  <div class="vazio">
                     <mat-icon>hotel</mat-icon>
                     <p>Nenhuma acomodação ativa cadastrada.</p>
                   </div>
@@ -399,7 +427,7 @@ const JANELA_DIAS = 14;
                     </div>
                   </div>
                 } @empty {
-                  <div class="tape-vazio">
+                  <div class="vazio">
                     <mat-icon>hotel</mat-icon>
                     <p>Nenhuma acomodação ativa cadastrada.</p>
                   </div>
@@ -415,65 +443,99 @@ const JANELA_DIAS = 14;
           </div>
         }
 
+        <!-- ==================== VISÃO: MAPA ==================== -->
         @if (visao() === 'mapa') {
-          <div class="mapa-wrap">
-            <div class="mapa-legenda">
-              <span><i class="mq mq-livre"></i> Livre</span>
-              <span><i class="mq mq-ocup"></i> Ocupado</span>
-              <span><i class="mq mq-pend"></i> Chega hoje</span>
-              <span><i class="mq mq-bloq"></i> Bloqueado</span>
-              <span><i class="mq mq-limp"></i> Limpeza pendente</span>
-              <span><i class="mq mq-man"></i> Manutenção</span>
+          <div class="leg" role="list" aria-label="Legenda de status">
+            <span role="listitem"><i class="dt lv"></i>Livre</span>
+            <span role="listitem"><i class="dt oc"></i>Ocupado</span>
+            <span role="listitem"><i class="dt pd"></i>Chega hoje</span>
+            <span role="listitem"><i class="dt bq"></i>Bloqueado</span>
+            <span role="listitem"><i class="dt lm"></i>Limpeza</span>
+            <span role="listitem"><i class="dt mn"></i>Manutenção</span>
+          </div>
+
+          @if (carregandoMapa()) {
+            <div class="qt-grid">
+              @for (s of skelMapa; track s) { <div class="skel skel-qt"></div> }
             </div>
+          } @else {
             @for (f of andares(); track f.andar) {
-              <div class="mapa-andar">
-                <h3 class="mapa-andar-tit">{{ f.andar === 0 ? 'Térreo' : f.andar + 'º andar' }} <small>({{ f.quartos.length }} quartos)</small></h3>
-                <div class="mapa-grid">
+              <div class="andar">
+                <span class="andar-lbl">
+                  {{ f.andar === 0 ? 'Térreo' : f.andar + 'º andar' }}
+                  <em>{{ f.quartos.length }} {{ f.quartos.length === 1 ? 'quarto' : 'quartos' }}</em>
+                </span>
+                <div class="qt-grid">
                   @for (a of f.quartos; track a.id) {
-                    <div class="mapa-card" [class]="'mapa-card ' + statusQuarto(a)" [style.border-left-color]="a.cor || '#8fa3ab'">
-                      <div class="mc-topo">
-                        <strong>{{ a.numero }}</strong>
-                        <span class="mc-nome">{{ a.nome }}</span>
+                    <div class="qt" [class]="'qt ' + statusQuarto(a)">
+                      <div class="qt-topo">
+                        <b>{{ a.numero }}</b>
+                        <small>{{ a.nome }}</small>
                       </div>
-                      <div class="mc-tipo">{{ a.tipo ?? '—' }}</div>
-                      <div class="mc-status">
-                        @if (a.bloqueado) { <span class="mc-tag tg-bloq">Bloqueado</span> }
-                        @else if (a.status_hoje === 'i') { <span class="mc-tag tg-ocup">Ocupado</span> }
-                        @else if (a.status_hoje === 'p') { <span class="mc-tag tg-pend">Chega hoje</span> }
-                        @else { <span class="mc-tag tg-livre">Livre</span> }
-                        @if (a.limpeza_pendente > 0) { <span class="mc-tag tg-limp" title="Tarefas de limpeza pendentes">🧹 {{ a.limpeza_pendente }}</span> }
-                        @if (a.manut_aberta > 0) { <span class="mc-tag tg-man" title="OS de manutenção abertas">🔧 {{ a.manut_aberta }}</span> }
-                      </div>
-                      <div class="mc-acoes">
+                      <span class="qt-tipo">{{ a.tipo ?? '—' }}</span>
+                      <span class="qt-tags">
+                        @if (a.bloqueado) { <em class="tg tg-bloq"><mat-icon>lock</mat-icon>Bloqueado</em> }
+                        @else if (a.status_hoje === 'i') { <em class="tg tg-ocup">Ocupado</em> }
+                        @else if (a.status_hoje === 'p') { <em class="tg tg-pend">Chega hoje</em> }
+                        @else { <em class="tg tg-livre">Livre</em> }
+                        @if (a.limpeza_pendente > 0) {
+                          <em class="tg tg-limp" title="Tarefas de limpeza pendentes">
+                            <mat-icon>cleaning_services</mat-icon>{{ a.limpeza_pendente }}
+                          </em>
+                        }
+                        @if (a.manut_aberta > 0) {
+                          <em class="tg tg-man" title="OS de manutenção abertas">
+                            <mat-icon>build</mat-icon>{{ a.manut_aberta }}
+                          </em>
+                        }
+                      </span>
+                      <span class="qt-acoes">
                         @if (a.idreserva_hoje) {
-                          <a class="mc-btn" [routerLink]="['/reservas', a.idreserva_hoje]">Reserva #{{ a.idreserva_hoje }}</a>
+                          <a class="qt-btn" [routerLink]="['/reservas', a.idreserva_hoje]">
+                            Reserva #{{ a.idreserva_hoje }}
+                          </a>
                         }
                         @if (bloqueioDe(a.id); as b) {
-                          <button class="mc-btn" (click)="desbloquear(b.id)">Desbloquear</button>
+                          <button type="button" class="qt-btn" (click)="desbloquear(b.id)">
+                            <mat-icon>lock_open</mat-icon> Desbloquear
+                          </button>
                         } @else {
-                          <button class="mc-btn" (click)="abrirBloqueio(a)">Bloquear</button>
+                          <button type="button" class="qt-btn" (click)="abrirBloqueio(a)">
+                            <mat-icon>lock</mat-icon> Bloquear
+                          </button>
                         }
-                      </div>
+                      </span>
                     </div>
                   }
                 </div>
               </div>
             } @empty {
-              <p class="tape-vazio">Nenhuma acomodação ativa cadastrada.</p>
+              <p class="vazio"><mat-icon>hotel</mat-icon>Nenhuma acomodação ativa cadastrada.</p>
             }
-          </div>
+          }
         }
 
+        <!-- ==================== VISÃO: GRUPOS ==================== -->
         @if (visao() === 'grupos') {
           <div class="gr-wrap">
             <div class="gr-novo">
-              <h3 class="gr-tit">Novo grupo / evento</h3>
+              <h3 class="gr-tit"><mat-icon>group</mat-icon> Novo grupo / evento</h3>
               <div class="gr-form">
                 <input class="inp" placeholder="Nome do grupo *" [value]="gNome" (input)="gNome=$any($event.target).value" aria-label="Nome do grupo" />
                 <input class="inp" placeholder="Contato" [value]="gContato" (input)="gContato=$any($event.target).value" aria-label="Contato" />
-                <input class="inp" type="date" [value]="gIni" (input)="gIni=$any($event.target).value" aria-label="Início" />
-                <input class="inp" type="date" [value]="gFim" (input)="gFim=$any($event.target).value" aria-label="Fim" />
               </div>
+              <mat-form-field
+                appearance="outline"
+                subscriptSizing="dynamic"
+                class="campo-mat gr-range"
+              >
+                <mat-date-range-input [rangePicker]="gPicker" [formGroup]="gRange">
+                  <input matStartDate formControlName="inicio" placeholder="Início" aria-label="Início do período do grupo" />
+                  <input matEndDate formControlName="fim" placeholder="Fim" aria-label="Fim do período do grupo" />
+                </mat-date-range-input>
+                <mat-datepicker-toggle matIconSuffix [for]="gPicker" />
+                <mat-date-range-picker #gPicker />
+              </mat-form-field>
               <p class="gr-sub">Unidades (rooming list):</p>
               <div class="gr-units">
                 @for (a of acomodacoes(); track a.id) {
@@ -487,7 +549,8 @@ const JANELA_DIAS = 14;
                 <input type="checkbox" [checked]="gBloquear" (change)="gBloquear=!gBloquear" />
                 Bloquear as unidades para venda no período
               </label>
-              <button class="mc-btn pri" [disabled]="salvandoGrupo()" (click)="criarGrupo()">
+              <button type="button" class="btn-pri gr-cta" [disabled]="salvandoGrupo()" (click)="criarGrupo()">
+                <mat-icon>{{ salvandoGrupo() ? 'hourglass_top' : 'add' }}</mat-icon>
                 {{ salvandoGrupo() ? 'Salvando…' : 'Criar grupo' }}
               </button>
             </div>
@@ -496,12 +559,22 @@ const JANELA_DIAS = 14;
               @for (g of grupos(); track g.id) {
                 <div class="gr-card">
                   <div class="gr-head">
-                    <strong>{{ g.nome }}</strong>
-                    <span class="gr-datas">{{ g.inicio | date:'dd/MM' }} → {{ g.fim | date:'dd/MM' }}</span>
-                    <button class="mc-btn" (click)="toggleRooming(g.id)">{{ roomingAberto() === g.id ? 'Fechar' : 'Rooming' }}</button>
-                    <button class="mc-btn" (click)="removerGrupo(g)">Remover</button>
+                    <span class="gr-av"><mat-icon>groups</mat-icon></span>
+                    <div class="gr-head-txt">
+                      <strong>{{ g.nome }}</strong>
+                      <small class="gr-datas">
+                        <mat-icon>event</mat-icon>
+                        {{ g.inicio | date:'dd/MM' }} → {{ g.fim | date:'dd/MM' }}
+                      </small>
+                    </div>
+                    <button type="button" class="qt-btn" (click)="toggleRooming(g.id)">
+                      {{ roomingAberto() === g.id ? 'Fechar' : 'Rooming' }}
+                    </button>
+                    <button type="button" class="qt-btn danger" (click)="removerGrupo(g)">
+                      <mat-icon>delete</mat-icon>
+                    </button>
                   </div>
-                  @if (g.contato) { <p class="gr-contato">{{ g.contato }}</p> }
+                  @if (g.contato) { <p class="gr-contato"><mat-icon>person</mat-icon> {{ g.contato }}</p> }
                   @if (roomingAberto() === g.id) {
                     <table class="plain bordered gr-tb">
                       <thead><tr><th>Unidade</th><th>Hóspede</th><th>Status</th></tr></thead>
@@ -520,24 +593,34 @@ const JANELA_DIAS = 14;
                   }
                 </div>
               } @empty {
-                <p class="tape-vazio">Nenhum grupo cadastrado — casamentos, retiros, excursões.</p>
+                <p class="vazio"><mat-icon>groups</mat-icon>Nenhum grupo cadastrado — casamentos, retiros, excursões.</p>
               }
             </div>
           </div>
         }
-      </div>
+      </section>
     </div>
 
     @if (bloqueioAlvo(); as alvo) {
       <div class="ovl" (click)="bloqueioAlvo.set(null)" (keydown.escape)="bloqueioAlvo.set(null)">
         <div class="dlg" role="dialog" aria-modal="true" aria-label="Bloquear acomodação">
-          <h3>Bloquear {{ alvo.nome }} — Nº {{ alvo.numero }}</h3>
-          <label class="dl">Início <input type="date" class="inp" [value]="bIni" (input)="bIni=$any($event.target).value"></label>
-          <label class="dl">Fim <input type="date" class="inp" [value]="bFim" (input)="bFim=$any($event.target).value"></label>
+          <h3><mat-icon>lock</mat-icon> Bloquear {{ alvo.nome }} — Nº {{ alvo.numero }}</h3>
+          <mat-form-field
+            appearance="outline"
+            subscriptSizing="dynamic"
+            class="campo-mat"
+          >
+            <mat-date-range-input [rangePicker]="bPicker" [formGroup]="bRange">
+              <input matStartDate formControlName="inicio" placeholder="Início" aria-label="Início do bloqueio" />
+              <input matEndDate formControlName="fim" placeholder="Fim" aria-label="Fim do bloqueio" />
+            </mat-date-range-input>
+            <mat-datepicker-toggle matIconSuffix [for]="bPicker" />
+            <mat-date-range-picker #bPicker />
+          </mat-form-field>
           <label class="dl">Motivo <input type="text" class="inp" placeholder="reforma, uso próprio…" [value]="bMot" (input)="bMot=$any($event.target).value"></label>
           <div class="dlg-acoes">
-            <button class="mc-btn" (click)="bloqueioAlvo.set(null)">Cancelar</button>
-            <button class="mc-btn pri" [disabled]="salvandoBloq()" (click)="confirmarBloqueio()">
+            <button type="button" class="qt-btn" (click)="bloqueioAlvo.set(null)">Cancelar</button>
+            <button type="button" class="btn-pri" [disabled]="salvandoBloq()" (click)="confirmarBloqueio()">
               {{ salvandoBloq() ? 'Bloqueando…' : 'Confirmar bloqueio' }}
             </button>
           </div>
@@ -553,259 +636,270 @@ const JANELA_DIAS = 14;
     }
   `,
   styles: `
+    :host { display: block; }
+    .rv { display: flex; flex-direction: column; gap: 16px; max-width: 1440px; }
+
     /* ---------- cabeçalho ---------- */
-    .rs-head {
-      display: flex; align-items: flex-end; justify-content: space-between;
-      gap: 16px; flex-wrap: wrap; margin-bottom: 16px;
-      padding-bottom: 14px; border-bottom: 1px solid #e3eaef;
+    .rv-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
     }
-    .rs-titulo-grupo { display: flex; flex-direction: column; gap: 2px; }
-    .rs-titulo {
-      margin: 0; font-size: 1.5rem; font-weight: 700;
-      color: #054054; letter-spacing: -0.015em; line-height: 1.15;
+    .eyebrow {
+      margin: 0 0 4px; font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase; color: #4b95ab;
     }
-    .rs-data {
-      margin: 0; font-size: 0.82rem; color: #7d97a1;
-      font-weight: 400; letter-spacing: 0.01em;
+    .titulo {
+      margin: 0; font-family: var(--font-display);
+      font-size: 1.9rem; font-weight: 600; color: #054054; line-height: 1.1;
+      display: flex; align-items: center; gap: 12px;
     }
-    .rs-head-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
-    .rs-head-acoes button { display: inline-flex; align-items: center; gap: 6px; }
-    .btn-tour {
+    .sub { margin: 4px 0 0; font-size: 0.86rem; color: #7d97a1; text-transform: capitalize; }
+    .live {
       display: inline-flex; align-items: center; gap: 6px;
-      border: 1.5px solid #d7e0e6; background: #fff;
-      color: #5d6d7e; border-radius: 4px;
-      padding: 0 14px; min-height: 34px; cursor: pointer;
-      font-size: 0.85rem; font-weight: 600;
-      transition: border-color .15s ease, color .15s ease;
+      font-family: var(--font-body); font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.05em; padding: 4px 11px; border-radius: 999px;
+      background: #fbeaea; color: #dc3545;
     }
-    .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { border-color: #1a6f8a; color: #1a6f8a; }
+    .live i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .live-on { background: #e3f3e6; color: #198754; }
+    .live-on i { animation: pulso 2s infinite; }
+    @keyframes pulso { 50% { opacity: 0.5; } }
 
-    /* ---------- resumo do dia ---------- */
-    .rs-resumo {
-      display: flex; align-items: center;
-      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
-      margin-bottom: 16px; overflow-x: auto;
+    .rv-acoes { display: flex; gap: 8px; align-items: center; }
+    .btn-ghost {
+      width: 40px; height: 40px; border-radius: 10px;
+      border: 1px solid #d7e0e6; background: #fff; color: #5d6d7e;
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: border-color 0.15s, color 0.15s;
     }
-    .rs-est {
-      display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
-      padding: 12px 26px; min-width: 148px;
-      background: none; border: none; cursor: pointer;
-      font-family: inherit; text-align: left;
-      border-left: 1px solid #eef2f5;
-      transition: background 0.14s ease;
+    .btn-ghost:hover:not(:disabled) { border-color: #1a6f8a; color: #1a6f8a; }
+    .btn-ghost:disabled { opacity: 0.5; }
+    .btn-pri {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: #054054; color: #fff; border: none; border-radius: 10px;
+      padding: 0 18px; height: 40px; font-family: inherit;
+      font-size: 0.86rem; font-weight: 700; cursor: pointer;
+      text-decoration: none; transition: background 0.15s;
     }
-    .rs-est:first-child { border-left: none; }
-    .rs-est:hover { background: #f7fafb; }
-    .rs-est:hover .rs-est-num { color: #1a6f8a; }
-    .rs-est-num {
-      font-size: 1.55rem; font-weight: 800; color: #054054;
-      line-height: 1; letter-spacing: -0.02em;
-      font-variant-numeric: tabular-nums;
-      transition: color 0.14s ease;
-    }
-    .rs-est-lbl {
+    .btn-pri:hover:not(:disabled) { background: #1a6f8a; color: #fff; }
+    .btn-pri:disabled { opacity: 0.55; }
+    .btn-ghost mat-icon, .stat-ico mat-icon, .gr-av mat-icon { font-size: 20px; width: 20px; height: 20px; }
+    .btn-pri mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    .btn-linha mat-icon, .rv-nav-hoje mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .btn-linha {
       display: inline-flex; align-items: center; gap: 5px;
-      font-size: 0.68rem; font-weight: 600; color: #7d97a1;
-      text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap;
+      border: 1px solid #d7e0e6; background: #fff; border-radius: 8px;
+      padding: 7px 12px; font-size: 0.78rem; font-weight: 600; color: #5d6d7e;
+      cursor: pointer; font-family: inherit;
     }
-    .rs-est-lbl mat-icon { font-size: 14px; width: 14px; height: 14px; color: #a5b6bf; }
-    .rs-resumo-info {
-      margin-left: auto; padding: 0 20px;
+    .btn-linha:hover { border-color: #1a6f8a; color: #1a6f8a; }
+
+    /* ---------- KPIs ---------- */
+    .stats {
+      display: grid; gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    }
+    .stat {
+      background: #fff; border: 1px solid #e3eaef; border-radius: 12px;
+      padding: 15px 16px; display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 10px;
+    }
+    .stat-btn {
+      font-family: inherit; text-align: left; cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+    }
+    .stat-btn:hover {
+      border-color: #4b95ab; box-shadow: 0 4px 14px rgba(5, 64, 84, 0.1);
+      transform: translateY(-1px);
+    }
+    .stat-txt { min-width: 0; }
+    .stat-l {
+      font-size: 0.72rem; font-weight: 700; color: #7d97a1;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .stat p { margin: 7px 0 0; display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
+    .stat strong {
+      font-family: var(--font-display); font-size: 1.9rem; font-weight: 700;
+      color: #054054; line-height: 1; font-variant-numeric: tabular-nums;
+    }
+    .stat-warn { color: #b5811f; }
+    .stat small { font-size: 0.76rem; color: #8a99a4; }
+    .stat-ico {
+      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+      background: #eef4f6; color: #054054;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ico-in { background: #e3f3e6; color: #146c2e; }
+    .ico-out { background: #fdeadb; color: #b2560a; }
+    .ico-casa { background: #e4eef5; color: #1a6f8a; }
+    .ico-atn { background: #f6efdd; color: #8a6200; }
+
+    /* ---------- card principal ---------- */
+    .fd-card {
+      background: #fff; border: 1px solid #e3eaef; border-radius: 14px;
+      padding: 16px 18px; min-width: 0;
+    }
+    .rv-toolbar {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    /* segmented control — 4 visões */
+    .seg {
+      display: inline-flex; gap: 3px; flex-shrink: 0;
+      background: #eef4f6; border-radius: 10px; padding: 3px;
+    }
+    .seg-btn {
       display: inline-flex; align-items: center; gap: 6px;
-      font-size: 0.72rem; color: #a5b6bf; white-space: nowrap;
+      border: none; background: transparent; border-radius: 8px;
+      padding: 7px 14px; font-family: inherit;
+      font-size: 0.82rem; font-weight: 600; color: #5d6d7e;
+      cursor: pointer; transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+      white-space: nowrap;
     }
-    .rs-resumo-info mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    @media (max-width: 820px) { .rs-resumo-info { display: none; } }
+    .seg-btn:hover:not(.ativo) { color: #1a6f8a; }
+    .seg-btn.ativo {
+      background: #fff; color: #054054;
+      box-shadow: 0 1px 4px rgba(5, 64, 84, 0.16);
+    }
 
-    /* ---------- toolbar ---------- */
-    .rs-card { padding-top: 14px; }
-    .rs-toolbar {
-      display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
-      margin-bottom: 14px; padding: 4px 2px;
-    }
-    /* ---------- mapa por andar ---------- */
-    .mapa-legenda{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;font-size:.78rem;color:#5d6d7e}
-    .mq{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
-    .mq-livre{background:#2e9e5b}.mq-ocup{background:#c0392b}.mq-pend{background:#d4a017}
-    .mq-bloq{background:#555}.mq-limp{background:#7a5fb5}.mq-man{background:#e67e22}
-    .mapa-andar-tit{font-size:1rem;color:#054054;margin:16px 0 8px}
-    .mapa-andar-tit small{color:#7d97a1;font-weight:400}
-    .mapa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
-    .mapa-card{background:#fff;border:1px solid #e3eaef;border-left:5px solid;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
-    .mapa-card.sq-bloq{background:#f2f2f2;opacity:.9}
-    .mc-topo{display:flex;align-items:baseline;gap:8px}
-    .mc-topo strong{font-size:1.1rem;color:#054054}
-    .mc-nome{font-size:.82rem;color:#5d6d7e}
-    .mc-tipo{font-size:.72rem;color:#8fa3ab;text-transform:uppercase;letter-spacing:.04em}
-    .mc-status{display:flex;gap:6px;flex-wrap:wrap}
-    .mc-tag{font-size:.68rem;padding:2px 8px;border-radius:10px;font-weight:600}
-    .tg-livre{background:#e4f6e8;color:#146c2e}.tg-ocup{background:#fde3e3;color:#a32}
-    .tg-pend{background:#fdf3d7;color:#8a6200}.tg-bloq{background:#e4e4e4;color:#444}
-    .tg-limp{background:#efe9fa;color:#5b3fa0}.tg-man{background:#fdeadb;color:#b2560a}
-    .mc-acoes{display:flex;gap:8px;margin-top:2px}
-    .mc-btn{font-size:.75rem;padding:4px 10px;border:1px solid #d7e0e6;border-radius:6px;background:#fff;color:#1a6f8a;cursor:pointer;text-decoration:none}
-    .mc-btn:hover{border-color:#1a6f8a}
-    .mc-btn.pri{background:#1a6f8a;color:#fff;border-color:#1a6f8a}
-    .ovl{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:50}
-    .dlg{background:#fff;border-radius:12px;padding:20px;min-width:320px;display:flex;flex-direction:column;gap:10px}
-    .dlg h3{margin:0;color:#054054;font-size:1.05rem}
-    .dl{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:#5d6d7e}
-    .inp{border:1px solid #d7e0e6;border-radius:6px;padding:7px 9px;font-size:.85rem}
-    .dlg-acoes{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
-
-    /* ---------- grupos / eventos ---------- */
-    .gr-wrap{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
-    .gr-novo{flex:0 0 320px;background:#fff;border:1px solid #e3eaef;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px}
-    .gr-tit{margin:0;font-size:.95rem;color:#054054}
-    .gr-form{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .gr-sub{margin:6px 0 2px;font-size:.78rem;color:#5d6d7e;font-weight:600}
-    .gr-units{display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto}
-    .gr-unit{font-size:.8rem;padding:4px 8px;border:1px solid #e3eaef;border-radius:6px;cursor:pointer;display:flex;gap:6px;align-items:center}
-    .gr-unit.sel{background:#e8f4f8;border-color:#1a6f8a}
-    .gr-blk{font-size:.8rem;color:#5d6d7e;display:flex;gap:6px;align-items:center}
-    .gr-lista{flex:1;min-width:280px;display:flex;flex-direction:column;gap:8px}
-    .gr-card{background:#fff;border:1px solid #e3eaef;border-radius:10px;padding:12px}
-    .gr-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-    .gr-head strong{color:#054054}
-    .gr-datas{font-size:.8rem;color:#5d6d7e;flex:1}
-    .gr-contato{margin:4px 0 0;font-size:.78rem;color:#8a99a4}
-    .gr-tb{margin-top:8px;font-size:.82rem}
-    .gr-tb th{font-size:.72rem;color:#8a99a4;text-transform:uppercase}
-    .muted{color:#8a99a4}.tc{text-align:center}
-
-    .rs-visao {
-      flex-shrink: 0;
-      --mat-button-toggle-selected-state-background-color: #1a6f8a;
-      --mat-button-toggle-selected-state-text-color: #fff;
-      --mat-button-toggle-text-color: #40525d;
-      --mat-button-toggle-height: 40px;
-    }
-    .rs-visao mat-button-toggle mat-icon {
-      font-size: 17px; width: 17px; height: 17px; vertical-align: -3px; margin-right: 4px;
-    }
-    .rs-busca {
+    /* ---------- busca ---------- */
+    .rv-busca {
       display: flex; align-items: center; gap: 8px;
-      flex: 1; min-width: 220px; max-width: 420px;
-      background: #fff; border: 1px solid #d7e0e6; border-radius: 8px;
+      flex: 1; min-width: 220px; max-width: 400px;
+      background: #fff; border: 1px solid #d7e0e6; border-radius: 10px;
       padding: 0 10px; height: 40px;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .rs-busca.foco {
+    .rv-busca.foco {
       border-color: #1a6f8a;
       box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14);
     }
-    .rs-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
-    .rs-busca-input {
+    .rv-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
+    .rv-busca-input {
       flex: 1; border: none; outline: none; background: transparent;
       font-size: 0.9rem; color: #33424c; font-family: inherit; height: 100%;
     }
-    .rs-busca-input::placeholder { color: #8fa3ab; }
-    .rs-busca-input::-webkit-search-cancel-button { display: none; }
-    .rs-limpar {
+    .rv-busca-input::placeholder { color: #8fa3ab; }
+    .rv-busca-input::-webkit-search-cancel-button { display: none; }
+    .rv-limpar {
       border: none; background: #eef2f5; border-radius: 50%;
       width: 22px; height: 22px; cursor: pointer; color: #5d6d7e;
       display: inline-flex; align-items: center; justify-content: center;
       padding: 0;
     }
-    .rs-limpar mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .rs-limpar:hover { background: #d7e0e6; }
+    .rv-limpar:hover { background: #d7e0e6; }
     .rs-range { width: 250px; }
-    .rs-limpa-range {
-      display: inline-flex; align-items: center; gap: 5px;
-      border: 1px solid #d7e0e6; background: #fff; border-radius: 6px;
-      padding: 7px 12px; font-size: 0.78rem; font-weight: 600; color: #5d6d7e;
-      cursor: pointer; font-family: inherit;
+
+    /* ---------- pills de status ---------- */
+    .pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .pf {
+      border: 1px solid #d7e0e6; background: #fff; border-radius: 999px;
+      padding: 6px 15px; font-family: inherit;
+      font-size: 0.78rem; font-weight: 600; color: #5d6d7e;
+      cursor: pointer; transition: all 0.15s;
     }
-    .rs-limpa-range mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .rs-limpa-range:hover { border-color: #1a6f8a; color: #1a6f8a; }
-    .rs-status {
-      margin-bottom: 12px; display: block;
-      --mdc-chip-elevated-container-color: #fff;
-      --mdc-chip-elevated-selected-container-color: #1a6f8a;
-      --mdc-chip-selected-label-text-color: #fff;
-      --mdc-chip-label-text-color: #40525d;
-      --mdc-chip-outline-color: #d7e0e6;
-    }
+    .pf:hover:not(.on) { border-color: #4b95ab; color: #1a6f8a; }
+    .pf.on { background: #054054; border-color: #054054; color: #fff; }
 
     /* nav do calendário */
-    .rs-nav { display: inline-flex; align-items: center; gap: 8px; }
-    .rs-nav-btn {
-      width: 34px; height: 34px; border-radius: 8px;
+    .rv-nav { display: inline-flex; align-items: center; gap: 8px; }
+    .rv-nav-btn {
+      width: 36px; height: 36px; border-radius: 10px;
       border: 1px solid #d7e0e6; background: #fff; cursor: pointer;
       color: #40525d; display: inline-flex; align-items: center; justify-content: center;
       transition: border-color 0.15s, color 0.15s;
     }
-    .rs-nav-btn:hover { border-color: #1a6f8a; color: #1a6f8a; }
-    .rs-nav-hoje {
+    .rv-nav-btn:hover { border-color: #1a6f8a; color: #1a6f8a; }
+    .rv-nav-hoje {
       display: inline-flex; align-items: center; gap: 5px;
-      border: 1px solid #d7e0e6; background: #fff; border-radius: 8px;
-      padding: 7px 14px; font-size: 0.82rem; font-weight: 600; color: #40525d;
+      border: 1px solid #d7e0e6; background: #fff; border-radius: 10px;
+      padding: 8px 14px; font-size: 0.82rem; font-weight: 600; color: #40525d;
       cursor: pointer; font-family: inherit;
     }
-    .rs-nav-hoje mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .rs-nav-hoje:hover { border-color: #1a6f8a; color: #1a6f8a; }
-    .rs-nav-periodo { font-size: 0.85rem; font-weight: 600; color: #054054; margin-left: 8px; }
+    .rv-nav-hoje:hover { border-color: #1a6f8a; color: #1a6f8a; }
+    .rv-nav-periodo { font-size: 0.85rem; font-weight: 600; color: #054054; margin-left: 8px; }
 
     /* ---------- tabela ---------- */
-    .rs-tabela-wrap { overflow-x: auto; border-radius: 8px; min-height: 42vh; }
-    .rs-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
-    .rs-tabela thead th {
+    .rv-tabela-wrap { overflow-x: auto; border-radius: 8px; min-height: 42vh; }
+    .rv-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    .rv-tabela thead th {
       position: sticky; top: 0; z-index: 1;
       background: #f4f8fa; color: #40525d;
-      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; padding: 14px 16px; text-align: left;
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; padding: 13px 16px; text-align: left;
       border-bottom: 2px solid #e3eaef; white-space: nowrap;
     }
-    .rs-tabela tbody td {
-      padding: 14px 16px; border-bottom: 1px solid #eef2f5;
+    .rv-tabela tbody td {
+      padding: 13px 16px; border-bottom: 1px solid #eef2f5;
       vertical-align: middle; color: #33424c;
     }
-    .rs-tabela tbody tr:hover { background: #f7fafb; }
-    .rs-tabela .tc { text-align: center; }
-    .rs-cell { display: flex; align-items: center; gap: 12px; min-width: 0; }
-    .rs-avatar {
+    .rv-tabela tbody tr { transition: background 0.12s; }
+    .rv-tabela tbody tr:hover { background: #f7fafb; }
+    .rv-tabela .tc { text-align: center; }
+    .rv-cell { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .rv-avatar {
       width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
       background: linear-gradient(135deg, #1a6f8a, #4b95ab); color: #fff;
       display: inline-flex; align-items: center; justify-content: center;
       font-size: 0.82rem; font-weight: 700; letter-spacing: 0.02em;
     }
-    .rs-cell-txt { display: flex; flex-direction: column; min-width: 0; }
-    .rs-cell-txt strong {
+    .rv-cell-txt { display: flex; flex-direction: column; min-width: 0; }
+    .rv-cell-txt strong {
       font-size: 0.93rem; color: #054054; font-weight: 700;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       max-width: 260px;
     }
-    .rs-cell-txt small { font-size: 0.75rem; color: #8a99a4; white-space: nowrap; }
-    .rs-dot { width: 14px; height: 14px; border-radius: 5px; flex-shrink: 0; }
-    .rs-acom-nome { max-width: 180px !important; }
-    .rs-periodo { display: flex; flex-direction: column; }
-    .rs-periodo strong {
+    .rv-cell-txt small { font-size: 0.75rem; color: #8a99a4; white-space: nowrap; }
+    .rv-dot { width: 14px; height: 14px; border-radius: 5px; flex-shrink: 0; }
+    .rv-acom-nome { max-width: 180px !important; }
+    .rv-periodo { display: flex; flex-direction: column; }
+    .rv-periodo strong {
       display: inline-flex; align-items: center; gap: 4px;
       font-size: 0.9rem; color: #33424c; font-weight: 600; white-space: nowrap;
     }
-    .rs-periodo strong mat-icon { font-size: 14px; width: 14px; height: 14px; color: #8fa3ab; }
-    .rs-periodo small { font-size: 0.74rem; color: #8a99a4; }
-    .rs-hj { color: #b5811f; }
-    .rs-valor { font-variant-numeric: tabular-nums; font-weight: 600; color: #054054; white-space: nowrap; }
-    .rs-total { display: block; font-size: 0.73rem; color: #8a99a4; white-space: nowrap; }
-    .rs-st {
+    .rv-periodo strong mat-icon { color: #8fa3ab; }
+    .rv-periodo small { font-size: 0.74rem; color: #8a99a4; }
+    .rv-hj { color: #b5811f; }
+    .rv-valor { font-variant-numeric: tabular-nums; font-weight: 600; color: #054054; white-space: nowrap; }
+    .rv-total { display: block; font-size: 0.73rem; color: #8a99a4; white-space: nowrap; }
+    .rv-st {
       display: inline-block; border-radius: 999px;
       padding: 5px 14px; font-size: 0.78rem; font-weight: 700; white-space: nowrap;
     }
-    .rs-tabela .badge-acao { padding: 0.5em 0.68em; }
-    .rs-tabela .badge-acao mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .rv-tabela .badge-acao { padding: 0.5em 0.68em; }
     .rs-ver { text-decoration: none; }
+    .rv-acoes { display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-ck {
+      display: inline-flex; align-items: center; gap: 5px;
+      min-height: 30px; padding: 0 12px; border: none; border-radius: 8px;
+      background: #146c2e; color: #fff; font-family: inherit;
+      font-size: 0.76rem; font-weight: 700; cursor: pointer;
+      transition: background 0.15s, transform 0.12s; white-space: nowrap;
+    }
+    .btn-ck:hover:not(:disabled) { background: #0f5624; transform: translateY(-1px); }
+    .btn-ck:disabled { opacity: 0.55; }
+    /* tamanhos de ícones compartilhados */
+    .seg-btn mat-icon, .rv-tabela .badge-acao mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .rv-limpar mat-icon, .rv-periodo strong mat-icon, .qt-btn mat-icon,
+    .gr-datas mat-icon, .btn-ck mat-icon { font-size: 14px; width: 14px; height: 14px; }
+    .gr-tit mat-icon, .dlg h3 mat-icon { font-size: 19px; width: 19px; height: 19px; }
 
     /* ---------- vazio / skeleton ---------- */
-    .rs-vazio {
-      text-align: center; padding: 40px 16px !important; color: #7d97a1;
+    .rv-vazio {
+      text-align: center; padding: 44px 16px !important; color: #7d97a1;
     }
-    .rs-vazio mat-icon {
+    .rv-vazio mat-icon {
       font-size: 40px; width: 40px; height: 40px;
       color: #c3d2d9; margin-bottom: 8px;
     }
-    .rs-vazio p { margin: 0 0 14px; font-size: 0.9rem; }
+    .rv-vazio p { margin: 0 0 14px; font-size: 0.9rem; }
+    .vazio {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      margin: 0; padding: 40px 16px; color: #8fa3ab; font-size: 0.86rem;
+      text-align: center;
+    }
+    .vazio mat-icon { font-size: 34px; width: 34px; height: 34px; color: #c3d2d9; }
     .skel-row td { border-bottom: 1px solid #eef2f5; }
     .skel {
       display: inline-block; border-radius: 6px;
@@ -820,6 +914,152 @@ const JANELA_DIAS = 14;
     .skel-chip { width: 78px; height: 24px; border-radius: 999px; }
     .skel-acoes { width: 70px; height: 26px; }
     .skel-bar { width: 60%; height: 24px; border-radius: 6px; margin: 10px 0 10px 60px; }
+    .skel-qt { height: 118px; }
+
+    /* ---------- mapa por andar ---------- */
+    .leg { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.72rem; color: #5d6d7e; margin-bottom: 6px; }
+    .leg span { display: inline-flex; align-items: center; gap: 4px; }
+    .dt { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+    .dt.lv { background: #2e9e5b; } .dt.oc { background: #4b95ab; }
+    .dt.pd { background: #d4a017; } .dt.bq { background: #555f66; }
+    .dt.lm { background: #7a5fb5; } .dt.mn { background: #e67e22; }
+    .andar { margin-top: 14px; }
+    .andar:first-of-type { margin-top: 4px; }
+    .andar-lbl {
+      display: flex; align-items: baseline; gap: 8px;
+      font-size: 0.72rem; font-weight: 700; color: #7d97a1;
+      text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px;
+    }
+    .andar-lbl em { font-style: normal; font-weight: 500; text-transform: none; letter-spacing: 0; }
+    .qt-grid {
+      display: grid; gap: 8px;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    }
+    .qt {
+      position: relative; padding: 10px 12px;
+      border: 1px solid #e3eaef; border-left: 5px solid;
+      border-radius: 10px; background: #fff;
+      display: flex; flex-direction: column; gap: 5px;
+      transition: box-shadow 0.14s, transform 0.14s;
+    }
+    .qt:hover { box-shadow: 0 5px 14px rgba(5, 64, 84, 0.12); transform: translateY(-1px); }
+    .qt-topo { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+    .qt-topo b { font-size: 1.05rem; color: #054054; line-height: 1.1; }
+    .qt-topo small {
+      font-size: 0.7rem; color: #7d97a1;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .qt-tipo {
+      font-size: 0.68rem; color: #8fa3ab;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .qt-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+    .tg {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-style: normal; font-size: 0.66rem; font-weight: 700;
+      border-radius: 8px; padding: 2px 8px;
+    }
+    .tg mat-icon { font-size: 12px; width: 12px; height: 12px; }
+    .tg-livre { background: #e4f6e8; color: #146c2e; }
+    .tg-ocup { background: #e4eef5; color: #1a6f8a; }
+    .tg-pend { background: #fdf3d7; color: #8a6200; }
+    .tg-bloq { background: #e4e4e4; color: #444; }
+    .tg-limp { background: #efe9fa; color: #5b3fa0; }
+    .tg-man { background: #fdeadb; color: #b2560a; }
+    .qt-livre { border-left-color: #2e9e5b; }
+    .qt-ocup { border-left-color: #4b95ab; background: #f0f7fa; }
+    .qt-pend { border-left-color: #d4a017; background: #fdf8ec; }
+    .qt-bloq { border-left-color: #555f66; background: #f2f4f5; opacity: 0.85; }
+    .qt-bloq b, .qt-bloq small { color: #8a99a4; }
+    .qt-acoes { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+    .qt-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: inherit; font-size: 0.72rem; font-weight: 600;
+      padding: 4px 10px; border: 1px solid #d7e0e6; border-radius: 7px;
+      background: #fff; color: #1a6f8a; cursor: pointer; text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .qt-btn:hover { border-color: #1a6f8a; }
+    .qt-btn.danger { color: #a33; }
+    .qt-btn.danger:hover { border-color: #a33; }
+
+    /* ---------- modal ---------- */
+    .ovl {
+      position: fixed; inset: 0; background: rgba(5, 30, 40, 0.45);
+      display: flex; align-items: center; justify-content: center; z-index: 50;
+      backdrop-filter: blur(2px);
+    }
+    .dlg {
+      background: #fff; border-radius: 14px; padding: 22px;
+      min-width: 340px; max-width: 92vw;
+      display: flex; flex-direction: column; gap: 12px;
+      box-shadow: 0 18px 50px rgba(5, 30, 40, 0.3);
+    }
+    .dlg h3 {
+      margin: 0; color: #054054; font-size: 1.05rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .dlg h3 mat-icon { color: #4b95ab; }
+    .dl { display: flex; flex-direction: column; gap: 4px; font-size: 0.82rem; color: #5d6d7e; font-weight: 600; }
+    .inp {
+      border: 1px solid #d7e0e6; border-radius: 8px; padding: 8px 10px;
+      font-size: 0.85rem; font-family: inherit; color: #33424c;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .inp:focus { outline: none; border-color: #1a6f8a; box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.12); }
+    .dlg-acoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+
+    /* ---------- grupos / eventos ---------- */
+    .gr-wrap { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+    .gr-novo {
+      flex: 0 0 330px; background: #f8fbfc;
+      border: 1px solid #e3eaef; border-radius: 12px; padding: 16px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .gr-tit {
+      margin: 0; font-size: 0.95rem; color: #054054; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .gr-tit mat-icon { color: #4b95ab; }
+    .gr-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .gr-sub { margin: 4px 0 0; font-size: 0.78rem; color: #5d6d7e; font-weight: 700; }
+    .gr-units { display: flex; flex-direction: column; gap: 4px; max-height: 190px; overflow-y: auto; }
+    .gr-unit {
+      font-size: 0.8rem; padding: 6px 9px;
+      border: 1px solid #e3eaef; border-radius: 8px; cursor: pointer;
+      display: flex; gap: 7px; align-items: center; background: #fff;
+      transition: border-color 0.14s, background 0.14s;
+    }
+    .gr-unit:hover { border-color: #4b95ab; }
+    .gr-unit.sel { background: #e8f4f8; border-color: #1a6f8a; }
+    .gr-blk { font-size: 0.8rem; color: #5d6d7e; display: flex; gap: 7px; align-items: center; }
+    .gr-cta { justify-content: center; }
+    .gr-lista { flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 10px; }
+    .gr-card {
+      background: #fff; border: 1px solid #e3eaef; border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .gr-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .gr-av {
+      width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+      background: #e4eef5; color: #1a6f8a;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .gr-head-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+    .gr-head-txt strong { color: #054054; font-size: 0.94rem; }
+    .gr-datas {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 0.76rem; color: #7d97a1;
+    }
+    .gr-contato {
+      margin: 8px 0 0; font-size: 0.78rem; color: #8a99a4;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .gr-contato mat-icon { font-size: 15px; width: 15px; height: 15px; }
+    .gr-tb { margin-top: 10px; font-size: 0.82rem; }
+    .gr-tb th { font-size: 0.72rem; color: #8a99a4; text-transform: uppercase; }
+    .muted { color: #8a99a4; }
+    .tc { text-align: center; }
 
     /* ---------- mapa de ocupação (tape chart) ---------- */
     .tape-wrap { overflow-x: auto; border-radius: 8px; }
@@ -903,25 +1143,27 @@ const JANELA_DIAS = 14;
         45deg, #9aa8b0, #9aa8b0 3px, #8a98a1 3px, #8a98a1 6px
       );
     }
-    .tape-vazio {
-      text-align: center; padding: 40px 16px; color: #7d97a1;
-    }
-    .tape-vazio mat-icon {
-      font-size: 40px; width: 40px; height: 40px; color: #c3d2d9;
-    }
 
+    @media (prefers-reduced-motion: reduce) {
+      .skel, .live-on i { animation: none; }
+      .qt, .btn-ck, .stat-btn, .rv-tabela tbody tr { transition: none; }
+    }
     @media (max-width: 700px) {
-      .rs-head { flex-direction: column; align-items: stretch; }
-      .rs-head-acoes { justify-content: stretch; }
-      .rs-head-acoes button { flex: 1; justify-content: center; }
-      .rs-busca { max-width: none; }
+      .titulo { font-size: 1.55rem; }
+      .rv-head { flex-direction: column; align-items: stretch; }
+      .rv-acoes { justify-content: flex-end; }
+      .rv-busca { max-width: none; }
       .rs-range { width: 100%; }
+      .fd-card { padding: 14px; }
+      .seg { width: 100%; }
+      .seg-btn { flex: 1; justify-content: center; }
+      .seg-btn mat-icon { display: none; }
     }
   `,
 })
 export class ReservasComponent implements OnInit {
   protected readonly JANELA_DIAS = JANELA_DIAS;
-  private readonly rt = inject(Realtime);
+  protected readonly rt = inject(Realtime);
   private readonly acomodacoesApi = inject(AcomodacoesApi);
   private readonly reservasApi = inject(ReservasApi);
   private readonly notify = inject(Notify);
@@ -935,8 +1177,10 @@ export class ReservasComponent implements OnInit {
   protected readonly total = signal(0);
   protected readonly pagina = signal(1);
   protected readonly carregando = signal(false);
+  protected readonly aguardando = signal<number | null>(null);
   protected readonly num = num;
   protected readonly skel = [1, 2, 3, 4, 5, 6];
+  protected readonly skelMapa = Array.from({ length: 12 }, (_, i) => i);
   protected readonly buscaFoco = signal(false);
 
   protected readonly fBusca = new FormControl('', { nonNullable: true });
@@ -946,9 +1190,24 @@ export class ReservasComponent implements OnInit {
     fim: [null as Date | null],
   });
 
+  protected readonly visoes: { id: Visao; rotulo: string; icone: string }[] = [
+    { id: 'lista', rotulo: 'Lista', icone: 'view_list' },
+    { id: 'cal', rotulo: 'Calendário', icone: 'calendar_view_week' },
+    { id: 'mapa', rotulo: 'Mapa', icone: 'map' },
+    { id: 'grupos', rotulo: 'Grupos', icone: 'groups' },
+  ];
+  protected readonly statusFiltro: { id: StatusReserva | ''; rotulo: string }[] = [
+    { id: '', rotulo: 'Todas' },
+    { id: 'p', rotulo: 'Pendente' },
+    { id: 'i', rotulo: 'Hospedado' },
+    { id: 'f', rotulo: 'Finalizado' },
+    { id: 'c', rotulo: 'Cancelada' },
+  ];
+
   // ---- mapa de ocupação -------------------------------------------------------
-  protected readonly visao = signal<'lista' | 'cal' | 'mapa' | 'grupos'>('lista');
+  protected readonly visao = signal<Visao>('lista');
   protected readonly mapa = signal<MapaQuarto[]>([]);
+  protected readonly carregandoMapa = signal(false);
   protected readonly bloqueios = signal<Bloqueio[]>([]);
   protected readonly grupos = signal<Grupo[]>([]);
   protected readonly rooming = signal<GrupoUnidadeView[]>([]);
@@ -957,13 +1216,17 @@ export class ReservasComponent implements OnInit {
   protected readonly gSel = signal<Set<number>>(new Set());
   protected gNome = '';
   protected gContato = '';
-  protected gIni = '';
-  protected gFim = '';
+  protected readonly gRange = this.fb.group({
+    inicio: [null as Date | null],
+    fim: [null as Date | null],
+  });
   protected gBloquear = true;
   protected readonly bloqueioAlvo = signal<MapaQuarto | null>(null);
   protected readonly salvandoBloq = signal(false);
-  protected bIni = '';
-  protected bFim = '';
+  protected readonly bRange = this.fb.group({
+    inicio: [null as Date | null],
+    fim: [null as Date | null],
+  });
   protected bMot = '';
   protected readonly andares = computed(() => {
     const por = new Map<number, MapaQuarto[]>();
@@ -1025,16 +1288,16 @@ export class ReservasComponent implements OnInit {
 
   /** Status na paleta da pousada (o STATUS_RESERVA global é do legado). */
   private readonly STATUS: Record<StatusReserva, { rotulo: string; bg: string; fg: string }> = {
-    p: { rotulo: 'Pendente', bg: '#b5811f', fg: '#3d2c10' },
-    i: { rotulo: 'Hospedado', bg: '#4b95ab', fg: '#fff' },
-    f: { rotulo: 'Finalizado', bg: '#1a6f8a', fg: '#fff' },
-    c: { rotulo: 'Cancelada', bg: '#7d97a1', fg: '#fff' },
+    p: { rotulo: 'Pendente', bg: '#f6efdd', fg: '#8a6200' },
+    i: { rotulo: 'Hospedado', bg: '#e4eef5', fg: '#1a6f8a' },
+    f: { rotulo: 'Finalizado', bg: '#eef2f5', fg: '#40525d' },
+    c: { rotulo: 'Cancelada', bg: '#f2f4f5', fg: '#7d97a1' },
   };
 
   constructor() {
     let ultimo = -1;
     effect(() => {
-      const v = this.rt.mudanca('reserva', 'consumo', 'item_consumido', 'adicional_consumo', 'acomodacao');
+      const v = this.rt.mudanca('reserva', 'consumo', 'item_consumido', 'adicional_consumo', 'acomodacao', 'bloqueio');
       if (ultimo < 0) {
         ultimo = v;
         return;
@@ -1065,6 +1328,15 @@ export class ReservasComponent implements OnInit {
       next: (p) => this.acomodacoes.set(p.items),
       error: () => undefined,
     });
+  }
+
+  /** Recarrega a visão ativa + KPIs (botão de refresh do cabeçalho). */
+  atualizar(): void {
+    this.carregar();
+    this.carregarKpis();
+    if (this.visao() === 'cal') this.carregarEventos();
+    if (this.visao() === 'mapa') this.carregarMapa();
+    if (this.visao() === 'grupos') this.carregarGrupos();
   }
 
   // ---- lista -----------------------------------------------------------------
@@ -1151,6 +1423,23 @@ export class ReservasComponent implements OnInit {
     this.carregarKpis();
   }
 
+  /** Check-in direto da lista — reservas que chegam hoje. */
+  checkin(r: ReservaResumo): void {
+    this.aguardando.set(r.id);
+    this.reservasApi.checkin(r.id, null, null).subscribe({
+      next: () => {
+        this.aguardando.set(null);
+        this.notify.ok(`Check-in de ${r.cliente_nome} realizado.`);
+        this.carregar();
+        this.carregarKpis();
+      },
+      error: (e) => {
+        this.aguardando.set(null);
+        this.notify.erro(e);
+      },
+    });
+  }
+
   async excluir(r: ReservaResumo): Promise<void> {
     const ok = await this.confirm.perguntar(
       `Excluir a reserva Nº${r.id} de ${r.cliente_nome}? A conta de consumo vinculada também será removida.`,
@@ -1171,15 +1460,22 @@ export class ReservasComponent implements OnInit {
 
   // ---------- mapa por andar + bloqueio ----------
   carregarMapa(): void {
-    this.reservasApi.mapaQuartos().subscribe({ next: (m) => this.mapa.set(m), error: () => undefined });
+    this.carregandoMapa.set(true);
+    this.reservasApi.mapaQuartos().subscribe({
+      next: (m) => {
+        this.mapa.set(m);
+        this.carregandoMapa.set(false);
+      },
+      error: () => this.carregandoMapa.set(false),
+    });
     this.reservasApi.bloqueios().subscribe({ next: (b) => this.bloqueios.set(b), error: () => undefined });
   }
 
   statusQuarto(a: MapaQuarto): string {
-    if (a.bloqueado) return 'sq-bloq';
-    if (a.status_hoje === 'i') return 'sq-ocup';
-    if (a.status_hoje === 'p') return 'sq-pend';
-    return 'sq-livre';
+    if (a.bloqueado) return 'qt-bloq';
+    if (a.status_hoje === 'i') return 'qt-ocup';
+    if (a.status_hoje === 'p') return 'qt-pend';
+    return 'qt-livre';
   }
 
   bloqueioDe(idacomodacao: number): Bloqueio | undefined {
@@ -1210,7 +1506,8 @@ export class ReservasComponent implements OnInit {
   }
 
   criarGrupo(): void {
-    if (!this.gNome.trim() || !this.gIni || !this.gFim || this.gSel().size === 0) {
+    const { inicio, fim } = this.gRange.getRawValue();
+    if (!this.gNome.trim() || !inicio || !fim || this.gSel().size === 0) {
       this.notify.aviso('Nome, período e ao menos uma unidade são obrigatórios.');
       return;
     }
@@ -1218,8 +1515,8 @@ export class ReservasComponent implements OnInit {
     this.reservasApi.criarGrupo({
         nome: this.gNome.trim(),
         contato: this.gContato.trim() || null,
-        inicio: this.gIni,
-        fim: this.gFim,
+        inicio: this.isoLocal(inicio),
+        fim: this.isoLocal(fim),
         unidades: [...this.gSel()],
         bloquear: this.gBloquear,
       })
@@ -1229,6 +1526,7 @@ export class ReservasComponent implements OnInit {
           this.gNome = '';
           this.gContato = '';
           this.gSel.set(new Set());
+          this.gRange.reset({ inicio: null, fim: null }, { emitEvent: false });
           this.notify.ok('Grupo criado.');
           this.carregarGrupos();
         },
@@ -1267,17 +1565,17 @@ export class ReservasComponent implements OnInit {
   }
 
   abrirBloqueio(a: MapaQuarto): void {
-    this.bIni = '';
-    this.bFim = '';
+    this.bRange.reset({ inicio: null, fim: null }, { emitEvent: false });
     this.bMot = '';
     this.bloqueioAlvo.set(a);
   }
 
   confirmarBloqueio(): void {
     const a = this.bloqueioAlvo();
-    if (!a || !this.bIni || !this.bFim || this.bMot.trim().length < 3) return;
+    const { inicio, fim } = this.bRange.getRawValue();
+    if (!a || !inicio || !fim || this.bMot.trim().length < 3) return;
     this.salvandoBloq.set(true);
-    this.reservasApi.bloquear(a.id, this.bIni, this.bFim, this.bMot.trim()).subscribe({
+    this.reservasApi.bloquear(a.id, this.isoLocal(inicio), this.isoLocal(fim), this.bMot.trim()).subscribe({
       next: () => {
         this.salvandoBloq.set(false);
         this.bloqueioAlvo.set(null);
@@ -1304,9 +1602,12 @@ export class ReservasComponent implements OnInit {
 
   // ---- mapa de ocupação ---------------------------------------------------------
 
-  mudarVisao(v: 'lista' | 'cal'): void {
+  mudarVisao(v: Visao): void {
     this.visao.set(v);
+    // Cada visão carrega seus dados sob demanda na primeira abertura.
     if (v === 'cal' && this.eventos().length === 0) this.carregarEventos();
+    if (v === 'mapa' && this.mapa().length === 0) this.carregarMapa();
+    if (v === 'grupos' && this.grupos().length === 0) this.carregarGrupos();
   }
 
   nav(d: number): void {
@@ -1406,6 +1707,14 @@ export class ReservasComponent implements OnInit {
     return (a + b).toUpperCase();
   }
 
+  /** Cor do avatar derivada do nome — estável entre recargas. */
+  avatarCor(r: ReservaResumo): string {
+    const cores = ['#1a6f8a', '#4b95ab', '#146c2e', '#8a6200', '#5b3fa0', '#054054'];
+    let h = 0;
+    for (const ch of r.cliente_nome) h = (h * 31 + ch.charCodeAt(0)) % 997;
+    return cores[h % cores.length];
+  }
+
   primeiroNome(nome: string): string {
     return nome.trim().split(/\s+/)[0] ?? nome;
   }
@@ -1415,10 +1724,10 @@ export class ReservasComponent implements OnInit {
     this.tour.iniciar([
       {
         popover: {
-          title: 'Bem-vindo à tela de Reservas!',
+          title: 'Bem-vindo à Central de Reservas!',
           description:
-            'A recepção da pousada em versão profissional — igual aos sistemas ' +
-            'dos grandes hotéis. Avance com <b>Próximo</b> e feche no ✕ ou Esc.',
+            'A gestão de reservas da pousada em versão profissional — igual aos ' +
+            'sistemas dos grandes hotéis. Avance com <b>Próximo</b> e feche no ✕ ou Esc.',
         },
       },
       {
@@ -1435,10 +1744,11 @@ export class ReservasComponent implements OnInit {
       {
         element: '#tour-visao',
         popover: {
-          title: 'Duas visões',
+          title: 'Quatro visões',
           description:
             '<b>Lista</b> mostra a tabela detalhada · <b>Calendário</b> abre o ' +
-            'mapa de ocupação, aquele quadro de barras dos grandes hotéis.',
+            'mapa de ocupação · <b>Mapa</b> mostra os quartos por andar · ' +
+            '<b>Grupos</b> gerencia eventos e rooming lists.',
           side: 'bottom',
         },
       },
@@ -1489,7 +1799,8 @@ export class ReservasComponent implements OnInit {
           title: 'Lista de reservas',
           description:
             'Cada linha mostra hóspede, acomodação, período com <b>noites</b>, ' +
-            'diária e status — com selo "em curso" e "chega hoje".',
+            'diária e status — com selo "em curso" e "chega hoje". Reservas que ' +
+            'chegam hoje têm <b>check-in em um clique</b> direto na linha.',
           side: 'top',
         },
       },
@@ -1517,8 +1828,8 @@ export class ReservasComponent implements OnInit {
         popover: {
           title: 'Pronto!',
           description:
-            'Você já conhece a tela de Reservas. Para rever, clique em ' +
-            '<b>Tutorial</b> no topo a qualquer momento.',
+            'Você já conhece a Central de Reservas. Para rever, clique no ' +
+            'ícone de <b>tutorial</b> no topo a qualquer momento.',
         },
       },
     ]);

@@ -164,7 +164,7 @@ function rotuloComanda(c: ComandaView): string {
                        [class.ocupada]="comandaDoQuarto(r.quarto_numero) !== undefined">
                     <button type="button" class="at-main" (click)="clicarQuarto(r)"
                             [attr.aria-label]="'Quarto ' + r.quarto_numero">
-                      <mat-icon>bed_double</mat-icon>
+                      <mat-icon>king_bed</mat-icon>
                       <span class="at-id">
                         <strong>Quarto {{ r.quarto_numero }}</strong>
                         <small class="at-sub">{{ r.cliente_nome }}</small>

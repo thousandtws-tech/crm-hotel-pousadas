@@ -53,7 +53,7 @@ type FiltroPresenca = 'todas' | 'aguardando' | 'presentes';
           <div><span class="stat-l">Reservas na casa</span>
             <p><strong>{{ quadro().length }}</strong>
               <small>{{ quadro().length === 1 ? 'reserva' : 'reservas' }}</small></p></div>
-          <span class="stat-ico"><mat-icon>bed_double</mat-icon></span>
+          <span class="stat-ico"><mat-icon>king_bed</mat-icon></span>
         </div>
         <div class="stat">
           <div><span class="stat-l">Reservas presentes</span>
@@ -95,7 +95,7 @@ type FiltroPresenca = 'todas' | 'aguardando' | 'presentes';
         @if (carregando()) {
           <div class="q-vazio"><mat-icon>hourglass_top</mat-icon>Carregando…</div>
         } @else if (quadro().length === 0) {
-          <div class="q-vazio"><mat-icon>bed_double</mat-icon>
+          <div class="q-vazio"><mat-icon>king_bed</mat-icon>
             Nenhuma reserva em estadia em {{ diaFormatado() }}.</div>
         } @else {
           <div class="q-tab" role="table" aria-label="Presença por reserva">

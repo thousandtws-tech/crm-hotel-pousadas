@@ -38,7 +38,7 @@ function casaRota(url: string, rota: string): boolean {
 
 const NAV: NavItem[] = [
   { rota: '/dashboard', rotulo: 'Home', icone: 'grid_view' },
-  { rota: '/recepcao', rotulo: 'Recepção', icone: 'concierge' },
+  { rota: '/recepcao', rotulo: 'Recepção', icone: 'room_service' },
   { rota: '/reservas', rotulo: 'Reservas', icone: 'calendar_month' },
   { rota: '/operadoras', rotulo: 'Operadoras', icone: 'handshake' },
   { rota: '/contratos', rotulo: 'Contratos', icone: 'corporate_fare' },
@@ -88,7 +88,7 @@ const NAV: NavItem[] = [
       { rota: '/financeiro/pagamentos-online', rotulo: 'Pagamentos Online', icone: 'credit_card' },
       { rota: '/financeiro/contas', rotulo: 'Contas', icone: 'account_balance' },
       { rota: '/financeiro/fluxo-caixa', rotulo: 'Fluxo de Caixa', icone: 'swap_vert' },
-      { rota: '/financeiro/dre', rotulo: 'DRE', icone: 'monitoring' },
+      { rota: '/financeiro/dre', rotulo: 'DRE', icone: 'assessment' },
       { rota: '/financeiro/conciliacao', rotulo: 'Conciliação', icone: 'compare_arrows' },
       { rota: '/financeiro/split', rotulo: 'Split', icone: 'call_split' },
       { rota: '/financeiro/caixa', rotulo: 'Caixa', icone: 'point_of_sale' },

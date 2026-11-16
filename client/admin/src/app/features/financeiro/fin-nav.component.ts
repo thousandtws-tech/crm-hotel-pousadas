@@ -42,7 +42,7 @@ import { MatIconModule } from '@angular/material/icon';
 })
 export class FinNavComponent {
   readonly itens = [
-    { rota: '/financeiro', rotulo: 'Visão geral', icone: 'monitoring', exato: true },
+    { rota: '/financeiro', rotulo: 'Visão geral', icone: 'assessment', exato: true },
     { rota: '/financeiro/contas', rotulo: 'Contas', icone: 'receipt_long', exato: false },
     { rota: '/financeiro/fluxo-caixa', rotulo: 'Fluxo de caixa', icone: 'swap_vert', exato: false },
     { rota: '/financeiro/dre', rotulo: 'DRE', icone: 'assessment', exato: false },
