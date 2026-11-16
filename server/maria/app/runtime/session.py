@@ -33,9 +33,6 @@ from ..tools.helpers import rotulo_tool
 
 log = logging.getLogger("maria.session")
 
-# Reconhecimentos curtos ditos assim que uma ferramenta começa — o
-# usuário ouve resposta imediata em vez de silêncio (parece muito mais
-# rápido e humano). Variadas para não soar robótico.
 FILLERS = [
     "Deixa eu ver aqui…",
     "Um instante…",
@@ -56,7 +53,7 @@ class MariaSession:
         self.tts: ElevenTts | None = None
         self.lat = Latencia()
         self._turno = uuid.uuid4().hex
-        self._turnos = 0  # contador p/ o teto de uso da sessão
+        self._turnos = 0
         self._task: asyncio.Task | None = None
         self._lock = asyncio.Lock()
         self._lat_stt = -1.0
@@ -86,7 +83,6 @@ class MariaSession:
                 "nome": self.ator.nome,
                 "nivel": self.ator.nivel,
                 "voz": s.maria_voice_enabled and bool(s.elevenlabs_api_key),
-                # mic (STT) independe do TTS — fala→texto funciona sem ElevenLabs
                 "mic": bool(s.openai_api_key),
                 "vad": s.openai_server_vad,
             }
@@ -112,7 +108,6 @@ class MariaSession:
             await self.stt.close()
         await self.api.close()
 
-    # ---------------------------------------------------- mensagens ---
     async def on_audio(self, pcm: bytes) -> None:
         if self.stt:
             self.lat.mark("fala_ini")
@@ -135,14 +130,11 @@ class MariaSession:
                     texto = f"[tela: {tela}] {texto}"
                 await self._turno_llm(texto, origem="texto")
         elif t == "confirm":
-            # Confirmação explícita por botão da interface — executa a
-            # ação preparada e avisa o LLM para anunciar o resultado.
             await self._confirmar_ui(msg.get("idacao") or "")
         elif t == "saida" or t == "reset":
             await self._cancelar_turno()
             await self._estado("idle")
 
-    # -------------------------------------------------- STT callbacks --
     async def _stt_delta(self, delta: str) -> None:
         await self._send({"type": "transcript", "text": delta, "final": False})
 
@@ -171,7 +163,6 @@ class MariaSession:
                 }
             )
 
-    # -------------------------------------------------- turno do LLM --
     async def _turno_llm(self, texto: str, origem: str) -> None:
         async with self._lock:
             s = get_settings()
@@ -214,8 +205,6 @@ class MariaSession:
                 nonlocal falou_filler
                 await self._send({"type": "tool", "name": nome,
                                   "label": rotulo_tool(nome)})
-                # Reconhecimento falado na 1ª tool — elimina o silêncio
-                # enquanto o sistema consulta/ prepara ações.
                 s = get_settings()
                 if (not falou_filler and s.maria_filler_enabled
                         and self.tts):
@@ -253,7 +242,6 @@ class MariaSession:
             async def on_tts_done() -> None:
                 await self._estado("listening")
 
-            # voz habilitada? cria o canal ElevenLabs desta resposta
             s = get_settings()
             if s.maria_voice_enabled and s.elevenlabs_api_key and s.elevenlabs_voice_id:
                 self.tts = ElevenTts(on_audio=on_audio, on_done=on_tts_done)
@@ -271,7 +259,6 @@ class MariaSession:
                     texto, on_text, on_tool, on_tool_result,
                     turno=self._turno,
                 )
-                # última sentença → TTS; fecha o canal
                 if self.tts:
                     resto = buf.flush()
                     if resto:
@@ -308,7 +295,7 @@ class MariaSession:
     async def _confirmar_ui(self, idacao: str) -> None:
         """Botão de confirmação da interface — executa a ação e devolve
         o resultado ao LLM para anunciar verbalmente."""
-        pend = self.llm.tools.pendente(idacao)
+        pend = await self.llm.tools.pendente(idacao)
         resultado = await self.llm.tools.run("confirmar_acao", {"idacao": idacao})
         await self._send(
             {
@@ -318,7 +305,6 @@ class MariaSession:
                 "mensagem": resultado.get("mensagem"),
             }
         )
-        # injeta no contexto para o assistente anunciar o número real
         nota = (
             f"[sistema] Ação '{pend['acao'] if pend else idacao}' confirmada "
             f"pelo usuário na interface. Resultado real: {resultado}. "
@@ -333,7 +319,6 @@ class MariaSession:
             self.tts = None
         await self._send({"type": "audio.clear"})
 
-    # ------------------------------------------------------ saudação --
     def _saudacao(self) -> str:
         """Saudação personalizada: período do dia + primeiro nome."""
         s = get_settings()

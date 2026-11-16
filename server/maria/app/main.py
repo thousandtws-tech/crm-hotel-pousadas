@@ -78,6 +78,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Maria", lifespan=lifespan)
+
+# Tracing OTel — no-op quando OTEL_ENDPOINT está vazio.
+from .telemetry.tracing import init_tracing  # noqa: E402
+
+init_tracing(app)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().cors_origins,

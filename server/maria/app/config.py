@@ -118,6 +118,10 @@ class Settings(BaseSettings):
     maria_rag_dir: str = "knowledge"
     maria_rag_top_k: int = 4
     maria_rag_min_score: float = 0.25
+    # Busca híbrida: vetor (embedding) + lexical (BM25) fundidos por RRF.
+    # Com ela ligada, a base responde mesmo sem embeddings indexados
+    # (só lexical); desligada, volta ao cosseno puro.
+    maria_rag_hybrid: bool = True
     openai_embed_model: str = "text-embedding-3-small"
     # Fine-tuning — snapshot do modelo base para os jobs (finetune/).
     openai_ft_base_model: str = "gpt-4o-mini-2024-07-18"
@@ -137,6 +141,21 @@ class Settings(BaseSettings):
     # JSONs legados na primeira abertura).
     maria_storage: str = "json"
     maria_sqlite_file: str = "data/maria.db"
+    # Estado compartilhado entre réplicas (pendentes, cache de tools,
+    # histórico de conversa, rate limit, budget). Vazio = tudo em
+    # memória de processo — uma réplica só.
+    redis_url: str = ""
+    # TTL do histórico persistido por usuário (segundos). Reconexão
+    # dentro da janela retoma a conversa até em outra réplica.
+    maria_hist_ttl_secs: int = 4 * 3600
+    # Controle de custo por usuário — 0 = desligado. Janela deslizante
+    # de 1 min p/ turnos; budget soma input+output de tokens no dia.
+    maria_rate_turnos_min: int = 0
+    maria_budget_tokens_dia: int = 0
+    # Tracing OpenTelemetry (OTLP/HTTP): vazio = desligado.
+    # Ex.: http://tempo:4318 — Langfuse também aceita OTLP.
+    otel_endpoint: str = ""
+    otel_service_name: str = "maria-ia"
     # Backup do data/ para S3-compatível (AWS S3 ou MinIO — endpoint
     # preenchido = MinIO/self-hosted; vazio = AWS).
     maria_backup_enabled: bool = False

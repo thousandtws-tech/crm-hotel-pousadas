@@ -9,3 +9,9 @@ pydantic-settings>=2.3
 python-dotenv>=1.0
 tzdata>=2024.1
 boto3>=1.34
+# estado compartilhado (REDIS_URL) — pendentes, cache, histórico, cotas
+redis>=5.0
+# tracing OTel — import opcional: sem OTEL_ENDPOINT o código é no-op
+opentelemetry-sdk>=1.40
+opentelemetry-exporter-otlp-proto-http>=1.40
+opentelemetry-instrumentation-fastapi>=0.61b0

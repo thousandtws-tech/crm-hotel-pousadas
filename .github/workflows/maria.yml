@@ -23,3 +23,16 @@ jobs:
       - run: ruff check .
       - run: python -m compileall -q app tests evals finetune
       - run: python -m pytest tests -q
+      # Gate de regressão do agente — roda contra a OpenAI real quando
+      # o secret existe; judge pontua fidelidade/voz/utilidade. Sem a
+      # chave, o passo é pulado (testes offline acima continuam valendo).
+      - name: evals — gate de regressão
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY ausente — evals pulados"
+            exit 0
+          fi
+          python -m evals.run_evals --judge --gate \
+            --judge-model gpt-4o-mini --gate-min 0.9 --judge-min 3.5

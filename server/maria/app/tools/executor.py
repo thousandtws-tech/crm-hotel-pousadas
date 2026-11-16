@@ -14,6 +14,7 @@ from ..config import get_settings
 from ..infra import knowledge
 from ..infra.api_client import ApiError, PousadaApi
 from ..infra.auth import Ator
+from ..infra.state import SharedState
 from .constantes import (
     _ACOES_ADMIN,
     _ACOES_RESTRITAS,
@@ -39,18 +40,27 @@ class ToolExecutor(Preparadores):
     `pendentes` injetável: o modo MCP (stateless) compartilha um dict
     por usuário entre requests, para o fluxo preparar→confirmar funcionar
     fora da sessão WebSocket.
+
+    `state` + `escopo`: com Redis, pendentes e cache de leituras vivem
+    no estado compartilhado — a confirmação funciona em qualquer
+    réplica e o cache de um usuário reaproveita entre sessões.
+    `escopo` isola por usuário/canal (ex.: "7", "mcp:7").
     """
 
     def __init__(self, api: PousadaApi, ator: Ator,
                  embedder: "knowledge.Embedder | None" = None,
-                 pendentes: dict[str, dict[str, Any]] | None = None):
+                 pendentes: dict[str, dict[str, Any]] | None = None,
+                 state: SharedState | None = None,
+                 escopo: str | None = None):
         self.api = api
         self.ator = ator
         self._embedder = embedder  # injetável p/ testes offline
         self.tz = get_settings().tz
+        self._state = state
+        self._escopo = escopo or str(ator.idfuncionario)
         # Ações preparadas aguardando confirmação (idempotentes por id).
         self._pendentes = pendentes if pendentes is not None else {}
-        self._compartilhado = pendentes is not None
+        self._compartilhado = pendentes is not None or state is not None
         self._seq = 0
         # Cache de leituras desta sessão — (monotonic, resultado) por chave.
         self._cache: dict[str, tuple[float, dict[str, Any]]] = {}
@@ -70,7 +80,7 @@ class ToolExecutor(Preparadores):
             }
         try:
             if nome == "confirmar_acao":
-                self._invalidar_cache()
+                await self._invalidar_cache()
                 return await self._confirmar(args.get("idacao", ""))
 
             s = get_settings()
@@ -78,11 +88,10 @@ class ToolExecutor(Preparadores):
             chave = None
             if s.maria_tool_cache_enabled and leitura:
                 chave = _cache_key(nome, args)
-                hit = self._cache.get(chave)
-                if hit and time.monotonic() - hit[0] \
-                        < s.maria_tool_cache_ttl_secs:
-                    log.info("tool %s — cache hit da sessão", nome)
-                    return dict(hit[1])
+                hit = await self._cache_get(chave)
+                if hit is not None:
+                    log.info("tool %s — cache hit", nome)
+                    return dict(hit)
 
             resultado = await self._dispatch(nome, args)
             if isinstance(resultado, dict) and resultado.get("status") == "preparada":
@@ -92,38 +101,101 @@ class ToolExecutor(Preparadores):
                 else:
                     self._seq += 1
                     idacao = f"ac{self._seq}"
-                self._pendentes[idacao] = {
+                await self._pend_salvar(idacao, {
                     "acao": resultado["acao"],
                     "args": dict(args),
                     "exec": resultado.get("exec"),
                     "msg": resultado.get("msg"),
                     "criado_em": time.time(),
-                }
+                })
                 resultado["idacao"] = idacao
                 return resultado
             # leitura bem-sucedida cacheia; escrita invalida o cache todo
             if leitura:
                 if chave and not (isinstance(resultado, dict)
                                   and resultado.get("erro")):
-                    self._cache[chave] = (time.monotonic(), resultado)
+                    await self._cache_set(chave, resultado)
             else:
-                self._invalidar_cache()
+                await self._invalidar_cache()
             return resultado
         except ApiError as e:
             return {"erro": f"api {e.status}", "mensagem": e.detail}
         except Exception as e:  # falha interna — reporta sem stack ao modelo
             return {"erro": "interno", "mensagem": str(e)[:200]}
 
-    def pendente(self, idacao: str) -> dict[str, Any] | None:
-        return self._pendentes.get(idacao)
+    def usar_state(self, state: SharedState, escopo: str) -> None:
+        """Conecta o executor ao estado compartilhado — pendentes e
+        cache passam a viver fora do processo (Redis)."""
+        self._state = state
+        self._escopo = escopo
+        self._compartilhado = True
 
-    def _invalidar_cache(self) -> None:
-        if self._cache:
+    async def pendente(self, idacao: str) -> dict[str, Any] | None:
+        return await self._pend_get(idacao)
+
+    # --------------------------------------------- cache de leituras --
+    # Chaves no estado compartilhado: tc:{escopo}:{geracao}:{key} — a
+    # invalidação incrementa tgen:{escopo}, então escritas tornam todas
+    # as entradas antigas invisíveis de uma vez (sem scan/delete).
+
+    async def _cache_get(self, chave: str) -> dict[str, Any] | None:
+        s = get_settings()
+        if self._state is not None:
+            gen = await self._state.get(
+                f"tgen:{self._escopo}") or 0
+            return await self._state.get(
+                f"tc:{self._escopo}:{gen}:{chave}")
+        hit = self._cache.get(chave)
+        if hit and time.monotonic() - hit[0] < s.maria_tool_cache_ttl_secs:
+            return hit[1]
+        return None
+
+    async def _cache_set(self, chave: str,
+                         resultado: dict[str, Any]) -> None:
+        s = get_settings()
+        ttl = int(max(s.maria_tool_cache_ttl_secs, 1))
+        if self._state is not None:
+            gen = await self._state.get(f"tgen:{self._escopo}") or 0
+            await self._state.set(
+                f"tc:{self._escopo}:{gen}:{chave}", resultado, ttl)
+            return
+        self._cache[chave] = (time.monotonic(), resultado)
+
+    async def _invalidar_cache(self) -> None:
+        if self._state is not None:
+            await self._state.incr(f"tgen:{self._escopo}", 1, 3600)
+        elif self._cache:
             self._cache.clear()
 
+    # ------------------------------------------- pendentes de ação --
+
+    async def _pend_salvar(self, idacao: str,
+                           pend: dict[str, Any]) -> None:
+        if self._state is not None:
+            await self._state.set(
+                f"pend:{self._escopo}:{idacao}", pend, _PENDENTE_TTL_SECS)
+        else:
+            self._pendentes[idacao] = pend
+
+    async def _pend_get(self, idacao: str) -> dict[str, Any] | None:
+        if self._state is not None:
+            return await self._state.get(
+                f"pend:{self._escopo}:{idacao}")
+        return self._pendentes.get(idacao)
+
+    async def _pend_pop(self, idacao: str) -> dict[str, Any] | None:
+        if self._state is not None:
+            chave = f"pend:{self._escopo}:{idacao}"
+            pend = await self._state.get(chave)
+            await self._state.delete(chave)
+            return pend
+        return self._pendentes.pop(idacao, None)
+
     def _podar_pendentes(self) -> None:
-        """Pendentes compartilhados expiram — sessões MCP não têm
-        teardown para limpá-los."""
+        """Modo dict: pendentes compartilhados expiram — sessões MCP
+        não têm teardown. Com estado remoto, o TTL da chave resolve."""
+        if self._state is not None:
+            return
         agora = time.time()
         velhos = [k for k, v in self._pendentes.items()
                   if agora - v.get("criado_em", agora) > _PENDENTE_TTL_SECS]
@@ -132,7 +204,7 @@ class ToolExecutor(Preparadores):
 
     async def _confirmar(self, idacao: str) -> dict[str, Any]:
         """Executa a ação preparada — único caminho de escrita real."""
-        pend = self._pendentes.pop(idacao, None)
+        pend = await self._pend_pop(idacao)
         if not pend:
             return {
                 "erro": "acao_expirada",

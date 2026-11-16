@@ -106,3 +106,47 @@ async def test_reindex_so_o_que_mudou(base, tmp_path):
     # segunda busca sem mudança → nenhum embed novo de doc
     await base.buscar("check-out de novo", contando)
     assert chamadas[-1] == 1  # só a pergunta
+
+
+# ------------------------------------------------------ busca híbrida --
+
+async def test_hibrida_lexical_sem_vetores(base):
+    """Sem embeddings (nenhuma chave/vetor), o lado BM25 responde
+    sozinho — a base não morre junto com a OpenAI."""
+    r = await base.buscar("que horas é o café da manhã?", embedder=None)
+    assert r["trechos"]
+    fontes = " ".join(t["fonte"] for t in r["trechos"])
+    assert "cafe" in fontes or "Horário" in fontes
+
+
+async def test_hibrida_lexical_captura_termo_exato(tmp_path):
+    """Termo exato do domínio (FNRH) ranqueia por BM25 mesmo quando
+    o vetor não favorece — é o buraco que o cosseno puro deixava."""
+    from app.infra.storage import JsonStore
+    d = tmp_path / "kb2"
+    d.mkdir()
+    (d / "a.md").write_text(
+        "# Docs\n\n## FNRH\n\nO registro FNRH é obrigatório para "
+        "todo hóspede nacional.\n", encoding="utf-8")
+    (d / "b.md").write_text(
+        "# Outros\n\n## Estacionamento\n\nVagas na lateral do "
+        "prédio, sem reserva.\n", encoding="utf-8")
+    b = BaseConhecimento(diretorio=d, store=JsonStore(tmp_path))
+    r = await b.buscar("o que é FNRH?", embedder=None)
+    assert r["trechos"]
+    assert "FNRH" in r["trechos"][0]["fonte"] \
+        or "FNRH" in r["trechos"][0]["texto"]
+
+
+async def test_hibrida_combina_vetor_e_lexico(base, tmp_path):
+    """Com embedder falso ativo, os dois sinais fundem por RRF —
+    pergunta semântica ainda acha o trecho certo."""
+    r = await base.buscar("posso levar meu cachorro?", fake_embedder)
+    assert r["trechos"]
+    fontes = " ".join(t["fonte"] for t in r["trechos"])
+    assert "Pets" in fontes or "politicas" in fontes
+
+
+async def test_sem_sinal_nenhum_devolve_vazio(base):
+    r = await base.buscar("zanzibar quantum flux", embedder=None)
+    assert r["trechos"] == []

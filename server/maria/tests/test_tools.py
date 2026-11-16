@@ -329,3 +329,57 @@ async def test_erro_nao_fica_cacheado(api, admin):
     r2 = await ex.run("get_checkins", {})
     assert not r2.get("erro")
     assert len(falho.calls) == 2
+
+
+# ------------------------------------------- estado compartilhado (Redis) --
+
+async def test_pendente_confirmavel_em_outro_executor(api, admin):
+    """Com state+escopo, uma ação preparada num executor confirma em
+    outro — o cenário de 2 réplicas / MCP + WS do mesmo usuário."""
+    from app.infra.state import MemState
+    st = MemState()
+    e1 = ToolExecutor(api, admin, state=st, escopo="user1")
+    e2 = ToolExecutor(api, admin, state=st, escopo="user1")
+    api.rotas = {("post", "/clientes"): {"id": 5}}
+    prep = await e1.run("preparar_cliente", {
+        "acao": "criar", "nome": "Ana", "cpf": "123",
+        "data_nascimento": "1990-01-01"})
+    assert prep["status"] == "preparada"
+    conf = await e2.run("confirmar_acao", {"idacao": prep["idacao"]})
+    assert conf.get("status") == "executada"
+
+
+async def test_cache_de_leitura_compartilhado(api, gerente):
+    """Cache no estado: leitura cacheada por um executor é hit para
+    outro executor do mesmo escopo — menos chamadas à API."""
+    from app.infra.state import MemState
+    st = MemState()
+    api.rotas = {
+        ("get", "/reservas"): {"items": [{"id": 1}], "total": 1}}
+    e1 = ToolExecutor(api, gerente, state=st, escopo="user2")
+    e2 = ToolExecutor(api, gerente, state=st, escopo="user2")
+    await e1.run("get_checkins", {})
+    antes = len(api.calls)
+    await e2.run("get_checkins", {})
+    assert len(api.calls) == antes  # hit — nenhuma chamada nova
+
+
+async def test_escrita_invalida_cache_remoto(api, gerente):
+    """Geração++ no escopo — entradas antigas ficam invisíveis."""
+    from app.infra.state import MemState
+    st = MemState()
+    api.rotas = {
+        ("get", "/reservas"): {"items": [{"id": 1}], "total": 1},
+        ("post", "/clientes"): {"id": 9},
+    }
+    ex = ToolExecutor(api, gerente, state=st, escopo="user3")
+    await ex.run("get_checkins", {})
+    antes = len(api.calls)
+    # confirmar uma escrita → geração incrementa → próxima leitura
+    # bate na API de novo (não usa cache velho)
+    prep = await ex.run("preparar_cliente", {
+        "acao": "criar", "nome": "B", "cpf": "1",
+        "data_nascimento": "1990-01-01"})
+    await ex.run("confirmar_acao", {"idacao": prep["idacao"]})
+    await ex.run("get_checkins", {})
+    assert len(api.calls) == antes + 2

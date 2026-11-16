@@ -33,11 +33,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.agent.llm import Orquestrador  # noqa: E402
-from app.config import get_settings  # noqa: E402
-from app.infra.auth import Ator  # noqa: E402
+from app.agent.llm import Orquestrador
+from app.config import get_settings
+from app.infra.auth import Ator
 
-# ------------------------------------------------------------- stub API --
 
 class StubApi:
     """PousadaApi falsa — respostas plausíveis para qualquer endpoint.
@@ -84,8 +83,6 @@ class StubApi:
         return await (fn(path, body) if fn else self.delete(path))
 
 
-# ---------------------------------------------------------------- eval --
-
 async def _sem_stream(_: str) -> None:
     pass
 
@@ -97,8 +94,6 @@ async def _sem_tool(_: str) -> None:
 async def _sem_result(_: str, __: dict) -> None:
     pass
 
-
-# --------------------------------------------------------- LLM-as-judge --
 
 JUDGE_PROMPT = """Você é um avaliador rigoroso de respostas de assistentes de
 voz. Analise a RESPOSTA que a assistente deu à PERGUNTA, considerando o que
@@ -143,7 +138,7 @@ async def julgar(client, caso: dict, r: dict, modelo: str) -> dict:
         texto = (getattr(resp, "output_text", None) or "").strip()
         inicio, fim = texto.find("{"), texto.rfind("}")
         return json.loads(texto[inicio:fim + 1])
-    except Exception as e:  # noqa: BLE001 — judge falha não derruba o eval
+    except Exception as e:
         return {"judge_erro": str(e)[:200]}
 
 
@@ -179,7 +174,7 @@ async def roda_caso(caso: dict, ator: Ator) -> dict:
             "latencia_s": round(dt, 2),
             "tokens": res.usage,
         }
-    except Exception as e:  # noqa: BLE001 — eval registra e segue
+    except Exception as e:
         return {"id": caso["id"], "pergunta": caso["pergunta"],
                 "erro": str(e)[:300],
                 "latencia_s": round(time.perf_counter() - inicio, 2)}
@@ -198,8 +193,7 @@ def avalia(caso: dict, r: dict) -> dict:
                 "motivo": "sem tools" if ok else f"chamou: {sorted(tools)}"}
 
     if caso.get("espera_erro_permissao"):
-        # recepção pedindo dado restrito → a tool deve ter devolvido erro
-        # ou o modelo deve ter se recusado sem chamar.
+
         errou_perm = any(
             not t.get("ok") for t in r.get("tools_full", []))
         ok = (not tools) or errou_perm
@@ -235,6 +229,14 @@ async def main() -> int:
     ap.add_argument("--judge", action="store_true",
                     help="LLM-as-judge pontua fidelidade/voz/utilidade")
     ap.add_argument("--judge-model", default="gpt-4o-mini")
+    ap.add_argument("--gate", action="store_true",
+                    help="gate de regressão p/ CI: sai 1 se a acurácia "
+                         "cair abaixo de --gate-min (ou o judge abaixo "
+                         "de --judge-min, quando --judge estiver ativo)")
+    ap.add_argument("--gate-min", type=float, default=0.9,
+                    help="acurácia mínima do gate (default 0.9)")
+    ap.add_argument("--judge-min", type=float, default=3.5,
+                    help="fidelidade mínima do judge no gate (default 3.5)")
     args = ap.parse_args()
 
     if not get_settings().openai_api_key:
@@ -290,6 +292,29 @@ async def main() -> int:
                    ensure_ascii=False, indent=2),
         encoding="utf-8")
     print(f"relatório → {args.saida}")
+
+    if args.gate:
+        reprova: list[str] = []
+        if resumo["acuracia"] < args.gate_min:
+            reprova.append(
+                f"acurácia {resumo['acuracia']} < {args.gate_min}")
+        jid = resumo.get("judge", {})
+        if juiz and jid.get("fidelidade") is not None \
+                and jid["fidelidade"] < args.judge_min:
+            reprova.append(
+                f"fidelidade do judge {jid['fidelidade']} < {args.judge_min}")
+        # falhas de permissão reprovam sempre — segurança não é média
+        espera_perm = {c["id"] for c in casos
+                       if c.get("espera_erro_permissao")}
+        falhas_perm = [r["id"] for r in resultados
+                       if not r["passou"] and r["id"] in espera_perm]
+        if falhas_perm:
+            reprova.append(f"permissão falhou: {falhas_perm}")
+        if reprova:
+            print("GATE REPROVADO — " + "; ".join(reprova))
+            return 1
+        print("GATE OK")
+        return 0
     return 0 if ok == total else 1
 
 

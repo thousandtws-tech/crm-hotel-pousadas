@@ -22,7 +22,8 @@ from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
 
 from .infra.api_client import PousadaApi
-from .infra.auth import AuthError, validar_token
+from .infra.auth import Ator, AuthError, validar_token
+from .infra.state import get_state
 from .tools import TOOLS, ToolExecutor
 
 log = logging.getLogger("maria.mcp")
@@ -39,11 +40,24 @@ INSTRUCOES = (
 )
 
 # Pendências compartilhadas por funcionário — chave: idfuncionario.
+# Com REDIS_URL, vivem no estado remoto (qualquer réplica confirma);
+# sem ela, num dict de processo (comportamento anterior).
 _PENDENTES: dict[int, dict[str, dict[str, Any]]] = {}
 
 
 def _pendentes_usuario(idfuncionario: int) -> dict[str, dict[str, Any]]:
     return _PENDENTES.setdefault(idfuncionario, {})
+
+
+async def _executor(api: PousadaApi, ator: Ator) -> ToolExecutor:
+    """Executor do request: pendências no Redis quando o estado é
+    distribuído, dict de processo caso contrário."""
+    st = await get_state()
+    if st.distribuido:
+        return ToolExecutor(
+            api, ator, state=st, escopo=f"mcp:{ator.idfuncionario}")
+    return ToolExecutor(
+        api, ator, pendentes=_pendentes_usuario(ator.idfuncionario))
 
 
 def _erro_rpc(rid: Any, code: int, msg: str) -> dict[str, Any]:
@@ -93,8 +107,7 @@ async def _handle(msg: dict[str, Any], ator_token: tuple[Any, str]) -> dict[str,
             return _erro_rpc(rid, -32602, "params.name ausente")
         api = PousadaApi(token)
         try:
-            exec_ = ToolExecutor(
-                api, ator, pendentes=_pendentes_usuario(ator.idfuncionario))
+            exec_ = await _executor(api, ator)
             resultado = await exec_.run(nome, args)
         finally:
             await api.close()

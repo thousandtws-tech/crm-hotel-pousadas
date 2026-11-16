@@ -79,6 +79,62 @@ modelo por caso: **fidelidade** (só afirma o que as tools devolveram?),
 **naturalidade para voz** (falável, sem markdown, concisa) e
 **utilidade**. Médias saem no resumo do relatório.
 
+`--gate` transforma eval em **gate de regressão**: exit code != 0 se a
+acurácia de seleção de tools cair abaixo de `--gate-min` (default 0.9)
+ou se a média de fidelidade do judge ficar abaixo de `--judge-min`
+(default 3.5/5 — exige `--judge`). O workflow `maria.yml` roda o gate
+quando o secret `OPENAI_API_KEY` existe no repo — sem ele, o passo é
+pulado e os testes offline continuam valendo.
+
+## Produção
+
+### Estado distribuído (Redis)
+
+Sem `REDIS_URL`, todo o estado vivo fica na memória do processo — ok
+para uma réplica. Com 2+ réplicas atrás de um LB, configure `REDIS_URL`
+(`redis://…`, `rediss://` para TLS): pendentes de confirmação, cache de
+leituras, histórico de conversa e cotas passam a ser compartilhados —
+qualquer réplica confirma uma ação preparada em outra, e a reconexão
+do usuário retoma a conversa independente do pod que atender.
+
+O backend é escolhido em runtime (`app/infra/state.py`): Redis quando
+a URL está setada, memória caso contrário — testes e dev continuam
+sem depender de infra externa. Chaves com prefixo `maria:` e TTLs
+curtos (pendentes 15min, histórico `MARIA_HIST_TTL_SECS`, cotas por
+janela).
+
+### Cotas de custo
+
+`MARIA_RATE_TURNOS_MIN` (turnos/usuário/minuto) e
+`MARIA_BUDGET_TOKENS_DIA` (tokens LLM/usuário/dia). `0` = desligado.
+Estourou → resposta falável explicando o limite, sem chamar o modelo —
+custo zero de proteção. Com Redis, as cotas valem no cluster inteiro.
+
+### Tracing (OpenTelemetry)
+
+`OTEL_ENDPOINT` ativa export OTLP/HTTP (Tempo, Jaeger, Datadog,
+Langfuse via gateway OTLP). Spans por turno: `maria.turno` (raiz) →
+`maria.llm` (modelo, provedor, tokens, TTFT) → `maria.tool` (nome,
+latência, sucesso). Desligado = custo zero, nenhum objeto criado.
+
+### Busca híbrida na base de conhecimento
+
+`MARIA_RAG_HYBRID` (default on) funde ranking vetorial + BM25 lexical
+via Reciprocal Rank Fusion — cobre os pontos cegos dos dois mundos:
+termos exatos (códigos, nomes próprios) que embedding dilui, e
+sinônimos que lexical não vê. Sem embeddings indexados (cold start ou
+falha na API), o lado lexical responde sozinho em vez de devolver vazio.
+
+### Defesa ativa de injeção
+
+`app/infra/guardrails.py` — saída de toda tool passa por sanitização
+antes de entrar no contexto: padrões de prompt-injection
+("ignore instruções anteriores", tags de sistema, tentativa de se
+passar por developer) são neutralizados para texto inerte. Um
+**canário** único por turno é embutido no prompt; se a resposta final
+repetir o canário, ela é substituída por uma fala segura — sinal de
+que dados de tool vazaram para a saída.
+
 ## Rodando
 
 ```bash

@@ -70,11 +70,15 @@ class FakeApi:
 @pytest.fixture(autouse=True)
 def _breakers_limpos():
     """Circuit breakers são registry process-global — sem reset, falhas
-    de um teste abrem o circuito para os seguintes."""
+    de um teste abrem o circuito para os seguintes. Mesmo para o
+    estado compartilhado (chaves de rate/budget/pendentes)."""
     from app.infra.resilience import _breakers
+    from app.infra.state import _reset_state
     _breakers.clear()
+    _reset_state()
     yield
     _breakers.clear()
+    _reset_state()
 
 
 @pytest.fixture
