@@ -1,7 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Meta } from '@angular/platform-browser';
-import { RouterLink } from '@angular/router';
 import { HOTEL_CONFIG } from '../../core/config/hotel-config';
 import { NewsletterService } from '../../core/services/newsletter.service';
 import { SeoService } from '../../core/services/seo.service';
@@ -9,7 +8,7 @@ import { SeoService } from '../../core/services/seo.service';
 /** Página "Em breve" — teaser standalone (sem header/footer) com captura de e-mail. */
 @Component({
   selector: 'app-coming-soon',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule],
   template: `
     <main class="palco">
       <img
@@ -55,8 +54,6 @@ import { SeoService } from '../../core/services/seo.service';
           <p class="msg ok" role="status">Inscrição confirmada — avisamos você por e-mail.</p>
         }
 
-        <div class="regra" aria-hidden="true"></div>
-        <a routerLink="/" class="voltar">Voltar ao site</a>
       </section>
     </main>
   `,
@@ -163,20 +160,6 @@ import { SeoService } from '../../core/services/seo.service';
     }
     .msg .err { color: #f2a9a0; }
     .msg.ok { color: #a8d5b0; }
-    .regra {
-      width: 3rem;
-      height: 1px;
-      background: rgba(238, 244, 246, 0.25);
-      margin: 2.4rem auto 1.4rem;
-    }
-    .voltar {
-      font-size: 0.85rem;
-      color: #a9c3cb;
-      text-decoration: none;
-      letter-spacing: 0.04em;
-      transition: color 0.2s;
-    }
-    .voltar:hover { color: #f7f5f0; }
     .sr-only {
       position: absolute;
       width: 1px;
