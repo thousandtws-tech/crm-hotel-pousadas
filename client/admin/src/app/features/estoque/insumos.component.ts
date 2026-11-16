@@ -29,6 +29,7 @@ interface LinhaNfe {
     <div class="pg">
       <header class="pg-head">
         <div>
+          <p class="eyebrow">Suprimentos</p>
           <h1>Insumos &amp; Compras</h1>
           <p class="sub">
             Fichas técnicas, conversões de unidade e importação de NF-e.
@@ -326,12 +327,15 @@ interface LinhaNfe {
     :host { display:block; }
     .pg { padding: 24px; max-width: 1200px; margin: 0 auto; }
     .pg-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:18px; }
+    .eyebrow { margin:0 0 4px; font-size:0.68rem; font-weight:700;
+      text-transform:uppercase; letter-spacing:0.09em; color:#8fa3ab; }
     h1 { font-size:22px; margin:0; }
     .sub { margin:4px 0 0; color:var(--txt-2,#5d6d7e); font-size:13px; }
     .head-actions { display:flex; gap:8px; }
     .btn { display:inline-flex; align-items:center; gap:6px; border:none; border-radius:10px;
            padding:10px 16px; font-size:14px; font-weight:600; cursor:pointer; text-decoration:none; }
-    .btn.primary { background:#1a6f8a; color:#fff; }
+    .btn.primary { background:#054054; color:#fff; }
+    .btn.primary:hover:not(:disabled) { background:#042f3d; }
     .btn.primary:disabled { opacity:.55; cursor:default; }
     .btn.ghost { background:#eef2f5; color:#29414e; }
     .ic-btn { background:none; border:none; cursor:pointer; color:#8a97a5; padding:6px; border-radius:8px; }
@@ -346,10 +350,10 @@ interface LinhaNfe {
     .linha { display:flex; justify-content:space-between; align-items:center; gap:8px; text-align:left;
              border:none; background:none; padding:9px 10px; border-radius:8px; cursor:pointer; font-size:13px; }
     .linha:hover { background:#f2f6f9; }
-    .linha.sel { background:#e3f0f5; font-weight:600; }
+    .linha.sel { background:#eef4f6; font-weight:600; }
     .l-nome { display:flex; align-items:center; gap:6px; min-width:0; }
     .tag { font-size:10px; font-style:normal; padding:1px 7px; border-radius:99px; }
-    .tag.insumo { background:#eef0ff; color:#5359c9; }
+    .tag.insumo { background:#eef4f6; color:#5d6d7e; }
     .tag.baixo { background:#fdecea; color:#c0392b; }
     .l-qtd { color:#5d6d7e; font-variant-numeric:tabular-nums; white-space:nowrap; }
     .dica { font-size:12px; color:#5d6d7e; margin:0 0 10px; }
@@ -371,13 +375,13 @@ interface LinhaNfe {
     .alerta.zerado { border-color:#f2b8b0; background:#fdf3f2; }
     .alerta-nome { font-weight:600; }
     .alerta-qtd { color:#9a6a00; font-variant-numeric:tabular-nums; }
-    .overlay { position:fixed; inset:0; background:rgba(15,25,35,.45); display:flex; align-items:center; justify-content:center; z-index:100; padding:16px; }
+    .overlay { position:fixed; inset:0; background:rgba(15,25,35,.45); display:flex; align-items:center; justify-content:center; z-index:310; padding:16px; }
     .modal { background:#fff; border-radius:16px; width:min(760px,100%); max-height:90vh; overflow:auto; padding:20px; }
     .modal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
     .modal-head h2 { font-size:17px; margin:0; }
     .upload-box { display:flex; align-items:center; justify-content:center; gap:10px; border:2px dashed #b9c6d0;
-                  border-radius:12px; padding:32px; cursor:pointer; color:#1a6f8a; font-weight:600; }
-    .upload-box:hover { background:#f2f8fb; }
+                  border-radius:12px; padding:32px; cursor:pointer; color:#054054; font-weight:600; }
+    .upload-box:hover { background:#f4f8fa; }
     .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
     .nfe-resumo { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin-bottom:14px; }
     .nfe-resumo div { display:flex; flex-direction:column; gap:2px; font-size:13px; }

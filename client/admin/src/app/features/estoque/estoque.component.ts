@@ -36,15 +36,18 @@ import { TourGuiado } from '@core/services/tour.service';
     <div class="page">
       <div class="est-head">
         <div class="est-titulo-grupo">
-          <h2 class="est-titulo">Estoque</h2>
-          <span class="est-contador" title="Total de itens cadastrados">
-            {{ itens().length }} {{ itens().length === 1 ? 'item' : 'itens' }}
-          </span>
-          @if (semEstoque() > 0) {
-            <span class="est-alerta" title="Itens ativos sem saldo em estoque">
-              {{ semEstoque() }} sem estoque
+          <p class="eyebrow">Suprimentos</p>
+          <div class="est-titulo-linha">
+            <h2 class="est-titulo">Estoque</h2>
+            <span class="est-contador" title="Total de itens cadastrados">
+              {{ itens().length }} {{ itens().length === 1 ? 'item' : 'itens' }}
             </span>
-          }
+            @if (semEstoque() > 0) {
+              <span class="est-alerta" title="Itens ativos sem saldo em estoque">
+                {{ semEstoque() }} sem estoque
+              </span>
+            }
+          </div>
         </div>
         <div class="est-head-acoes">
           <button class="btn-tour" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
@@ -64,7 +67,7 @@ import { TourGuiado } from '@core/services/tour.service';
 
       <div class="est-info">
         <div class="est-info-card">
-          <span class="est-info-icone inf-teal"><mat-icon>inventory_2</mat-icon></span>
+          <span class="est-info-icone"><mat-icon>inventory_2</mat-icon></span>
           <div class="est-info-txt">
             <strong>Entradas e saídas</strong>
             <p>
@@ -74,7 +77,7 @@ import { TourGuiado } from '@core/services/tour.service';
           </div>
         </div>
         <div class="est-info-card">
-          <span class="est-info-icone inf-gold"><mat-icon>history</mat-icon></span>
+          <span class="est-info-icone"><mat-icon>history</mat-icon></span>
           <div class="est-info-txt">
             <strong>Movimentações registradas</strong>
             <p>
@@ -84,7 +87,7 @@ import { TourGuiado } from '@core/services/tour.service';
           </div>
         </div>
         <div class="est-info-card">
-          <span class="est-info-icone inf-navy"><mat-icon>print</mat-icon></span>
+          <span class="est-info-icone"><mat-icon>print</mat-icon></span>
           <div class="est-info-txt">
             <strong>Impressora por categoria</strong>
             <p>
@@ -193,9 +196,8 @@ import { TourGuiado } from '@core/services/tour.service';
                           <td class="tc">
                             <button
                               type="button"
-                              class="status-chip badge-toggle"
-                              [class.bg-blue]="i.ativo"
-                              [class.bg-gray]="!i.ativo"
+                              class="st-chip"
+                              [class.off]="!i.ativo"
                               [title]="i.ativo ? 'Clique para desativar' : 'Clique para ativar'"
                               (click)="statusItem(i, !i.ativo)"
                             >
@@ -205,7 +207,7 @@ import { TourGuiado } from '@core/services/tour.service';
                           <td class="tc est-acoes">
                             <button
                               type="button"
-                              class="badge-acao bg-teal"
+                              class="acao-btn"
                               title="Imprimir etiqueta"
                               aria-label="Imprimir etiqueta"
                               (click)="imprimirEtiqueta(i)"
@@ -214,7 +216,7 @@ import { TourGuiado } from '@core/services/tour.service';
                             </button>
                             <button
                               type="button"
-                              class="badge-acao bg-yellow"
+                              class="acao-btn"
                               title="Editar"
                               aria-label="Editar item"
                               (click)="abrirItem(i)"
@@ -223,7 +225,7 @@ import { TourGuiado } from '@core/services/tour.service';
                             </button>
                             <button
                               type="button"
-                              class="badge-acao bg-dark-blue"
+                              class="acao-btn perigo"
                               title="Excluir"
                               aria-label="Excluir item"
                               (click)="excluirItem(i)"
@@ -325,7 +327,7 @@ import { TourGuiado } from '@core/services/tour.service';
                     }
                   </div>
                   <button
-                    class="btn-green mov-btn"
+                    class="btn-dark-blue mov-btn"
                     type="submit"
                     [disabled]="entradasPendentes().itens === 0"
                   >
@@ -448,9 +450,8 @@ import { TourGuiado } from '@core/services/tour.service';
                         <td><strong class="est-item-nome">{{ m.item_nome }}</strong></td>
                         <td class="tc">
                           <span
-                            class="status-chip"
-                            [class.bg-blue]="m.tipo === 'entrada'"
-                            [class.bg-gray]="m.tipo === 'saida'"
+                            class="st-chip"
+                            [class.off]="m.tipo === 'saida'"
                           >
                             {{ m.tipo === 'entrada' ? '↙ Entrada' : '↗ Saída' }}
                           </span>
@@ -588,7 +589,7 @@ import { TourGuiado } from '@core/services/tour.service';
               <span class="drawer-req"><small class="req">*</small> Campos obrigatórios</span>
               <div class="drawer-foot-acoes">
                 <button class="btn-gray" type="button" (click)="fecharDrawer()">Cancelar</button>
-                <button class="btn-green" type="submit">
+                <button class="btn-dark-blue" type="submit">
                   <mat-icon>save</mat-icon> {{ editandoItem() ? 'Salvar alterações' : 'Cadastrar item' }}
                 </button>
               </div>
@@ -616,7 +617,7 @@ import { TourGuiado } from '@core/services/tour.service';
                 class="input-inn" type="text" [formControl]="novaCategoria"
                 placeholder="Nova categoria" aria-label="Nome da categoria"
               />
-              <button class="btn-green" type="submit" [disabled]="novaCategoria.invalid">Adicionar</button>
+              <button class="btn-dark-blue" type="submit" [disabled]="novaCategoria.invalid">Adicionar</button>
             </form>
             <table class="plain bordered">
               <thead>
@@ -643,8 +644,8 @@ import { TourGuiado } from '@core/services/tour.service';
                     </td>
                     <td class="tc">
                       <button
-                        type="button" class="status-chip badge-toggle"
-                        [class.bg-blue]="c.ativo" [class.bg-gray]="!c.ativo"
+                        type="button" class="st-chip"
+                        [class.off]="!c.ativo"
                         [title]="c.ativo ? 'Clique para desativar' : 'Clique para ativar'"
                         (click)="statusCategoria(c, !c.ativo)"
                       >
@@ -653,7 +654,7 @@ import { TourGuiado } from '@core/services/tour.service';
                     </td>
                     <td class="tc">
                       <button
-                        type="button" class="badge-acao bg-dark-blue" title="Excluir"
+                        type="button" class="acao-btn perigo" title="Excluir"
                         aria-label="Excluir categoria" (click)="excluirCategoria(c)"
                       >
                         <mat-icon>delete</mat-icon>
@@ -676,33 +677,38 @@ import { TourGuiado } from '@core/services/tour.service';
       display: flex; align-items: center; justify-content: space-between;
       gap: 16px; flex-wrap: wrap; margin-bottom: 14px;
     }
-    .est-titulo-grupo { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .est-titulo-grupo { display: flex; flex-direction: column; gap: 4px; }
+    .eyebrow {
+      margin: 0; font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.09em; color: #8fa3ab;
+    }
+    .est-titulo-linha { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
     .est-titulo {
       margin: 0; font-size: 1.35rem; font-weight: 700;
       color: #054054; letter-spacing: -0.01em;
     }
     .est-contador {
-      font-size: 0.78rem; font-weight: 600; color: #1a6f8a;
-      background: rgba(26, 111, 138, 0.12);
+      font-size: 0.78rem; font-weight: 600; color: #054054;
+      background: #eef4f6;
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .est-alerta {
-      font-size: 0.78rem; font-weight: 600; color: #b5811f;
-      background: rgba(221, 165, 84, 0.16);
+      font-size: 0.78rem; font-weight: 600; color: #92670b;
+      background: #fdf3e2;
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .est-head-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
     .est-head-acoes button { display: inline-flex; align-items: center; gap: 6px; }
     .btn-tour {
       display: inline-flex; align-items: center; gap: 6px;
-      border: 1.5px solid #4b95ab; background: #fff;
-      color: #1a6f8a; border-radius: 4px;
+      border: 1px solid #d7e0e6; background: #fff;
+      color: #5d6d7e; border-radius: 4px;
       padding: 0 14px; min-height: 34px; cursor: pointer;
       font-size: 0.85rem; font-weight: 600;
-      transition: background .15s ease, color .15s ease;
+      transition: border-color .15s ease, color .15s ease;
     }
     .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { background: #1a6f8a; color: #fff; border-color: #1a6f8a; }
+    .btn-tour:hover { border-color: #054054; color: #054054; }
 
     /* ---------- banners de informação ---------- */
     .est-info {
@@ -722,11 +728,9 @@ import { TourGuiado } from '@core/services/tour.service';
     .est-info-icone {
       width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
+      background: #eef4f6; color: #054054;
     }
     .est-info-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .inf-teal { background: rgba(26, 111, 138, 0.12); color: #1a6f8a; }
-    .inf-gold { background: rgba(221, 165, 84, 0.16); color: #b5811f; }
-    .inf-navy { background: rgba(5, 64, 84, 0.1); color: #054054; }
     .est-info-txt { min-width: 0; }
     .est-info-txt strong {
       display: block; font-size: 0.9rem; font-weight: 700;
@@ -752,8 +756,8 @@ import { TourGuiado } from '@core/services/tour.service';
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .est-busca.foco {
-      border-color: #1a6f8a;
-      box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14);
+      border-color: #054054;
+      box-shadow: 0 0 0 3px rgba(5, 64, 84, 0.1);
     }
     .est-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
     .est-busca-input {
@@ -789,8 +793,8 @@ import { TourGuiado } from '@core/services/tour.service';
       background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25);
       transition: transform 0.18s;
     }
-    .est-toggle.on { border-color: #1a6f8a; color: #054054; }
-    .est-toggle.on .est-trilho { background: #1a6f8a; }
+    .est-toggle.on { border-color: #054054; color: #054054; }
+    .est-toggle.on .est-trilho { background: #054054; }
     .est-toggle.on .est-bolinha { transform: translateX(16px); }
 
     /* ---------- tabelas ---------- */
@@ -810,7 +814,7 @@ import { TourGuiado } from '@core/services/tour.service';
     }
     .est-row { transition: background 0.12s; }
     .est-row:hover { background: #f4f8fa; }
-    .est-row.marcada { background: rgba(26, 111, 138, 0.06); }
+    .est-row.marcada { background: rgba(5, 64, 84, 0.05); }
     .est-row:last-child td { border-bottom: none; }
     .tc { text-align: center; }
     .tr { text-align: right; }
@@ -819,7 +823,7 @@ import { TourGuiado } from '@core/services/tour.service';
     .est-cell { display: flex; align-items: center; gap: 12px; min-width: 200px; }
     .est-item-icone {
       width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
-      background: rgba(26, 111, 138, 0.1); color: #1a6f8a;
+      background: #eef4f6; color: #054054;
       display: inline-flex; align-items: center; justify-content: center;
     }
     .est-item-icone mat-icon { font-size: 22px; width: 22px; height: 22px; }
@@ -828,19 +832,19 @@ import { TourGuiado } from '@core/services/tour.service';
     .est-cell-txt small { color: #7d97a1; font-size: 0.8rem; }
     .est-item-nome { color: #054054; font-weight: 600; font-size: 0.92rem; }
     .est-tipo {
-      font-size: 0.78rem; font-weight: 600; color: #1a6f8a;
-      background: rgba(26, 111, 138, 0.1);
+      font-size: 0.78rem; font-weight: 600; color: #5d6d7e;
+      background: #eef4f6;
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .est-qtd {
       font-variant-numeric: tabular-nums; font-weight: 700;
       color: #054054; font-size: 0.95rem;
     }
-    .est-qtd.zero { color: #b5811f; }
+    .est-qtd.zero { color: #92670b; }
     .est-tag-zero {
       display: inline-block; margin-left: 6px;
-      font-size: 0.7rem; font-weight: 600; color: #b5811f;
-      background: rgba(221, 165, 84, 0.16);
+      font-size: 0.7rem; font-weight: 600; color: #92670b;
+      background: #fdf3e2;
       border-radius: 999px; padding: 2px 8px;
     }
     .est-valor { font-variant-numeric: tabular-nums; font-weight: 600; color: #054054; }
@@ -848,8 +852,8 @@ import { TourGuiado } from '@core/services/tour.service';
       display: inline-block; min-width: 34px;
       font-variant-numeric: tabular-nums; font-weight: 700; color: #8fa3ab;
     }
-    .est-futuro.sobe { color: #1a6f8a; }
-    .est-futuro.desce { color: #b5811f; }
+    .est-futuro.sobe { color: #054054; }
+    .est-futuro.desce { color: #92670b; }
     .est-quando { color: #7d97a1; font-variant-numeric: tabular-nums; }
     .est-motivo {
       max-width: 260px; overflow: hidden; text-overflow: ellipsis;
@@ -869,7 +873,7 @@ import { TourGuiado } from '@core/services/tour.service';
       display: flex; align-items: center; gap: 7px;
       font-size: 0.85rem; color: #5d6d7e;
     }
-    .mov-resumo-txt mat-icon { font-size: 18px; width: 18px; height: 18px; color: #1a6f8a; }
+    .mov-resumo-txt mat-icon { font-size: 18px; width: 18px; height: 18px; color: #054054; }
     .mov-resumo-txt b { color: #054054; }
     .mov-btn {
       display: inline-flex; align-items: center; justify-content: center;
@@ -884,11 +888,30 @@ import { TourGuiado } from '@core/services/tour.service';
       background: #f4f8fa; border: 1px dashed #c3d4dc; border-radius: 10px;
       font-size: 0.84rem; color: #40525d;
     }
-    .aba-dica mat-icon { font-size: 18px; width: 18px; height: 18px; color: #1a6f8a; }
+    .aba-dica mat-icon { font-size: 18px; width: 18px; height: 18px; color: #054054; }
 
-    .est-tabela .badge-acao { padding: 0.5em 0.68em; }
-    .est-tabela .badge-acao mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .est-tabela .status-chip { padding: 6px 14px; font-size: 0.8rem; }
+    .est-tabela .acao-btn { margin: 0 2px; }
+    .acao-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px;
+      border: 1px solid #d7e0e6; border-radius: 7px;
+      background: #fff; color: #5d6d7e; cursor: pointer;
+      transition: border-color .15s, color .15s, background .15s;
+    }
+    .acao-btn mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .acao-btn:hover { border-color: #054054; color: #054054; }
+    .acao-btn.perigo:hover { border-color: #b3261e; color: #b3261e; background: #fdf3f2; }
+    .st-chip {
+      display: inline-flex; align-items: center;
+      border: 1px solid #d7e0e6; border-radius: 999px;
+      background: #eef4f6; color: #054054;
+      padding: 6px 14px; font-size: 0.8rem; font-weight: 600;
+      font-family: inherit;
+      transition: border-color .15s, background .15s;
+    }
+    button.st-chip { cursor: pointer; }
+    button.st-chip:hover { border-color: #054054; }
+    .st-chip.off { background: #f4f6f8; color: #7d97a1; }
 
     /* ---------- estado vazio ---------- */
     .est-vazio {
@@ -926,14 +949,15 @@ import { TourGuiado } from '@core/services/tour.service';
     }
 
     /* ---------- drawer lateral ---------- */
+    .overlay { z-index: 310; }
     .drawer-backdrop {
-      position: fixed; inset: 0; z-index: 200;
+      position: fixed; inset: 0; z-index: 320;
       background: rgba(5, 32, 43, 0.45);
       animation: fadeIn 0.18s ease-out;
     }
     @keyframes fadeIn { from { opacity: 0; } }
     .drawer {
-      position: fixed; top: 0; right: 0; bottom: 0; z-index: 201;
+      position: fixed; top: 0; right: 0; bottom: 0; z-index: 321;
       width: min(480px, 100vw);
       background: #f7fafb;
       box-shadow: -12px 0 40px rgba(3, 32, 43, 0.28);
@@ -970,7 +994,7 @@ import { TourGuiado } from '@core/services/tour.service';
     .dsec-tit {
       display: flex; align-items: center; gap: 7px;
       font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #1a6f8a; margin-bottom: 12px;
+      letter-spacing: 0.05em; color: #40525d; margin-bottom: 12px;
     }
     .dsec-tit mat-icon { font-size: 17px; width: 17px; height: 17px; }
     .dsec-dica { margin: 0; font-size: 0.76rem; color: #8a99a4; line-height: 1.5; }
@@ -1003,7 +1027,7 @@ import { TourGuiado } from '@core/services/tour.service';
     }
     .drawer-req { font-size: 0.76rem; color: #8a99a4; }
     .drawer-foot-acoes { display: flex; gap: 8px; }
-    .drawer-foot-acoes .btn-green,
+    .drawer-foot-acoes .btn-dark-blue,
     .drawer-foot-acoes .btn-gray {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 0.5rem 1rem;
@@ -1469,13 +1493,13 @@ export class EstoqueComponent implements OnInit {
           },
         },
         {
-          element: 'tr.est-row .badge-toggle',
+          element: 'tr.est-row .st-chip',
           skipMissingElement: true,
           popover: {
             title: 'Ativar / desativar',
             description:
-              'Clique no selo para mudar o status: <b>teal = Ativo</b>, ' +
-              '<b>cinza = Inativo</b>. Itens inativos somem das Entradas e Saídas.',
+              'Clique no selo para mudar o status entre <b>Ativo</b> e ' +
+              '<b>Inativo</b>. Itens inativos somem das Entradas e Saídas.',
             side: 'top',
           },
         },
@@ -1485,8 +1509,8 @@ export class EstoqueComponent implements OnInit {
           popover: {
             title: 'Ações do item',
             description:
-              '<b>Dourado</b> edita os dados · <b>navy</b> exclui o item junto ' +
-              'com o histórico dele — sempre com confirmação.',
+              '<b>Etiqueta</b> imprime a etiqueta · <b>lápis</b> edita os dados · ' +
+              '<b>lixeira</b> exclui o item — sempre com confirmação.',
             side: 'left',
           },
         },

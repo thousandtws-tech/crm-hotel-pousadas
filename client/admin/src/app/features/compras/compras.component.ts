@@ -42,6 +42,7 @@ interface LinhaPedido {
       <!-- ============ Cabeçalho ============ -->
       <header class="cab">
         <div>
+          <p class="eyebrow">Suprimentos</p>
           <h1>Compras</h1>
           <p class="sub">Pedidos de compra, fornecedores e recebimento integrado ao estoque e financeiro.</p>
         </div>
@@ -927,7 +928,9 @@ interface LinhaPedido {
 
     /* Cabeçalho */
     .cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; }
-    h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 34px; font-weight: 600; color: #054054; margin: 0; line-height: 1.1; }
+    .eyebrow { margin: 0 0 4px; font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.09em; color: #8fa3ab; }
+    h1 { font-size: 1.35rem; font-weight: 700; color: #054054; margin: 0; line-height: 1.1; letter-spacing: -0.01em; }
     .sub { color: #5d6d7e; margin: 4px 0 0; font-size: 13.5px; }
     .cab-acoes { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
@@ -938,13 +941,13 @@ interface LinhaPedido {
     .btn-sm { padding: 7px 13px; font-size: 12.5px; border-radius: 9px; }
     .w-full { width: 100%; }
     .btn-dark { background: #054054; border: 1px solid #054054; color: #fff; }
-    .btn-dark:hover:not(:disabled) { background: #1a6f8a; border-color: #1a6f8a; }
+    .btn-dark:hover:not(:disabled) { background: #042f3d; border-color: #042f3d; }
     .btn-out { background: #fff; border: 1px solid #d7e0e6; color: #054054; }
-    .btn-out:hover:not(:disabled), .btn-out.on { border-color: #1a6f8a; color: #1a6f8a; background: #f4f8fa; }
+    .btn-out:hover:not(:disabled), .btn-out.on { border-color: #054054; color: #054054; background: #f4f8fa; }
     .btn-dan { background: #fff; border: 1px solid #dc3545; color: #dc3545; }
     .btn-dan:hover:not(:disabled) { background: #fbeaea; }
     .btn-dark:disabled, .btn-out:disabled, .btn-dan:disabled { opacity: .48; cursor: not-allowed; }
-    .btn-link { border: 0; background: none; color: #1a6f8a; font: inherit; font-size: 13px; font-weight: 600;
+    .btn-link { border: 0; background: none; color: #054054; font: inherit; font-size: 13px; font-weight: 600;
       cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px; border-radius: 6px; }
     .btn-link:hover { background: #eef4f6; color: #054054; }
     .pill-cnt { background: #eef4f6; color: #054054; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
@@ -953,13 +956,13 @@ interface LinhaPedido {
     .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
     .kpi-card { display: flex; align-items: center; gap: 14px; background: #fff; border: 1px solid #e3eaef;
       border-radius: 14px; padding: 14px 16px; text-align: left; font: inherit; cursor: pointer; transition: all .15s ease; }
-    .kpi-card:hover { border-color: #4b95ab; transform: translateY(-1px); }
+    .kpi-card:hover { border-color: #054054; transform: translateY(-1px); }
     .kpi-card.ativo { border-color: #054054; box-shadow: 0 0 0 1px #054054; background: #f9fcfd; }
     .kpi-ic { width: 42px; height: 42px; border-radius: 11px; display: grid; place-items: center; flex-shrink: 0; }
-    .kpi-pend { background: #e8f2f6; color: #054054; }
-    .kpi-parc { background: #f7ead2; color: #b5811f; }
-    .kpi-rec { background: #d1fae5; color: #065f46; }
-    .kpi-forn { background: #eef2f5; color: #1a6f8a; }
+    .kpi-pend { background: #eef4f6; color: #054054; }
+    .kpi-parc { background: #fdf3e2; color: #92670b; }
+    .kpi-rec { background: #e3f3e6; color: #198754; }
+    .kpi-forn { background: #eef4f6; color: #054054; }
     .kpi-txt { display: flex; flex-direction: column; gap: 2px; }
     .kpi-val { font-size: 20px; font-weight: 800; color: #054054; line-height: 1.1; }
     .kpi-val small { font-size: 13px; font-weight: 600; color: #7d97a1; margin-left: 2px; }
@@ -967,7 +970,7 @@ interface LinhaPedido {
 
     /* Seção & Card */
     .sec { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-    .sec h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 25px; font-weight: 600; color: #054054; margin: 0; }
+    .sec h2 { font-size: 1.05rem; font-weight: 700; color: #054054; margin: 0; }
     .sec-cnt { color: #5d6d7e; font-size: 13px; font-weight: 600; }
     .card { background: #fff; border: 1px solid #e3eaef; border-radius: 16px; overflow: hidden; }
     .card-pad { padding: 18px 20px; }
@@ -981,7 +984,7 @@ interface LinhaPedido {
     .busca-limpar { position: absolute; right: 8px; border: 0; background: none; color: #7d97a1; cursor: pointer; display: grid; place-items: center; padding: 4px; }
     .lbl { font-size: 12.5px; font-weight: 600; color: #054054; }
     .inp { padding: 10px 13px; border: 1px solid #d7e0e6; border-radius: 10px; font: inherit; font-size: 13.5px; background: #fff; color: #33424c; }
-    .inp:focus { outline: 2px solid #1a6f8a; outline-offset: -1px; border-color: #1a6f8a; }
+    .inp:focus { outline: 2px solid rgba(5, 64, 84, 0.25); outline-offset: -1px; border-color: #054054; }
     .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
     .tab { border: 0; background: transparent; padding: 9px 15px; border-radius: 999px; font: inherit;
       font-size: 13px; font-weight: 600; color: #054054; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
@@ -993,26 +996,27 @@ interface LinhaPedido {
     /* Tabela */
     .tbl-wrap { overflow-x: auto; }
     .tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-    .tbl thead { background: #054054; }
-    .tbl th { text-align: left; padding: 12px 18px; color: #fff; font-size: 11px; font-weight: 700;
-      letter-spacing: .07em; text-transform: uppercase; white-space: nowrap; }
-    .tbl td { padding: 14px 18px; border-bottom: 1px solid #e3eaef; vertical-align: middle; }
+    .tbl thead { background: #f4f8fa; }
+    .tbl th { text-align: left; padding: 12px 18px; color: #40525d; font-size: 11px; font-weight: 700;
+      letter-spacing: .07em; text-transform: uppercase; white-space: nowrap;
+      border-bottom: 2px solid #e3eaef; }
+    .tbl td { padding: 14px 18px; border-bottom: 1px solid #eef2f5; vertical-align: middle; }
     .tbl tbody tr:last-child td { border-bottom: 0; }
     .row-click { cursor: pointer; transition: background .12s; }
     .row-click:hover td { background: #f8fbfc; }
     .tbl td.ok { color: #198754; font-weight: 700; }
-    .tbl td.pend-num { color: #b5811f; font-weight: 700; }
+    .tbl td.pend-num { color: #92670b; font-weight: 700; }
     .ta { text-align: right; }
 
     .ped { display: flex; align-items: center; gap: 13px; }
-    .ped-ic { width: 38px; height: 38px; border-radius: 10px; background: #f4f8fa; color: #1a6f8a;
+    .ped-ic { width: 38px; height: 38px; border-radius: 10px; background: #eef4f6; color: #054054;
       display: grid; place-items: center; flex-shrink: 0; }
     .ped-txt strong { color: #054054; font-size: 14.5px; display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .ped-txt small { display: block; color: #5d6d7e; margin-top: 2px; font-size: 12px; }
-    .maria { font-size: 10px; font-weight: 700; background: #ede9fe; color: #5b21b6; padding: 2px 7px;
+    .maria { font-size: 10px; font-weight: 700; background: #eef4f6; color: #5d6d7e; padding: 2px 7px;
       border-radius: 999px; text-transform: uppercase; }
     .fin-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600;
-      background: #eef4f6; color: #1a6f8a; padding: 1px 7px; border-radius: 999px; }
+      background: #eef4f6; color: #5d6d7e; padding: 1px 7px; border-radius: 999px; }
     .fin-tag mat-icon { font-size: 13px; width: 13px; height: 13px; }
 
     /* Barra de Progresso */
@@ -1020,8 +1024,8 @@ interface LinhaPedido {
     .prog-top { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #33424c; margin-bottom: 5px; gap: 8px; }
     .prev-dt { color: #7d97a1; font-weight: 500; }
     .prog-bar { height: 6px; background: #eef2f5; border-radius: 999px; overflow: hidden; }
-    .prog-fill { height: 100%; background: #1a6f8a; border-radius: 999px; transition: width .25s ease; }
-    .prog-fill.prog-parc { background: #b5811f; }
+    .prog-fill { height: 100%; background: #054054; border-radius: 999px; transition: width .25s ease; }
+    .prog-fill.prog-parc { background: #92670b; }
     .prog-fill.prog-ok { background: #198754; }
     .val-str { color: #054054; font-size: 14px; }
     .mut-inline { color: #8a99a4; font-size: 12.5px; }
@@ -1030,15 +1034,15 @@ interface LinhaPedido {
     .st { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 999px;
       font-size: 12.5px; font-weight: 600; white-space: nowrap; }
     .st mat-icon { font-size: 15px; width: 15px; height: 15px; }
-    .st_pendente { background: #054054; color: #fff; }
-    .st_parcial { background: #f7ead2; color: #b5811f; }
-    .st_recebido { background: #d1fae5; color: #065f46; }
-    .st_cancelado { background: #eef2f5; color: #5d6d7e; }
+    .st_pendente { background: #eef4f6; color: #054054; }
+    .st_parcial { background: #fdf3e2; color: #92670b; }
+    .st_recebido { background: #e3f3e6; color: #198754; }
+    .st_cancelado { background: #f4f6f8; color: #7d97a1; }
 
     .btn-ver { display: inline-flex; align-items: center; gap: 7px; padding: 8px 15px; border-radius: 10px;
       border: 1px solid #d7e0e6; background: #fff; color: #054054; font: inherit; font-weight: 600;
       font-size: 13px; cursor: pointer; }
-    .btn-ver:hover { border-color: #1a6f8a; color: #1a6f8a; background: #f4f8fa; }
+    .btn-ver:hover { border-color: #054054; color: #054054; background: #f4f8fa; }
     .btn-ver mat-icon { font-size: 17px; width: 17px; height: 17px; }
 
     .vazio { padding: 40px 20px; text-align: center; color: #5d6d7e; display: flex; flex-direction: column; align-items: center; gap: 8px; }
@@ -1052,7 +1056,7 @@ interface LinhaPedido {
     .pager { display: flex; align-items: center; gap: 12px; font-size: 13px; color: #5d6d7e; }
     .btn-pg { padding: 7px 14px; border-radius: 9px; border: 1px solid #e3eaef; background: #fff; color: #054054;
       font: inherit; font-weight: 600; cursor: pointer; }
-    .btn-pg:not(:disabled):hover { border-color: #1a6f8a; color: #1a6f8a; }
+    .btn-pg:not(:disabled):hover { border-color: #054054; color: #054054; }
     .btn-pg:disabled { opacity: .45; cursor: default; }
 
     /* Aba Fornecedores */
@@ -1065,16 +1069,17 @@ interface LinhaPedido {
     .forn-form-foot { margin-top: 4px; }
     .lead-pill { display: inline-flex; align-items: center; gap: 5px; background: #f4f8fa; color: #054054;
       padding: 4px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; }
-    .lead-pill mat-icon { font-size: 15px; width: 15px; height: 15px; color: #1a6f8a; }
+    .lead-pill mat-icon { font-size: 15px; width: 15px; height: 15px; color: #054054; }
     tr.inativo td { opacity: .48; }
     .ac { display: flex; gap: 4px; justify-content: flex-end; }
     .ic { border: 0; background: transparent; cursor: pointer; color: #5d6d7e; padding: 6px; border-radius: 8px;
       display: inline-grid; place-items: center; }
-    .ic:hover:not(:disabled) { color: #1a6f8a; background: #eef4f6; }
+    .ic:hover:not(:disabled) { color: #054054; background: #eef4f6; }
     .ic-del:hover:not(:disabled) { color: #dc3545; background: #fbeaea; }
     .ic:disabled { opacity: .35; cursor: default; }
 
     /* Modais (.overlay e .modal-inn vêm do styles.css global) */
+    .overlay { z-index: 310; }
     .modal-compra { max-width: 820px !important; width: 100%; border-radius: 16px !important; overflow: hidden; }
     .np-body { gap: 16px !important; max-height: calc(90vh - 64px); overflow-y: auto; padding: 18px 20px !important; }
     .np-sec { background: #f9fbfc; border: 1px solid #e3eaef; border-radius: 12px; padding: 14px 16px;
@@ -1095,8 +1100,8 @@ interface LinhaPedido {
     .fld { display: flex; flex-direction: column; gap: 5px; }
     .mt-6 { margin-top: 6px; }
     .hint { color: #5d6d7e; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
-    .ok-hint { color: #065f46; }
-    .warn-hint { color: #b5811f; }
+    .ok-hint { color: #198754; }
+    .warn-hint { color: #92670b; }
     .mini { font-size: 15px; width: 15px; height: 15px; }
 
     .chk-box { display: flex; align-items: flex-start; gap: 10px; background: #fff; border: 1px solid #d7e0e6;
@@ -1136,14 +1141,14 @@ interface LinhaPedido {
     .det-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #7d97a1; }
     .det-box strong { color: #054054; font-size: 13.5px; }
     .det-box small { color: #5d6d7e; font-size: 11.5px; }
-    .obs-banner { display: flex; align-items: center; gap: 8px; background: #f7ead2; color: #92670b;
+    .obs-banner { display: flex; align-items: center; gap: 8px; background: #fdf3e2; color: #92670b;
       padding: 9px 13px; border-radius: 10px; font-size: 13px; }
     .obs-banner mat-icon { font-size: 18px; width: 18px; height: 18px; }
     .det-tbl-wrap { border: 1px solid #e3eaef; border-radius: 12px; overflow: hidden; }
     .un-badge { margin-left: 6px; background: #eef2f5; color: #5d6d7e; padding: 1px 6px; border-radius: 6px; font-size: 11px; }
-    .rq { width: 88px; padding: 7px 9px; border: 1px solid #1a6f8a; border-radius: 8px; font: inherit; text-align: center; background: #fff; color: #054054; font-weight: 700; }
+    .rq { width: 88px; padding: 7px 9px; border: 1px solid #d7e0e6; border-radius: 8px; font: inherit; text-align: center; background: #fff; color: #054054; font-weight: 700; }
 
-    .rec-panel { background: #f0f7fa; border: 1px solid #d3e4ec; border-radius: 12px; padding: 14px;
+    .rec-panel { background: #f4f8fa; border: 1px solid #e3eaef; border-radius: 12px; padding: 14px;
       display: flex; flex-direction: column; gap: 12px; }
     .rec-panel-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
     .rec-panel-head strong { display: block; color: #054054; font-size: 14px; }
@@ -1155,7 +1160,7 @@ interface LinhaPedido {
       border-top: 1px solid #e3eaef; padding-top: 12px; }
     .det-acoes-dir { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    .aviso { display: flex; gap: 10px; align-items: center; background: #f7ead2; color: #b5811f;
+    .aviso { display: flex; gap: 10px; align-items: center; background: #fdf3e2; color: #92670b;
       border-radius: 10px; padding: 10px 13px; font-size: 13px; }
     .aviso-sm { margin-bottom: 10px; font-size: 12px; }
   `,
