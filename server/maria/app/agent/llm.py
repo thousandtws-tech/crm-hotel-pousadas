@@ -7,6 +7,7 @@ texto para síntese incremental.
 import asyncio
 import json
 import logging
+import uuid
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -64,6 +65,8 @@ class Orquestrador:
             timeout=s.openai_timeout_secs,
             max_retries=s.openai_max_retries,
         )
+        # cliente do provedor fallback (ex.: Cerebras) — criado sob demanda
+        self._fb: AsyncOpenAI | None = None
         self._historico: list[dict[str, Any]] = []
         self._resumo: str | None = None
         self._para_resumir: list[str] = []
@@ -71,6 +74,19 @@ class Orquestrador:
 
     def cancelar(self) -> None:
         self._cancelado = True
+
+    def _cliente_fallback(self) -> AsyncOpenAI:
+        """Cliente do provedor reserva (ex.: Cerebras) — criado só quando
+        o primeiro fallback é necessário."""
+        if self._fb is None:
+            s = get_settings()
+            self._fb = AsyncOpenAI(
+                api_key=s.cerebras_api_key,
+                base_url=s.cerebras_base_url,
+                timeout=s.openai_timeout_secs,
+                max_retries=s.openai_max_retries,
+            )
+        return self._fb
 
     async def _contexto(self, consulta: str) -> list[dict[str, Any]]:
         """Monta o `input` da Responses API: system + agora + memórias + histórico."""
@@ -202,53 +218,68 @@ class Orquestrador:
         if s.openai_llm_reasoning_effort.lower() not in ("", "none"):
             kwargs["reasoning"] = {"effort": s.openai_llm_reasoning_effort}
 
-        modelos = [s.openai_llm_model]
+        # Cadeia de fallback: OpenAI principal → modelo reserva OpenAI →
+        # provedor externo (Cerebras, Chat Completions). Cada entrada é
+        # (cliente, modelo, modo) — o contexto canônico fica em formato
+        # Responses e é traduzido para chat na hora da chamada.
+        modelos: list[tuple[Any, str, str]] = [
+            (self._client, s.openai_llm_model, "responses")]
         if s.openai_llm_fallback_model:
-            modelos.append(s.openai_llm_fallback_model)
+            modelos.append(
+                (self._client, s.openai_llm_fallback_model, "responses"))
+        if s.cerebras_api_key and s.cerebras_model:
+            modelos.append(
+                (self._cliente_fallback(), s.cerebras_model, "chat"))
 
         for _ in range(MAX_TOOL_ROUNDS):
             if self._cancelado:
                 break
 
-            # Modelo principal → fallback: a segunda tentativa só roda
-            # se nada foi emitido ainda — texto parcial já falado/streamed
-            # não pode ser repetido (duplicaria na voz e na tela). Calls
-            # coletadas num stream que falhou ainda não executaram —
-            # refazer o turno não tem efeito colateral.
             calls: list[dict[str, Any]] = []
             final = None
-            # texto emitido na(s) tentativa(s) desta rodada — sobrevive a
-            # exceções do stream (deltas já saíram p/ TTS/UI antes da queda)
             emissao = {"texto": ""}
-            br = breaker("openai-llm")
-            for mi, modelo in enumerate(modelos):
+            for mi, (cliente, modelo, modo) in enumerate(modelos):
                 if self._cancelado:
                     break
+                # breaker por provedor — uma queda da Cerebras não conta
+                # contra a OpenAI (e vice-versa)
+                br = breaker(
+                    "cerebras-llm" if modo == "chat" else "openai-llm")
                 try:
-                    # circuito aberto → falha na hora, sem esperar o timeout do SDK
                     with br.vigiar():
-                        stream = await self._client.responses.create(
-                            model=modelo,
-                            input=input_msgs,
-                            tools=TOOLS,
-                            stream=True,
-                            **kwargs,
-                        )
-                    calls, final, chamadas = await self._consumir(
-                        stream, on_text, chamadas, emissao)
+                        if modo == "chat":
+                            stream = await cliente.chat.completions.create(
+                                model=modelo,
+                                messages=_msgs_chat(input_msgs),
+                                tools=_TOOLS_CHAT,
+                                stream=True,
+                                stream_options={"include_usage": True},
+                            )
+                        else:
+                            stream = await cliente.responses.create(
+                                model=modelo,
+                                input=input_msgs,
+                                tools=TOOLS,
+                                stream=True,
+                                **kwargs,
+                            )
+                    if modo == "chat":
+                        calls, final, chamadas = await self._consumir_chat(
+                            stream, on_text, chamadas, emissao)
+                    else:
+                        calls, final, chamadas = await self._consumir(
+                            stream, on_text, chamadas, emissao)
                     if mi > 0:
                         log.info("%sresposta veio do modelo fallback %s",
                                  tag, modelo)
                     break
                 except (APIError, _FalhaStream) as exc:
-                    # falha do provedor no meio do stream conta no breaker;
-                    # exceções do callback on_text (TTS/UI) não são da OpenAI
                     br.falha(exc)
                     if emissao["texto"] or mi == len(modelos) - 1:
                         raise
                     log.warning(
                         "%smodelo %s falhou antes de emitir — fallback %s",
-                        tag, modelo, modelos[mi + 1])
+                        tag, modelo, modelos[mi + 1][1])
             saida_total += emissao["texto"]
 
             if final is not None and getattr(final, "usage", None):
@@ -258,7 +289,6 @@ class Orquestrador:
                 uso_total["output_tokens"] += int(
                     getattr(final.usage, "output_tokens", 0) or 0)
 
-            # teto de custo por turno — corta o loop se estourar
             if (uso_total["input_tokens"] + uso_total["output_tokens"]
                     > s.maria_limite_tokens_turno):
                 log.warning("%slimite de tokens do turno atingido", tag)
@@ -273,7 +303,6 @@ class Orquestrador:
                 )
 
             if not calls:
-                # resposta terminada
                 self._lembra(texto_usuario, saida_total)
                 return TurnoResult(
                     texto=saida_total,
@@ -282,7 +311,6 @@ class Orquestrador:
                     usage=uso_total,
                 )
 
-            # anexa a saída do modelo e executa as ferramentas
             if final is not None:
                 for out in final.output:
                     input_msgs.append(_item_para_dict(out))
@@ -314,7 +342,6 @@ class Orquestrador:
                 return {"call": c, "nome": nome, "args": args,
                         "resultado": resultado}
 
-            # avisa a UI na ordem emitida, executa em paralelo quando >1
             for c in calls:
                 if self._cancelado:
                     break
@@ -335,8 +362,6 @@ class Orquestrador:
                     {"name": f["nome"], "args": f["args"],
                      "ok": not (isinstance(f["resultado"], dict)
                                 and f["resultado"].get("erro")),
-                     # resultado alimenta o dataset de fine-tune
-                     # (transcripts trunca e redige)
                      "result": f["resultado"]}
                 )
                 input_msgs.append(
@@ -392,6 +417,126 @@ class Orquestrador:
                 det = getattr(getattr(ev, "response", None), "error", None) or ev
                 raise _FalhaStream(f"resposta LLM falhou: {det}")
         return calls, final, chamadas
+
+    async def _consumir_chat(
+        self,
+        stream: Any,
+        on_text: OnText,
+        chamadas: int,
+        emissao: dict[str, str],
+    ) -> tuple[list[dict[str, Any]], Any, int]:
+        """Consome um stream Chat Completions (provedor fallback).
+
+        tool_calls chegam fragmentados por `index` — acumula nome/args
+        por índice. Devolve um `final` sintético com output=[] e usage
+        normalizado para o shape da Responses API (contabilidade única).
+        """
+        por_idx: dict[int, dict[str, Any]] = {}
+        usage = None
+        async for ev in stream:
+            if self._cancelado:
+                break
+            esc = ev.choices[0] if getattr(ev, "choices", None) else None
+            if esc is not None:
+                d = getattr(esc, "delta", None)
+                if d is not None:
+                    if getattr(d, "content", None):
+                        emissao["texto"] += d.content
+                        await on_text(d.content)
+                    for tc in (getattr(d, "tool_calls", None) or []):
+                        idx = getattr(tc, "index", 0)
+                        c = por_idx.setdefault(
+                            idx, {"call_id": "", "name": "", "arguments": ""})
+                        if getattr(tc, "id", None):
+                            c["call_id"] = tc.id
+                        fn = getattr(tc, "function", None)
+                        if fn is not None:
+                            if getattr(fn, "name", None):
+                                c["name"] += fn.name
+                            if getattr(fn, "arguments", None):
+                                c["arguments"] += fn.arguments
+            if getattr(ev, "usage", None):
+                usage = ev.usage
+
+        calls = [por_idx[i] for i in sorted(por_idx)]
+        for c in calls:
+            if not c["call_id"]:
+                c["call_id"] = f"call_{uuid.uuid4().hex[:8]}"
+        chamadas += len(calls)
+        final = None
+        if usage is not None:
+            from types import SimpleNamespace
+            final = SimpleNamespace(
+                output=[],
+                usage=SimpleNamespace(
+                    input_tokens=getattr(usage, "prompt_tokens", 0) or 0,
+                    output_tokens=getattr(usage, "completion_tokens", 0) or 0,
+                ),
+            )
+        return calls, final, chamadas
+
+
+# ------------------------------------------- tradução Chat Completions --
+
+def _txt(content: Any) -> str:
+    """Conteúdo de mensagem → string: str direto, lista de blocos
+    (output_text/text) concatenada."""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return "".join(
+            str(c.get("text", "")) if isinstance(c, dict) else str(c)
+            for c in content)
+    return str(content or "")
+
+
+def _msgs_chat(msgs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Contexto canônico (formato Responses) → mensagens Chat Completions.
+
+    developer→system; function_call→assistant.tool_calls;
+    function_call_output→role tool.
+    """
+    out: list[dict[str, Any]] = []
+    for m in msgs:
+        if not isinstance(m, dict):
+            continue
+        t = m.get("type")
+        role = m.get("role")
+        if t == "function_call":
+            out.append({
+                "role": "assistant", "content": None,
+                "tool_calls": [{
+                    "id": m["call_id"], "type": "function",
+                    "function": {"name": m["name"],
+                                 "arguments": m["arguments"]},
+                }],
+            })
+        elif t == "function_call_output":
+            out.append({
+                "role": "tool", "tool_call_id": m["call_id"],
+                "content": str(m.get("output", "")),
+            })
+        elif role in ("developer", "system"):
+            out.append({"role": "system", "content": _txt(m.get("content"))})
+        elif role == "assistant":
+            out.append({"role": "assistant",
+                        "content": _txt(m.get("content"))})
+        else:
+            out.append({"role": "user", "content": _txt(m.get("content"))})
+    return out
+
+
+_TOOLS_CHAT = [
+    {
+        "type": "function",
+        "function": {
+            "name": t["name"],
+            "description": t.get("description", ""),
+            "parameters": t.get("parameters", {"type": "object"}),
+        },
+    }
+    for t in TOOLS
+]
 
 
 def _chars_historico(msgs: list[dict[str, Any]]) -> int:

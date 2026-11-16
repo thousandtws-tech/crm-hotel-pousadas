@@ -25,6 +25,15 @@ reconhecimento curto ("deixa eu ver aqui…") — sem silêncio percebido.
   Texto parcial nunca é reemitido — o retry só acontece com zero deltas
   enviados (calls coletadas num stream que caiu ainda não executaram,
   então refazer não tem efeito colateral).
+- **Fallback multi-provedor (Cerebras)**: último elo da cadeia quando
+  `CEREBRAS_API_KEY` + `CEREBRAS_MODEL` estão configurados. Endpoint
+  OpenAI-compatível via **Chat Completions** — o contexto canônico
+  (formato Responses) é traduzido na chamada (`developer`→`system`,
+  `function_call`→`tool_calls`, saída→`tool`), e `tool_calls`
+  fragmentadas por `index` são reagrupadas no consumo do stream.
+  Wafer-scale = latência de tokens muito baixa — bom para voz.
+  **Circuit breaker por provedor**: `openai-llm` e `cerebras-llm`
+  contam falhas separadamente — a queda de um não derruba o outro.
 - **Orçamento de contexto**: histórico limita por turnos
   (`MARIA_HISTORY_MAX_TURNS`) *e* por tamanho
   (`MARIA_HISTORY_MAX_CHARS`); cada saída de ferramenta devolvida ao

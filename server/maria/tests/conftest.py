@@ -67,6 +67,16 @@ class FakeApi:
             if metodo.lower() != "delete" else await self.delete(path)
 
 
+@pytest.fixture(autouse=True)
+def _breakers_limpos():
+    """Circuit breakers são registry process-global — sem reset, falhas
+    de um teste abrem o circuito para os seguintes."""
+    from app.infra.resilience import _breakers
+    _breakers.clear()
+    yield
+    _breakers.clear()
+
+
 @pytest.fixture
 def api() -> FakeApi:
     return FakeApi()

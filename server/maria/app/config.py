@@ -32,6 +32,13 @@ class Settings(BaseSettings):
     # antes do primeiro token emitido, o turno é refeito neste modelo
     # (idealmente menor/mais barato, ex.: gpt-5-mini). Vazio = sem fallback.
     openai_llm_fallback_model: str = ""
+    # Fallback multi-provedor — endpoint OpenAI-compatível via Chat
+    # Completions (a Responses API é exclusiva da OpenAI). Cerebras
+    # (wafer-scale) é ideal para voz: latência de tokens muito baixa.
+    # Ativado quando cerebras_api_key + cerebras_model estão preenchidos.
+    cerebras_api_key: str = ""
+    cerebras_base_url: str = "https://api.cerebras.ai/v1"
+    cerebras_model: str = "llama-3.3-70b"
     # Modelo da sessão realtime (vai na query ?model=) — versão GA.
     openai_realtime_model: str = "gpt-realtime-mini"
     # Modelo de transcrição (vai em audio.input.transcription.model)

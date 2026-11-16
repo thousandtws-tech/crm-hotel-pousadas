@@ -245,3 +245,115 @@ def test_summary_desligada_descarta_sem_chamar(api, admin):
     finally:
         s.maria_history_max_turns = ant_turnos
         s.maria_summary_enabled = ant_sum
+
+
+# ------------------------------------------- fallback chat (Cerebras) --
+
+class _FakeChatCompletions:
+    def __init__(self, tentativas):
+        self._tentativas = tentativas
+        self.modelos: list[str] = []
+        self.last_kwargs: dict = {}
+
+    async def create(self, model: str, **kwargs: Any):
+        self.modelos.append(model)
+        self.last_kwargs = kwargs
+        t = self._tentativas[len(self.modelos) - 1]
+        if isinstance(t, Exception):
+            raise t
+        return _FakeStream(t)
+
+
+class _FakeChatClient:
+    def __init__(self, tentativas):
+        self.chat = SimpleNamespace(
+            completions=_FakeChatCompletions(tentativas))
+
+
+def _ev_chat(txt: str):
+    return SimpleNamespace(
+        choices=[SimpleNamespace(delta=SimpleNamespace(content=txt))],
+        usage=None)
+
+
+def _ev_chat_usage(in_t=10, out_t=5):
+    return SimpleNamespace(
+        choices=[],
+        usage=SimpleNamespace(prompt_tokens=in_t, completion_tokens=out_t))
+
+
+def _ev_chat_toolcall(nome="get_checkins", args="{}"):
+    tc = SimpleNamespace(
+        index=0, id="call_abc",
+        function=SimpleNamespace(name=nome, arguments=args))
+    return SimpleNamespace(
+        choices=[SimpleNamespace(delta=SimpleNamespace(
+            content=None, tool_calls=[tc]))],
+        usage=None)
+
+
+def test_fallback_cerebras_responde_quando_openai_cai(api, admin):
+    s = get_settings()
+    antigos = (s.cerebras_api_key, s.cerebras_model)
+    s.cerebras_api_key = "csk-teste"
+    s.cerebras_model = "llama-3.3-70b"
+    try:
+        orq = _orq(api, admin, [_FalhaStream("openai caiu")])
+        orq._fb = _FakeChatClient([
+            [_ev_chat("Opa! "), _ev_chat("temos dois check-ins hoje."),
+             _ev_chat_usage()],
+        ])
+        saida = asyncio.run(orq.responder("check-ins de hoje?", _vazio, _vazio))
+        assert "dois check-ins" in saida.texto
+        assert orq._fb.chat.completions.modelos == ["llama-3.3-70b"]
+        assert saida.usage["input_tokens"] == 10
+        # tools no formato chat (function wrapper)
+        tool0 = orq._fb.chat.completions.last_kwargs["tools"][0]
+        assert tool0["type"] == "function" and "function" in tool0
+    finally:
+        s.cerebras_api_key, s.cerebras_model = antigos
+
+
+def test_fallback_cerebras_tool_call_fragmentada(api, admin):
+    """tool_calls do chat chegam por index — acumula e executa."""
+    s = get_settings()
+    antigos = (s.cerebras_api_key, s.cerebras_model)
+    s.cerebras_api_key = "csk-teste"
+    s.cerebras_model = "llama-test"
+    try:
+        orq = _orq(api, admin, [_FalhaStream("openai caiu"),
+                            _FalhaStream("openai caiu de novo")])
+        orq._fb = _FakeChatClient([
+            [_ev_chat_toolcall(), _ev_chat_usage()],  # rodada 1: call
+            [_ev_chat("São dois hóspedes hoje."), _ev_chat_usage()],
+        ])
+        orq.api.rotas = {
+            ("get", "/reservas"): {"items": [{"id": 1}], "total": 1}}
+        nomes = []
+        async def on_tool(n): nomes.append(n)
+        saida = asyncio.run(
+            orq.responder("check-ins?", _vazio, on_tool))
+        assert "get_checkins" in nomes
+        assert "dois hóspedes" in saida.texto
+        assert saida.tool_calls == 1
+    finally:
+        s.cerebras_api_key, s.cerebras_model = antigos
+
+
+def test_msgs_chat_traduz_formato_responses():
+    from app.agent.llm import _msgs_chat
+    msgs = [
+        {"role": "developer", "content": "regras"},
+        {"role": "user", "content": "oi"},
+        {"role": "assistant",
+         "content": [{"type": "output_text", "text": "olá"}]},
+        {"type": "function_call", "call_id": "c1",
+         "name": "get_x", "arguments": "{}"},
+        {"type": "function_call_output", "call_id": "c1",
+         "output": '{"ok":1}'},
+    ]
+    out = _msgs_chat(msgs)
+    assert out[0] == {"role": "system", "content": "regras"}
+    assert out[2] == {"role": "assistant", "content": "olá"}
+    assert out[3]["tool_calls"][0]["function"]["name"] == "get_x"
+    assert out[4]["role"] == "tool" and out[4]["tool_call_id"] == "c1"
