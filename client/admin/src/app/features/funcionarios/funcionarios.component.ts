@@ -32,6 +32,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       <!-- ================= Cabeçalho ================= -->
       <div class="fn-head">
         <div>
+          <p class="eyebrow">Configurações</p>
           <h2 class="fn-titulo">Funcionários</h2>
           <p class="fn-sub">Equipe com acesso ao sistema — cada pessoa entra com login e senha próprios</p>
         </div>
@@ -51,21 +52,21 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       <!-- ================= Banners ================= -->
       <div class="fn-banners">
         <div class="fn-banner">
-          <span class="fn-banner-ic tint-teal"><mat-icon>badge</mat-icon></span>
+          <span class="fn-banner-ic"><mat-icon>badge</mat-icon></span>
           <div>
             <strong>Três níveis de acesso</strong>
             <p><b>Recepção</b> opera o dia a dia · <b>Gerente</b> acompanha relatórios · <b>Administrador</b> tem acesso total ao sistema.</p>
           </div>
         </div>
         <div class="fn-banner">
-          <span class="fn-banner-ic tint-gold"><mat-icon>key</mat-icon></span>
+          <span class="fn-banner-ic"><mat-icon>key</mat-icon></span>
           <div>
             <strong>Conta individual e rastreável</strong>
             <p>Cada ação no sistema fica registrada com o nome de quem fez — por isso cada pessoa tem seu próprio login. Nunca compartilhe senhas.</p>
           </div>
         </div>
         <div class="fn-banner">
-          <span class="fn-banner-ic tint-navy"><mat-icon>shield</mat-icon></span>
+          <span class="fn-banner-ic"><mat-icon>shield</mat-icon></span>
           <div>
             <strong>Você está protegido</strong>
             <p>O sistema não deixa você desativar nem excluir a sua própria conta — evita bloquear o acesso por engano.</p>
@@ -173,8 +174,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                     <td class="tc">
                       <button
                         type="button"
-                        class="status-chip badge-toggle"
-                        [class.on]="f.ativo"
+                        class="st-chip"
                         [class.off]="!f.ativo"
                         [disabled]="f.id === auth.user()?.id"
                         [title]="f.id === auth.user()?.id ? 'Você não pode desativar a si mesmo' : (f.ativo ? 'Clique para desativar' : 'Clique para ativar')"
@@ -184,12 +184,12 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                     <td class="tc">
                       <div class="fn-acoes-linha">
                         <button
-                          type="button" class="acao gold" title="Editar"
+                          type="button" class="acao-btn" title="Editar"
                           aria-label="Editar funcionário"
                           (click)="abrirEdicao(f)"
                         ><mat-icon>edit</mat-icon></button>
                         <button
-                          type="button" class="acao navy"
+                          type="button" class="acao-btn perigo"
                           [disabled]="f.id === auth.user()?.id"
                           (click)="excluir(f)"
                           aria-label="Excluir funcionário"
@@ -345,7 +345,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
               <span class="drawer-req"><small class="req">*</small> Campos obrigatórios</span>
               <div class="drawer-foot-acoes">
                 <button class="btn-gray" type="button" (click)="fecharDrawer()">Cancelar</button>
-                <button class="btn-green" type="submit">
+                <button class="btn-dark-blue" type="submit">
                   <mat-icon>save</mat-icon> {{ editando() ? 'Salvar alterações' : 'Cadastrar funcionário' }}
                 </button>
               </div>
@@ -369,15 +369,15 @@ import { DateInputComponent } from '@shared/components/date-input.component';
     .fn-acoes button, .fn-acoes a { display: inline-flex; align-items: center; gap: 6px; }
     .btn-tour {
       display: inline-flex; align-items: center; gap: 6px;
-      border: 1.5px solid #d7e0e6; background: #fff;
-      color: #5d6d7e; border-radius: 4px;
+      border: 1px solid #dce6ea; background: #fff;
+      color: #536b73; border-radius: 6px;
       padding: 0 14px; min-height: 34px; cursor: pointer;
       font-size: 0.85rem; font-weight: 600; font-family: inherit;
       text-decoration: none;
       transition: border-color .15s ease, color .15s ease;
     }
     .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { border-color: #1a6f8a; color: #1a6f8a; }
+    .btn-tour:hover { border-color: #054054; color: #054054; }
 
     /* ---------- banners ---------- */
     .fn-banners {
@@ -389,17 +389,13 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       display: flex; gap: 12px; align-items: flex-start;
       background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
       padding: 14px 16px;
-      transition: transform .15s ease, box-shadow .15s ease;
     }
-    .fn-banner:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(5, 64, 84, 0.07); }
     .fn-banner-ic {
-      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+      width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
+      background: #eef4f6; color: #054054;
     }
-    .fn-banner-ic mat-icon { font-size: 21px; width: 21px; height: 21px; }
-    .tint-teal { background: rgba(26, 111, 138, 0.1); color: #1a6f8a; }
-    .tint-gold { background: rgba(221, 165, 84, 0.14); color: #b5811f; }
-    .tint-navy { background: rgba(5, 64, 84, 0.08); color: #054054; }
+    .fn-banner-ic mat-icon { font-size: 19px; width: 19px; height: 19px; }
     .fn-banner strong { display: block; font-size: 0.88rem; color: #054054; margin-bottom: 3px; }
     .fn-banner p { margin: 0; font-size: 0.78rem; color: #7d97a1; line-height: 1.45; }
 
@@ -424,7 +420,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       font-size: 0.68rem; font-weight: 600; color: #7d97a1;
       text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap;
     }
-    .fn-est-lbl mat-icon { font-size: 14px; width: 14px; height: 14px; color: #a5b6bf; }
+    .fn-est-lbl mat-icon { font-size: 14px; width: 14px; height: 14px; color: #8fa3ab; }
 
     /* ---------- toolbar ---------- */
     .fn-card { padding-top: 14px; }
@@ -439,7 +435,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       padding: 0 10px; height: 40px;
       transition: border-color .15s, box-shadow .15s;
     }
-    .fn-busca.foco { border-color: #1a6f8a; box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14); }
+    .fn-busca.foco { border-color: #054054; box-shadow: 0 0 0 3px rgba(5, 64, 84, 0.1); }
     .fn-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
     .fn-busca-input {
       flex: 1; border: none; outline: none; background: transparent;
@@ -478,7 +474,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       display: inline-flex; align-items: center; justify-content: center;
       font-size: 0.82rem; font-weight: 700; letter-spacing: 0.02em;
     }
-    .fn-avatar.eu { background: linear-gradient(135deg, #b5811f, #c98f3e); color: #fff; }
+    .fn-avatar.eu { background: linear-gradient(135deg, #054054, #1a6f8a); color: #fff; }
     .fn-cell-txt { display: flex; flex-direction: column; min-width: 0; }
     .fn-cell-txt strong {
       font-size: 0.93rem; color: #054054; font-weight: 700;
@@ -486,7 +482,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px;
     }
     .fn-voce {
-      background: rgba(221, 165, 84, 0.16); color: #b5811f;
+      background: #eef4f6; color: #054054;
       font-size: 0.65rem; font-weight: 700; padding: 1px 8px; border-radius: 999px;
     }
     .fn-cell-txt small {
@@ -501,24 +497,26 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       font-size: 0.78rem; font-weight: 700; white-space: nowrap;
     }
     .fn-nivel mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .fn-nivel.n1 { background: #054054; color: #fff; }
-    .fn-nivel.n2 { background: #1a6f8a; color: #fff; }
-    .fn-nivel.n3 { background: #eef4f6; color: #1a6f8a; }
-    .status-chip.clickable, .status-chip.badge-toggle { cursor: pointer; border: none; font-family: inherit; }
-    .status-chip.on, .status-chip.bg-blue { background: #1a6f8a; color: #fff; }
-    .status-chip.off, .status-chip.bg-gray { background: #7d97a1; color: #fff; }
-    .status-chip:disabled { opacity: 0.55; cursor: not-allowed; }
-    .fn-acoes-linha { display: inline-flex; gap: 5px; }
-    .acao {
+    .fn-nivel.n1, .fn-nivel.n2, .fn-nivel.n3 { background: #eef4f6; color: #054054; }
+    .st-chip {
       display: inline-flex; align-items: center; justify-content: center;
-      border: none; border-radius: 6px; width: 30px; height: 30px;
-      cursor: pointer; transition: filter .14s;
+      border: none; border-radius: 999px; padding: 4px 14px;
+      background: #eef4f6; color: #054054;
+      font-size: 0.75rem; font-weight: 600; font-family: inherit;
     }
-    .acao mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .acao:hover:not(:disabled) { filter: brightness(1.12); }
-    .acao:disabled { opacity: 0.4; cursor: not-allowed; }
-    .acao.gold { background: #b5811f; color: #054054; }
-    .acao.navy { background: #054054; color: #fff; }
+    .st-chip { cursor: pointer; }
+    .st-chip.off { background: #f4f8fa; color: #8fa3ab; }
+    .st-chip:disabled { opacity: 0.55; cursor: not-allowed; }
+    .fn-acoes-linha { display: inline-flex; gap: 4px; }
+    .acao-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      border: none; background: none; border-radius: 6px; width: 30px; height: 30px;
+      cursor: pointer; color: #536b73; transition: background .14s, color .14s;
+    }
+    .acao-btn mat-icon { font-size: 17px; width: 17px; height: 17px; }
+    .acao-btn:hover:not(:disabled) { background: #eef4f6; color: #054054; }
+    .acao-btn.perigo:hover:not(:disabled) { background: #fbeaea; color: #b3343a; }
+    .acao-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .fn-vazio {
       text-align: center; color: #8a99a4; padding: 40px !important; font-size: 0.86rem;
     }
@@ -542,18 +540,19 @@ import { DateInputComponent } from '@shared/components/date-input.component';
 
     /* ---------- drawer ---------- */
     .drawer-backdrop {
-      position: fixed; inset: 0; z-index: 200;
+      position: fixed; inset: 0; z-index: 320;
       background: rgba(5, 32, 43, 0.45);
       animation: fadeIn 0.18s ease-out;
     }
     @keyframes fadeIn { from { opacity: 0; } }
     .drawer {
-      position: fixed; top: 0; right: 0; bottom: 0; z-index: 201;
+      position: fixed; top: 0; right: 0; bottom: 0;
       width: min(540px, 100vw);
       background: #f7fafb;
       box-shadow: -12px 0 40px rgba(3, 32, 43, 0.28);
       display: flex; flex-direction: column;
       animation: drawerIn 0.22s cubic-bezier(0.2, 0.8, 0.3, 1);
+      z-index: 321;
     }
     @keyframes drawerIn {
       from { transform: translateX(64px); opacity: 0.4; }
@@ -583,7 +582,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
     .dsec-tit {
       display: flex; align-items: center; gap: 7px;
       font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #1a6f8a; margin-bottom: 12px;
+      letter-spacing: 0.05em; color: #054054; margin-bottom: 12px;
     }
     .dsec-tit mat-icon { font-size: 17px; width: 17px; height: 17px; }
     .dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
@@ -598,9 +597,9 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       font-size: 0.78rem; color: #40525d; font-weight: 500; margin-bottom: 6px;
       cursor: pointer;
     }
-    .dica-sec { background: #fbf7ef; border-color: #efe4cd; }
-    .dica-sec .dsec-tit { color: #b5811f; }
-    .dicas { margin: 0; padding-left: 18px; font-size: 0.8rem; color: #6b5d40; line-height: 1.7; }
+    .check-senha input { accent-color: #054054; }
+    .dica-sec { background: #f4f8fa; }
+    .dicas { margin: 0; padding-left: 18px; font-size: 0.8rem; color: #536b73; line-height: 1.7; }
     .drawer-foot {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 13px 22px;
@@ -608,7 +607,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
     }
     .drawer-req { font-size: 0.76rem; color: #8a99a4; }
     .drawer-foot-acoes { display: flex; gap: 8px; }
-    .drawer-foot-acoes .btn-green,
+    .drawer-foot-acoes .btn-dark-blue,
     .drawer-foot-acoes .btn-gray {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 0.5rem 1rem;
