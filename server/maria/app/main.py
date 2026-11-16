@@ -57,6 +57,10 @@ async def lifespan(app: FastAPI):
         log.info("MAR IA pronto — voz=%s model=%s", s.maria_voice_enabled, s.openai_llm_model)
     store = get_store()
     await restaurar_metricas(store)
+    # Sonda o estado compartilhado no boot — Redis indisponível cai
+    # para memória com log aqui, não no primeiro turno do usuário.
+    from .infra.state import get_state
+    await get_state()
 
     async def _salvar_periodico() -> None:
         while True:
