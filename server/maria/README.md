@@ -1,6 +1,7 @@
 # MAR IA — Assistente de voz da Pousada Espírito do Mar
 
 Serviço Python (FastAPI) que conecta o admin Angular a:
+
 - **OpenAI Realtime API** — transcrição de voz em tempo real
 - **OpenAI Responses API** — raciocínio + function calling
 - **ElevenLabs** — síntese de voz em streaming (pt-BR, baixa latência)
@@ -8,7 +9,7 @@ Serviço Python (FastAPI) que conecta o admin Angular a:
 
 ## Pipeline
 
-```
+```text
 mic PCM16 → WebSocket → STT (Realtime, VAD 450 ms) → Responses API (+ tools,
           execução em paralelo) → texto stream → ElevenLabs WS → PCM 24 kHz
           → frontend
@@ -173,7 +174,7 @@ preparadas expiram junto com a sessão.
 
 Organizado em camadas — dependência só aponta para baixo:
 
-```
+```text
 app/
 ├── main.py         FastAPI — endpoints, CORS, lifecycle, persistência de métricas
 ├── config.py       settings (env, pydantic)
@@ -273,6 +274,7 @@ re-embedado. Edite `knowledge/sobre-a-pousada.md` com os dados reais
 da casa (o arquivo é um template). Detalhes em `knowledge/README.md`.
 
 Divisão de responsabilidade entre "saberes":
+
 - **Tools** → dados ao vivo do sistema (reserva, estoque, caixa);
 - **RAG** → políticas/procedimentos fixos editados pela equipe;
 - **Memória** → fatos que o usuário ensina no dia a dia.
