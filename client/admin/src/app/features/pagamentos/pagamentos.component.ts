@@ -19,6 +19,7 @@ import { AuthStore } from '@core/services/auth.store';
       <!-- ================= Cabeçalho ================= -->
       <div class="pg-head">
         <div>
+          <p class="eyebrow">Financeiro</p>
           <h2 class="pg-titulo">Pagamentos</h2>
           <p class="pg-sub">Comprovantes emitidos no check-out e os meios de pagamento aceitos na pousada</p>
         </div>
@@ -35,21 +36,21 @@ import { AuthStore } from '@core/services/auth.store';
       <!-- ================= Banners ================= -->
       <div class="pg-banners">
         <div class="pg-banner">
-          <span class="pg-banner-ic tint-teal"><mat-icon>receipt_long</mat-icon></span>
+          <span class="pg-banner-ic"><mat-icon>receipt_long</mat-icon></span>
           <div>
             <strong>Comprovante a um clique</strong>
             <p>Todo check-out com pagamento gera um comprovante aqui — visualize, baixe o arquivo ou mande para a impressora térmica da recepção.</p>
           </div>
         </div>
         <div class="pg-banner">
-          <span class="pg-banner-ic tint-gold"><mat-icon>payments</mat-icon></span>
+          <span class="pg-banner-ic"><mat-icon>payments</mat-icon></span>
           <div>
             <strong>Meios de pagamento flexíveis</strong>
             <p>PIX, cartões, dinheiro… cadastre e ative as formas aceitas no botão <b>Formas de pagamento</b>. Elas aparecem na hora de receber do hóspede.</p>
           </div>
         </div>
         <div class="pg-banner">
-          <span class="pg-banner-ic tint-navy"><mat-icon>print</mat-icon></span>
+          <span class="pg-banner-ic"><mat-icon>print</mat-icon></span>
           <div>
             <strong>Impressão térmica</strong>
             <p>O botão de impressora envia o comprovante direto para a térmica — sem abrir janelas nem copiar texto.</p>
@@ -136,14 +137,14 @@ import { AuthStore } from '@core/services/auth.store';
                     <td class="tc"><span class="pg-chip">Nº {{ c.idreserva }}</span></td>
                     <td class="tc">
                       <div class="pg-acoes-linha">
-                        <button class="acao teal" type="button" title="Visualizar comprovante" (click)="visualizar(c)">
+                        <button class="acao-btn" type="button" title="Visualizar comprovante" (click)="visualizar(c)">
                           <mat-icon>visibility</mat-icon>
                         </button>
-                        <button class="acao navy" type="button" title="Baixar arquivo" (click)="baixar(c)">
+                        <button class="acao-btn" type="button" title="Baixar arquivo" (click)="baixar(c)">
                           <mat-icon>download</mat-icon>
                         </button>
                         <button
-                          class="acao gold" type="button" title="Imprimir na térmica"
+                          class="acao-btn" type="button" title="Imprimir na térmica"
                           [disabled]="imprimindo() === c.idreserva"
                           (click)="imprimir(c)"
                         >
@@ -228,9 +229,8 @@ import { AuthStore } from '@core/services/auth.store';
                       </td>
                       <td class="tc">
                         <button
-                          class="status-chip clickable"
+                          class="st-chip"
                           type="button"
-                          [class.on]="p.ativo"
                           [class.off]="!p.ativo"
                           title="Clique para alternar"
                           (click)="alternar(p)"
@@ -238,12 +238,12 @@ import { AuthStore } from '@core/services/auth.store';
                       </td>
                       <td class="tc">
                         <div class="pg-acoes-linha">
-                          <button class="acao gold" type="button" title="Renomear" (click)="editando.set(p.id)">
+                          <button class="acao-btn" type="button" title="Renomear" (click)="editando.set(p.id)">
                             <mat-icon>edit</mat-icon>
                           </button>
                           @if (auth.isAdmin()) {
                             <button
-                              class="acao navy" type="button" title="Excluir"
+                              class="acao-btn perigo" type="button" title="Excluir"
                               aria-label="Excluir forma de pagamento"
                               (click)="excluir(p)"
                             >
@@ -285,7 +285,7 @@ import { AuthStore } from '@core/services/auth.store';
       transition: border-color .15s ease, color .15s ease;
     }
     .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { border-color: #1a6f8a; color: #1a6f8a; }
+    .btn-tour:hover { border-color: #054054; color: #054054; }
 
     /* ---------- banners ---------- */
     .pg-banners {
@@ -303,11 +303,9 @@ import { AuthStore } from '@core/services/auth.store';
     .pg-banner-ic {
       width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
+      background: #eef4f6; color: #054054;
     }
     .pg-banner-ic mat-icon { font-size: 21px; width: 21px; height: 21px; }
-    .tint-teal { background: rgba(26, 111, 138, 0.1); color: #1a6f8a; }
-    .tint-gold { background: rgba(221, 165, 84, 0.14); color: #b5811f; }
-    .tint-navy { background: rgba(5, 64, 84, 0.08); color: #054054; }
     .pg-banner strong { display: block; font-size: 0.88rem; color: #054054; margin-bottom: 3px; }
     .pg-banner p { margin: 0; font-size: 0.78rem; color: #7d97a1; line-height: 1.45; }
 
@@ -347,7 +345,7 @@ import { AuthStore } from '@core/services/auth.store';
       padding: 0 10px; height: 40px;
       transition: border-color .15s, box-shadow .15s;
     }
-    .pg-busca.foco { border-color: #1a6f8a; box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14); }
+    .pg-busca.foco { border-color: #054054; box-shadow: 0 0 0 3px rgba(5, 64, 84, 0.1); }
     .pg-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
     .pg-busca-input {
       flex: 1; border: none; outline: none; background: transparent;
@@ -382,7 +380,7 @@ import { AuthStore } from '@core/services/auth.store';
     .td-cod {
       font-weight: 700; color: #054054; white-space: nowrap;
     }
-    .td-cod mat-icon { font-size: 16px; width: 16px; height: 16px; vertical-align: -3px; color: #1a6f8a; margin-right: 6px; }
+    .td-cod mat-icon { font-size: 16px; width: 16px; height: 16px; vertical-align: -3px; color: #7d97a1; margin-right: 6px; }
     .td-id { font-weight: 700; color: #054054; }
     .pg-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .pg-avatar {
@@ -397,21 +395,21 @@ import { AuthStore } from '@core/services/auth.store';
     }
     .pg-chip {
       display: inline-flex; align-items: center;
-      background: #eef4f6; color: #1a6f8a; border-radius: 999px;
+      background: #eef4f6; color: #5d6d7e; border-radius: 999px;
       padding: 3px 12px; font-size: 0.78rem; font-weight: 700; white-space: nowrap;
     }
     .pg-acoes-linha { display: inline-flex; gap: 5px; }
-    .acao {
+    .acao-btn {
       display: inline-flex; align-items: center; justify-content: center;
-      border: none; border-radius: 6px; width: 30px; height: 30px;
-      color: #fff; cursor: pointer; transition: filter .14s;
+      width: 30px; height: 30px;
+      border: 1px solid #d7e0e6; border-radius: 7px;
+      background: #fff; color: #5d6d7e; cursor: pointer;
+      transition: border-color .15s, color .15s, background .15s;
     }
-    .acao mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .acao:hover { filter: brightness(1.12); }
-    .acao:disabled { opacity: 0.55; cursor: wait; }
-    .acao.teal { background: #1a6f8a; }
-    .acao.navy { background: #054054; }
-    .acao.gold { background: #b5811f; color: #054054; }
+    .acao-btn mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .acao-btn:hover { border-color: #054054; color: #054054; }
+    .acao-btn.perigo:hover { border-color: #b3261e; color: #b3261e; background: #fdf3f2; }
+    .acao-btn:disabled { opacity: 0.55; cursor: wait; }
     .pg-vazio {
       text-align: center; color: #8a99a4; padding: 34px !important; font-size: 0.86rem;
     }
@@ -421,7 +419,7 @@ import { AuthStore } from '@core/services/auth.store';
       display: inline-flex; align-items: center; gap: 8px;
       font-weight: 600; color: #054054;
     }
-    .pg-forma-nome mat-icon { font-size: 17px; width: 17px; height: 17px; color: #1a6f8a; }
+    .pg-forma-nome mat-icon { font-size: 17px; width: 17px; height: 17px; color: #7d97a1; }
     .pg-edit { width: 100%; max-width: 260px; }
 
     /* ---------- skeleton ---------- */
@@ -442,7 +440,7 @@ import { AuthStore } from '@core/services/auth.store';
 
     /* ---------- modal ---------- */
     .overlay {
-      position: fixed; inset: 0; z-index: 100;
+      position: fixed; inset: 0; z-index: 310;
       background: rgba(5, 64, 84, 0.45);
       display: flex; align-items: flex-start; justify-content: center;
       padding: 2rem 1rem; backdrop-filter: blur(2px);
@@ -462,7 +460,7 @@ import { AuthStore } from '@core/services/auth.store';
       margin: 0; font-size: 1rem; font-weight: 700; color: #054054;
       display: inline-flex; align-items: center; gap: 8px;
     }
-    .modal-head h5 mat-icon { font-size: 19px; width: 19px; height: 19px; color: #1a6f8a; }
+    .modal-head h5 mat-icon { font-size: 19px; width: 19px; height: 19px; color: #054054; }
     .modal-head .close {
       border: none; background: #eef2f5; border-radius: 50%;
       width: 28px; height: 28px; cursor: pointer; color: #5d6d7e;
@@ -478,7 +476,7 @@ import { AuthStore } from '@core/services/auth.store';
     }
     .pg-novo-ic {
       width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
-      background: #1a6f8a; color: #fff;
+      background: #eef4f6; color: #054054;
       display: inline-flex; align-items: center; justify-content: center;
     }
     .pg-novo-ic mat-icon { font-size: 18px; width: 18px; height: 18px; }
@@ -486,9 +484,16 @@ import { AuthStore } from '@core/services/auth.store';
     .pg-novo-txt strong { font-size: 0.85rem; color: #054054; }
     .pg-novo-txt small { font-size: 0.72rem; color: #7d97a1; }
     .pg-novo-input { flex: 1; min-width: 140px; }
-    .status-chip.clickable { cursor: pointer; border: none; font-family: inherit; }
-    .status-chip.on { background: #1a6f8a; color: #fff; }
-    .status-chip.off { background: #7d97a1; color: #fff; }
+    .st-chip {
+      display: inline-flex; align-items: center;
+      border: 1px solid #d7e0e6; border-radius: 999px;
+      background: #eef4f6; color: #054054;
+      padding: 5px 13px; font-size: 0.8rem; font-weight: 600;
+      font-family: inherit; cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .st-chip:hover { border-color: #054054; }
+    .st-chip.off { background: #f4f6f8; color: #7d97a1; }
   `,
 })
 export class PagamentosComponent implements OnInit {
@@ -708,8 +713,8 @@ export class PagamentosComponent implements OnInit {
           title: 'Comprovantes',
           description:
             'Cada linha é um comprovante de check-out. Os botões permitem ' +
-            '<b>visualizar</b> (teal), <b>baixar o arquivo</b> (navy) e ' +
-            '<b>imprimir na térmica</b> (dourado).',
+            '<b>visualizar</b> (olho), <b>baixar o arquivo</b> (seta) e ' +
+            '<b>imprimir na térmica</b> (impressora).',
           side: 'top',
         },
       },

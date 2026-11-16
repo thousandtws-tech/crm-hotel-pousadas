@@ -97,16 +97,17 @@ a:hover {
   flex-wrap: wrap;
 }
 
-/* Títulos editoriais — serifa da marca em azul-escuro */
+/* Títulos de página — sans da marca em azul-escuro */
 .page-header h1,
 .page h1,
 .page h2 {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 1.7rem;
-  font-weight: 600;
+  font-weight: 700;
   margin: 0;
   color: var(--inn-navbar);
   line-height: 1.15;
+  letter-spacing: -0.01em;
 }
 
 .page h2 {
@@ -120,7 +121,7 @@ a:hover {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--inn-accent);
+  color: #8fa3ab;
 }
 
 .table-card {
