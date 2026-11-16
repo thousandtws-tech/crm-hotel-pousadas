@@ -135,30 +135,30 @@ function fimMes(): string {
     </div>
   `,
   styles: `
-    .fin-head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; padding-bottom:14px; margin-bottom:16px; border-bottom:1px solid #e3eaef; }
-    .fin-titulo { margin:0; font-size:1.5rem; font-weight:800; color:#054054; letter-spacing:-.02em; }
-    .fin-sub { margin:2px 0 0; font-size:.82rem; color:#7d97a1; }
+    .fin-head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; padding-bottom:14px; margin-bottom:16px; border-bottom:1px solid #e9ecf0; }
+    .fin-titulo { margin:0; font-size:1.5rem; font-weight:800; color:#20242c; letter-spacing:-.02em; }
+    .fin-sub { margin:2px 0 0; font-size:.82rem; color:#66707e; }
     .fin-range { width:270px; }
-    .kpi { display:flex; background:#fff; border:1px solid #e3eaef; border-radius:10px; margin-bottom:14px; overflow-x:auto; }
-    .kpi-item { display:flex; flex-direction:column; gap:3px; padding:14px 24px; min-width:160px; border-left:1px solid #eef2f5; }
+    .kpi { display:flex; background:#fff; border:1px solid #e9ecf0; border-radius:10px; margin-bottom:14px; overflow-x:auto; }
+    .kpi-item { display:flex; flex-direction:column; gap:3px; padding:14px 24px; min-width:160px; border-left:1px solid #f0f2f5; }
     .kpi-item:first-child { border-left:none; }
-    .kpi-num { font-size:1.35rem; font-weight:800; color:#054054; line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .kpi-num { font-size:1.35rem; font-weight:800; color:#20242c; line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums; white-space:nowrap; }
     .kpi-num.pos { color:#198754; } .kpi-num.neg, .neg { color:#dc3545; }
-    .kpi-lbl { display:inline-flex; align-items:center; gap:5px; font-size:.68rem; font-weight:600; color:#7d97a1; text-transform:uppercase; letter-spacing:.07em; white-space:nowrap; }
+    .kpi-lbl { display:inline-flex; align-items:center; gap:5px; font-size:.68rem; font-weight:600; color:#66707e; text-transform:uppercase; letter-spacing:.07em; white-space:nowrap; }
     .kpi-lbl mat-icon { font-size:14px; width:14px; height:14px; color:#a5b6bf; }
-    .card { background:#fff; border:1px solid #e3eaef; border-radius:10px; padding:16px 18px; margin-bottom:14px; }
+    .card { background:#fff; border:1px solid #e9ecf0; border-radius:10px; padding:16px 18px; margin-bottom:14px; }
     .card-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:6px; }
-    .card-head h3 { margin:0; font-size:.95rem; font-weight:700; color:#054054; }
-    .card-head small { font-size:.74rem; color:#8a99a4; }
+    .card-head h3 { margin:0; font-size:.95rem; font-weight:700; color:#20242c; }
+    .card-head small { font-size:.74rem; color:#66707e; }
     .tab-wrap { overflow-x:auto; }
     .tab { width:100%; border-collapse:collapse; font-size:.88rem; }
-    .tab thead th { background:#f4f8fa; color:#40525d; font-size:.73rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:11px 14px; text-align:left; border-bottom:2px solid #e3eaef; white-space:nowrap; }
-    .tab tbody td { padding:9px 14px; border-bottom:1px solid #eef2f5; color:#33424c; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .tab thead th { background:#f5f7fa; color:#3d4552; font-size:.73rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:11px 14px; text-align:left; border-bottom:2px solid #e9ecf0; white-space:nowrap; }
+    .tab tbody td { padding:9px 14px; border-bottom:1px solid #f0f2f5; color:#3d4552; font-variant-numeric:tabular-nums; white-space:nowrap; }
     .tab .tr { text-align:right; }
-    .pos { color:#198754; } .prev { color:#8a99a4; }
-    .fw { font-weight:700; color:#054054; }
-    .vazio { color:#8a99a4; font-size:.85rem; text-align:center; padding:22px 0; margin:0; }
-    .skel { border-radius:8px; background:linear-gradient(90deg,#eef2f5 25%,#f7fafb 50%,#eef2f5 75%); background-size:200% 100%; animation:sk 1.2s infinite; }
+    .pos { color:#198754; } .prev { color:#66707e; }
+    .fw { font-weight:700; color:#20242c; }
+    .vazio { color:#66707e; font-size:.85rem; text-align:center; padding:22px 0; margin:0; }
+    .skel { border-radius:8px; background:linear-gradient(90deg,#f0f2f5 25%,#f8f9fb 50%,#f0f2f5 75%); background-size:200% 100%; animation:sk 1.2s infinite; }
     .sk-bloco { height:420px; }
     @keyframes sk { to { background-position:-200% 0; } }
   `,
@@ -215,23 +215,23 @@ export class FinFluxoCaixaComponent implements OnInit {
         trigger: 'axis',
         valueFormatter: (v: unknown) => BRL.format(Number(v)),
       },
-      legend: { top: 0, textStyle: { color: '#5d6d7e', fontSize: 11 } },
+      legend: { top: 0, textStyle: { color: '#55606d', fontSize: 11 } },
       grid: { left: 8, right: 8, top: 34, bottom: 8, containLabel: true },
       xAxis: {
         type: 'category',
         data: dias,
         axisTick: { show: false },
-        axisLine: { lineStyle: { color: '#dbe4e9' } },
-        axisLabel: { color: '#7d97a1', fontSize: 10 },
+        axisLine: { lineStyle: { color: '#dde2e8' } },
+        axisLabel: { color: '#66707e', fontSize: 10 },
       },
       yAxis: {
         type: 'value',
         axisLabel: {
-          color: '#8fa3ab',
+          color: '#66707e',
           fontSize: 11,
           formatter: (v: number) => COMPACTO.format(v),
         },
-        splitLine: { lineStyle: { color: '#eef2f5' } },
+        splitLine: { lineStyle: { color: '#f0f2f5' } },
       },
       series: [
         {
@@ -239,7 +239,7 @@ export class FinFluxoCaixaComponent implements OnInit {
           type: 'bar',
           stack: 'mov',
           barMaxWidth: 14,
-          itemStyle: { color: '#1a6f8a', borderRadius: [0, 0, 0, 0] },
+          itemStyle: { color: '#2457a7', borderRadius: [0, 0, 0, 0] },
           data: f.dias.map((d) => num(d.entradas)),
         },
         {
@@ -247,7 +247,7 @@ export class FinFluxoCaixaComponent implements OnInit {
           type: 'bar',
           stack: 'mov2',
           barMaxWidth: 14,
-          itemStyle: { color: '#b5811f' },
+          itemStyle: { color: '#b45309' },
           data: f.dias.map((d) => num(d.saidas)),
         },
         {
@@ -255,9 +255,9 @@ export class FinFluxoCaixaComponent implements OnInit {
           type: 'line',
           smooth: true,
           symbolSize: 5,
-          lineStyle: { width: 2.4, color: '#054054' },
-          itemStyle: { color: '#054054' },
-          areaStyle: { color: 'rgba(5,64,84,0.06)' },
+          lineStyle: { width: 2.4, color: '#20242c' },
+          itemStyle: { color: '#20242c' },
+          areaStyle: { color: 'rgba(61, 69, 82, 0.06)' },
           data: f.dias.map((d) => num(d.acumulado)),
         },
       ],

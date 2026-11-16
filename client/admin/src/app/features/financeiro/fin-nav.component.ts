@@ -24,20 +24,20 @@ import { MatIconModule } from '@angular/material/icon';
   styles: `
     .fin-nav {
       display: flex; gap: 4px; flex-wrap: wrap;
-      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
+      background: #fff; border: 1px solid #e9ecf0; border-radius: 10px;
       padding: 6px; margin-bottom: 16px;
     }
     .fin-nav-link {
       display: inline-flex; align-items: center; gap: 7px;
       padding: 8px 16px; border-radius: 7px;
-      font-size: 0.84rem; font-weight: 600; color: #5d6d7e;
+      font-size: 0.84rem; font-weight: 600; color: #55606d;
       text-decoration: none; white-space: nowrap;
       transition: background .14s ease, color .14s ease;
     }
     .fin-nav-link mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .fin-nav-link:hover { background: #eef4f6; color: #054054; }
-    .fin-nav-link.ativo { background: #054054; color: #fff; }
-    .fin-nav-link:focus-visible { outline: 2px solid #1a6f8a; outline-offset: 2px; }
+    .fin-nav-link:hover { background: #f0f2f5; color: #20242c; }
+    .fin-nav-link.ativo { background: #20242c; color: #fff; }
+    .fin-nav-link:focus-visible { outline: 2px solid #2457a7; outline-offset: 2px; }
   `,
 })
 export class FinNavComponent {

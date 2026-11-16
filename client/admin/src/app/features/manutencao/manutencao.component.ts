@@ -147,29 +147,29 @@ const STATUS: StatusManut[] = ['aberta', 'em_execucao', 'aguardando_peca', 'conc
     .pg-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem}
     .pg-titulo{font-size:1.35rem;margin:0}
     .pg-sub{margin:.15rem 0 0;color:var(--mut,#667);font-size:.85rem}
-    .abas{display:flex;gap:.4rem;border-bottom:1px solid var(--borda,#e3e6ea)}
+    .abas{display:flex;gap:.4rem;border-bottom:1px solid var(--borda,#dde2e8)}
     .aba{padding:.55rem 1rem;border:0;background:none;border-bottom:2px solid transparent;cursor:pointer;font-size:.88rem}
-    .aba.ativa{border-bottom-color:#0b7285;font-weight:700}
+    .aba.ativa{border-bottom-color:#2457a7;font-weight:700}
     .filtros{display:flex;gap:.4rem;flex-wrap:wrap}
     .chip{padding:.3rem .75rem;border-radius:999px;border:1px solid var(--borda,#ccd);background:#fff;font-size:.75rem;cursor:pointer}
-    .chip.ativa{background:#0b7285;color:#fff;border-color:#0b7285}
-    .bloco{background:var(--card,#fff);border:1px solid var(--borda,#e3e6ea);border-radius:12px;padding:1rem;overflow-x:auto}
+    .chip.ativa{background:#2457a7;color:#fff;border-color:#2457a7}
+    .bloco{background:var(--card,#fff);border:1px solid var(--borda,#dde2e8);border-radius:12px;padding:1rem;overflow-x:auto}
     .bloco h3{margin:0 0 .75rem;font-size:.95rem;display:flex;align-items:center;gap:.6rem}
     table{width:100%;border-collapse:collapse;font-size:.82rem}
     th,td{text-align:left;padding:.45rem .6rem;border-bottom:1px solid var(--borda,#eee)}
     th{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut,#667)}
     .prio{padding:.15rem .5rem;border-radius:999px;font-size:.7rem;font-weight:600}
     .prio-baixa{background:#eee;color:#555}
-    .prio-media{background:#e8ecfd;color:#345}
-    .prio-alta{background:#fdf3d7;color:#8a6200}
+    .prio-media{background:#e8eef8;color:#345}
+    .prio-alta{background:#fef3e0;color:#b45309}
     .prio-urgente{background:#fde2e2;color:#a11}
-    .critica td{background:#fff5f5}
-    .aviso-pmoc{margin:0 0 .75rem;padding:.5rem .8rem;border-radius:8px;background:#e4f6e8;color:#146c2e;font-size:.8rem;font-weight:600}
+    .critica td{background:#fdf1f2}
+    .aviso-pmoc{margin:0 0 .75rem;padding:.5rem .8rem;border-radius:8px;background:#e6f3ec;color:#198754;font-size:.8rem;font-weight:600}
     .aviso-pmoc.vencido{background:#fde2e2;color:#a11}
     select{padding:.3rem .5rem;border:1px solid var(--borda,#ccd);border-radius:6px;font-size:.78rem}
     .btn-mini{font-size:.72rem;padding:.3rem .7rem;border-radius:6px;border:1px solid var(--borda,#ccd);background:#fff;cursor:pointer}
     .vazio{color:var(--mut,#667);font-size:.85rem}
-    .overlay{position:fixed;inset:0;background:rgba(10,15,20,.45);display:flex;align-items:center;justify-content:center;z-index:60}
+    .overlay{position:fixed;inset:0;background:rgba(22, 26, 32, .45);display:flex;align-items:center;justify-content:center;z-index:60}
     .modal{background:#fff;border-radius:14px;padding:1.5rem;width:min(420px,92vw);display:flex;flex-direction:column;gap:.8rem;max-height:90vh;overflow-y:auto}
     .modal-lg{width:min(560px,94vw)}
     .modal h3{margin:0}
@@ -179,7 +179,7 @@ const STATUS: StatusManut[] = ['aberta', 'em_execucao', 'aguardando_peca', 'conc
     .itens{display:flex;flex-direction:column;gap:.35rem}
     .item-check{flex-direction:row!important;align-items:center;gap:.5rem;font-weight:400!important;font-size:.82rem}
     .acoes{display:flex;gap:.6rem;margin-top:.4rem}
-    .btn{flex:1;padding:.6rem;border:0;border-radius:8px;background:#0b7285;color:#fff;font-weight:600;cursor:pointer}
+    .btn{flex:1;padding:.6rem;border:0;border-radius:8px;background:#2457a7;color:#fff;font-weight:600;cursor:pointer}
     .btn:disabled{opacity:.6}.btn-sec{padding:.6rem 1rem;border:1px solid var(--borda,#ccd);border-radius:8px;background:#fff;cursor:pointer}
   `],
 })

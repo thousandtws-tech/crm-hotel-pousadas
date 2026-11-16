@@ -158,7 +158,7 @@ type Modal = 'tipos' | 'quarto' | null;
                   <tr class="acm-row" [class.sel]="selecionada()?.id === a.id">
                     <td>
                       <div class="acm-cell">
-                        <span class="acm-dot" [style.background]="a.cor || '#8fa3ab'"></span>
+                        <span class="acm-dot" [style.background]="a.cor || '#66707e'"></span>
                         <span class="acm-cell-txt">
                           <strong>{{ a.nome }}</strong>
                           <small>
@@ -267,7 +267,7 @@ type Modal = 'tipos' | 'quarto' | null;
         <div class="modal-inn modal-detalhe" role="dialog" aria-modal="true" aria-labelledby="titulo-detalhe">
           <div class="modal-head">
             <h5 id="titulo-detalhe" class="det-titulo">
-              <span class="acm-dot" [style.background]="a.cor || '#8fa3ab'"></span>
+              <span class="acm-dot" [style.background]="a.cor || '#66707e'"></span>
               {{ a.nome }} — Nº {{ a.numero }}
               <span
                 class="status-chip det-status"
@@ -751,16 +751,16 @@ type Modal = 'tipos' | 'quarto' | null;
     .acm-titulo-grupo { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
     .acm-titulo {
       margin: 0; font-size: 1.35rem; font-weight: 700;
-      color: #054054; letter-spacing: -0.01em;
+      color: #20242c; letter-spacing: -0.01em;
     }
     .acm-contador {
-      font-size: 0.78rem; font-weight: 600; color: #1a6f8a;
-      background: rgba(26, 111, 138, 0.12);
+      font-size: 0.78rem; font-weight: 600; color: #2457a7;
+      background: rgba(36, 87, 167, 0.12);
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .acm-ativas {
-      font-size: 0.78rem; font-weight: 600; color: #b5811f;
-      background: rgba(221, 165, 84, 0.16);
+      font-size: 0.78rem; font-weight: 600; color: #b45309;
+      background: rgba(180, 83, 9, 0.16);
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .acm-head-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -769,14 +769,14 @@ type Modal = 'tipos' | 'quarto' | null;
     }
     .btn-tour {
       display: inline-flex; align-items: center; gap: 6px;
-      border: 1.5px solid #4b95ab; background: #fff;
-      color: #1a6f8a; border-radius: 4px;
+      border: 1.5px solid #3d6db5; background: #fff;
+      color: #2457a7; border-radius: 4px;
       padding: 0 14px; min-height: 34px; cursor: pointer;
       font-size: 0.85rem; font-weight: 600;
       transition: background .15s ease, color .15s ease;
     }
     .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { background: #1a6f8a; color: #fff; border-color: #1a6f8a; }
+    .btn-tour:hover { background: #2457a7; color: #fff; border-color: #2457a7; }
 
     /* ---------- banners de informação ---------- */
     .acm-info {
@@ -785,12 +785,12 @@ type Modal = 'tipos' | 'quarto' | null;
     }
     .acm-info-card {
       display: flex; align-items: flex-start; gap: 12px;
-      background: #fff; border: 1px solid #e3eaef; border-radius: 12px;
+      background: #fff; border: 1px solid #e9ecf0; border-radius: 12px;
       padding: 15px 16px;
       transition: box-shadow 0.15s ease, transform 0.15s ease;
     }
     .acm-info-card:hover {
-      box-shadow: 0 6px 18px rgba(5, 64, 84, 0.08);
+      box-shadow: 0 6px 18px rgba(61, 69, 82, 0.08);
       transform: translateY(-1px);
     }
     .acm-info-icone {
@@ -798,18 +798,18 @@ type Modal = 'tipos' | 'quarto' | null;
       display: inline-flex; align-items: center; justify-content: center;
     }
     .acm-info-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .inf-teal { background: rgba(26, 111, 138, 0.12); color: #1a6f8a; }
-    .inf-gold { background: rgba(221, 165, 84, 0.16); color: #b5811f; }
-    .inf-navy { background: rgba(5, 64, 84, 0.1); color: #054054; }
+    .inf-teal { background: rgba(36, 87, 167, 0.12); color: #2457a7; }
+    .inf-gold { background: rgba(180, 83, 9, 0.16); color: #b45309; }
+    .inf-navy { background: rgba(61, 69, 82, 0.1); color: #20242c; }
     .acm-info-txt { min-width: 0; }
     .acm-info-txt strong {
       display: block; font-size: 0.9rem; font-weight: 700;
-      color: #054054; margin-bottom: 3px;
+      color: #20242c; margin-bottom: 3px;
     }
     .acm-info-txt p {
-      margin: 0; font-size: 0.8rem; line-height: 1.5; color: #7d97a1;
+      margin: 0; font-size: 0.8rem; line-height: 1.5; color: #66707e;
     }
-    .acm-info-txt b { color: #40525d; }
+    .acm-info-txt b { color: #3d4552; }
     @media (max-width: 960px) { .acm-info { grid-template-columns: 1fr; } }
 
     /* ---------- toolbar ---------- */
@@ -821,40 +821,40 @@ type Modal = 'tipos' | 'quarto' | null;
     .acm-busca {
       display: flex; align-items: center; gap: 8px;
       flex: 1; min-width: 240px; max-width: 460px;
-      background: #fff; border: 1px solid #d7e0e6; border-radius: 8px;
+      background: #fff; border: 1px solid #dde2e8; border-radius: 8px;
       padding: 0 10px; height: 40px;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .acm-busca.foco {
-      border-color: #1a6f8a;
-      box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14);
+      border-color: #2457a7;
+      box-shadow: 0 0 0 3px rgba(36, 87, 167, 0.14);
     }
-    .acm-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
+    .acm-busca-icone { color: #66707e; font-size: 20px; width: 20px; height: 20px; }
     .acm-busca-input {
       flex: 1; border: none; outline: none; background: transparent;
-      font-size: 0.9rem; color: #33424c; font-family: inherit; height: 100%;
+      font-size: 0.9rem; color: #3d4552; font-family: inherit; height: 100%;
     }
-    .acm-busca-input::placeholder { color: #8fa3ab; }
+    .acm-busca-input::placeholder { color: #66707e; }
     .acm-busca-input::-webkit-search-cancel-button { display: none; }
     .acm-limpar {
-      border: none; background: #eef2f5; border-radius: 50%;
-      width: 22px; height: 22px; cursor: pointer; color: #5d6d7e;
+      border: none; background: #f0f2f5; border-radius: 50%;
+      width: 22px; height: 22px; cursor: pointer; color: #55606d;
       display: inline-flex; align-items: center; justify-content: center;
       padding: 0;
     }
     .acm-limpar mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .acm-limpar:hover { background: #d7e0e6; }
+    .acm-limpar:hover { background: #dde2e8; }
 
     .acm-toggle {
       display: inline-flex; align-items: center; gap: 14px;
-      border: 1px solid #d7e0e6; background: #fff; border-radius: 999px;
+      border: 1px solid #dde2e8; background: #fff; border-radius: 999px;
       padding: 8px 20px 8px 12px; font-size: 0.84rem; font-weight: 600;
-      color: #5d6d7e; cursor: pointer; font-family: inherit;
+      color: #55606d; cursor: pointer; font-family: inherit;
       transition: border-color 0.15s, background 0.15s;
     }
     .acm-trilho {
       width: 34px; height: 19px; border-radius: 999px;
-      background: #c3d2d9; position: relative; transition: background 0.18s;
+      background: #cbd2dc; position: relative; transition: background 0.18s;
       flex-shrink: 0;
     }
     .acm-bolinha {
@@ -863,8 +863,8 @@ type Modal = 'tipos' | 'quarto' | null;
       background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25);
       transition: transform 0.18s;
     }
-    .acm-toggle.on { border-color: #1a6f8a; color: #054054; }
-    .acm-toggle.on .acm-trilho { background: #1a6f8a; }
+    .acm-toggle.on { border-color: #2457a7; color: #20242c; }
+    .acm-toggle.on .acm-trilho { background: #2457a7; }
     .acm-toggle.on .acm-bolinha { transform: translateX(16px); }
 
     /* ---------- tabela ---------- */
@@ -872,19 +872,19 @@ type Modal = 'tipos' | 'quarto' | null;
     .acm-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
     .acm-tabela thead th {
       position: sticky; top: 0; z-index: 1;
-      background: #f4f8fa; color: #40525d;
+      background: #f5f7fa; color: #3d4552;
       font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.04em; text-align: left;
-      padding: 14px 14px; border-bottom: 1px solid #d7e0e6;
+      padding: 14px 14px; border-bottom: 1px solid #dde2e8;
       white-space: nowrap;
     }
     .acm-tabela tbody td {
-      padding: 16px 14px; border-bottom: 1px solid #eef2f5;
-      color: #2c3a44; vertical-align: middle; white-space: nowrap;
+      padding: 16px 14px; border-bottom: 1px solid #f0f2f5;
+      color: #3d4552; vertical-align: middle; white-space: nowrap;
     }
     .acm-row { transition: background 0.12s; }
-    .acm-row:hover { background: #f4f8fa; }
-    .acm-row.sel { background: rgba(26, 111, 138, 0.07); }
+    .acm-row:hover { background: #f5f7fa; }
+    .acm-row.sel { background: rgba(36, 87, 167, 0.07); }
     .acm-row:last-child td { border-bottom: none; }
     .tc { text-align: center; }
     .acm-th-nome { min-width: 260px; }
@@ -895,23 +895,23 @@ type Modal = 'tipos' | 'quarto' | null;
       box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
     }
     .acm-cell-txt { display: flex; flex-direction: column; line-height: 1.3; min-width: 0; }
-    .acm-cell-txt strong { color: #054054; font-weight: 600; font-size: 0.95rem; }
+    .acm-cell-txt strong { color: #20242c; font-weight: 600; font-size: 0.95rem; }
     .acm-cell-txt small {
-      color: #7d97a1; font-size: 0.8rem;
+      color: #66707e; font-size: 0.8rem;
       max-width: 320px; white-space: nowrap;
       overflow: hidden; text-overflow: ellipsis;
     }
     .acm-tipo {
-      font-size: 0.78rem; font-weight: 600; color: #1a6f8a;
-      background: rgba(26, 111, 138, 0.1);
+      font-size: 0.78rem; font-weight: 600; color: #2457a7;
+      background: rgba(36, 87, 167, 0.1);
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
-    .acm-valor { font-variant-numeric: tabular-nums; font-weight: 600; color: #054054; }
+    .acm-valor { font-variant-numeric: tabular-nums; font-weight: 600; color: #20242c; }
     .acm-cap {
       display: inline-flex; align-items: center; gap: 5px;
-      color: #40525d; font-size: 0.88rem;
+      color: #3d4552; font-size: 0.88rem;
     }
-    .acm-cap mat-icon { font-size: 17px; width: 17px; height: 17px; color: #8fa3ab; }
+    .acm-cap mat-icon { font-size: 17px; width: 17px; height: 17px; color: #66707e; }
 
     .acm-tabela .badge-acao { padding: 0.5em 0.68em; }
     .acm-tabela .badge-acao mat-icon { font-size: 17px; width: 17px; height: 17px; }
@@ -919,19 +919,19 @@ type Modal = 'tipos' | 'quarto' | null;
 
     /* ---------- estado vazio ---------- */
     .acm-vazio {
-      text-align: center; padding: 40px 16px !important; color: #7d97a1;
+      text-align: center; padding: 40px 16px !important; color: #66707e;
     }
     .acm-vazio mat-icon {
       font-size: 40px; width: 40px; height: 40px;
-      color: #c3d2d9; margin-bottom: 8px;
+      color: #cbd2dc; margin-bottom: 8px;
     }
     .acm-vazio p { margin: 0 0 14px; font-size: 0.9rem; }
 
     /* ---------- skeleton ---------- */
-    .skel-row td { border-bottom: 1px solid #eef2f5; }
+    .skel-row td { border-bottom: 1px solid #f0f2f5; }
     .skel {
       display: inline-block; border-radius: 6px;
-      background: linear-gradient(90deg, #eef2f5 25%, #e3eaef 50%, #eef2f5 75%);
+      background: linear-gradient(90deg, #f0f2f5 25%, #e9ecf0 50%, #f0f2f5 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
     }
@@ -947,16 +947,16 @@ type Modal = 'tipos' | 'quarto' | null;
     .modal-detalhe .modal-body { max-height: 78vh; overflow-y: auto; }
     .det-titulo { display: flex; align-items: center; gap: 10px; }
     .det-desc {
-      margin: 0 0 4px; font-size: 0.84rem; line-height: 1.5; color: #7d97a1;
+      margin: 0 0 4px; font-size: 0.84rem; line-height: 1.5; color: #66707e;
     }
     .modal-detalhe h4 {
       display: flex; align-items: center; gap: 6px;
       font-size: 0.82rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #1a6f8a; margin: 18px 0 10px;
+      letter-spacing: 0.05em; color: #2457a7; margin: 18px 0 10px;
     }
     .modal-detalhe h4 mat-icon { font-size: 17px; width: 17px; height: 17px; }
     .det-dica {
-      margin: -4px 0 10px; font-size: 0.76rem; color: #8a99a4; line-height: 1.5;
+      margin: -4px 0 10px; font-size: 0.76rem; color: #66707e; line-height: 1.5;
     }
 
     /* faixa-resumo dentro do modal — itens fluem, sem truncar */
@@ -964,8 +964,8 @@ type Modal = 'tipos' | 'quarto' | null;
     .det-faixa {
       display: flex; flex-wrap: wrap; align-items: center;
       gap: 10px 24px;
-      background: linear-gradient(135deg, #f2f8fb 0%, #f7faf6 100%);
-      border: 1px solid #dce8ee; border-radius: 12px;
+      background: #f8f9fb;
+      border: 1px solid #dbe9f5; border-radius: 12px;
       padding: 12px 18px; margin: 14px 0 4px;
     }
     .det-item {
@@ -979,27 +979,27 @@ type Modal = 'tipos' | 'quarto' | null;
     .det-item-txt { display: flex; flex-direction: column; line-height: 1.15; }
     .det-item-txt small {
       font-size: 0.66rem; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #7d97a1;
+      letter-spacing: 0.05em; color: #66707e;
     }
     .det-item-txt strong {
-      font-size: 0.9rem; color: #054054; font-weight: 700; white-space: nowrap;
+      font-size: 0.9rem; color: #20242c; font-weight: 700; white-space: nowrap;
     }
     .quartos {
       display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
     }
     .chip {
       display: inline-flex; align-items: center; gap: 8px;
-      border: 1px solid #d7e0e6; border-radius: 8px; padding: 6px 10px;
+      border: 1px solid #dde2e8; border-radius: 8px; padding: 6px 10px;
       background: #fff;
     }
-    .chip strong { color: #054054; font-size: 0.9rem; }
+    .chip strong { color: #20242c; font-size: 0.9rem; }
     .chip-del {
       display: inline-flex; align-items: center; justify-content: center;
       border: none; background: transparent; cursor: pointer;
-      color: #8fa3ab; padding: 0;
+      color: #66707e; padding: 0;
     }
     .chip-del mat-icon { font-size: 15px; width: 15px; height: 15px; }
-    .chip-del:hover { color: #054054; }
+    .chip-del:hover { color: #20242c; }
     .btn-add-quarto {
       display: inline-flex; align-items: center; gap: 5px;
       padding: 0.4rem 0.8rem; font-size: 0.84rem;
@@ -1013,11 +1013,11 @@ type Modal = 'tipos' | 'quarto' | null;
     /* ---------- modais pequenos (tipos / quarto) ---------- */
     .modal-sm { max-width: 360px; }
     .modal-dica {
-      margin: 0 0 12px; font-size: 0.8rem; line-height: 1.5; color: #7d97a1;
+      margin: 0 0 12px; font-size: 0.8rem; line-height: 1.5; color: #66707e;
     }
     .modal-foot {
       display: flex; justify-content: flex-end;
-      padding: 10px 14px; border-top: 1px solid #d7e0e6;
+      padding: 10px 14px; border-top: 1px solid #dde2e8;
     }
     .modal-foot .btn-green { display: inline-flex; align-items: center; gap: 6px; }
     .modal-foot mat-icon { font-size: 15px; width: 15px; height: 15px; }
@@ -1025,15 +1025,15 @@ type Modal = 'tipos' | 'quarto' | null;
     /* ---------- drawer lateral ---------- */
     .drawer-backdrop {
       position: fixed; inset: 0; z-index: 200;
-      background: rgba(5, 32, 43, 0.45);
+      background: rgba(22, 26, 32, 0.45);
       animation: fadeIn 0.18s ease-out;
     }
     @keyframes fadeIn { from { opacity: 0; } }
     .drawer {
       position: fixed; top: 0; right: 0; bottom: 0; z-index: 201;
       width: min(540px, 100vw);
-      background: #f7fafb;
-      box-shadow: -12px 0 40px rgba(3, 32, 43, 0.28);
+      background: #f8f9fb;
+      box-shadow: -12px 0 40px rgba(22, 26, 32, 0.28);
       display: flex; flex-direction: column;
       animation: drawerIn 0.22s cubic-bezier(0.2, 0.8, 0.3, 1);
     }
@@ -1044,38 +1044,38 @@ type Modal = 'tipos' | 'quarto' | null;
     .drawer-head {
       display: flex; align-items: flex-start; justify-content: space-between;
       gap: 12px; padding: 18px 22px;
-      background: #fff; border-bottom: 1px solid #e3eaef;
+      background: #fff; border-bottom: 1px solid #e9ecf0;
       flex-shrink: 0;
     }
-    .drawer-head-txt h5 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #054054; }
-    .drawer-head-txt p { margin: 3px 0 0; font-size: 0.8rem; color: #7d97a1; }
+    .drawer-head-txt h5 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #20242c; }
+    .drawer-head-txt p { margin: 3px 0 0; font-size: 0.8rem; color: #66707e; }
     .drawer-fechar {
-      border: none; background: #eef2f5; border-radius: 8px;
-      width: 34px; height: 34px; cursor: pointer; color: #5d6d7e;
+      border: none; background: #f0f2f5; border-radius: 8px;
+      width: 34px; height: 34px; cursor: pointer; color: #55606d;
       display: inline-flex; align-items: center; justify-content: center;
       flex-shrink: 0; transition: background 0.15s;
     }
-    .drawer-fechar:hover { background: #d7e0e6; color: #054054; }
+    .drawer-fechar:hover { background: #dde2e8; color: #20242c; }
     .drawer-fechar mat-icon { font-size: 18px; width: 18px; height: 18px; }
 
     .drawer-form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
     .drawer-body { flex: 1; overflow-y: auto; padding: 18px 22px; }
     .dsec {
-      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
+      background: #fff; border: 1px solid #e9ecf0; border-radius: 10px;
       padding: 16px; margin-bottom: 14px;
     }
     .dsec-tit {
       display: flex; align-items: center; gap: 7px;
       font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #1a6f8a; margin-bottom: 12px;
+      letter-spacing: 0.05em; color: #2457a7; margin-bottom: 12px;
     }
     .dsec-tit mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .dsec-sub { margin: -6px 0 12px; font-size: 0.76rem; color: #8a99a4; }
-    .dsec-dica { display: block; margin-top: 6px; font-size: 0.74rem; color: #8a99a4; }
+    .dsec-sub { margin: -6px 0 12px; font-size: 0.76rem; color: #66707e; }
+    .dsec-dica { display: block; margin-top: 6px; font-size: 0.74rem; color: #66707e; }
     .dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
     .dgrid .full { grid-column: 1 / -1; }
     .campo { display: flex; flex-direction: column; gap: 4px; }
-    .campo .lbl { font-size: 0.8rem; font-weight: 600; color: #40525d; }
+    .campo .lbl { font-size: 0.8rem; font-weight: 600; color: #3d4552; }
     .campo .req, .drawer-req .req { color: #dc3545; }
     .erro-campo { color: #dc3545; font-size: 0.74rem; font-weight: 500; }
     .input-inn.inval { border-color: #dc3545; box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.12); }
@@ -1087,8 +1087,8 @@ type Modal = 'tipos' | 'quarto' | null;
     .input-group-inn .addon {
       display: inline-flex; align-items: center;
       padding: 0 10px; font-size: 0.8rem;
-      background: #5d6d7e; color: #fff;
-      border: 1px solid #5d6d7e;
+      background: #55606d; color: #fff;
+      border: 1px solid #55606d;
       border-radius: 4px 0 0 4px;
     }
     .input-group-inn .addon mat-icon { font-size: 15px; width: 15px; height: 15px; }
@@ -1096,27 +1096,27 @@ type Modal = 'tipos' | 'quarto' | null;
     .input-group-inn.mb { margin-bottom: 12px; }
     .input-group-inn.mb .input-inn { border-radius: 4px 0 0 4px; border-right: 0; }
     .input-group-inn.mb .btn-green { border-radius: 0 4px 4px 0; }
-    .check-inn { display: flex; align-items: center; gap: 6px; font-size: 0.84rem; color: #40525d; }
+    .check-inn { display: flex; align-items: center; gap: 6px; font-size: 0.84rem; color: #3d4552; }
 
     /* tarifa por ocupação — linha expansível na tabela de tipos */
-    .fx-row td { background: #f7fafb; border-top: none; }
+    .fx-row td { background: #f8f9fb; border-top: none; }
     .fx-box { display: flex; flex-direction: column; gap: 8px; padding: 10px 6px; }
-    .fx-tit { margin: 0; font-size: 0.85rem; color: #054054; font-weight: 600; }
+    .fx-tit { margin: 0; font-size: 0.85rem; color: #20242c; font-weight: 600; }
     .fx-linha { display: flex; align-items: flex-end; gap: 10px; }
     .fx-inp { width: 110px; }
     .fx-acoes { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
-    .bg-green { background: #1e8e5a; }
-    .dl { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: #5d6d7e; }
-    .mc-btn { font-size: 0.75rem; padding: 5px 12px; border: 1px solid #d7e0e6; border-radius: 6px; background: #fff; color: #1a6f8a; cursor: pointer; }
-    .mc-btn:hover { border-color: #1a6f8a; }
+    .bg-green { background: #198754; }
+    .dl { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: #55606d; }
+    .mc-btn { font-size: 0.75rem; padding: 5px 12px; border: 1px solid #dde2e8; border-radius: 6px; background: #fff; color: #2457a7; cursor: pointer; }
+    .mc-btn:hover { border-color: #2457a7; }
 
     .drawer-foot {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 13px 22px;
-      background: #fff; border-top: 1px solid #e3eaef;
+      background: #fff; border-top: 1px solid #e9ecf0;
       flex-shrink: 0;
     }
-    .drawer-req { font-size: 0.76rem; color: #8a99a4; }
+    .drawer-req { font-size: 0.76rem; color: #66707e; }
     .drawer-foot-acoes { display: flex; gap: 8px; }
     .drawer-foot-acoes .btn-green,
     .drawer-foot-acoes .btn-gray {
@@ -1207,7 +1207,7 @@ export class AcomodacoesComponent implements OnInit {
     valor: [null as number | null],
     capacidade: [1, [Validators.required, Validators.min(1)]],
     descricao: [''],
-    cor: ['#1a6f8a'],
+    cor: ['#2457a7'],
   });
 
   /** Acomodações ativas — selo dourado do cabeçalho. */
@@ -1316,7 +1316,7 @@ export class AcomodacoesComponent implements OnInit {
         valor: a.valor !== null ? Number(a.valor) : null,
         capacidade: a.capacidade,
         descricao: a.descricao ?? '',
-        cor: a.cor ?? '#1a6f8a',
+        cor: a.cor ?? '#2457a7',
       });
     } else {
       this.form.reset({
@@ -1327,7 +1327,7 @@ export class AcomodacoesComponent implements OnInit {
         valor: null,
         capacidade: 1,
         descricao: '',
-        cor: '#1a6f8a',
+        cor: '#2457a7',
       });
       this.estacionamentoApi.listarVagas().subscribe({
         next: (v) => this.vagasLivres.set(v.filter((x) => x.ativo && x.idacomodacao === null)),

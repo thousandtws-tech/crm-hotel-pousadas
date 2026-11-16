@@ -513,30 +513,30 @@ import { TourGuiado } from '@core/services/tour.service';
     .fr-titulo-grupo { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
     .fr-titulo {
       margin: 0; font-size: 1.35rem; font-weight: 700;
-      color: #054054; letter-spacing: -0.01em;
+      color: #20242c; letter-spacing: -0.01em;
     }
     .fr-contador {
-      font-size: 0.78rem; font-weight: 600; color: #1a6f8a;
-      background: rgba(26, 111, 138, 0.12);
+      font-size: 0.78rem; font-weight: 600; color: #2457a7;
+      background: rgba(36, 87, 167, 0.12);
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .fr-ativos {
-      font-size: 0.78rem; font-weight: 600; color: #b5811f;
-      background: rgba(221, 165, 84, 0.16);
+      font-size: 0.78rem; font-weight: 600; color: #b45309;
+      background: rgba(180, 83, 9, 0.16);
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .fr-head-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
     .fr-head-acoes button { display: inline-flex; align-items: center; gap: 6px; }
     .btn-tour {
       display: inline-flex; align-items: center; gap: 6px;
-      border: 1.5px solid #4b95ab; background: #fff;
-      color: #1a6f8a; border-radius: 4px;
+      border: 1.5px solid #3d6db5; background: #fff;
+      color: #2457a7; border-radius: 4px;
       padding: 0 14px; min-height: 34px; cursor: pointer;
       font-size: 0.85rem; font-weight: 600;
       transition: background .15s ease, color .15s ease;
     }
     .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { background: #1a6f8a; color: #fff; border-color: #1a6f8a; }
+    .btn-tour:hover { background: #2457a7; color: #fff; border-color: #2457a7; }
 
     /* ---------- banners de informação ---------- */
     .fr-info {
@@ -545,12 +545,12 @@ import { TourGuiado } from '@core/services/tour.service';
     }
     .fr-info-card {
       display: flex; align-items: flex-start; gap: 12px;
-      background: #fff; border: 1px solid #e3eaef; border-radius: 12px;
+      background: #fff; border: 1px solid #e9ecf0; border-radius: 12px;
       padding: 15px 16px;
       transition: box-shadow 0.15s ease, transform 0.15s ease;
     }
     .fr-info-card:hover {
-      box-shadow: 0 6px 18px rgba(5, 64, 84, 0.08);
+      box-shadow: 0 6px 18px rgba(61, 69, 82, 0.08);
       transform: translateY(-1px);
     }
     .fr-info-icone {
@@ -558,16 +558,16 @@ import { TourGuiado } from '@core/services/tour.service';
       display: inline-flex; align-items: center; justify-content: center;
     }
     .fr-info-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .inf-teal { background: rgba(26, 111, 138, 0.12); color: #1a6f8a; }
-    .inf-gold { background: rgba(221, 165, 84, 0.16); color: #b5811f; }
-    .inf-navy { background: rgba(5, 64, 84, 0.1); color: #054054; }
+    .inf-teal { background: rgba(36, 87, 167, 0.12); color: #2457a7; }
+    .inf-gold { background: rgba(180, 83, 9, 0.16); color: #b45309; }
+    .inf-navy { background: rgba(61, 69, 82, 0.1); color: #20242c; }
     .fr-info-txt { min-width: 0; }
     .fr-info-txt strong {
       display: block; font-size: 0.9rem; font-weight: 700;
-      color: #054054; margin-bottom: 3px;
+      color: #20242c; margin-bottom: 3px;
     }
-    .fr-info-txt p { margin: 0; font-size: 0.8rem; line-height: 1.5; color: #7d97a1; }
-    .fr-info-txt b { color: #40525d; }
+    .fr-info-txt p { margin: 0; font-size: 0.8rem; line-height: 1.5; color: #66707e; }
+    .fr-info-txt b { color: #3d4552; }
     @media (max-width: 960px) { .fr-info { grid-template-columns: 1fr; } }
 
     /* ---------- toolbar ---------- */
@@ -579,40 +579,40 @@ import { TourGuiado } from '@core/services/tour.service';
     .fr-busca {
       display: flex; align-items: center; gap: 8px;
       flex: 1; min-width: 240px; max-width: 460px;
-      background: #fff; border: 1px solid #d7e0e6; border-radius: 8px;
+      background: #fff; border: 1px solid #dde2e8; border-radius: 8px;
       padding: 0 10px; height: 40px;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .fr-busca.foco {
-      border-color: #1a6f8a;
-      box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14);
+      border-color: #2457a7;
+      box-shadow: 0 0 0 3px rgba(36, 87, 167, 0.14);
     }
-    .fr-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
+    .fr-busca-icone { color: #66707e; font-size: 20px; width: 20px; height: 20px; }
     .fr-busca-input {
       flex: 1; border: none; outline: none; background: transparent;
-      font-size: 0.9rem; color: #33424c; font-family: inherit; height: 100%;
+      font-size: 0.9rem; color: #3d4552; font-family: inherit; height: 100%;
     }
-    .fr-busca-input::placeholder { color: #8fa3ab; }
+    .fr-busca-input::placeholder { color: #66707e; }
     .fr-busca-input::-webkit-search-cancel-button { display: none; }
     .fr-limpar {
-      border: none; background: #eef2f5; border-radius: 50%;
-      width: 22px; height: 22px; cursor: pointer; color: #5d6d7e;
+      border: none; background: #f0f2f5; border-radius: 50%;
+      width: 22px; height: 22px; cursor: pointer; color: #55606d;
       display: inline-flex; align-items: center; justify-content: center;
       padding: 0;
     }
     .fr-limpar mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .fr-limpar:hover { background: #d7e0e6; }
+    .fr-limpar:hover { background: #dde2e8; }
 
     .fr-toggle {
       display: inline-flex; align-items: center; gap: 14px;
-      border: 1px solid #d7e0e6; background: #fff; border-radius: 999px;
+      border: 1px solid #dde2e8; background: #fff; border-radius: 999px;
       padding: 8px 20px 8px 12px; font-size: 0.84rem; font-weight: 600;
-      color: #5d6d7e; cursor: pointer; font-family: inherit;
+      color: #55606d; cursor: pointer; font-family: inherit;
       transition: border-color 0.15s, background 0.15s;
     }
     .fr-trilho {
       width: 34px; height: 19px; border-radius: 999px;
-      background: #c3d2d9; position: relative; transition: background 0.18s;
+      background: #cbd2dc; position: relative; transition: background 0.18s;
       flex-shrink: 0;
     }
     .fr-bolinha {
@@ -621,8 +621,8 @@ import { TourGuiado } from '@core/services/tour.service';
       background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25);
       transition: transform 0.18s;
     }
-    .fr-toggle.on { border-color: #1a6f8a; color: #054054; }
-    .fr-toggle.on .fr-trilho { background: #1a6f8a; }
+    .fr-toggle.on { border-color: #2457a7; color: #20242c; }
+    .fr-toggle.on .fr-trilho { background: #2457a7; }
     .fr-toggle.on .fr-bolinha { transform: translateX(16px); }
 
     /* ---------- tabela ---------- */
@@ -630,46 +630,46 @@ import { TourGuiado } from '@core/services/tour.service';
     .fr-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
     .fr-tabela thead th {
       position: sticky; top: 0; z-index: 1;
-      background: #f4f8fa; color: #40525d;
+      background: #f5f7fa; color: #3d4552;
       font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.05em; padding: 14px 16px; text-align: left;
-      border-bottom: 2px solid #e3eaef; white-space: nowrap;
+      border-bottom: 2px solid #e9ecf0; white-space: nowrap;
     }
     .fr-tabela tbody td {
-      padding: 16px; border-bottom: 1px solid #eef2f5;
-      vertical-align: middle; color: #33424c;
+      padding: 16px; border-bottom: 1px solid #f0f2f5;
+      vertical-align: middle; color: #3d4552;
     }
-    .fr-tabela tbody tr:hover { background: #f7fafb; }
+    .fr-tabela tbody tr:hover { background: #f8f9fb; }
     .fr-tabela .tc { text-align: center; }
     .fr-cell { display: flex; align-items: center; gap: 12px; min-width: 0; }
     .fr-ic {
       width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
-      background: rgba(5, 64, 84, 0.08); color: #054054;
+      background: rgba(61, 69, 82, 0.08); color: #20242c;
       display: inline-flex; align-items: center; justify-content: center;
     }
     .fr-ic mat-icon { font-size: 22px; width: 22px; height: 22px; }
     .fr-cell-txt { display: flex; flex-direction: column; min-width: 0; }
-    .fr-cell-txt strong { font-size: 0.95rem; color: #054054; font-weight: 700; }
-    .fr-cell-txt small { font-size: 0.76rem; color: #8a99a4; }
+    .fr-cell-txt strong { font-size: 0.95rem; color: #20242c; font-weight: 700; }
+    .fr-cell-txt small { font-size: 0.76rem; color: #66707e; }
     .fr-acom { display: inline-flex; flex-direction: column; }
-    .fr-acom small { font-size: 0.74rem; color: #8a99a4; }
+    .fr-acom small { font-size: 0.74rem; color: #66707e; }
     .fr-tabela .badge-acao { padding: 0.5em 0.68em; }
     .fr-tabela .badge-acao mat-icon { font-size: 17px; width: 17px; height: 17px; }
     .fr-tabela .status-chip { padding: 6px 14px; font-size: 0.8rem; }
 
     /* ---------- estado vazio / skeleton ---------- */
     .fr-vazio {
-      text-align: center; padding: 40px 16px !important; color: #7d97a1;
+      text-align: center; padding: 40px 16px !important; color: #66707e;
     }
     .fr-vazio mat-icon {
       font-size: 40px; width: 40px; height: 40px;
-      color: #c3d2d9; margin-bottom: 8px;
+      color: #cbd2dc; margin-bottom: 8px;
     }
     .fr-vazio p { margin: 0 0 14px; font-size: 0.9rem; }
-    .skel-row td { border-bottom: 1px solid #eef2f5; }
+    .skel-row td { border-bottom: 1px solid #f0f2f5; }
     .skel {
       display: inline-block; border-radius: 6px;
-      background: linear-gradient(90deg, #eef2f5 25%, #e3eaef 50%, #eef2f5 75%);
+      background: linear-gradient(90deg, #f0f2f5 25%, #e9ecf0 50%, #f0f2f5 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
     }
@@ -683,15 +683,15 @@ import { TourGuiado } from '@core/services/tour.service';
     /* ---------- drawer lateral ---------- */
     .drawer-backdrop {
       position: fixed; inset: 0; z-index: 200;
-      background: rgba(5, 32, 43, 0.45);
+      background: rgba(22, 26, 32, 0.45);
       animation: fadeIn 0.18s ease-out;
     }
     @keyframes fadeIn { from { opacity: 0; } }
     .drawer {
       position: fixed; top: 0; right: 0; bottom: 0; z-index: 201;
       width: min(540px, 100vw);
-      background: #f7fafb;
-      box-shadow: -12px 0 40px rgba(3, 32, 43, 0.28);
+      background: #f8f9fb;
+      box-shadow: -12px 0 40px rgba(22, 26, 32, 0.28);
       display: flex; flex-direction: column;
       animation: drawerIn 0.22s cubic-bezier(0.2, 0.8, 0.3, 1);
     }
@@ -702,45 +702,45 @@ import { TourGuiado } from '@core/services/tour.service';
     .drawer-head {
       display: flex; align-items: flex-start; justify-content: space-between;
       gap: 12px; padding: 18px 22px;
-      background: #fff; border-bottom: 1px solid #e3eaef;
+      background: #fff; border-bottom: 1px solid #e9ecf0;
       flex-shrink: 0;
     }
-    .drawer-head-txt h5 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #054054; }
-    .drawer-head-txt p { margin: 3px 0 0; font-size: 0.8rem; color: #7d97a1; }
+    .drawer-head-txt h5 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #20242c; }
+    .drawer-head-txt p { margin: 3px 0 0; font-size: 0.8rem; color: #66707e; }
     .drawer-fechar {
-      border: none; background: #eef2f5; border-radius: 8px;
-      width: 34px; height: 34px; cursor: pointer; color: #5d6d7e;
+      border: none; background: #f0f2f5; border-radius: 8px;
+      width: 34px; height: 34px; cursor: pointer; color: #55606d;
       display: inline-flex; align-items: center; justify-content: center;
       flex-shrink: 0; transition: background 0.15s;
     }
-    .drawer-fechar:hover { background: #d7e0e6; color: #054054; }
+    .drawer-fechar:hover { background: #dde2e8; color: #20242c; }
     .drawer-fechar mat-icon { font-size: 18px; width: 18px; height: 18px; }
     .drawer-form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
     .drawer-body { flex: 1; overflow-y: auto; padding: 18px 22px; }
     .dsec {
-      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
+      background: #fff; border: 1px solid #e9ecf0; border-radius: 10px;
       padding: 16px; margin-bottom: 14px;
     }
     .dsec-tit {
       display: flex; align-items: center; gap: 7px;
       font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #1a6f8a; margin-bottom: 12px;
+      letter-spacing: 0.05em; color: #2457a7; margin-bottom: 12px;
     }
     .dsec-tit mat-icon { font-size: 17px; width: 17px; height: 17px; }
     .dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
     .dgrid .full { grid-column: 1 / -1; }
     .campo { display: flex; flex-direction: column; gap: 4px; }
-    .campo .lbl { font-size: 0.8rem; font-weight: 600; color: #40525d; }
+    .campo .lbl { font-size: 0.8rem; font-weight: 600; color: #3d4552; }
     .campo .req, .drawer-req .req { color: #dc3545; }
     .erro-campo { color: #dc3545; font-size: 0.74rem; font-weight: 500; }
     .input-inn.inval { border-color: #dc3545; box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.12); }
     .drawer-foot {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 13px 22px;
-      background: #fff; border-top: 1px solid #e3eaef;
+      background: #fff; border-top: 1px solid #e9ecf0;
       flex-shrink: 0;
     }
-    .drawer-req { font-size: 0.76rem; color: #8a99a4; }
+    .drawer-req { font-size: 0.76rem; color: #66707e; }
     .drawer-foot-acoes { display: flex; gap: 8px; }
     .drawer-foot-acoes .btn-green,
     .drawer-foot-acoes .btn-gray {
@@ -752,8 +752,8 @@ import { TourGuiado } from '@core/services/tour.service';
     .input-group-inn .addon {
       display: inline-flex; align-items: center;
       padding: 0 10px; font-size: 0.8rem;
-      background: #5d6d7e; color: #fff;
-      border: 1px solid #5d6d7e;
+      background: #55606d; color: #fff;
+      border: 1px solid #55606d;
       border-radius: 4px 0 0 4px;
     }
     .input-group-inn .addon mat-icon { font-size: 15px; width: 15px; height: 15px; }
@@ -765,27 +765,27 @@ import { TourGuiado } from '@core/services/tour.service';
     .fr-det-titulo { display: flex; align-items: center; gap: 10px; }
     .fr-det-ic {
       width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
-      background: rgba(5, 64, 84, 0.1); color: #054054;
+      background: rgba(61, 69, 82, 0.1); color: #20242c;
       display: inline-flex; align-items: center; justify-content: center;
     }
     .fr-det-ic mat-icon { font-size: 19px; width: 19px; height: 19px; }
     .modal-fr h4 {
       display: flex; align-items: center; gap: 6px;
       font-size: 0.82rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #1a6f8a; margin: 18px 0 10px;
+      letter-spacing: 0.05em; color: #2457a7; margin: 18px 0 10px;
     }
     .modal-fr h4 mat-icon { font-size: 17px; width: 17px; height: 17px; }
     .det-dica {
-      margin: -4px 0 10px; font-size: 0.76rem; color: #8a99a4; line-height: 1.5;
+      margin: -4px 0 10px; font-size: 0.76rem; color: #66707e; line-height: 1.5;
     }
-    .det-dica b { color: #40525d; }
+    .det-dica b { color: #3d4552; }
 
     /* faixa-resumo — itens fluem sem truncar */
     .det-faixa {
       display: flex; flex-wrap: wrap; align-items: center;
       gap: 10px 24px;
-      background: linear-gradient(135deg, #f2f8fb 0%, #f7faf6 100%);
-      border: 1px solid #dce8ee; border-radius: 12px;
+      background: #f8f9fb;
+      border: 1px solid #dbe9f5; border-radius: 12px;
       padding: 12px 18px; margin: 0 0 4px;
     }
     .det-item { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
@@ -797,16 +797,16 @@ import { TourGuiado } from '@core/services/tour.service';
     .det-item-txt { display: flex; flex-direction: column; line-height: 1.15; }
     .det-item-txt small {
       font-size: 0.66rem; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #7d97a1;
+      letter-spacing: 0.05em; color: #66707e;
     }
     .det-item-txt strong {
-      font-size: 0.9rem; color: #054054; font-weight: 700; white-space: nowrap;
+      font-size: 0.9rem; color: #20242c; font-weight: 700; white-space: nowrap;
     }
 
     /* faixa de reposição de item */
     .fr-add {
       display: flex; align-items: stretch; gap: 10px; flex-wrap: wrap;
-      background: #f4f8fa; border: 1px solid #e0ebf0; border-radius: 10px;
+      background: #f5f7fa; border: 1px solid #dbe9f5; border-radius: 10px;
       padding: 12px;
     }
     .fr-add-cat { width: 200px; }
@@ -821,39 +821,39 @@ import { TourGuiado } from '@core/services/tour.service';
 
     /* itens do frigobar */
     .fr-itens-wrap { overflow-x: auto; border-radius: 8px; }
-    .fr-tabela-itens .fr-item-nome { color: #054054; font-size: 0.9rem; }
+    .fr-tabela-itens .fr-item-nome { color: #20242c; font-size: 0.9rem; }
     .fr-cat {
-      font-size: 0.78rem; font-weight: 600; color: #1a6f8a;
-      background: rgba(26, 111, 138, 0.1);
+      font-size: 0.78rem; font-weight: 600; color: #2457a7;
+      background: rgba(36, 87, 167, 0.1);
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
-    .fr-valor { font-variant-numeric: tabular-nums; font-weight: 600; color: #054054; }
+    .fr-valor { font-variant-numeric: tabular-nums; font-weight: 600; color: #20242c; }
     .qtd-ctl {
       display: inline-flex; align-items: center; gap: 8px;
-      background: #f2f6f8; border: 1px solid #dfe8ed; border-radius: 999px;
+      background: #f5f7fa; border: 1px solid #dbe9f5; border-radius: 999px;
       padding: 3px 6px;
     }
     .qtd-btn {
       width: 26px; height: 26px; border-radius: 50%;
-      border: none; background: #fff; color: #1a6f8a; cursor: pointer;
+      border: none; background: #fff; color: #2457a7; cursor: pointer;
       display: inline-flex; align-items: center; justify-content: center;
-      box-shadow: 0 1px 3px rgba(5, 64, 84, 0.15);
+      box-shadow: 0 1px 3px rgba(61, 69, 82, 0.15);
       transition: background 0.15s, color 0.15s;
     }
     .qtd-btn mat-icon { font-size: 15px; width: 15px; height: 15px; }
-    .qtd-btn:hover { background: #1a6f8a; color: #fff; }
+    .qtd-btn:hover { background: #2457a7; color: #fff; }
     .qtd-num {
       min-width: 22px; text-align: center; font-size: 0.92rem;
-      font-variant-numeric: tabular-nums; color: #054054;
+      font-variant-numeric: tabular-nums; color: #20242c;
     }
     .btn-del {
       background: none; border: none; cursor: pointer;
-      color: #7d97a1; padding: 4px; border-radius: 6px;
+      color: #66707e; padding: 4px; border-radius: 6px;
       display: inline-flex; align-items: center;
       transition: color 0.15s, background 0.15s;
     }
     .btn-del mat-icon { font-size: 18px; width: 18px; height: 18px; }
-    .btn-del:hover { color: #054054; background: rgba(5, 64, 84, 0.08); }
+    .btn-del:hover { color: #20242c; background: rgba(61, 69, 82, 0.08); }
 
     @media (max-width: 640px) {
       .fr-head { flex-direction: column; align-items: stretch; }

@@ -928,14 +928,14 @@ interface AdicionalLinha {
     .total-consumo { font-size: 0.9rem; }
 
     .alert-warn {
-      margin-top: 12px; background: #fff3cd; color: #664d03;
-      border: 1px solid #ffecb5; border-radius: 0.25rem;
+      margin-top: 12px; background: #f7ead2; color: #8a6116;
+      border: 1px solid #f7ead2; border-radius: 0.25rem;
       padding: 0.6rem 1rem; font-size: 0.85rem;
       animation: in 0.3s ease-out;
     }
     .alert-eca {
-      background: #fdf1e8; border: 1px solid #f0c9a8; border-radius: 8px;
-      padding: 10px 12px; font-size: 0.82rem; color: #7a4a12;
+      background: #fef3e0; border: 1px solid #f7ead2; border-radius: 8px;
+      padding: 10px 12px; font-size: 0.82rem; color: #8a6116;
     }
     .alert-eca strong { display: block; margin-bottom: 4px; }
     .alert-eca p { margin: 0 0 8px; }
@@ -943,9 +943,9 @@ interface AdicionalLinha {
     .head-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
     .badges { display: flex; gap: 8px; flex-wrap: wrap; }
     .my-badge { font-size: 0.8rem; }
-    .status-chip.bg-warn-t { background: #b5811f; color: #33424c; }
-    .status-chip.bg-blue { background: #1a6f8a; }
-    .status-chip.bg-danger { background: #7d97a1; }
+    .status-chip.bg-warn-t { background: #b45309; color: #3d4552; }
+    .status-chip.bg-blue { background: #2457a7; }
+    .status-chip.bg-danger { background: #66707e; }
     .acoes { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .acoes .btn-green, .acoes .btn-gray, .acoes .btn-danger { font-size: 0.8rem; padding: 0.3em 0.7em; }
     .btn-gray.sq { padding: 0 8px; display: inline-flex; align-items: center; }
@@ -960,18 +960,18 @@ interface AdicionalLinha {
     .f { display: flex; flex-direction: column; gap: 4px; }
     .c3 { grid-column: span 3; } .c4 { grid-column: span 4; }
     .c6 { grid-column: span 6; } .c12 { grid-column: span 12; }
-    .lbl2 { font-size: 0.8rem; font-weight: 600; color: #374151; display: flex; flex-direction: column; gap: 4px; }
+    .lbl2 { font-size: 0.8rem; font-weight: 600; color: #3d4552; display: flex; flex-direction: column; gap: 4px; }
     .ig { display: flex; }
     .ig-icon {
-      background: #5d6d7e; color: #fff; border-radius: 0.2rem 0 0 0.2rem;
+      background: #55606d; color: #fff; border-radius: 0.2rem 0 0 0.2rem;
       display: inline-flex; align-items: center; justify-content: center;
       min-width: 34px; font-size: 12px; padding: 0 8px;
     }
     .ig-icon mat-icon { font-size: 15px; width: 15px; height: 15px; }
     .ig-input {
-      flex: 1; border: 1px solid #c3d2d9; border-left: none;
+      flex: 1; border: 1px solid #cbd2dc; border-left: none;
       border-radius: 0 0.2rem 0.2rem 0; padding: 5px 9px;
-      font-size: 0.82rem; font-family: inherit; background: #eef2f5; color: #495057;
+      font-size: 0.82rem; font-family: inherit; background: #f0f2f5; color: #44525f;
     }
 
     .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; }
@@ -982,8 +982,8 @@ interface AdicionalLinha {
     .ig-add { display: flex; gap: 0; align-items: stretch; }
     .ig-add .input-inn { border-radius: 0.2rem 0 0 0.2rem; border-right: none; width: 110px; }
     .ig-add .rs {
-      background: #eef2f5; border: 1px solid #c3d2d9; border-right: none;
-      border-radius: 0.2rem 0 0 0.2rem; padding: 6px 9px; font-size: 0.85rem; color: #495057;
+      background: #f0f2f5; border: 1px solid #cbd2dc; border-right: none;
+      border-radius: 0.2rem 0 0 0.2rem; padding: 6px 9px; font-size: 0.85rem; color: #44525f;
     }
     .ig-add .btn-green { border-radius: 0 0.2rem 0.2rem 0; }
     .ig-add .rs + .input-inn { border-radius: 0; }
@@ -997,12 +997,12 @@ interface AdicionalLinha {
     .modal-body { gap: 10px; }
     .alert-warn { animation: modal-in 0.3s ease-out; }
     .mt { margin-top: 8px; }
-    .bb { border-bottom: 1px solid #d7e0e6; padding-bottom: 10px; }
-    .bt { border-top: 1px solid #d7e0e6; padding-top: 12px; }
+    .bb { border-bottom: 1px solid #dde2e8; padding-bottom: 10px; }
+    .bt { border-top: 1px solid #dde2e8; padding-top: 12px; }
     .tc { text-align: center; }
     .end { display: flex; justify-content: flex-end; }
     .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .ro { background: #eef2f5; }
+    .ro { background: #f0f2f5; }
     .note { font-size: 70%; }
     .radio-row {
       display: flex; align-items: center; gap: 8px;
@@ -1025,16 +1025,16 @@ interface AdicionalLinha {
     .cancel-title { font-size: 1rem; font-weight: 600; text-align: center; margin: 0.5rem 0; }
     .cancel-btns { display: flex; justify-content: space-between; }
     .admin-box {
-      border: 1px solid #d7e0e6; border-radius: 0.25rem; padding: 1rem;
+      border: 1px solid #dde2e8; border-radius: 0.25rem; padding: 1rem;
       display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
     .admin-box h6 { margin: 0; font-size: 0.85rem; font-weight: 600; }
     table.plain td { font-size: 0.85rem; }
     .fnrh-export { display: flex; align-items: center; gap: 6px; margin: 4px 0 8px; flex-wrap: wrap; }
-    .fx-lbl { font-size: 0.75rem; color: #5d6d7e; font-weight: 600; }
-    .fx-inp { border: 1px solid #d7e0e6; border-radius: 6px; padding: 4px 8px; font-size: 0.8rem; }
+    .fx-lbl { font-size: 0.75rem; color: #55606d; font-weight: 600; }
+    .fx-inp { border: 1px solid #dde2e8; border-radius: 6px; padding: 4px 8px; font-size: 0.8rem; }
     .ret-badge {
-      background: #eef4f6; color: #054054; border-radius: 10px;
+      background: #f0f2f5; color: #20242c; border-radius: 10px;
       padding: 2px 8px; font-size: 0.72rem; font-weight: 600;
     }
 

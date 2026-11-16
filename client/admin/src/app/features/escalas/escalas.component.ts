@@ -168,11 +168,11 @@ const REGRA_ROTULO: Record<string, string> = {
     .pg-sub{margin:.15rem 0 0;color:var(--mut,#667);font-size:.85rem}
     .filtros{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
     .filtros input{padding:.45rem .6rem;border:1px solid var(--borda,#ccd);border-radius:8px;font-size:.85rem}
-    .abas{display:flex;gap:.4rem;border-bottom:1px solid var(--borda,#e3e6ea)}
+    .abas{display:flex;gap:.4rem;border-bottom:1px solid var(--borda,#dde2e8)}
     .aba{padding:.55rem 1rem;border:0;background:none;border-bottom:2px solid transparent;cursor:pointer;font-size:.88rem;display:flex;align-items:center;gap:.4rem}
-    .aba.ativa{border-bottom-color:#0b7285;font-weight:700}
-    .badge{background:#c0392b;color:#fff;border-radius:999px;font-size:.65rem;padding:.1rem .45rem}
-    .bloco{background:var(--card,#fff);border:1px solid var(--borda,#e3e6ea);border-radius:12px;padding:1rem;overflow-x:auto}
+    .aba.ativa{border-bottom-color:#2457a7;font-weight:700}
+    .badge{background:#b02a37;color:#fff;border-radius:999px;font-size:.65rem;padding:.1rem .45rem}
+    .bloco{background:var(--card,#fff);border:1px solid var(--borda,#dde2e8);border-radius:12px;padding:1rem;overflow-x:auto}
     .bloco h3{margin:0 0 .75rem;font-size:.95rem;display:flex;align-items:center;gap:.6rem}
     table{width:100%;border-collapse:collapse;font-size:.82rem}
     th,td{text-align:left;padding:.45rem .6rem;border-bottom:1px solid var(--borda,#eee)}
@@ -180,20 +180,20 @@ const REGRA_ROTULO: Record<string, string> = {
     td input[type=time]{padding:.25rem .4rem;border:1px solid var(--borda,#ccd);border-radius:6px;font-size:.8rem}
     .sev{padding:.15rem .5rem;border-radius:999px;font-size:.7rem;font-weight:600}
     .sev-alta{background:#fde2e2;color:#a11}
-    .sev-media{background:#fdf3d7;color:#8a6200}
-    .critica td{background:#fff5f5}
+    .sev-media{background:#fef3e0;color:#b45309}
+    .critica td{background:#fdf1f2}
     select{padding:.3rem .5rem;border:1px solid var(--borda,#ccd);border-radius:6px;font-size:.78rem}
     .btn-mini{font-size:.72rem;padding:.3rem .7rem;border-radius:6px;border:1px solid var(--borda,#ccd);background:#fff;cursor:pointer}
     .btn-mini.danger{color:#a11;border-color:#ecc}
     .vazio{color:var(--mut,#667);font-size:.85rem;padding:.5rem 0}
-    .overlay{position:fixed;inset:0;background:rgba(10,15,20,.45);display:flex;align-items:center;justify-content:center;z-index:60}
+    .overlay{position:fixed;inset:0;background:rgba(22, 26, 32, .45);display:flex;align-items:center;justify-content:center;z-index:60}
     .modal{background:#fff;border-radius:14px;padding:1.5rem;width:min(440px,92vw);display:flex;flex-direction:column;gap:.8rem;max-height:90vh;overflow-y:auto}
     .modal h3{margin:0}
     .modal label{display:flex;flex-direction:column;gap:.3rem;font-size:.78rem;font-weight:600}
     .modal input,.modal select{padding:.55rem .65rem;border:1px solid var(--borda,#ccd);border-radius:8px;font-size:.9rem}
     .duo{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
     .acoes{display:flex;gap:.6rem;margin-top:.4rem}
-    .btn{flex:1;padding:.6rem;border:0;border-radius:8px;background:#0b7285;color:#fff;font-weight:600;cursor:pointer}
+    .btn{flex:1;padding:.6rem;border:0;border-radius:8px;background:#2457a7;color:#fff;font-weight:600;cursor:pointer}
     .btn:disabled{opacity:.6}.btn-sec{padding:.6rem 1rem;border:1px solid var(--borda,#ccd);border-radius:8px;background:#fff;cursor:pointer}
   `],
 })

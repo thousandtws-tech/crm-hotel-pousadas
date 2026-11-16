@@ -334,28 +334,28 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
     .modal-body { gap: 12px; }
     .center { display: grid; place-items: center; padding: 32px; }
     .sec { font-size: 0.9rem; font-weight: 600; display: block; }
-    .sec.bt { border-top: 1px solid #d7e0e6; padding-top: 12px; }
+    .sec.bt { border-top: 1px solid #dde2e8; padding-top: 12px; }
     table.sm { font-size: 80%; }
-    .muted { color: #7d97a1; }
+    .muted { color: #66707e; }
     .tc { text-align: center; }
     .scan-thumb {
-      border: 1px solid #c3d2d9; border-radius: 4px; padding: 0;
-      width: 44px; height: 30px; overflow: hidden; cursor: zoom-in; background: #f7fafb;
+      border: 1px solid #cbd2dc; border-radius: 4px; padding: 0;
+      width: 44px; height: 30px; overflow: hidden; cursor: zoom-in; background: #f8f9fb;
     }
     .scan-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .scan-loading { font-size: 16px; width: 16px; height: 16px; color: #adb5bd; }
+    .scan-loading { font-size: 16px; width: 16px; height: 16px; color: #9aa2ae; }
     .linha-acoes { white-space: nowrap; }
     .vazio {
       display: flex; align-items: center; gap: 12px;
-      padding: 14px 16px; border: 1px dashed #c3d2d9; border-radius: 10px;
-      background: #f7fafb; color: #5d6d7e;
+      padding: 14px 16px; border: 1px dashed #cbd2dc; border-radius: 10px;
+      background: #f8f9fb; color: #55606d;
     }
-    .vazio mat-icon { color: #4b95ab; font-size: 28px; width: 28px; height: 28px; }
+    .vazio mat-icon { color: #3d6db5; font-size: 28px; width: 28px; height: 28px; }
     .vazio div { display: flex; flex-direction: column; gap: 2px; }
-    .vazio strong { color: #054054; font-size: 0.88rem; }
+    .vazio strong { color: #20242c; font-size: 0.88rem; }
     .vazio span { font-size: 0.8rem; }
     .doc-form {
-      border-top: 1px solid #e3eaef; padding-top: 14px;
+      border-top: 1px solid #e9ecf0; padding-top: 14px;
       display: flex; flex-direction: column; gap: 12px;
     }
     .doc-grid { display: grid; grid-template-columns: 1fr 1.3fr 1fr 80px; gap: 12px 14px; align-items: start; }
@@ -364,17 +364,17 @@ const CAMPOS_DOC: Record<TipoDocumento, CamposDoc> = {
     .vencido { color: #dc3545; font-weight: 600; }
     .tag-venc {
       margin-left: 6px; padding: 1px 6px; border-radius: 999px;
-      background: #fdecec; color: #dc3545; font-size: 0.7rem; font-weight: 700;
+      background: #fbebec; color: #dc3545; font-size: 0.7rem; font-weight: 700;
     }
     .aviso-dup {
       margin: 0; display: flex; align-items: center; gap: 6px;
-      font-size: 0.78rem; color: #8a5a10; background: #fdf7ec;
-      border: 1px solid #f0dcb4; border-radius: 8px; padding: 6px 10px;
+      font-size: 0.78rem; color: #8a6116; background: #fdf9ec;
+      border: 1px solid #f7ead2; border-radius: 8px; padding: 6px 10px;
     }
     .aviso-dup mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .bg-danger { background: #c0392b; color: #fff; }
+    .bg-danger { background: #b02a37; color: #fff; }
     .doc-form-acoes { display: flex; justify-content: flex-end; gap: 8px; }
-    .lbl2 { font-size: 0.78rem; font-weight: 600; color: #374151; display: flex; flex-direction: column; gap: 6px; }
+    .lbl2 { font-size: 0.78rem; font-weight: 600; color: #3d4552; display: flex; flex-direction: column; gap: 6px; }
     .req { color: #dc3545; margin-left: 2px; }
     .uf { text-transform: uppercase; }
     @media (max-width: 700px) { .doc-grid, .doc-grid:has(app-date) { grid-template-columns: 1fr 1fr; } }
