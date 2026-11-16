@@ -208,7 +208,7 @@ const MAX_DPR = 2; // teto de pixel ratio do componente original
 function hexToRgb(hex: string): [number, number, number] {
   const m = hex.match(/^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/);
   if (m) return [parseInt(m[1], 16) / 255, parseInt(m[2], 16) / 255, parseInt(m[3], 16) / 255];
-  return [0.239, 0.427, 0.71]; // #3d6db5
+  return [0.121, 0.835, 0.976]; // #1FD5F9
 }
 
 /** Parâmetro animado — aproximação suave (easeOut) do alvo por frame. */
@@ -241,7 +241,7 @@ export class MariaAuraComponent implements OnDestroy {
   /** Mesma API do componente React. */
   readonly size = input<'icon' | 'sm' | 'md' | 'lg' | 'xl'>('lg');
   readonly state = input<AuraState>('connecting');
-  readonly color = input<`#${string}` | string>('#3d6db5');
+  readonly color = input<`#${string}` | string>('#1FD5F9');
   readonly colorShift = input(0.05);
   readonly themeMode = input<'dark' | 'light'>('dark');
   /** Getter de volume 0..1 — chamado a cada frame (sem custo de CD). */

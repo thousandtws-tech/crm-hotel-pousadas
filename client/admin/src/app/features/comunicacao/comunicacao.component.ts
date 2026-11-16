@@ -260,38 +260,38 @@ const PAPEL_ROTULO: Record<number, string> = { 1: 'Admin', 2: 'Gerente', 3: 'Tod
     .pg-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem}
     .pg-titulo{font-size:1.35rem;margin:0}
     .pg-sub{margin:.15rem 0 0;color:var(--mut,#667);font-size:.85rem}
-    .abas{display:flex;gap:.4rem;border-bottom:1px solid var(--borda,#dde2e8)}
+    .abas{display:flex;gap:.4rem;border-bottom:1px solid var(--borda,#e3e6ea)}
     .aba{padding:.55rem 1rem;border:0;background:none;border-bottom:2px solid transparent;cursor:pointer;font-size:.88rem}
-    .aba.ativa{border-bottom-color:var(--primaria,#2457a7);font-weight:700}
+    .aba.ativa{border-bottom-color:var(--primaria,#0b7285);font-weight:700}
     .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.75rem}
-    .card{background:var(--card,#fff);border:1px solid var(--borda,#dde2e8);border-radius:12px;padding:.9rem 1rem;display:flex;flex-direction:column;gap:.15rem}
+    .card{background:var(--card,#fff);border:1px solid var(--borda,#e3e6ea);border-radius:12px;padding:.9rem 1rem;display:flex;flex-direction:column;gap:.15rem}
     .card span{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut,#667)}
     .card strong{font-size:1.15rem}
     .card small{color:var(--mut,#667);font-size:.72rem}
-    .bloco{background:var(--card,#fff);border:1px solid var(--borda,#dde2e8);border-radius:12px;padding:1rem;overflow-x:auto}
+    .bloco{background:var(--card,#fff);border:1px solid var(--borda,#e3e6ea);border-radius:12px;padding:1rem;overflow-x:auto}
     .bloco h3{margin:0 0 .75rem;font-size:.95rem;display:flex;align-items:center;gap:.6rem}
     table{width:100%;border-collapse:collapse;font-size:.82rem}
     th,td{text-align:left;padding:.45rem .6rem;border-bottom:1px solid var(--borda,#eee);vertical-align:top}
     th{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut,#667)}
     .coment{max-width:260px;word-break:break-word}
     .resp{display:block;color:var(--mut,#667)}
-    .critica td{background:#fdf1f2}
+    .critica td{background:#fff5f5}
     .st{padding:.15rem .5rem;border-radius:999px;font-size:.7rem;font-weight:600}
-    .st-respondida,.st-enviado,.st-executada,.st-resolvido,.st-normal{background:#e6f3ec;color:#198754}
-    .st-pendente,.st-enviando,.st-aberta,.st-aberto,.st-em_atendimento{background:#fef3e0;color:#b45309}
-    .st-falhou,.st-expirada,.st-cancelado,.st-escalado,.st-urgente{background:#fde2e2;color:#a32}
-    .linha-urgente td{background:#fdf1f2}
+    .st-respondida,.st-enviado,.st-executada,.st-resolvido,.st-normal{background:#e4f6e8;color:#146c2e}
+    .st-pendente,.st-enviando,.st-aberta,.st-aberto,.st-em_atendimento{background:#fdf3d7;color:#8a6200}
+    .st-falhou,.st-expirada,.st-cancelado,.st-escalado,.st-urgente{background:#fde3e3;color:#a32}
+    .linha-urgente td{background:#fff5f5}
     .sel{margin:0 .5rem;padding:.3rem .5rem;border:1px solid #ddd;border-radius:6px;font-size:.82rem}
     .chk{display:flex;align-items:center;gap:.25rem;font-size:.7rem;margin:.1rem 0;cursor:pointer}
     .btn-mini{font-size:.72rem;padding:.3rem .7rem;border-radius:6px;border:1px solid var(--borda,#ccd);background:#fff;cursor:pointer}
     .vazio{color:var(--mut,#667);font-size:.85rem;padding:.5rem 0;text-align:center}
-    .overlay{position:fixed;inset:0;background:rgba(22, 26, 32, .45);display:flex;align-items:center;justify-content:center;z-index:60}
+    .overlay{position:fixed;inset:0;background:rgba(10,15,20,.45);display:flex;align-items:center;justify-content:center;z-index:60}
     .modal{background:#fff;border-radius:14px;padding:1.5rem;width:min(460px,92vw);display:flex;flex-direction:column;gap:.8rem}
     .modal h3{margin:0}.modal p{margin:0;font-size:.82rem;color:var(--mut,#667)}
     .modal label{display:flex;flex-direction:column;gap:.3rem;font-size:.78rem;font-weight:600}
     .modal textarea{padding:.55rem .65rem;border:1px solid var(--borda,#ccd);border-radius:8px;font-size:.9rem}
     .acoes{display:flex;gap:.6rem;margin-top:.4rem}
-    .btn{flex:1;padding:.6rem;border:0;border-radius:8px;background:#2457a7;color:#fff;font-weight:600;cursor:pointer}
+    .btn{flex:1;padding:.6rem;border:0;border-radius:8px;background:#0b7285;color:#fff;font-weight:600;cursor:pointer}
     .btn:disabled{opacity:.6}.btn-sec{padding:.6rem 1rem;border:1px solid var(--borda,#ccd);border-radius:8px;background:#fff;cursor:pointer}
   `],
 })

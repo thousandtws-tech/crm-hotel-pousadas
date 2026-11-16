@@ -16,10 +16,7 @@ import { AuthStore } from '@core/services/auth.store';
 
       <div class="login-form-panel">
         <div class="login-card">
-          <div class="login-logo">
-            <img src="logo.svg" alt="Pousada Espírito do Mar" />
-          </div>
-
+          
           <p class="login-box-msg">Acesse sua conta</p>
 
           @if (erro()) {

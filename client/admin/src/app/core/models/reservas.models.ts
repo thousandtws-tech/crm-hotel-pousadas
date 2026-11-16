@@ -227,8 +227,8 @@ export const STATUS_RESERVA: Record<
   StatusReserva,
   { rotulo: string; cor: string; texto: string }
 > = {
-  p: { rotulo: 'Pendente', cor: '#b45309', texto: '#fff' },
-  i: { rotulo: 'Iniciado', cor: '#2457a7', texto: '#fff' },
+  p: { rotulo: 'Pendente', cor: '#ffc107', texto: '#000' },
+  i: { rotulo: 'Iniciado', cor: '#3498db', texto: '#fff' },
   c: { rotulo: 'Cancelado', cor: '#dc3545', texto: '#fff' },
   f: { rotulo: 'Finalizado', cor: '#198754', texto: '#fff' },
 };

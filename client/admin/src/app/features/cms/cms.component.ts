@@ -925,7 +925,7 @@ type AbaCms = 'quartos' | 'site' | 'widget';
     </div>
   `,
   styles: [`
-    :host { display: block; --c-bg: #fff; --c-sub: #f8f9fb; --c-mut: #f0f2f5; --c-brd: #dde2e8; --c-brd2: #cbd2dc; --c-ink: #000000; --c-ink2: #3d4552; --c-ink3: #44525f; --c-txt: #66707e; --mdc-circular-progress-active-indicator-color: #161a20; }
+    :host { display: block; --c-bg: #fff; --c-sub: #fafafa; --c-mut: #f4f4f5; --c-brd: #e4e4e7; --c-brd2: #d4d4d8; --c-ink: #09090b; --c-ink2: #3f3f46; --c-ink3: #52525b; --c-txt: #71717a; --mdc-circular-progress-active-indicator-color: #18181b; }
     .cms-shell { background: var(--c-bg); border: 1px solid var(--c-brd); border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.03); padding: 24px 28px; color: var(--c-ink); font-family: var(--font-body); }
     .cms-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; padding-bottom: 20px; }
     .cms-titulo, .settings-tit, .modal-tit { font-family: var(--font-body) !important; font-weight: 600 !important; color: var(--c-ink) !important; margin: 0; }
@@ -933,11 +933,11 @@ type AbaCms = 'quartos' | 'site' | 'widget';
     .cms-sub { margin: 4px 0 0; font-size: .84rem; color: var(--c-txt); line-height: 1.45; }
     .cms-acoes, .aside-actions, .foot-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .rt-pill { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--c-brd); background: var(--c-sub); color: var(--c-ink3); font-size: .76rem; font-weight: 500; }
-    .rt-pill .dot, .pill-toggle .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: #9aa2ae; }
+    .rt-pill .dot, .pill-toggle .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: #a1a1aa; }
     .rt-pill.on .dot { background: var(--c-ink); }
     .btn-primary, .btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 6px; font: 500 .82rem var(--font-body); cursor: pointer; text-decoration: none; white-space: nowrap; }
-    .btn-primary { background: #161a20; color: #fff; border: 1px solid #161a20; }
-    .btn-primary:hover:not(:disabled) { background: #20242c; border-color: #20242c; color: #fff; }
+    .btn-primary { background: #18181b; color: #fff; border: 1px solid #18181b; }
+    .btn-primary:hover:not(:disabled) { background: #27272a; border-color: #27272a; color: #fff; }
     .btn-ghost { background: #fff; color: var(--c-ink); border: 1px solid var(--c-brd); }
     .btn-ghost:hover:not(:disabled) { background: var(--c-sub); border-color: var(--c-brd2); color: var(--c-ink); }
     .btn-primary:disabled, .btn-ghost:disabled { opacity: .5; cursor: not-allowed; }
@@ -961,7 +961,7 @@ type AbaCms = 'quartos' | 'site' | 'widget';
     .cms-busca.foco, .cms-input:focus { border-color: var(--c-ink); outline: none; }
     .cms-busca-icone { color: var(--c-txt); font-size: 17px; width: 17px; height: 17px; }
     .cms-busca-input { flex: 1; border: none; outline: none; background: none; font: .84rem var(--font-body); color: var(--c-ink); height: 100%; }
-    .cms-busca-input::placeholder, .cms-input::placeholder { color: #9aa2ae; }
+    .cms-busca-input::placeholder, .cms-input::placeholder { color: #a1a1aa; }
     .cms-busca-input::-webkit-search-cancel-button { display: none; }
     .cms-limpar, .btn-icon-row { border: none; background: none; width: 28px; height: 28px; border-radius: 5px; cursor: pointer; color: var(--c-txt); display: inline-flex; align-items: center; justify-content: center; padding: 0; }
     .cms-limpar:hover, .btn-icon-row:hover { background: var(--c-mut); color: var(--c-ink); }
@@ -980,7 +980,7 @@ type AbaCms = 'quartos' | 'site' | 'widget';
     .tr { text-align: right !important; }
     .inativo-row { opacity: .55; }
     .capa-thumb, .capa-vazia { width: 68px; height: 46px; border-radius: 5px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--c-brd); object-fit: cover; }
-    .capa-vazia { background: var(--c-mut); color: #9aa2ae; }
+    .capa-vazia { background: var(--c-mut); color: #a1a1aa; }
     .q-cell { display: flex; flex-direction: column; gap: 3px; min-width: 180px; }
     .q-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .q-name { font-size: .88rem; font-weight: 600; color: var(--c-ink); }
@@ -990,13 +990,13 @@ type AbaCms = 'quartos' | 'site' | 'widget';
     .preco-cell { font-weight: 600; color: var(--c-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
     .sob-consulta { font-size: .78rem; color: var(--c-txt); font-weight: 400; }
     .midias-cell { white-space: nowrap; font-size: .8rem; color: var(--c-ink3); font-variant-numeric: tabular-nums; }
-    .midia-n.off { color: #9aa2ae; }
+    .midia-n.off { color: #a1a1aa; }
     .midia-sep { margin: 0 6px; color: var(--c-brd2); }
     .pill-toggle, .pill-static { display: inline-flex; align-items: center; gap: 6px; height: 25px; padding: 0 10px; border-radius: 999px; font: 500 .74rem var(--font-body); white-space: nowrap; }
     .pill-toggle { cursor: pointer; background: var(--c-bg); color: var(--c-ink3); border: 1px solid var(--c-brd); }
     .pill-toggle:hover { border-color: var(--c-ink); color: var(--c-ink); }
-    .pill-toggle.pill-solid { background: #161a20; color: #fff; border-color: #161a20; }
-    .pill-toggle.pill-solid:hover { background: #20242c; border-color: #20242c; }
+    .pill-toggle.pill-solid { background: #18181b; color: #fff; border-color: #18181b; }
+    .pill-toggle.pill-solid:hover { background: #27272a; border-color: #27272a; }
     .pill-toggle.pill-solid .pill-dot { background: #fff; }
     .pill-static { background: var(--c-mut); color: var(--c-txt); }
     .cms-acoes-linha { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; }
@@ -1005,7 +1005,7 @@ type AbaCms = 'quartos' | 'site' | 'widget';
     .cms-vazio { text-align: center; padding: 48px 20px !important; }
     .vazio-tit { margin: 0; font-size: .88rem; font-weight: 500; color: var(--c-ink2); }
     .vazio-sub { margin: 6px 0 0; font-size: .8rem; color: var(--c-txt); }
-    .skel { display: block; border-radius: 4px; background: #f0f2f5; height: 14px; }
+    .skel { display: block; border-radius: 4px; background: #f4f4f5; height: 14px; }
     .sk-capa { width: 68px; height: 46px; }
     .sk-txt-l { width: 160px; margin-bottom: 6px; }
     .sk-txt-s { width: 105px; height: 11px; }
@@ -1037,7 +1037,7 @@ type AbaCms = 'quartos' | 'site' | 'widget';
     .wg-url-box { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 10px; }
     .copy-row { display: flex; gap: 8px; }
     .wg-snippet { background: var(--c-sub); }
-    .overlay { position: fixed; inset: 0; z-index: 100; background: rgba(0, 0, 0, .48); display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; backdrop-filter: blur(2px); }
+    .overlay { position: fixed; inset: 0; z-index: 100; background: rgba(9,9,11,.48); display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; backdrop-filter: blur(2px); }
     .modal-cms { width: 95vw; max-width: 840px; max-height: 90vh; background: var(--c-bg); border: 1px solid var(--c-brd); border-radius: 10px; box-shadow: 0 20px 50px rgba(0,0,0,.18); display: flex; flex-direction: column; }
     .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 24px; border-bottom: 1px solid var(--c-brd); }
     .modal-tit { font-size: 1.05rem !important; }
@@ -1055,13 +1055,13 @@ type AbaCms = 'quartos' | 'site' | 'widget';
     .f-span2 { grid-column: span 2; }
     .f-full { grid-column: 1 / -1; }
     .check-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--c-brd); border-radius: 6px; background: var(--c-sub); cursor: pointer; }
-    .check-row input, .como-check input { accent-color: #161a20; margin-top: 2px; }
+    .check-row input, .como-check input { accent-color: #18181b; margin-top: 2px; }
     .check-row span { display: flex; flex-direction: column; gap: 2px; font-size: .82rem; }
     .check-row small { font-size: .76rem; color: var(--c-txt); }
     .presets-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
     .preset-chip { height: 28px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--c-brd); background: var(--c-bg); color: var(--c-ink3); font: 500 .76rem var(--font-body); cursor: pointer; }
     .preset-chip:hover { border-color: var(--c-ink); color: var(--c-ink); }
-    .preset-chip.ativo { background: #161a20; border-color: #161a20; color: #fff; }
+    .preset-chip.ativo { background: #18181b; border-color: #18181b; color: #fff; }
     .como-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .como-nome { flex: 1; min-width: 180px; }
     .ic-sel { width: 220px; flex-shrink: 0; }
@@ -1073,18 +1073,18 @@ type AbaCms = 'quartos' | 'site' | 'widget';
     .midia-card { position: relative; border: 1px solid var(--c-brd); border-radius: 6px; padding: 5px; }
     .midia-card.capa { border-color: var(--c-ink); box-shadow: inset 0 0 0 1px var(--c-ink); }
     .midia-card img, .midia-card video { width: 100%; height: 96px; object-fit: cover; border-radius: 4px; display: block; background: var(--c-mut); cursor: zoom-in; }
-    .media-badge { position: absolute; top: 10px; background: rgba(0, 0, 0, .82); color: #fff; font-size: .66rem; font-weight: 600; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; }
+    .media-badge { position: absolute; top: 10px; background: rgba(9,9,11,.82); color: #fff; font-size: .66rem; font-weight: 600; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; }
     .media-badge.left { left: 10px; }
     .media-badge.right { right: 10px; }
     .midia-ops { display: flex; gap: 4px; margin-top: 5px; }
     .midia-ops button { flex: 1; height: 26px; border: 1px solid var(--c-brd); border-radius: 4px; background: var(--c-sub); color: var(--c-ink3); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
     .midia-ops button:hover { background: var(--c-mut); color: var(--c-ink); }
-    .lightbox { position: fixed; inset: 0; z-index: 300; background: rgba(0, 0, 0, .92); display: flex; align-items: center; justify-content: center; outline: none; }
+    .lightbox { position: fixed; inset: 0; z-index: 300; background: rgba(9,9,11,.92); display: flex; align-items: center; justify-content: center; outline: none; }
     .lb-midia { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: min(1100px, 92vw); }
     .lb-midia img, .lb-midia video { max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 6px; }
-    .lb-midia figcaption { color: #cbd2dc; font-size: .8rem; font-variant-numeric: tabular-nums; }
-    .lb-btn { position: fixed; z-index: 301; width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,.2); background: rgba(22, 26, 32, .85); color: #fff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-    .lb-btn:hover, .lb-btn:focus-visible { background: #fff; color: #000000; outline: none; }
+    .lb-midia figcaption { color: #d4d4d8; font-size: .8rem; font-variant-numeric: tabular-nums; }
+    .lb-btn { position: fixed; z-index: 301; width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,.2); background: rgba(24,24,27,.85); color: #fff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+    .lb-btn:hover, .lb-btn:focus-visible { background: #fff; color: #09090b; outline: none; }
     .lb-close { top: 18px; right: 20px; }
     .lb-nav { top: 50%; transform: translateY(-50%); }
     .lb-nav.prev { left: 16px; }
@@ -1552,7 +1552,7 @@ export class CmsComponent implements OnInit {
         valor: Number(v.valor) || 0,
         capacidade: Number(v.capacidade) || 2,
         descricao: v.descricao_curta.trim() || v.subtitulo.trim(),
-        cor: this.editando()?.cor ?? '#161a20',
+        cor: this.editando()?.cor ?? '#18181b',
         version: acomId ? this.pmsVersion : undefined,
       };
 
@@ -1646,7 +1646,7 @@ export class CmsComponent implements OnInit {
             valor: Number(v.valor) || 0,
             capacidade: Number(v.capacidade) || 2,
             descricao: v.subtitulo.trim() || v.nome.trim(),
-            cor: '#161a20',
+            cor: '#18181b',
           }),
         );
         acomId = criada.id;

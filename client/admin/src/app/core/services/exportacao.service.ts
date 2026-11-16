@@ -20,9 +20,9 @@ export interface RelatorioCfg {
   resumo?: LinhaResumo[];
 }
 
-const NAVY = '#20242c';
-const TEAL = '#2457a7';
-const GOLD = '#b45309';
+const NAVY = '#054054';
+const TEAL = '#1a6f8a';
+const GOLD = '#b5811f';
 
 const agora = (): string =>
   new Intl.DateTimeFormat('pt-BR', {
@@ -61,8 +61,8 @@ function htmlRelatorio(cfg: RelatorioCfg): string {
   const resumo = (cfg.resumo ?? [])
     .map(
       (r) =>
-        `<td style="padding:8px 14px;border:1px solid #dde2e8;">
-           <div style="font-size:9px;color:#66707e;text-transform:uppercase;letter-spacing:.05em;">${r.rotulo}</div>
+        `<td style="padding:8px 14px;border:1px solid #d7e0e6;">
+           <div style="font-size:9px;color:#7d97a1;text-transform:uppercase;letter-spacing:.05em;">${r.rotulo}</div>
            <div style="font-size:14px;font-weight:bold;color:${NAVY};">${r.valor}</div>
          </td>`,
     )
@@ -80,12 +80,12 @@ function htmlRelatorio(cfg: RelatorioCfg): string {
   const linhas = cfg.linhas
     .map(
       (l, i) =>
-        `<tr style="background:${i % 2 ? '#f5f7fa' : '#fff'};">` +
+        `<tr style="background:${i % 2 ? '#f4f8fa' : '#fff'};">` +
         l
           .map(
             (c) =>
-              `<td style="padding:6px 10px;font-size:11px;color:#3d4552;
-                border:1px solid #dde2e8;">${c ?? '—'}</td>`,
+              `<td style="padding:6px 10px;font-size:11px;color:#33424c;
+                border:1px solid #d7e0e6;">${c ?? '—'}</td>`,
           )
           .join('') +
         '</tr>',
@@ -99,7 +99,7 @@ function htmlRelatorio(cfg: RelatorioCfg): string {
       <tr>
         <td style="background:${NAVY};padding:14px 18px;">
           <div style="color:#fff;font-size:18px;font-weight:bold;">${cfg.titulo}</div>
-          <div style="color:#a5b6bf;font-size:11px;margin-top:2px;">
+          <div style="color:#9fc3d0;font-size:11px;margin-top:2px;">
             ${cfg.subtitulo ?? ''} · Gerado em ${agora()}
           </div>
         </td>
@@ -115,7 +115,7 @@ function htmlRelatorio(cfg: RelatorioCfg): string {
       <thead><tr>${cab}</tr></thead>
       <tbody>${linhas}</tbody>
     </table>
-    <p style="font-size:9px;color:#66707e;margin-top:10px;">
+    <p style="font-size:9px;color:#8a99a4;margin-top:10px;">
       Documento gerado pelo sistema da pousada em ${agora()}.
     </p>
   </body></html>`;
@@ -144,7 +144,7 @@ export class ExportacaoService {
     doc.text(cfg.titulo, 12, 12);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.setTextColor('#a5b6bf');
+    doc.setTextColor('#9fc3d0');
     doc.text(`${cfg.subtitulo ?? ''} · Gerado em ${agora()}`, 12, 19);
     doc.setTextColor('#ffffff');
     doc.setFontSize(8);
@@ -158,11 +158,11 @@ export class ExportacaoService {
       const w = (largura - 24 - (n - 1) * 4) / n;
       cfg.resumo.forEach((r, i) => {
         const x = 12 + i * (w + 4);
-        doc.setFillColor('#f5f7fa');
-        doc.setDrawColor('#dde2e8');
+        doc.setFillColor('#f4f8fa');
+        doc.setDrawColor('#d7e0e6');
         doc.roundedRect(x, y, w, 16, 1.5, 1.5, 'FD');
         doc.setFontSize(6.5);
-        doc.setTextColor('#66707e');
+        doc.setTextColor('#7d97a1');
         doc.text(r.rotulo.toUpperCase(), x + 4, y + 5.5);
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
@@ -181,8 +181,8 @@ export class ExportacaoService {
       styles: {
         fontSize: 8,
         cellPadding: 2.4,
-        textColor: '#3d4552',
-        lineColor: '#dde2e8',
+        textColor: '#33424c',
+        lineColor: '#d7e0e6',
         lineWidth: 0.15,
       },
       headStyles: {
@@ -191,11 +191,11 @@ export class ExportacaoService {
         fontSize: 7.5,
         fontStyle: 'bold',
       },
-      alternateRowStyles: { fillColor: '#f5f7fa' },
+      alternateRowStyles: { fillColor: '#f4f8fa' },
       didDrawPage: (data) => {
         const pagina = doc.getNumberOfPages();
         doc.setFontSize(7);
-        doc.setTextColor('#66707e');
+        doc.setTextColor('#8a99a4');
         doc.text(
           `Página ${data.pageNumber} de ${pagina} — ${cfg.titulo}`,
           largura / 2,

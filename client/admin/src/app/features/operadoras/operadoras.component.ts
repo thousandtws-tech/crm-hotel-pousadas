@@ -192,44 +192,44 @@ import * as M from '@core/models';
   styles: `
     .pag { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
     .cab { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
-    .cab h1 { margin: 0; font-size: 1.4rem; color: #20242c; }
-    .sub { margin: 4px 0 0; font-size: 0.82rem; color: #55606d; }
-    .vazio { color: #66707e; }
-    .vazio-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px; color: #66707e; }
+    .cab h1 { margin: 0; font-size: 1.4rem; color: #054054; }
+    .sub { margin: 4px 0 0; font-size: 0.82rem; color: #5d6d7e; }
+    .vazio { color: #7d97a1; }
+    .vazio-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px; color: #7d97a1; }
     .vazio-card mat-icon { font-size: 40px; width: 40px; height: 40px; }
-    .inner-card { background: #fff; border: 1px solid #e9ecf0; border-radius: 10px; padding: 16px; overflow-x: auto; }
+    .inner-card { background: #fff; border: 1px solid #e3eaef; border-radius: 10px; padding: 16px; overflow-x: auto; }
     .tab { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
-    .tab th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: #66707e; padding: 6px 10px; border-bottom: 1px solid #e9ecf0; }
-    .tab td { padding: 10px; border-bottom: 1px solid #f0f2f5; vertical-align: middle; }
+    .tab th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: #7d97a1; padding: 6px 10px; border-bottom: 1px solid #e3eaef; }
+    .tab td { padding: 10px; border-bottom: 1px solid #f0f4f6; vertical-align: middle; }
     .tab tr.inativa td { opacity: 0.55; }
     .ac { text-align: right; white-space: nowrap; }
-    .mini { font-size: 0.76rem; color: #66707e; }
+    .mini { font-size: 0.76rem; color: #7d97a1; }
     .notas { display: block; }
-    .pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; background: rgba(36, 87, 167, 0.1); color: #2457a7; }
-    .pill-off { background: #f0f2f5; color: #66707e; }
-    .mini-btn { display: inline-flex; align-items: center; gap: 4px; border: 1px solid #dde2e8; background: #fff; color: #2457a7; border-radius: 6px; padding: 5px 9px; font-size: 0.74rem; cursor: pointer; margin-left: 6px; }
+    .pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; background: rgba(26,111,138,0.1); color: #1a6f8a; }
+    .pill-off { background: #f0f4f6; color: #7d97a1; }
+    .mini-btn { display: inline-flex; align-items: center; gap: 4px; border: 1px solid #d7e0e6; background: #fff; color: #1a6f8a; border-radius: 6px; padding: 5px 9px; font-size: 0.74rem; cursor: pointer; margin-left: 6px; }
     .mini-btn mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .mini-btn:hover { border-color: #2457a7; }
-    .mini-btn.perigo { color: #b02a37; }
-    .btn-pri { display: inline-flex; align-items: center; gap: 6px; background: #2457a7; color: #fff; border: none; border-radius: 8px; padding: 0 16px; min-height: 38px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+    .mini-btn:hover { border-color: #1a6f8a; }
+    .mini-btn.perigo { color: #b3402a; }
+    .btn-pri { display: inline-flex; align-items: center; gap: 6px; background: #1a6f8a; color: #fff; border: none; border-radius: 8px; padding: 0 16px; min-height: 38px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
     .btn-pri:disabled { opacity: 0.6; }
-    .btn-sec { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #dde2e8; background: #fff; color: #2457a7; border-radius: 8px; padding: 0 16px; min-height: 38px; font-size: 0.82rem; cursor: pointer; }
-    .btn-sec.perigo { color: #b02a37; border-color: rgba(176, 42, 55, 0.3); }
-    .dl { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: #55606d; margin-bottom: 10px; }
-    .input-inn { border: 1px solid #dde2e8; border-radius: 8px; padding: 9px 12px; font-size: 0.88rem; font-family: inherit; color: #3d4552; }
-    .input-inn:focus { outline: none; border-color: #2457a7; box-shadow: 0 0 0 3px rgba(36, 87, 167, 0.14); }
+    .btn-sec { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #d7e0e6; background: #fff; color: #1a6f8a; border-radius: 8px; padding: 0 16px; min-height: 38px; font-size: 0.82rem; cursor: pointer; }
+    .btn-sec.perigo { color: #b3402a; border-color: rgba(179,64,42,0.3); }
+    .dl { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: #5d6d7e; margin-bottom: 10px; }
+    .input-inn { border: 1px solid #d7e0e6; border-radius: 8px; padding: 9px 12px; font-size: 0.88rem; font-family: inherit; color: #33424c; }
+    .input-inn:focus { outline: none; border-color: #1a6f8a; box-shadow: 0 0 0 3px rgba(26,111,138,0.14); }
     .mono { font-family: monospace; font-size: 0.8rem; }
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .modal-fundo { position: fixed; inset: 0; background: rgba(22, 26, 32, 0.45); z-index: 60; }
+    .modal-fundo { position: fixed; inset: 0; background: rgba(9,20,26,0.45); z-index: 60; }
     .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 61; background: #fff; border-radius: 14px; padding: 22px; width: min(480px, 92vw); max-height: 88vh; overflow-y: auto; }
     .modal.largo { width: min(720px, 94vw); }
-    .modal h2 { margin: 0 0 10px; font-size: 1.1rem; color: #20242c; }
+    .modal h2 { margin: 0 0 10px; font-size: 1.1rem; color: #054054; }
     .modal-acoes { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
     .fat-filtro { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
     .fat-resumo { display: flex; gap: 24px; margin-bottom: 12px; }
     .fat-stat { display: flex; flex-direction: column; }
-    .fat-stat strong { font-size: 1.3rem; color: #20242c; }
-    .fat-stat span { font-size: 0.72rem; color: #66707e; text-transform: uppercase; letter-spacing: 0.06em; }
+    .fat-stat strong { font-size: 1.3rem; color: #054054; }
+    .fat-stat span { font-size: 0.72rem; color: #7d97a1; text-transform: uppercase; letter-spacing: 0.06em; }
     .mini-tab { font-size: 0.8rem; }
     @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
   `,

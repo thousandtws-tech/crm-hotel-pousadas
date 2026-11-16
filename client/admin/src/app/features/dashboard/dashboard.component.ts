@@ -57,20 +57,20 @@ function axisCategoria(): Record<string, unknown> {
   return {
     type: 'category',
     boundaryGap: false,
-    axisLine: { lineStyle: { color: '#dde2e8' } },
+    axisLine: { lineStyle: { color: '#dde6eb' } },
     axisTick: { show: false },
-    axisLabel: { color: '#66707e', fontSize: 11 },
+    axisLabel: { color: '#8fa3ab', fontSize: 11 },
   };
 }
 function axisValor(): Record<string, unknown> {
   return {
     type: 'value',
     axisLabel: {
-      color: '#66707e',
+      color: '#8fa3ab',
       fontSize: 11,
       formatter: (v: number) => COMPACTO.format(v),
     },
-    splitLine: { lineStyle: { color: '#f0f2f5' } },
+    splitLine: { lineStyle: { color: '#eef2f5' } },
   };
 }
 const TOOLTIP_BRL = {
@@ -351,7 +351,7 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
                       <td>{{ r.cliente_nome }}</td>
                       <td>
                         <span class="aco-chip">
-                          <i [style.background]="r.acomodacao_cor || '#2457a7'"></i>
+                          <i [style.background]="r.acomodacao_cor || '#1a6f8a'"></i>
                           {{ r.acomodacao_nome }}
                         </span>
                       </td>
@@ -390,50 +390,50 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
       display: flex; justify-content: space-between; align-items: flex-end;
       gap: 16px; flex-wrap: wrap;
       padding-bottom: 14px; margin-bottom: 14px;
-      border-bottom: 1px solid #e9ecf0;
+      border-bottom: 1px solid #e3eaef;
     }
     .d-titulo {
-      margin: 0; font-size: 1.5rem; font-weight: 800; color: #20242c;
+      margin: 0; font-size: 1.5rem; font-weight: 800; color: #054054;
       letter-spacing: -0.02em;
     }
     .d-sub {
-      margin: 2px 0 0; font-size: 0.82rem; color: #66707e;
+      margin: 2px 0 0; font-size: 0.82rem; color: #7d97a1;
       text-transform: capitalize;
     }
     .btn-tour {
       display: inline-flex; align-items: center; gap: 6px;
-      border: 1.5px solid #dde2e8; background: #fff;
-      color: #55606d; border-radius: 4px;
+      border: 1.5px solid #d7e0e6; background: #fff;
+      color: #5d6d7e; border-radius: 4px;
       padding: 0 14px; min-height: 34px; cursor: pointer;
       font-size: 0.85rem; font-weight: 600; font-family: inherit;
       transition: border-color .15s ease, color .15s ease;
     }
     .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { border-color: #2457a7; color: #2457a7; }
+    .btn-tour:hover { border-color: #1a6f8a; color: #1a6f8a; }
 
     /* ---------- slicer ---------- */
     .d-slicer {
       display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-      background: #fff; border: 1px solid #e9ecf0; border-radius: 10px;
+      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
       padding: 10px 16px; margin-bottom: 14px;
     }
     .d-slicer-lbl {
       display: inline-flex; align-items: center; gap: 6px;
-      font-size: 0.72rem; font-weight: 700; color: #66707e;
+      font-size: 0.72rem; font-weight: 700; color: #7d97a1;
       text-transform: uppercase; letter-spacing: 0.06em;
     }
     .d-slicer-lbl mat-icon { font-size: 16px; width: 16px; height: 16px; }
     .d-presets { display: flex; gap: 6px; flex-wrap: wrap; }
     .pre-btn {
-      border: 1px solid #dde2e8; background: #fff; color: #3d4552;
+      border: 1px solid #d7e0e6; background: #fff; color: #40525d;
       border-radius: 999px; padding: 6px 15px;
       font-size: 0.8rem; font-weight: 600; cursor: pointer; font-family: inherit;
       transition: all .14s ease;
     }
-    .pre-btn:hover { border-color: #2457a7; color: #2457a7; }
-    .pre-btn.ativo { background: #2457a7; border-color: #2457a7; color: #fff; }
+    .pre-btn:hover { border-color: #1a6f8a; color: #1a6f8a; }
+    .pre-btn.ativo { background: #1a6f8a; border-color: #1a6f8a; color: #fff; }
     .d-slicer-per {
-      margin-left: auto; font-size: 0.78rem; color: #66707e;
+      margin-left: auto; font-size: 0.78rem; color: #8a99a4;
       font-variant-numeric: tabular-nums; white-space: nowrap;
     }
 
@@ -444,32 +444,32 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
       gap: 12px; margin-bottom: 14px;
     }
     .kpi {
-      background: #fff; border: 1px solid #e9ecf0; border-radius: 10px;
+      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
       padding: 14px 16px 13px; display: flex; flex-direction: column; gap: 4px;
       min-width: 0;
     }
     .kpi-top { display: flex; justify-content: space-between; align-items: center; }
     .kpi-lbl {
-      font-size: 0.66rem; font-weight: 700; color: #66707e;
+      font-size: 0.66rem; font-weight: 700; color: #7d97a1;
       text-transform: uppercase; letter-spacing: 0.07em;
     }
-    .kpi-ic { font-size: 17px; width: 17px; height: 17px; color: #cbd2dc; }
+    .kpi-ic { font-size: 17px; width: 17px; height: 17px; color: #c3d2d9; }
     .kpi-num {
-      font-size: 1.6rem; font-weight: 800; color: #20242c;
+      font-size: 1.6rem; font-weight: 800; color: #054054;
       line-height: 1.1; letter-spacing: -0.02em;
       font-variant-numeric: tabular-nums;
     }
     .kpi-num.kpi-din { font-size: 1.3rem; padding-top: 4px; }
-    .kpi-num.kpi-prev { color: #2457a7; }
-    .kpi-num.kpi-alerta { color: #b45309; }
-    .kpi-sub { font-size: 0.72rem; color: #66707e; }
+    .kpi-num.kpi-prev { color: #1a6f8a; }
+    .kpi-num.kpi-alerta { color: #b5811f; }
+    .kpi-sub { font-size: 0.72rem; color: #8a99a4; }
     .kpi-bar {
-      height: 5px; border-radius: 99px; background: #f0f2f5;
+      height: 5px; border-radius: 99px; background: #e9f0f4;
       overflow: hidden; margin: 2px 0;
     }
     .kpi-bar i {
       display: block; height: 100%; border-radius: 99px;
-      background: #2457a7;
+      background: linear-gradient(90deg, #1a6f8a, #4b95ab);
       transition: width .4s ease;
     }
     .kpi-skel { height: 96px; }
@@ -487,7 +487,7 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
       .d-grid-a, .d-grid-b { grid-template-columns: 1fr; }
     }
     .d-card {
-      background: #fff; border: 1px solid #e9ecf0; border-radius: 10px;
+      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
       padding: 16px 18px 12px; min-width: 0;
       display: flex; flex-direction: column;
     }
@@ -495,10 +495,10 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
       display: flex; justify-content: space-between; align-items: flex-start;
       gap: 12px; margin-bottom: 6px;
     }
-    .d-card-head h3 { margin: 0; font-size: 0.95rem; font-weight: 700; color: #20242c; }
-    .d-card-head small { font-size: 0.74rem; color: #66707e; }
+    .d-card-head h3 { margin: 0; font-size: 0.95rem; font-weight: 700; color: #054054; }
+    .d-card-head small { font-size: 0.74rem; color: #8a99a4; }
     .d-card-total {
-      font-size: 1.05rem; font-weight: 800; color: #2457a7;
+      font-size: 1.05rem; font-weight: 800; color: #1a6f8a;
       font-variant-numeric: tabular-nums; white-space: nowrap;
     }
     .d-card app-echart { flex: 1; min-height: 230px; }
@@ -508,52 +508,52 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
     .d-vazio {
       flex: 1; display: flex; align-items: center; justify-content: center;
       gap: 8px; min-height: 180px; margin: 0;
-      color: #66707e; font-size: 0.85rem;
+      color: #8a99a4; font-size: 0.85rem;
     }
     .d-vazio mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .d-vazio-tab { text-align: center; color: #66707e; padding: 28px 0 !important; }
+    .d-vazio-tab { text-align: center; color: #8a99a4; padding: 28px 0 !important; }
 
     /* ---------- movimento de hoje ---------- */
     .mov-sec { padding: 6px 0 10px; }
-    .mov-sec + .mov-sec { border-top: 1px solid #f0f2f5; }
+    .mov-sec + .mov-sec { border-top: 1px solid #eef2f5; }
     .mov-tit {
       display: flex; align-items: center; gap: 7px;
-      font-size: 0.78rem; font-weight: 700; color: #3d4552;
+      font-size: 0.78rem; font-weight: 700; color: #40525d;
       text-transform: uppercase; letter-spacing: 0.05em;
       padding: 6px 0 8px;
     }
-    .mov-tit mat-icon { font-size: 16px; width: 16px; height: 16px; color: #2457a7; }
+    .mov-tit mat-icon { font-size: 16px; width: 16px; height: 16px; color: #1a6f8a; }
     .mov-n {
-      margin-left: auto; background: #f0f2f5; color: #2457a7;
+      margin-left: auto; background: #eef4f6; color: #1a6f8a;
       border-radius: 99px; min-width: 22px; height: 20px; padding: 0 7px;
       display: inline-flex; align-items: center; justify-content: center;
       font-size: 0.72rem; font-weight: 800;
     }
-    .mov-n.mov-pend { background: #f7ead2; color: #b45309; }
+    .mov-n.mov-pend { background: #f7ead2; color: #b5811f; }
     .mov-lista { list-style: none; margin: 0; padding: 0; }
     .mov-item {
       display: flex; align-items: center; gap: 10px;
       padding: 8px 10px; border-radius: 7px; text-decoration: none;
       transition: background .13s ease;
     }
-    .mov-item:hover { background: #eef3fb; }
-    .mov-item:hover .mov-go { color: #2457a7; transform: translateX(2px); }
-    .mov-cli { font-size: 0.88rem; font-weight: 600; color: #3d4552; flex: 1; min-width: 0; }
+    .mov-item:hover { background: #f2f7f9; }
+    .mov-item:hover .mov-go { color: #1a6f8a; transform: translateX(2px); }
+    .mov-cli { font-size: 0.88rem; font-weight: 600; color: #33424c; flex: 1; min-width: 0; }
     .mov-aco {
-      font-size: 0.78rem; color: #66707e;
-      background: #f5f7fa; border-radius: 99px; padding: 3px 10px;
+      font-size: 0.78rem; color: #7d97a1;
+      background: #f2f6f8; border-radius: 99px; padding: 3px 10px;
       white-space: nowrap;
     }
-    .mov-go { font-size: 18px; width: 18px; height: 18px; color: #cbd2dc; transition: all .13s; }
+    .mov-go { font-size: 18px; width: 18px; height: 18px; color: #c3d2d9; transition: all .13s; }
     .mov-vazio {
-      padding: 10px; font-size: 0.82rem; color: #66707e;
+      padding: 10px; font-size: 0.82rem; color: #8a99a4;
       display: flex; align-items: center; gap: 6px;
     }
 
     /* ---------- ver tudo ---------- */
     .d-ver-tudo {
       display: inline-flex; align-items: center; gap: 4px;
-      font-size: 0.78rem; font-weight: 600; color: #2457a7;
+      font-size: 0.78rem; font-weight: 600; color: #1a6f8a;
       text-decoration: none; white-space: nowrap;
     }
     .d-ver-tudo mat-icon { font-size: 15px; width: 15px; height: 15px; }
@@ -563,18 +563,18 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
     .d-tab-wrap { overflow-x: auto; margin: 4px -6px 0; }
     .d-tab { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
     .d-tab thead th {
-      background: #f5f7fa; color: #3d4552;
+      background: #f4f8fa; color: #40525d;
       font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.05em; padding: 10px 14px; text-align: left;
-      border-bottom: 2px solid #e9ecf0; white-space: nowrap;
+      border-bottom: 2px solid #e3eaef; white-space: nowrap;
     }
     .d-tab tbody td {
-      padding: 9px 14px; border-bottom: 1px solid #f0f2f5;
-      vertical-align: middle; color: #3d4552;
+      padding: 9px 14px; border-bottom: 1px solid #eef2f5;
+      vertical-align: middle; color: #33424c;
     }
-    .d-tab tbody tr:hover { background: #f8f9fb; }
+    .d-tab tbody tr:hover { background: #f7fafb; }
     .d-tab .tc { text-align: center; }
-    .td-id { font-weight: 700; color: #20242c; white-space: nowrap; }
+    .td-id { font-weight: 700; color: #054054; white-space: nowrap; }
     .td-per { white-space: nowrap; font-variant-numeric: tabular-nums; }
     .aco-chip { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
     .aco-chip i { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
@@ -592,7 +592,7 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
     /* ---------- skeleton ---------- */
     .skel {
       border-radius: 10px;
-      background: linear-gradient(90deg, #f0f2f5 25%, #f8f9fb 50%, #f0f2f5 75%);
+      background: linear-gradient(90deg, #eef3f6 25%, #f7fafb 50%, #eef3f6 75%);
       background-size: 200% 100%;
       animation: shimmer 1.3s infinite;
     }
@@ -739,15 +739,15 @@ export class DashboardComponent implements OnInit {
         symbol: 'circle',
         symbolSize: 5,
         data: this.serieRecebido().map((p) => num(p.valor)),
-        lineStyle: { color: '#2457a7', width: 2.5 },
-        itemStyle: { color: '#2457a7' },
+        lineStyle: { color: '#1a6f8a', width: 2.5 },
+        itemStyle: { color: '#1a6f8a' },
         areaStyle: {
           color: {
             type: 'linear',
             x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(36, 87, 167, 0.22)' },
-              { offset: 1, color: 'rgba(36, 87, 167, 0.01)' },
+              { offset: 0, color: 'rgba(26,111,138,0.22)' },
+              { offset: 1, color: 'rgba(26,111,138,0.01)' },
             ],
           },
         },
@@ -774,15 +774,15 @@ export class DashboardComponent implements OnInit {
               type: 'linear',
               x: 0, y: 0, x2: 1, y2: 0,
               colorStops: [
-                { offset: 0, color: '#20242c' },
-                { offset: 1, color: '#3d6db5' },
+                { offset: 0, color: '#054054' },
+                { offset: 1, color: '#4b95ab' },
               ],
             },
           },
         },
         axisLine: {
           roundCap: true,
-          lineStyle: { width: 15, color: [[1, '#e8eef8']] },
+          lineStyle: { width: 15, color: [[1, '#e8eff3']] },
         },
         pointer: { show: false },
         axisTick: { show: false },
@@ -793,13 +793,13 @@ export class DashboardComponent implements OnInit {
           offsetCenter: [0, '32%'],
           fontSize: 11,
           fontWeight: 600,
-          color: '#66707e',
+          color: '#7d97a1',
         },
         detail: {
           valueAnimation: true,
           fontSize: 38,
           fontWeight: 800,
-          color: '#20242c',
+          color: '#054054',
           offsetCenter: [0, '-4%'],
           formatter: '{value}%',
         },
@@ -824,8 +824,8 @@ export class DashboardComponent implements OnInit {
     yAxis: {
       type: 'value',
       minInterval: 1,
-      axisLabel: { color: '#66707e', fontSize: 11 },
-      splitLine: { lineStyle: { color: '#f0f2f5' } },
+      axisLabel: { color: '#8fa3ab', fontSize: 11 },
+      splitLine: { lineStyle: { color: '#eef2f5' } },
     },
     series: [
       {
@@ -833,7 +833,7 @@ export class DashboardComponent implements OnInit {
         type: 'bar',
         barMaxWidth: 18,
         data: this.serieReservas().map((p) => p.quantidade),
-        itemStyle: { color: '#20242c', borderRadius: [3, 3, 0, 0] },
+        itemStyle: { color: '#054054', borderRadius: [3, 3, 0, 0] },
       },
     ],
   }));
@@ -856,7 +856,7 @@ export class DashboardComponent implements OnInit {
         data: pts.map((p) => p.rotulo),
         axisLine: { show: false },
         axisTick: { show: false },
-        axisLabel: { color: '#55606d', fontSize: 11 },
+        axisLabel: { color: '#5d6d7e', fontSize: 11 },
       },
       series: [
         {
@@ -864,11 +864,11 @@ export class DashboardComponent implements OnInit {
           type: 'bar',
           barMaxWidth: 16,
           data: pts.map((p) => num(p.valor)),
-          itemStyle: { color: '#2457a7', borderRadius: [0, 3, 3, 0] },
+          itemStyle: { color: '#1a6f8a', borderRadius: [0, 3, 3, 0] },
           label: {
             show: true,
             position: 'right',
-            color: '#3d4552',
+            color: '#40525d',
             fontSize: 11,
             fontWeight: 600,
             formatter: (p: { value: unknown }) => BRL.format(Number(p.value)),
@@ -889,7 +889,7 @@ export class DashboardComponent implements OnInit {
       bottom: 0,
       itemWidth: 10,
       itemHeight: 10,
-      textStyle: { color: '#55606d', fontSize: 11 },
+      textStyle: { color: '#5d6d7e', fontSize: 11 },
     },
     series: [
       {
@@ -903,14 +903,14 @@ export class DashboardComponent implements OnInit {
           show: true,
           formatter: '{d}%',
           fontSize: 11,
-          color: '#3d4552',
+          color: '#40525d',
           fontWeight: 600,
         },
         data: this.seriePagamento().map((p, i) => ({
           name: p.rotulo,
           value: num(p.valor),
           itemStyle: {
-            color: ['#20242c', '#2457a7', '#3d6db5', '#b45309', '#a5b6bf'][
+            color: ['#054054', '#1a6f8a', '#4b95ab', '#b5811f', '#8ab4c4'][
               i % 5
             ],
           },
@@ -932,7 +932,7 @@ export class DashboardComponent implements OnInit {
     return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.rotulo ?? s;
   }
   statusCor(s: string): string {
-    return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.cor ?? '#66707e';
+    return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.cor ?? '#7d97a1';
   }
   statusTexto(s: string): string {
     return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.texto ?? '#fff';

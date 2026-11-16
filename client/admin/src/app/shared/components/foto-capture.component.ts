@@ -127,7 +127,7 @@ const QUALIDADE_JPEG = 0.85;
     .cam-erro p { margin: 0; color: #555; }
     .cam-foot { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
     .cam-foot button { display: inline-flex; align-items: center; gap: 6px; }
-    .muted { color: #66707e; }
+    .muted { color: #7d97a1; }
   `,
 })
 export class FotoCaptureComponent implements OnInit, OnDestroy {

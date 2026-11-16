@@ -323,7 +323,7 @@ const NAV: NavItem[] = [
     }
   `,
   styles: `
-    :host { --shell-h: var(--header-height); }
+    :host { --shell-h: calc(var(--header-height) + 1rem); }
 
     /* =====================================================================
        HEADER — começa à direita da sidebar, nunca passa por baixo dela
@@ -339,8 +339,9 @@ const NAV: NavItem[] = [
       gap: 1.25rem;
       align-items: center;
       padding: 0 1.25rem 0 0.75rem;
-      background-color: var(--surface);
-      border-bottom: 1px solid var(--border);
+      background-color: var(--inn-navbar);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      box-shadow: 0 2px 12px rgba(4, 30, 40, 0.18);
       z-index: 100;
       transition: left 0.25s ease;
     }
@@ -352,14 +353,14 @@ const NAV: NavItem[] = [
       display: inline-grid;
       place-items: center;
       width: 38px; height: 38px;
-      color: var(--text-3);
+      color: #fff;
       background: none;
       border: none;
-      border-radius: var(--radius);
+      border-radius: 10px;
       cursor: pointer;
-      transition: background 0.15s, color 0.15s;
+      transition: background 0.15s;
     }
-    .header_toggle:hover { background: var(--surface-2); color: var(--text); }
+    .header_toggle:hover { background: rgba(255, 255, 255, 0.1); }
 
     .pagina { display: flex; flex-direction: column; justify-content: center; min-width: 0; line-height: 1.1; }
     .pagina-grupo {
@@ -367,15 +368,15 @@ const NAV: NavItem[] = [
       font-weight: 700;
       letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: var(--muted);
+      color: rgba(255, 255, 255, 0.62);
     }
     .pagina-titulo {
       margin: 0;
-      font-family: var(--font-body);
-      font-size: 1.2rem;
-      font-weight: 650;
-      letter-spacing: 0;
-      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 1.45rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: #fff;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
@@ -387,24 +388,24 @@ const NAV: NavItem[] = [
     .hoje {
       display: inline-flex; align-items: center; gap: 0.4rem;
       font-size: 0.78rem;
-      color: var(--text-3);
+      color: rgba(255, 255, 255, 0.8);
       white-space: nowrap;
       text-transform: capitalize;
     }
     .hoje mat-icon { font-size: 16px; width: 16px; height: 16px; }
 
     .header .sino {
-      color: var(--text-3);
+      color: #fff;
       width: 38px; height: 38px;
       display: inline-grid; place-items: center;
-      border-radius: var(--radius);
+      border-radius: 10px;
       padding: 0;
-      transition: background 0.15s, color 0.15s;
+      transition: background 0.15s;
     }
-    .header .sino:hover { background: var(--surface-2); color: var(--text); }
-    .header .sino-badge { top: 3px; right: 2px; box-shadow: 0 0 0 2px var(--surface); }
+    .header .sino:hover { background: rgba(255, 255, 255, 0.1); }
+    .header .sino-badge { top: 3px; right: 2px; box-shadow: 0 0 0 2px var(--inn-navbar); }
 
-    .divisor { width: 1px; height: 26px; background: var(--border); }
+    .divisor { width: 1px; height: 26px; background: rgba(255, 255, 255, 0.16); }
 
     /* ----- menu do usuário ----- */
     .user-wrap { position: relative; }
@@ -413,16 +414,17 @@ const NAV: NavItem[] = [
       padding: 4px 6px 4px 4px;
       background: none; border: none; cursor: pointer;
       border-radius: 999px;
-      color: var(--text); font: inherit; text-align: left;
+      color: #fff; font: inherit; text-align: left;
       transition: background 0.15s;
     }
-    .user-btn:hover { background: var(--surface-2); }
+    .user-btn:hover { background: rgba(255, 255, 255, 0.1); }
     .avatar {
       flex: none;
       display: inline-grid; place-items: center;
       width: 34px; height: 34px;
       border-radius: 50%;
-      background: var(--primary);
+      background: var(--inn-first);
+      border: 1.5px solid var(--inn-gold);
       color: #fff;
       font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
     }
@@ -432,17 +434,16 @@ const NAV: NavItem[] = [
       font-size: 0.82rem; font-weight: 600;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .user-papel { font-size: 0.68rem; color: var(--muted); }
-    .user-seta { font-size: 18px; width: 18px; height: 18px; color: var(--muted); transition: transform 0.2s; }
+    .user-papel { font-size: 0.68rem; color: rgba(255, 255, 255, 0.7); }
+    .user-seta { font-size: 18px; width: 18px; height: 18px; transition: transform 0.2s; }
     .user-seta-aberta { transform: rotate(180deg); }
     .user-fechar { position: fixed; inset: 0; z-index: 150; }
     .user-menu {
       position: absolute; top: calc(100% + 10px); right: 0; z-index: 151;
       width: 260px;
-      background: var(--surface);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-lg);
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(4, 30, 40, 0.22);
       padding: 6px;
       animation: user-in 0.15s ease-out;
     }
@@ -451,27 +452,27 @@ const NAV: NavItem[] = [
       display: flex; align-items: center; gap: 0.7rem;
       padding: 0.7rem 0.6rem 0.8rem;
       margin-bottom: 4px;
-      border-bottom: 1px solid var(--border-soft);
+      border-bottom: 1px solid #e8eef1;
     }
     .user-card-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
     .user-card-txt strong {
-      font-size: 0.88rem; color: var(--text);
+      font-size: 0.88rem; color: #14303c;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .user-card-txt span { font-size: 0.72rem; color: var(--muted); }
+    .user-card-txt span { font-size: 0.72rem; color: #5b6f78; }
     .user-item {
       display: flex; align-items: center; gap: 0.65rem;
       width: 100%;
       padding: 0.55rem 0.6rem;
       border: 0; background: none; cursor: pointer;
-      border-radius: var(--radius);
-      font: inherit; font-size: 0.84rem; color: var(--text-2);
+      border-radius: 8px;
+      font: inherit; font-size: 0.84rem; color: #24404b;
       text-decoration: none; text-align: left;
     }
-    .user-item:hover { background: var(--surface-2); }
-    .user-item mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--text-3); }
-    .user-sair { color: var(--danger); }
-    .user-sair mat-icon { color: var(--danger); }
+    .user-item:hover { background: #f1f6f8; }
+    .user-item mat-icon { font-size: 18px; width: 18px; height: 18px; color: #5b6f78; }
+    .user-sair { color: #b02a37; }
+    .user-sair mat-icon { color: #b02a37; }
 
     /* =====================================================================
        SIDEBAR — marca fixa no topo, só a lista rola, rodapé fixo
@@ -480,7 +481,7 @@ const NAV: NavItem[] = [
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(22, 26, 32, 0.45);
+      background: rgba(6, 18, 24, 0.55);
       z-index: 105;
       opacity: 0;
       transition: opacity 0.25s ease;
@@ -496,8 +497,8 @@ const NAV: NavItem[] = [
       height: 100dvh;
       display: flex;
       flex-direction: column;
-      background-color: var(--surface);
-      border-right: 1px solid var(--border);
+      background-color: var(--inn-first);
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
       transition: width 0.25s ease, box-shadow 0.25s ease;
       z-index: 110;
       overflow: hidden;
@@ -508,7 +509,7 @@ const NAV: NavItem[] = [
     @media (min-width: 769px) and (hover: hover) {
       .l-navbar:not(.expanded):hover {
         width: var(--nav-width-open);
-        box-shadow: 8px 0 28px rgba(22, 26, 32, 0.12);
+        box-shadow: 8px 0 28px rgba(4, 20, 28, 0.35);
       }
       .l-navbar:not(.expanded):hover .nav_logo img { width: 130px; }
     }
@@ -520,13 +521,14 @@ const NAV: NavItem[] = [
       display: flex;
       align-items: center;
       justify-content: center;
-      border-bottom: 1px solid var(--border-soft);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
     }
     .nav_logo img {
-      width: 130px; max-height: 40px; object-fit: contain;
+      width: 130px; max-height: 44px; object-fit: contain;
+      filter: brightness(0) invert(1);
       transition: width 0.25s ease;
     }
-    .l-navbar:not(.expanded) .nav_logo img { width: 40px; }
+    .l-navbar:not(.expanded) .nav_logo img { width: 44px; }
 
     /* ----- lista: única área com rolagem; sem barra nativa (zero salto de
        layout ao abrir um grupo) — o esmaecimento indica que há mais itens ----- */
@@ -556,9 +558,9 @@ const NAV: NavItem[] = [
       margin: 0 10px 2px;
       padding: 0 0 0 14px;
       border: 0;
-      border-radius: var(--radius);
+      border-radius: 10px;
       background: none;
-      color: var(--text-3);
+      color: var(--inn-link);
       font: inherit;
       font-size: 0.86rem;
       text-align: left;
@@ -568,16 +570,16 @@ const NAV: NavItem[] = [
       cursor: pointer;
       transition: background 0.15s, color 0.15s;
     }
-    .nav_link:hover { color: var(--text); background: var(--surface-2); }
-    .nav_link:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
-    .nav_link.active { color: var(--primary); background: var(--primary-soft); font-weight: 600; }
+    .nav_link:hover { color: #fff; background: var(--inn-navlink-hover); }
+    .nav_link:focus-visible { outline: 2px solid var(--inn-gold); outline-offset: -2px; }
+    .nav_link.active { color: #fff; background: var(--inn-navlink-hover); font-weight: 600; }
     .nav_link.active::before {
       content: '';
       position: absolute;
       left: 0; top: 9px; bottom: 9px;
       width: 3px;
       border-radius: 0 3px 3px 0;
-      background: var(--primary);
+      background: var(--inn-gold);
     }
     .nav_icon { font-size: 20px; width: 20px; height: 20px; }
     .nav_name { overflow: hidden; text-overflow: ellipsis; }
@@ -592,7 +594,7 @@ const NAV: NavItem[] = [
     /* grupo aberto: o destaque fica no filho ativo, não no pai */
     .nav_group.aberto > .nav_group-btn.active { background: none; }
     .nav_group.aberto > .nav_group-btn.active::before { display: none; }
-    .nav_group.aberto > .nav_group-btn.active:hover { background: var(--surface-2); }
+    .nav_group.aberto > .nav_group-btn.active:hover { background: var(--inn-navlink-hover); }
 
     .nav_filhos {
       display: grid;
@@ -613,13 +615,13 @@ const NAV: NavItem[] = [
       border: 1.5px solid currentColor;
       border-radius: 50%;
     }
-    .nav_sub.active .nav_bullet { background: var(--primary); border-color: var(--primary); }
+    .nav_sub.active .nav_bullet { background: var(--inn-gold); border-color: var(--inn-gold); }
 
     /* rail recolhida (sem hover): filhos fechados e o pai volta a indicar a rota */
     @media (min-width: 769px) {
       .l-navbar:not(.expanded):not(:hover) .nav_filhos { grid-template-rows: 0fr; }
       .l-navbar:not(.expanded):not(:hover) .nav_group.aberto > .nav_group-btn.active {
-        background: var(--primary-soft);
+        background: var(--inn-navlink-hover);
       }
       .l-navbar:not(.expanded):not(:hover) .nav_group.aberto > .nav_group-btn.active::before {
         display: block;
@@ -634,8 +636,8 @@ const NAV: NavItem[] = [
       gap: 0.75rem;
       height: 44px;
       padding-left: 30px;
-      border-top: 1px solid var(--border-soft);
-      color: var(--muted);
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      color: var(--inn-link);
       font-size: 0.72rem;
       white-space: nowrap;
     }
@@ -643,15 +645,15 @@ const NAV: NavItem[] = [
       flex: none;
       width: 8px; height: 8px;
       border-radius: 50%;
-      background: var(--warning);
+      background: #d9a441;
     }
     .rt-dot.rt-on {
-      background: var(--success);
+      background: #3ecf8e;
       animation: rt-pulse 2s ease-in-out infinite;
     }
     @keyframes rt-pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.4); }
-      50% { box-shadow: 0 0 0 5px rgba(25, 135, 84, 0); }
+      0%, 100% { box-shadow: 0 0 0 0 rgba(62, 207, 142, 0.5); }
+      50% { box-shadow: 0 0 0 5px rgba(62, 207, 142, 0); }
     }
 
     /* =====================================================================

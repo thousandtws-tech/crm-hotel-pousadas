@@ -248,29 +248,29 @@ import { TourGuiado } from '@core/services/tour.service';
     .est-titulo-grupo { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
     .est-titulo {
       margin: 0; font-size: 1.35rem; font-weight: 700;
-      color: #20242c; letter-spacing: -0.01em;
+      color: #054054; letter-spacing: -0.01em;
     }
     .est-contador {
-      font-size: 0.78rem; font-weight: 600; color: #2457a7;
-      background: rgba(36, 87, 167, 0.12);
+      font-size: 0.78rem; font-weight: 600; color: #1a6f8a;
+      background: rgba(26, 111, 138, 0.12);
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .est-livres {
-      font-size: 0.78rem; font-weight: 600; color: #b45309;
-      background: rgba(180, 83, 9, 0.16);
+      font-size: 0.78rem; font-weight: 600; color: #b5811f;
+      background: rgba(221, 165, 84, 0.16);
       border-radius: 999px; padding: 3px 10px; white-space: nowrap;
     }
     .est-head-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
     .btn-tour {
       display: inline-flex; align-items: center; gap: 6px;
-      border: 1.5px solid #3d6db5; background: #fff;
-      color: #2457a7; border-radius: 4px;
+      border: 1.5px solid #4b95ab; background: #fff;
+      color: #1a6f8a; border-radius: 4px;
       padding: 0 14px; min-height: 34px; cursor: pointer;
       font-size: 0.85rem; font-weight: 600;
       transition: background .15s ease, color .15s ease;
     }
     .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { background: #2457a7; color: #fff; border-color: #2457a7; }
+    .btn-tour:hover { background: #1a6f8a; color: #fff; border-color: #1a6f8a; }
 
     /* ---------- banners de informação ---------- */
     .est-info {
@@ -279,12 +279,12 @@ import { TourGuiado } from '@core/services/tour.service';
     }
     .est-info-card {
       display: flex; align-items: flex-start; gap: 12px;
-      background: #fff; border: 1px solid #e9ecf0; border-radius: 12px;
+      background: #fff; border: 1px solid #e3eaef; border-radius: 12px;
       padding: 15px 16px;
       transition: box-shadow 0.15s ease, transform 0.15s ease;
     }
     .est-info-card:hover {
-      box-shadow: 0 6px 18px rgba(61, 69, 82, 0.08);
+      box-shadow: 0 6px 18px rgba(5, 64, 84, 0.08);
       transform: translateY(-1px);
     }
     .est-info-icone {
@@ -292,36 +292,36 @@ import { TourGuiado } from '@core/services/tour.service';
       display: inline-flex; align-items: center; justify-content: center;
     }
     .est-info-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .inf-teal { background: rgba(36, 87, 167, 0.12); color: #2457a7; }
-    .inf-gold { background: rgba(180, 83, 9, 0.16); color: #b45309; }
-    .inf-navy { background: rgba(61, 69, 82, 0.1); color: #20242c; }
+    .inf-teal { background: rgba(26, 111, 138, 0.12); color: #1a6f8a; }
+    .inf-gold { background: rgba(221, 165, 84, 0.16); color: #b5811f; }
+    .inf-navy { background: rgba(5, 64, 84, 0.1); color: #054054; }
     .est-info-txt { min-width: 0; }
     .est-info-txt strong {
       display: block; font-size: 0.9rem; font-weight: 700;
-      color: #20242c; margin-bottom: 3px;
+      color: #054054; margin-bottom: 3px;
     }
     .est-info-txt p {
-      margin: 0; font-size: 0.8rem; line-height: 1.5; color: #66707e;
+      margin: 0; font-size: 0.8rem; line-height: 1.5; color: #7d97a1;
     }
-    .est-info-txt b { color: #3d4552; }
+    .est-info-txt b { color: #40525d; }
     @media (max-width: 960px) { .est-info { grid-template-columns: 1fr; } }
 
     /* ---------- cadastro rápido ---------- */
     .est-card { padding-top: 14px; }
     .est-form {
       display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-      background: #f5f7fa; border: 1px dashed #cbd2dc;
+      background: #f4f8fa; border: 1px dashed #c3d4dc;
       border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;
     }
     .est-form-icone {
       width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
-      background: rgba(36, 87, 167, 0.12); color: #2457a7;
+      background: rgba(26, 111, 138, 0.12); color: #1a6f8a;
       display: inline-flex; align-items: center; justify-content: center;
     }
     .est-form-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
     .est-form-txt { display: flex; flex-direction: column; line-height: 1.25; margin-right: auto; }
-    .est-form-txt strong { font-size: 0.9rem; font-weight: 700; color: #20242c; }
-    .est-form-txt small { font-size: 0.76rem; color: #66707e; }
+    .est-form-txt strong { font-size: 0.9rem; font-weight: 700; color: #054054; }
+    .est-form-txt small { font-size: 0.76rem; color: #7d97a1; }
     .est-num { width: 170px; }
     .est-form .btn-dark-blue {
       display: inline-flex; align-items: center; gap: 6px;
@@ -336,40 +336,40 @@ import { TourGuiado } from '@core/services/tour.service';
     .est-busca {
       display: flex; align-items: center; gap: 8px;
       flex: 1; min-width: 240px; max-width: 460px;
-      background: #fff; border: 1px solid #dde2e8; border-radius: 8px;
+      background: #fff; border: 1px solid #d7e0e6; border-radius: 8px;
       padding: 0 10px; height: 40px;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .est-busca.foco {
-      border-color: #2457a7;
-      box-shadow: 0 0 0 3px rgba(36, 87, 167, 0.14);
+      border-color: #1a6f8a;
+      box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14);
     }
-    .est-busca-icone { color: #66707e; font-size: 20px; width: 20px; height: 20px; }
+    .est-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
     .est-busca-input {
       flex: 1; border: none; outline: none; background: transparent;
-      font-size: 0.9rem; color: #3d4552; font-family: inherit; height: 100%;
+      font-size: 0.9rem; color: #33424c; font-family: inherit; height: 100%;
     }
-    .est-busca-input::placeholder { color: #66707e; }
+    .est-busca-input::placeholder { color: #8fa3ab; }
     .est-busca-input::-webkit-search-cancel-button { display: none; }
     .est-limpar {
-      border: none; background: #f0f2f5; border-radius: 50%;
-      width: 22px; height: 22px; cursor: pointer; color: #55606d;
+      border: none; background: #eef2f5; border-radius: 50%;
+      width: 22px; height: 22px; cursor: pointer; color: #5d6d7e;
       display: inline-flex; align-items: center; justify-content: center;
       padding: 0;
     }
     .est-limpar mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .est-limpar:hover { background: #dde2e8; }
+    .est-limpar:hover { background: #d7e0e6; }
 
     .est-toggle {
       display: inline-flex; align-items: center; gap: 14px;
-      border: 1px solid #dde2e8; background: #fff; border-radius: 999px;
+      border: 1px solid #d7e0e6; background: #fff; border-radius: 999px;
       padding: 8px 20px 8px 12px; font-size: 0.84rem; font-weight: 600;
-      color: #55606d; cursor: pointer; font-family: inherit;
+      color: #5d6d7e; cursor: pointer; font-family: inherit;
       transition: border-color 0.15s, background 0.15s;
     }
     .est-trilho {
       width: 34px; height: 19px; border-radius: 999px;
-      background: #cbd2dc; position: relative; transition: background 0.18s;
+      background: #c3d2d9; position: relative; transition: background 0.18s;
       flex-shrink: 0;
     }
     .est-bolinha {
@@ -378,8 +378,8 @@ import { TourGuiado } from '@core/services/tour.service';
       background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25);
       transition: transform 0.18s;
     }
-    .est-toggle.on { border-color: #2457a7; color: #20242c; }
-    .est-toggle.on .est-trilho { background: #2457a7; }
+    .est-toggle.on { border-color: #1a6f8a; color: #054054; }
+    .est-toggle.on .est-trilho { background: #1a6f8a; }
     .est-toggle.on .est-bolinha { transform: translateX(16px); }
 
     /* ---------- tabela ---------- */
@@ -387,18 +387,18 @@ import { TourGuiado } from '@core/services/tour.service';
     .est-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
     .est-tabela thead th {
       position: sticky; top: 0; z-index: 1;
-      background: #f5f7fa; color: #3d4552;
+      background: #f4f8fa; color: #40525d;
       font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.04em; text-align: left;
-      padding: 14px 14px; border-bottom: 1px solid #dde2e8;
+      padding: 14px 14px; border-bottom: 1px solid #d7e0e6;
       white-space: nowrap;
     }
     .est-tabela tbody td {
-      padding: 16px 14px; border-bottom: 1px solid #f0f2f5;
-      color: #3d4552; vertical-align: middle; white-space: nowrap;
+      padding: 16px 14px; border-bottom: 1px solid #eef2f5;
+      color: #2c3a44; vertical-align: middle; white-space: nowrap;
     }
     .est-row { transition: background 0.12s; }
-    .est-row:hover { background: #f5f7fa; }
+    .est-row:hover { background: #f4f8fa; }
     .est-row:last-child td { border-bottom: none; }
     .tc { text-align: center; }
     .est-th-vaga { min-width: 220px; }
@@ -406,20 +406,20 @@ import { TourGuiado } from '@core/services/tour.service';
     .est-cell { display: flex; align-items: center; gap: 12px; min-width: 180px; }
     .est-vaga-icone {
       width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
-      background: rgba(61, 69, 82, 0.08); color: #20242c;
+      background: rgba(5, 64, 84, 0.08); color: #054054;
       display: inline-flex; align-items: center; justify-content: center;
     }
     .est-vaga-icone mat-icon { font-size: 23px; width: 23px; height: 23px; }
     .est-cell-txt { display: flex; flex-direction: column; line-height: 1.3; }
-    .est-cell-txt strong { color: #20242c; font-weight: 600; font-size: 0.95rem; }
-    .est-cell-txt small { color: #66707e; font-size: 0.8rem; }
+    .est-cell-txt strong { color: #054054; font-weight: 600; font-size: 0.95rem; }
+    .est-cell-txt small { color: #7d97a1; font-size: 0.8rem; }
 
     .est-vinc { display: flex; align-items: center; gap: 9px; }
     .est-dot {
       width: 9px; height: 9px; border-radius: 50%;
-      background: #cbd2dc; flex-shrink: 0;
+      background: #c3d2d9; flex-shrink: 0;
     }
-    .est-dot.on { background: #2457a7; }
+    .est-dot.on { background: #1a6f8a; }
 
     /* (mat-select estilizado globalmente em styles.css) */
 
@@ -429,20 +429,20 @@ import { TourGuiado } from '@core/services/tour.service';
 
     /* ---------- estado vazio ---------- */
     .est-vazio {
-      text-align: center; padding: 40px 16px !important; color: #66707e;
+      text-align: center; padding: 40px 16px !important; color: #7d97a1;
     }
     .est-vazio mat-icon {
       font-size: 40px; width: 40px; height: 40px;
-      color: #cbd2dc; margin-bottom: 8px;
+      color: #c3d2d9; margin-bottom: 8px;
     }
     .est-vazio p { margin: 0 0 6px; font-size: 0.9rem; }
-    .est-vazio-dica { font-size: 0.82rem !important; color: #66707e; }
+    .est-vazio-dica { font-size: 0.82rem !important; color: #8fa3ab; }
 
     /* ---------- skeleton ---------- */
-    .skel-row td { border-bottom: 1px solid #f0f2f5; }
+    .skel-row td { border-bottom: 1px solid #eef2f5; }
     .skel {
       display: inline-block; border-radius: 6px;
-      background: linear-gradient(90deg, #f0f2f5 25%, #e9ecf0 50%, #f0f2f5 75%);
+      background: linear-gradient(90deg, #eef2f5 25%, #e3eaef 50%, #eef2f5 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
     }

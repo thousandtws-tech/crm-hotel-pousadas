@@ -27,7 +27,7 @@ export class TourGuiado {
         animate: true,
         smoothScroll: true,
         allowClose: true,
-        overlayColor: '#161a20',
+        overlayColor: '#02141b',
         overlayOpacity: 0.55,
         stagePadding: 8,
         stageRadius: 8,

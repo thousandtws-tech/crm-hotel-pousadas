@@ -173,33 +173,33 @@ const SUGESTOES = [
     .mar-fab {
       position: fixed; right: 22px; bottom: 22px; z-index: 300;
       width: 56px; height: 56px; border-radius: 50%;
-      background: #20242c; color: #fff; border: 2px solid #2457a7;
+      background: #054054; color: #fff; border: 2px solid #1a6f8a;
       cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
       box-shadow: 0 4px 18px rgba(0,0,0,.35);
       transition: transform .15s ease, box-shadow .15s ease;
     }
     .mar-fab:hover { transform: scale(1.06); }
     .mar-fab mat-icon { font-size: 26px; width: 26px; height: 26px; }
-    .mar-fab-live { border-color: #b45309; box-shadow: 0 0 0 6px rgba(180, 83, 9, .18), 0 4px 18px rgba(0,0,0,.35); }
-    .mar-fab-think { border-color: #3d6db5; animation: fab-think 1.2s ease-in-out infinite; }
-    @keyframes fab-think { 50% { box-shadow: 0 0 0 8px rgba(61, 109, 181, .16), 0 4px 18px rgba(0,0,0,.35); } }
+    .mar-fab-live { border-color: #b5811f; box-shadow: 0 0 0 6px rgba(221,165,84,.18), 0 4px 18px rgba(0,0,0,.35); }
+    .mar-fab-think { border-color: #4b95ab; animation: fab-think 1.2s ease-in-out infinite; }
+    @keyframes fab-think { 50% { box-shadow: 0 0 0 8px rgba(75,149,171,.16), 0 4px 18px rgba(0,0,0,.35); } }
 
     /* ===== painel ===== */
     .mar-panel {
       position: fixed; right: 22px; bottom: 90px; z-index: 300;
       width: min(410px, calc(100vw - 44px)); max-height: min(580px, calc(100vh - 120px));
-      background: #fff; border: 1px solid #dde2e8; border-radius: 16px;
+      background: #fff; border: 1px solid #d7e0e6; border-radius: 16px;
       display: flex; flex-direction: column; overflow: hidden;
-      box-shadow: 0 12px 40px rgba(32, 36, 44, .28);
+      box-shadow: 0 12px 40px rgba(5, 40, 54, .28);
     }
 
     .mar-head {
       display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-bottom: 1px solid #e9ecf0;
+      padding: 10px 12px; border-bottom: 1px solid #e3eaef;
     }
     .mar-avatar {
       width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
-      background: #2457a7;
+      background: linear-gradient(135deg, #054054 0%, #1a6f8a 100%);
       color: #fff; font-size: 14px; font-weight: 700; letter-spacing: 0.02em;
       display: inline-flex; align-items: center; justify-content: center;
       user-select: none;
@@ -207,26 +207,26 @@ const SUGESTOES = [
     .mar-avatar-sm { width: 26px; height: 26px; align-self: flex-end; margin-bottom: 2px; font-size: 11.5px; }
     .mar-avatar-lg { width: 44px; height: 44px; font-size: 19px; }
     .mar-head-txt { display: flex; flex-direction: column; line-height: 1.15; flex: 1; min-width: 0; }
-    .mar-head-txt strong { font-size: 0.95rem; letter-spacing: 0.02em; color: #20242c; }
-    .mar-st { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; color: #66707e; }
-    .mar-dot { width: 7px; height: 7px; border-radius: 50%; background: #66707e; flex-shrink: 0; }
-    .mar-dot-idle { background: #198754; }
-    .mar-dot-listening { background: #b45309; animation: pulse 1s infinite; }
-    .mar-dot-thinking { background: #3d6db5; animation: pulse .8s infinite; }
-    .mar-dot-speaking { background: #198754; animation: pulse .6s infinite; }
-    .mar-dot-offline { background: #9aa2ae; }
+    .mar-head-txt strong { font-size: 0.95rem; letter-spacing: 0.02em; color: #054054; }
+    .mar-st { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; color: #8a99a4; }
+    .mar-dot { width: 7px; height: 7px; border-radius: 50%; background: #6c7f88; flex-shrink: 0; }
+    .mar-dot-idle { background: #2e9e6b; }
+    .mar-dot-listening { background: #b5811f; animation: pulse 1s infinite; }
+    .mar-dot-thinking { background: #4b95ab; animation: pulse .8s infinite; }
+    .mar-dot-speaking { background: #2e9e6b; animation: pulse .6s infinite; }
+    .mar-dot-offline { background: #9aa7ad; }
     @keyframes pulse { 50% { opacity: .45; } }
     .mar-hbtn {
-      background: transparent; border: none; color: #66707e; cursor: pointer;
+      background: transparent; border: none; color: #8a99a4; cursor: pointer;
       border-radius: 8px; padding: 6px; display: inline-flex;
     }
-    .mar-hbtn:hover { color: #20242c; background: #f0f2f5; }
+    .mar-hbtn:hover { color: #054054; background: #eef3f6; }
     .mar-hbtn mat-icon { font-size: 18px; width: 18px; height: 18px; }
 
     .mar-erro {
       display: flex; align-items: center; gap: 6px;
-      background: #fbebec; color: #dc3545; font-size: 0.78rem;
-      padding: 8px 12px; border-bottom: 1px solid #fde2e2;
+      background: #fdecec; color: #dc3545; font-size: 0.78rem;
+      padding: 8px 12px; border-bottom: 1px solid #f3d3d1;
     }
     .mar-erro mat-icon { font-size: 16px; width: 16px; height: 16px; }
 
@@ -245,27 +245,27 @@ const SUGESTOES = [
     }
     @keyframes mar-in { from { opacity: 0; transform: translateY(4px); } }
     .mar-balao-user {
-      background: #20242c; color: #fff; border-bottom-right-radius: 6px;
+      background: #054054; color: #fff; border-bottom-right-radius: 6px;
       white-space: pre-wrap;
     }
     .mar-balao-ia {
-      background: #f0f2f5; color: #20242c; border-bottom-left-radius: 6px;
+      background: #f1f5f7; color: #1c3038; border-bottom-left-radius: 6px;
     }
     .mar-balao-ia code {
-      background: #e9ecf0; border-radius: 4px; padding: 1px 5px;
+      background: #e2eaee; border-radius: 4px; padding: 1px 5px;
       font-size: 0.8rem; font-family: ui-monospace, monospace;
     }
     .mar-partial { opacity: .8; }
     .cur { animation: pulse .7s infinite; }
     .mar-sys {
-      align-self: center; color: #66707e;
+      align-self: center; color: #8a99a4;
       font-size: 0.74rem; font-style: italic; padding: 2px 8px;
     }
 
     /* typing indicator */
     .mar-typing { display: inline-flex; gap: 4px; align-items: center; padding: 12px 14px; }
     .tdot {
-      width: 7px; height: 7px; border-radius: 50%; background: #9aa2ae;
+      width: 7px; height: 7px; border-radius: 50%; background: #8fa9b5;
       animation: tbounce 1.2s infinite;
     }
     .tdot:nth-child(2) { animation-delay: .15s; }
@@ -277,11 +277,11 @@ const SUGESTOES = [
       position: sticky; bottom: 8px; margin-left: auto; margin-right: 12px;
       display: flex; float: right;
       width: 32px; height: 32px; border-radius: 50%;
-      border: 1px solid #dde2e8; background: #fff; color: #55606d;
+      border: 1px solid #d7e0e6; background: #fff; color: #5d6d7e;
       box-shadow: 0 2px 8px rgba(0,0,0,.12); cursor: pointer;
       align-items: center; justify-content: center;
     }
-    .mar-voltar:hover { color: #20242c; }
+    .mar-voltar:hover { color: #054054; }
     .mar-voltar mat-icon { font-size: 17px; width: 17px; height: 17px; }
 
     /* estado vazio + suggestions */
@@ -289,53 +289,53 @@ const SUGESTOES = [
       display: flex; flex-direction: column; align-items: center; gap: 12px;
       padding: 30px 18px 20px; text-align: center;
     }
-    .mar-vazio-t { margin: 0; font-size: 0.95rem; color: #20242c; font-weight: 600; }
+    .mar-vazio-t { margin: 0; font-size: 0.95rem; color: #054054; font-weight: 600; }
     .mar-sug { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
     .mar-chip {
       display: inline-flex; align-items: center; gap: 6px;
-      border: 1px solid #dde2e8; border-radius: 999px; background: #fff;
-      padding: 7px 12px; font-size: 0.78rem; color: #44525f;
+      border: 1px solid #d7e0e6; border-radius: 999px; background: #fff;
+      padding: 7px 12px; font-size: 0.78rem; color: #3d5460;
       cursor: pointer; font-family: inherit; transition: all .14s ease;
     }
-    .mar-chip:hover { border-color: #3d6db5; color: #20242c; background: #eef3fb; }
-    .mar-chip mat-icon { font-size: 15px; width: 15px; height: 15px; color: #3d6db5; }
+    .mar-chip:hover { border-color: #4b95ab; color: #054054; background: #f0f7fa; }
+    .mar-chip mat-icon { font-size: 15px; width: 15px; height: 15px; color: #4b95ab; }
 
     /* ===== confirmação ===== */
     .mar-acao {
-      margin: 0 12px 8px; border: 1.5px solid #b45309; border-radius: 12px;
-      background: #fdf9ec; padding: 10px 12px;
+      margin: 0 12px 8px; border: 1.5px solid #b5811f; border-radius: 12px;
+      background: #fdf7ec; padding: 10px 12px;
     }
     .mar-acao-tit {
       display: flex; align-items: center; gap: 6px;
-      font-size: 0.72rem; font-weight: 700; color: #b45309;
+      font-size: 0.72rem; font-weight: 700; color: #b5811f;
       text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;
     }
     .mar-acao-tit mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .mar-acao-res { display: flex; flex-direction: column; gap: 2px; font-size: 0.82rem; color: #3d4552; margin-bottom: 8px; }
+    .mar-acao-res { display: flex; flex-direction: column; gap: 2px; font-size: 0.82rem; color: #33424c; margin-bottom: 8px; }
     .mar-acao-btns { display: flex; gap: 8px; }
     .mar-ok, .mar-nok {
       display: inline-flex; align-items: center; gap: 5px;
       border: none; border-radius: 8px; padding: 8px 14px;
       font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit;
     }
-    .mar-ok { background: #2457a7; color: #fff; }
-    .mar-ok:hover { background: #20242c; }
-    .mar-nok { background: #e9ecf0; color: #55606d; }
+    .mar-ok { background: #1a6f8a; color: #fff; }
+    .mar-ok:hover { background: #054054; }
+    .mar-nok { background: #e8edf0; color: #5d6d7e; }
     .mar-ok mat-icon, .mar-nok mat-icon { font-size: 16px; width: 16px; height: 16px; }
 
     /* ===== composer ===== */
-    .mar-foot { padding: 10px 12px 12px; border-top: 1px solid #e9ecf0; }
+    .mar-foot { padding: 10px 12px 12px; border-top: 1px solid #e3eaef; }
     .mar-composer {
       display: flex; flex-direction: column; gap: 6px;
-      border: 1px solid #dde2e8; border-radius: 18px; background: #fff;
+      border: 1px solid #d7e0e6; border-radius: 18px; background: #fff;
       padding: 8px 8px 6px 14px;
       transition: border-color .15s ease, box-shadow .15s ease;
     }
-    .mar-composer:focus-within { border-color: #3d6db5; box-shadow: 0 0 0 3px rgba(61, 109, 181, .14); }
+    .mar-composer:focus-within { border-color: #4b95ab; box-shadow: 0 0 0 3px rgba(75,149,171,.14); }
     .mar-txt {
       border: none; outline: none; resize: none; background: transparent;
       font-size: 0.88rem; font-family: inherit; line-height: 1.45;
-      max-height: 120px; width: 100%; padding: 4px 0; color: #20242c;
+      max-height: 120px; width: 100%; padding: 4px 0; color: #1c3038;
     }
     .mar-acoes { display: flex; justify-content: space-between; align-items: center; }
     .mar-acoes > :last-child { margin-left: auto; }
@@ -343,14 +343,14 @@ const SUGESTOES = [
       border: none; border-radius: 50%; width: 34px; height: 34px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
       cursor: pointer; transition: all .15s ease;
-      background: #f0f2f5; color: #55606d;
+      background: #eef3f6; color: #5d6d7e;
     }
-    .mar-ibtn:hover { background: #e9ecf0; color: #20242c; }
+    .mar-ibtn:hover { background: #e2eaee; color: #054054; }
     .mar-ibtn mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .mar-ibtn-send { background: #20242c; color: #fff; }
-    .mar-ibtn-send:hover:not(:disabled) { background: #2457a7; }
+    .mar-ibtn-send { background: #054054; color: #fff; }
+    .mar-ibtn-send:hover:not(:disabled) { background: #1a6f8a; }
     .mar-ibtn-send:disabled { opacity: .35; cursor: default; }
-    .mar-ibtn-stop { background: #fbebec; color: #dc3545; }
+    .mar-ibtn-stop { background: #fdecec; color: #dc3545; }
   `,
 })
 export class MariaWidgetComponent {

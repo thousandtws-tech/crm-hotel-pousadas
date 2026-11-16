@@ -94,13 +94,13 @@ import { DateInputComponent } from '@shared/components/date-input.component';
   styles: `
     .filtros { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 12px; flex-wrap: wrap; }
     .fdata { display: flex; flex-direction: column; gap: 4px; width: 180px; }
-    .fdata > span { font-size: 12px; color: #55606d; font-weight: 600; }
+    .fdata > span { font-size: 12px; color: #5d6d7e; font-weight: 600; }
     .fdata .campo-mat { width: 100%; }
     .btn-filtrar {
       height: 32px; min-height: 32px; border-radius: 6px;
       font-size: 0.85rem;
-      --mat-sys-primary: #2457a7;
-      --mat-sys-outline: #b9c4cb;
+      --mat-sys-primary: #1a6f8a;
+      --mat-sys-outline: #b9c7d0;
     }
     .btn-filtrar mat-icon { font-size: 17px; width: 17px; height: 17px; }
     .acao {
@@ -109,7 +109,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
       font-size: 13px; margin-right: 10px;
     }
     .dados {
-      background: #161a20; color: #dbe9f5;
+      background: #0f172a; color: #e2e8f0;
       padding: 12px; border-radius: 8px; font-size: 12px;
       overflow-x: auto;
     }

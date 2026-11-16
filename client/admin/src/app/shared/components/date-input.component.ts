@@ -115,9 +115,9 @@ const BR_FORMATS: MatDateFormats = {
       width: 28px; height: 28px; padding: 0;
       border: 0; background: transparent; border-radius: 6px;
       display: inline-flex; align-items: center; justify-content: center;
-      color: #55606d; cursor: pointer;
+      color: #5d6d7e; cursor: pointer;
     }
-    .dw-btn:hover { background: rgba(0, 0, 0, 0.06); color: #20242c; }
+    .dw-btn:hover { background: rgba(0, 0, 0, 0.06); color: #054054; }
     .dw-btn:disabled { cursor: default; opacity: 0.5; }
     .dw-btn mat-icon { font-size: 18px; width: 18px; height: 18px; }
   `,

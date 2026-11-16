@@ -32,13 +32,13 @@ type Preset = 'mes' | 'mesAnt' | 'd30' | 'ano' | 'custom';
 
 /** Paleta oficial da pousada aplicada aos gráficos. */
 const C = {
-  navy: '#20242c',
-  teal: '#2457a7',
-  light: '#3d6db5',
-  gold: '#b45309',
-  cinza: '#66707e',
+  navy: '#054054',
+  teal: '#1a6f8a',
+  light: '#4b95ab',
+  gold: '#b5811f',
+  cinza: '#8a99a4',
 };
-const PALETA = ['#20242c', '#2457a7', '#3d6db5', '#b45309', '#a5b6bf', '#8a6116', '#a5b6bf'];
+const PALETA = ['#054054', '#1a6f8a', '#4b95ab', '#b5811f', '#7fb8c9', '#b98a45', '#9fb9c4'];
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const COMPACTO = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 });
@@ -53,19 +53,19 @@ function axisCategoria(): Record<string, unknown> {
   return {
     type: 'category',
     axisTick: { show: false },
-    axisLine: { lineStyle: { color: '#dde2e8' } },
-    axisLabel: { color: '#66707e', fontSize: 11 },
+    axisLine: { lineStyle: { color: '#dbe4e9' } },
+    axisLabel: { color: '#7d97a1', fontSize: 11 },
   };
 }
 function axisValor(): Record<string, unknown> {
   return {
     type: 'value',
     axisLabel: {
-      color: '#66707e',
+      color: '#8fa3ab',
       fontSize: 11,
       formatter: (v: number) => COMPACTO.format(v),
     },
-    splitLine: { lineStyle: { color: '#f0f2f5' } },
+    splitLine: { lineStyle: { color: '#eef2f5' } },
   };
 }
 const TOOLTIP_BRL = {
@@ -356,24 +356,24 @@ function ttItem(fmtExtra: (p: { name: string; value: number; dataIndex: number }
       display: flex; justify-content: space-between; align-items: flex-end;
       gap: 16px; flex-wrap: wrap;
       padding-bottom: 14px; margin-bottom: 16px;
-      border-bottom: 1px solid #e9ecf0;
+      border-bottom: 1px solid #e3eaef;
     }
     .fin-titulo {
-      margin: 0; font-size: 1.5rem; font-weight: 800; color: #20242c;
+      margin: 0; font-size: 1.5rem; font-weight: 800; color: #054054;
       letter-spacing: -0.02em;
     }
-    .fin-periodo { margin: 2px 0 0; font-size: 0.82rem; color: #66707e; }
+    .fin-periodo { margin: 2px 0 0; font-size: 0.82rem; color: #7d97a1; }
     .fin-head-acoes { display: flex; gap: 8px; }
     .btn-tour {
       display: inline-flex; align-items: center; gap: 6px;
-      border: 1.5px solid #dde2e8; background: #fff;
-      color: #55606d; border-radius: 4px;
+      border: 1.5px solid #d7e0e6; background: #fff;
+      color: #5d6d7e; border-radius: 4px;
       padding: 0 14px; min-height: 34px; cursor: pointer;
       font-size: 0.85rem; font-weight: 600; font-family: inherit;
       transition: border-color .15s ease, color .15s ease;
     }
     .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { border-color: #2457a7; color: #2457a7; }
+    .btn-tour:hover { border-color: #1a6f8a; color: #1a6f8a; }
 
     /* ---------- período ---------- */
     .fin-periodo-card {
@@ -382,37 +382,37 @@ function ttItem(fmtExtra: (p: { name: string; value: number; dataIndex: number }
     }
     .fin-presets { display: flex; gap: 6px; flex-wrap: wrap; }
     .pre-btn {
-      border: 1px solid #dde2e8; background: #fff; color: #3d4552;
+      border: 1px solid #d7e0e6; background: #fff; color: #40525d;
       border-radius: 999px; padding: 7px 16px;
       font-size: 0.8rem; font-weight: 600; cursor: pointer; font-family: inherit;
       transition: all .14s ease;
     }
-    .pre-btn:hover { border-color: #2457a7; color: #2457a7; }
+    .pre-btn:hover { border-color: #1a6f8a; color: #1a6f8a; }
     .pre-btn.ativo {
-      background: #2457a7; border-color: #2457a7; color: #fff;
+      background: #1a6f8a; border-color: #1a6f8a; color: #fff;
     }
     .fin-range { width: 270px; margin-left: auto; }
 
     /* ---------- barra de números ---------- */
     .fin-resumo {
       display: flex; align-items: center;
-      background: #fff; border: 1px solid #e9ecf0; border-radius: 10px;
+      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
       margin-bottom: 16px; overflow-x: auto;
     }
     .fin-est {
       display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
       padding: 14px 26px; min-width: 160px;
-      border-left: 1px solid #f0f2f5;
+      border-left: 1px solid #eef2f5;
     }
     .fin-est:first-child { border-left: none; }
     .fin-est-num {
-      font-size: 1.45rem; font-weight: 800; color: #20242c;
+      font-size: 1.45rem; font-weight: 800; color: #054054;
       line-height: 1; letter-spacing: -0.02em;
       font-variant-numeric: tabular-nums; white-space: nowrap;
     }
     .fin-est-lbl {
       display: inline-flex; align-items: center; gap: 5px;
-      font-size: 0.68rem; font-weight: 600; color: #66707e;
+      font-size: 0.68rem; font-weight: 600; color: #7d97a1;
       text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap;
     }
     .fin-est-lbl mat-icon { font-size: 14px; width: 14px; height: 14px; color: #a5b6bf; }
@@ -436,7 +436,7 @@ function ttItem(fmtExtra: (p: { name: string; value: number; dataIndex: number }
       .fin-card.span2 { grid-column: span 1; }
     }
     .fin-card {
-      background: #fff; border: 1px solid #e9ecf0; border-radius: 10px;
+      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
       padding: 16px 18px 10px; min-width: 0;
       display: flex; flex-direction: column;
     }
@@ -445,11 +445,11 @@ function ttItem(fmtExtra: (p: { name: string; value: number; dataIndex: number }
       gap: 12px; margin-bottom: 6px;
     }
     .fin-card-head h3 {
-      margin: 0; font-size: 0.95rem; font-weight: 700; color: #20242c;
+      margin: 0; font-size: 0.95rem; font-weight: 700; color: #054054;
     }
-    .fin-card-head small { font-size: 0.74rem; color: #66707e; }
+    .fin-card-head small { font-size: 0.74rem; color: #8a99a4; }
     .fin-card-total {
-      font-size: 1.05rem; font-weight: 800; color: #2457a7;
+      font-size: 1.05rem; font-weight: 800; color: #1a6f8a;
       font-variant-numeric: tabular-nums; white-space: nowrap;
     }
     .fin-card app-echart { flex: 1; min-height: 260px; }
@@ -460,7 +460,7 @@ function ttItem(fmtExtra: (p: { name: string; value: number; dataIndex: number }
     .fin-vazio {
       flex: 1; display: flex; align-items: center; justify-content: center;
       gap: 8px; min-height: 200px; margin: 0;
-      color: #66707e; font-size: 0.85rem;
+      color: #8a99a4; font-size: 0.85rem;
     }
     .fin-vazio mat-icon { font-size: 20px; width: 20px; height: 20px; }
 
@@ -469,34 +469,34 @@ function ttItem(fmtExtra: (p: { name: string; value: number; dataIndex: number }
     .fin-tabela-wrap { overflow-x: auto; }
     .fin-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
     .fin-tabela thead th {
-      background: #f5f7fa; color: #3d4552;
+      background: #f4f8fa; color: #40525d;
       font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.05em; padding: 12px 16px; text-align: left;
-      border-bottom: 2px solid #e9ecf0; white-space: nowrap;
+      border-bottom: 2px solid #e3eaef; white-space: nowrap;
     }
     .fin-tabela tbody td {
-      padding: 12px 16px; border-bottom: 1px solid #f0f2f5;
-      vertical-align: middle; color: #3d4552;
+      padding: 12px 16px; border-bottom: 1px solid #eef2f5;
+      vertical-align: middle; color: #33424c;
     }
-    .fin-tabela tbody tr:hover { background: #f8f9fb; }
+    .fin-tabela tbody tr:hover { background: #f7fafb; }
     .fin-tabela .tc { text-align: center; }
     .fin-tabela .tr { text-align: right; }
-    .td-id { font-weight: 700; color: #20242c; white-space: nowrap; }
+    .td-id { font-weight: 700; color: #054054; white-space: nowrap; }
     .td-valor { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .td-per { white-space: nowrap; }
     .td-per mat-icon { font-size: 13px; width: 13px; height: 13px; vertical-align: -2px; color: #a5b6bf; }
     .fin-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .fin-avatar {
       width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
-      background: #2457a7; color: #fff;
+      background: linear-gradient(135deg, #1a6f8a, #4b95ab); color: #fff;
       display: inline-flex; align-items: center; justify-content: center;
       font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em;
     }
     .fin-cell-nome {
-      font-weight: 600; color: #20242c;
+      font-weight: 600; color: #054054;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;
     }
-    .fin-vazio-tab { text-align: center; color: #66707e; padding: 30px !important; font-size: 0.85rem; }
+    .fin-vazio-tab { text-align: center; color: #8a99a4; padding: 30px !important; font-size: 0.85rem; }
     .badge-acao {
       display: inline-flex; align-items: center;
       border: none; border-radius: 0.25rem;
@@ -670,7 +670,7 @@ export class FinanceiroComponent implements OnInit {
       icon: 'roundRect',
       itemWidth: 14,
       itemHeight: 8,
-      textStyle: { color: '#55606d', fontSize: 11 },
+      textStyle: { color: '#5d6d7e', fontSize: 11 },
     },
     grid: { left: 8, right: 12, top: 34, bottom: 4, containLabel: true },
     xAxis: { ...axisCategoria(), data: this.serieRecebido().map((p) => p.rotulo) },
@@ -688,8 +688,8 @@ export class FinanceiroComponent implements OnInit {
           color: {
             type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(36, 87, 167, 0.28)' },
-              { offset: 1, color: 'rgba(36, 87, 167, 0.02)' },
+              { offset: 0, color: 'rgba(26,111,138,0.28)' },
+              { offset: 1, color: 'rgba(26,111,138,0.02)' },
             ],
           },
         },
@@ -717,7 +717,7 @@ export class FinanceiroComponent implements OnInit {
         icon: 'circle',
         itemWidth: 9,
         itemHeight: 9,
-        textStyle: { color: '#55606d', fontSize: 11 },
+        textStyle: { color: '#5d6d7e', fontSize: 11 },
       },
       series: [{
         type: 'pie',
@@ -730,7 +730,7 @@ export class FinanceiroComponent implements OnInit {
           formatter: '{d}%',
           fontSize: 11,
           fontWeight: 600,
-          color: '#3d4552',
+          color: '#40525d',
         },
         labelLine: { length: 8, length2: 8 },
         data: [
@@ -750,7 +750,7 @@ export class FinanceiroComponent implements OnInit {
       icon: 'circle',
       itemWidth: 9,
       itemHeight: 9,
-      textStyle: { color: '#55606d', fontSize: 11 },
+      textStyle: { color: '#5d6d7e', fontSize: 11 },
     },
     series: [{
       type: 'pie',
@@ -762,7 +762,7 @@ export class FinanceiroComponent implements OnInit {
         formatter: '{d}%',
         fontSize: 11,
         fontWeight: 600,
-        color: '#3d4552',
+        color: '#40525d',
       },
       labelLine: { length: 8, length2: 8 },
       data: this.seriePagamento().map((p) => ({
@@ -781,7 +781,7 @@ export class FinanceiroComponent implements OnInit {
       yAxis: {
         ...axisCategoria(),
         axisLine: { show: false },
-        axisLabel: { color: '#3d4552', fontSize: 12 },
+        axisLabel: { color: '#40525d', fontSize: 12 },
         data: dados.map((p) => p.rotulo),
       },
       series: [{
@@ -831,7 +831,7 @@ export class FinanceiroComponent implements OnInit {
       yAxis: {
         ...axisCategoria(),
         axisLine: { show: false },
-        axisLabel: { color: '#3d4552', fontSize: 12 },
+        axisLabel: { color: '#40525d', fontSize: 12 },
         data: dados.map((i) => i.nome),
       },
       series: [{
@@ -843,7 +843,7 @@ export class FinanceiroComponent implements OnInit {
           position: 'right',
           fontSize: 11,
           fontWeight: 600,
-          color: '#3d4552',
+          color: '#40525d',
           formatter: '{c}',
         },
         data: dados.map((i) => i.quantidade),
@@ -861,7 +861,7 @@ export class FinanceiroComponent implements OnInit {
     return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.rotulo ?? s;
   }
   statusCor(s: string): string {
-    return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.cor ?? '#66707e';
+    return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.cor ?? '#7d97a1';
   }
   statusTexto(s: string): string {
     return STATUS_RESERVA[s as keyof typeof STATUS_RESERVA]?.texto ?? '#fff';
