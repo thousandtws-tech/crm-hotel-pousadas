@@ -3,8 +3,6 @@ REST, telas e campos mutáveis. Separadas para facilitar revisão
 de segurança em um só lugar.
 """
 
-
-# Gerente/admin: operações destrutivas, financeiras ou de cadastro.
 _ACOES_RESTRITAS = {
     "preparar_cancelamento",
     "preparar_excluir",
@@ -34,8 +32,7 @@ _ACOES_RESTRITAS = {
     "preparar_cancelar_pedido",
     "preparar_mesa",
 }
-# Leituras restritas a gerente/admin (dados financeiros e cadastros
-# sensíveis — defense-in-depth além do RBAC do backend).
+
 _LEITURAS_RESTRITAS = {
     "get_plano_contas",
     "get_contas_financeiras",
@@ -51,7 +48,7 @@ _LEITURAS_RESTRITAS = {
     "get_inteligencia",
     "get_historico_12m",
 }
-# Somente administrador.
+
 _ACOES_ADMIN = {
     "preparar_funcionario",
     "preparar_estabelecimento",
@@ -60,7 +57,7 @@ _ACOES_ADMIN = {
 _LEITURAS_ADMIN = {
     "get_cms_acomodacoes",
 }
-# Mapa tipo → caminho REST (status e exclusão compartilham prefixos).
+
 _PATHS: dict[str, str] = {
     "cliente": "/clientes",
     "funcionario": "/funcionarios",
@@ -75,7 +72,7 @@ _PATHS: dict[str, str] = {
     "forma_pagamento": "/formas-pagamento",
     "reserva": "/reservas",
 }
-# Telas restritas a administrador (mesmo guard do router Angular).
+
 _PAGINAS_ADMIN = {"cms", "estabelecimento", "funcionarios"}
 _ROTULO_PAGINA = {
     "dashboard": "o Painel",
@@ -103,7 +100,7 @@ _ROTULO_PAGINA = {
     "funcionarios": "os Funcionários",
     "auditoria": "a Auditoria",
 }
-# Páginas cuja rota não é simplesmente "/<pagina>".
+
 _ROTA_PAGINA = {
     "financeiro_contas": "/financeiro/contas",
     "financeiro_fluxo": "/financeiro/fluxo-caixa",
@@ -112,7 +109,7 @@ _ROTA_PAGINA = {
     "financeiro_split": "/financeiro/split",
     "financeiro_caixa": "/financeiro/caixa",
 }
-# Campos mutáveis por entidade (merge com o GET atual no PUT).
+
 _CAMPOS_CLIENTE = ("nome", "cpf", "data_nascimento", "email", "telefone",
                    "cidade", "estado", "nacionalidade", "profissao")
 _CAMPOS_FUNCIONARIO = ("nome", "login", "senha", "nivel", "cpf", "data_nascimento")

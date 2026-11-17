@@ -563,7 +563,6 @@ async def handle(ex, nome: str, a: dict[str, Any]) -> dict[str, Any]:
             await ex.api.post(f"/notificacoes/{int(a['id'])}/ler", {})
             return {"ok": True, "mensagem": "Notificação marcada como lida."}
 
-        # ================= PDV / café / caixa / tesouraria =================
         case "abrir_pagina":
             pagina = a["pagina"]
             if pagina in _PAGINAS_ADMIN and not ex.ator.admin:

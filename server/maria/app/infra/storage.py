@@ -37,7 +37,7 @@ from ..config import get_settings
 
 log = logging.getLogger("maria.storage")
 
-_TURNOS_MAX_LINHAS = 50_000  # poda do diário no backend sqlite
+_TURNOS_MAX_LINHAS = 50_000
 
 
 class Store(Protocol):
@@ -53,8 +53,6 @@ class Store(Protocol):
     async def kv_set(self, chave: str, valor: Any) -> None: ...
     async def fechar(self) -> None: ...
 
-
-# ------------------------------------------------------------- helpers --
 
 def _arquivo_colecao(colecao: str) -> Path:
     """Arquivo legado da coleção no backend JSON."""
@@ -83,8 +81,6 @@ def _grava_atomico(p: Path, dado: Any) -> None:
                    encoding="utf-8")
     tmp.replace(p)
 
-
-# ---------------------------------------------------------- backend JSON --
 
 class JsonStore:
     """Um arquivo por coleção — formato legado, zero migração.
@@ -195,8 +191,6 @@ class JsonStore:
         pass
 
 
-# -------------------------------------------------------- backend sqlite --
-
 class SqliteStore:
     """SQLite (stdlib) — um banco, coleções como tabelas lógicas.
 
@@ -229,7 +223,6 @@ class SqliteStore:
             self._db.commit()
             return out
 
-    # -- migração única dos JSONs legados
     def _migrar_json(self) -> None:
         with self._lock:
             if self._db.execute(
@@ -330,8 +323,6 @@ class SqliteStore:
         with self._lock:
             self._db.close()
 
-
-# ------------------------------------------------------------ singleton --
 
 _STORE: Store | None = None
 

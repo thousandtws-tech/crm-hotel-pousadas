@@ -22,8 +22,8 @@ log = logging.getLogger("maria.memory")
 
 _LOCK = asyncio.Lock()
 _COLECAO = "memorias"
-_MAX = 300          # teto global de memórias
-_POR_ESCOPO = 150   # teto por escopo
+_MAX = 300
+_POR_ESCOPO = 150
 _STOP = {
     "para", "com", "uma", "que", "dos", "das", "por", "seu", "sua",
     "tem", "ter", "esta", "este", "isso", "esse", "quando", "onde",
@@ -69,7 +69,6 @@ async def lembrar(escopo: str, idfuncionario: int | None, texto: str,
             "usos": 0,
         }
         items.append(novo)
-        # teto por escopo: remove as mais velhas e menos usadas
         mesmo = [m for m in items if m["escopo"] == escopo]
         if len(mesmo) > _POR_ESCOPO:
             velhas = sorted(mesmo, key=lambda m: (m.get("usos", 0), m["criado_em"]))

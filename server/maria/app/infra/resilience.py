@@ -53,8 +53,6 @@ class CircuitBreaker:
             return True
         if time.monotonic() - self._aberto_em < self.cooldown:
             return False
-        # meia-abertura — uma sonda por vez; demais chamadas seguem
-        # falhando rápido até a sonda decidir
         if self._sondando:
             return False
         self._sondando = True
@@ -96,7 +94,6 @@ class CircuitBreaker:
         except CircuitoAberto:
             raise
         except asyncio.CancelledError:
-            # cancelamento é nosso — libera a sonda sem contar falha
             self._sondando = False
             raise
         except BaseException as exc:

@@ -100,11 +100,11 @@ class Latencia:
 
     _lock = threading.Lock()
     _series: dict[str, deque[float]] = {
-        "stt_final": deque(maxlen=200),      # fala → transcrição final
+        "stt_final": deque(maxlen=200),
         "llm_primeiro_token": deque(maxlen=200),
         "tool_exec": deque(maxlen=200),
         "tts_primeiro_audio": deque(maxlen=200),
-        "resposta_total": deque(maxlen=200), # fala → primeiro áudio audível
+        "resposta_total": deque(maxlen=200),
     }
 
     def __init__(self) -> None:
@@ -160,8 +160,6 @@ class Latencia:
                             cls._series[nome].appendleft(float(v))
 
 
-# ------------------------------------------------------ persistência --
-
 async def restaurar_metricas(store) -> None:
     """Boot: soma o snapshot gravado no store aos contadores do processo."""
     try:
@@ -187,8 +185,6 @@ async def persistir_metricas(store) -> None:
     except Exception:
         log.exception("falha ao persistir métricas")
 
-
-# -------------------------------------------------------- prometheus --
 
 def prometheus() -> str:
     """Exposição text/plain no formato do Prometheus."""
