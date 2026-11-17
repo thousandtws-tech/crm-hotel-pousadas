@@ -17,7 +17,7 @@ fn campo_chave(provedor: ProvedorIntegracao) -> &'static str {
         ProvedorIntegracao::Stripe => "secret_key",
         ProvedorIntegracao::Pagbank | ProvedorIntegracao::Mercadopago => "access_token",
         ProvedorIntegracao::Zapi => "webhook_segredo",
-        ProvedorIntegracao::Spedy => "api_key",
+        ProvedorIntegracao::Spedy | ProvedorIntegracao::Didit => "api_key",
     }
 }
 
@@ -85,7 +85,9 @@ impl PgGatewayResolver {
             ProvedorIntegracao::Stripe => Arc::new(StripeGateway::new(segredo)),
             ProvedorIntegracao::Pagbank => Arc::new(PagBankGateway::new(segredo, ambiente)),
             ProvedorIntegracao::Mercadopago => Arc::new(MercadoPagoGateway::new(segredo)),
-            ProvedorIntegracao::Zapi | ProvedorIntegracao::Spedy => unreachable!(),
+            ProvedorIntegracao::Zapi | ProvedorIntegracao::Spedy | ProvedorIntegracao::Didit => {
+                unreachable!()
+            }
         };
         Ok(gw)
     }
