@@ -29,6 +29,7 @@ fn stack(pool: &PgPool) -> (IntegracoesService, Arc<PgGatewayResolver>) {
             None,
             None,
             None,
+            None,
             pagamentos,
             false,
         ),

@@ -68,3 +68,5 @@ pub use reserva::{
     Acompanhante, AdicionalConsumo, Bloqueio, Consumo, Fnrh, Grupo, GrupoUnidade, GrupoUnidadeView,
     ItemConsumido, Reembolso, Reserva,
 };
+pub mod verificacao;
+pub use verificacao::{StatusVerificacaoIdentidade, VerificacaoIdentidade, VerificacaoListItem};

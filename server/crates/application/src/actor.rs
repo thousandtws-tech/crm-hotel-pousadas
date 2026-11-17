@@ -77,6 +77,16 @@ impl Ator {
     }
 }
 
+/// Funcionário autenticado **sem** o portão de verificação Didit.
+///
+/// `Ator` exige KYC aprovado quando a integração Didit está com
+/// `exigir_verificacao` ligada; `AtorBasico` só valida o JWT — usado nas
+/// rotas que o funcionário bloqueado precisa continuar acessando
+/// (`/verificacao/minha`, `/verificacao/minha/sessao`) para destravar
+/// a si mesmo. Qualquer outra rota protegida deve usar `Ator`.
+#[derive(Debug, Clone)]
+pub struct AtorBasico(pub Ator);
+
 /// Contexto de transporte da requisição (para sessões e log de acesso).
 #[derive(Debug, Clone, Default)]
 pub struct RequestCtx {

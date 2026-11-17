@@ -19,3 +19,4 @@ pub mod preditivo;
 pub mod relatorios;
 pub mod reservas;
 pub mod tesouraria;
+pub mod verificacao;

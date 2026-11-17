@@ -10,7 +10,7 @@ import type {
   ZapiSessao,
 } from '@core/models/integracoes.models';
 
-export const ORDEM_PROVEDOR: ProvedorIntegracao[] = ['stripe', 'pagbank', 'mercadopago', 'zapi', 'spedy'];
+export const ORDEM_PROVEDOR: ProvedorIntegracao[] = ['stripe', 'pagbank', 'mercadopago', 'zapi', 'spedy', 'didit'];
 export const ORDEM_AMBIENTE: AmbienteIntegracao[] = ['producao', 'teste'];
 
 export const ROTULO_PROVEDOR: Record<ProvedorIntegracao, string> = {
@@ -19,6 +19,7 @@ export const ROTULO_PROVEDOR: Record<ProvedorIntegracao, string> = {
   mercadopago: 'Mercado Pago',
   zapi: 'Z-API',
   spedy: 'Spedy',
+  didit: 'Didit',
 };
 
 export const ROTULO_AMBIENTE: Record<AmbienteIntegracao, string> = {
@@ -27,12 +28,13 @@ export const ROTULO_AMBIENTE: Record<AmbienteIntegracao, string> = {
 };
 
 /** Agrupamento do catálogo — pagamentos primeiro, comunicação depois. */
-export const ORDEM_CATEGORIA: CategoriaIntegracao[] = ['pagamento', 'comunicacao', 'fiscal'];
+export const ORDEM_CATEGORIA: CategoriaIntegracao[] = ['pagamento', 'comunicacao', 'fiscal', 'seguranca'];
 
 export const ROTULO_CATEGORIA: Record<CategoriaIntegracao, string> = {
   pagamento: 'Pagamentos',
   comunicacao: 'Comunicação',
   fiscal: 'Fiscal',
+  seguranca: 'Segurança',
 };
 
 /** Categoria estática por provedor — igual à regra do backend. */
@@ -42,6 +44,7 @@ export const CATEGORIA_PROVEDOR: Record<ProvedorIntegracao, CategoriaIntegracao>
   mercadopago: 'pagamento',
   zapi: 'comunicacao',
   spedy: 'fiscal',
+  didit: 'seguranca',
 };
 
 /** estado → rótulo + variante de pill (semântica, sem cor arbitrária). */
@@ -140,6 +143,24 @@ export const CAMPOS_POR_PROVEDOR: Record<ProvedorIntegracao, CampoCredencial[]> 
       rotulo: 'Public key',
       segredo: false,
       placeholder: 'APP_USR-…',
+    },
+  ],
+  // Didit: sk_test_/sk_live_ (x-api-key) — gerada em business.didit.me;
+  // `webhook_secret` (secret_shared_key) é capturado ao registrar o webhook.
+  didit: [
+    {
+      nome: 'api_key',
+      rotulo: 'API key',
+      segredo: true,
+      obrigatorio: true,
+      dica: 'Chave do aplicativo no console Didit — Developers → API keys',
+      placeholder: 'sk_live_… / sk_test_…',
+    },
+    {
+      nome: 'webhook_secret',
+      rotulo: 'Webhook signing secret',
+      segredo: true,
+      dica: 'secret_shared_key do destino — capturada ao registrar o webhook',
     },
   ],
   // `webhook_segredo` não aparece aqui: o backend o gera automaticamente

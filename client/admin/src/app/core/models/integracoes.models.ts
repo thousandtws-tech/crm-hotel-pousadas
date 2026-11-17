@@ -4,7 +4,7 @@
 // Categorias: 'pagamento' (Stripe/PagBank/Mercado Pago ×2 ambientes) e
 // 'comunicacao' (Z-API/WhatsApp — só producao).
 
-export type ProvedorIntegracao = 'stripe' | 'pagbank' | 'mercadopago' | 'zapi' | 'spedy';
+export type ProvedorIntegracao = 'stripe' | 'pagbank' | 'mercadopago' | 'zapi' | 'spedy' | 'didit';
 
 /** @deprecated Alias legado — prefira `ProvedorIntegracao`. */
 export type ProvedorPagamento = ProvedorIntegracao;
@@ -12,7 +12,7 @@ export type ProvedorPagamento = ProvedorIntegracao;
 export type AmbienteIntegracao = 'producao' | 'teste';
 
 /** Grupo operacional do catálogo — vem sempre preenchida pela API. */
-export type CategoriaIntegracao = 'pagamento' | 'comunicacao' | 'fiscal';
+export type CategoriaIntegracao = 'pagamento' | 'comunicacao' | 'fiscal' | 'seguranca';
 
 export type EstadoIntegracao =
   'ativa' | 'pendente' | 'falha' | 'desativada' | 'gerenciado_pelo_ambiente' | 'nao_configurada';
@@ -193,4 +193,60 @@ export interface PrepararNfseInput {
 export interface FiscalLista {
   documentos: FiscalDocumento[];
   total: number;
+}
+
+// ---------------------------------------------------------------------------
+// Didit — verificação de identidade (KYC) de funcionários
+// ---------------------------------------------------------------------------
+
+export type StatusVerificacao =
+  | 'nao_iniciada' | 'em_andamento' | 'aguardando_usuario' | 'em_revisao'
+  | 'reenviada' | 'aprovada' | 'recusada' | 'expirada' | 'abandonada'
+  | 'kyc_expirada' | 'desconhecido' | 'sem_verificacao';
+
+/** GET /verificacao/minha — portão de login do funcionário autenticado. */
+export interface MinhaVerificacao {
+  status: StatusVerificacao;
+  rotulo: string;
+  url: string | null;
+  /** Integração de produção habilitada + exigir_verificacao. */
+  exigido: boolean;
+  /** exigido && !aprovada — o guard bloqueia a navegação. */
+  bloqueado: boolean;
+  /** Nível 1 — pode seguir mesmo bloqueado (bypass de emergência). */
+  admin: boolean;
+  aprovada: boolean;
+}
+
+/** POST .../sessao — sessão hospedada criada ou reutilizada. */
+export interface SessaoVerificacao {
+  id: string;
+  session_id: string;
+  url: string;
+  status: StatusVerificacao;
+  rotulo: string;
+  reutilizada: boolean;
+}
+
+export interface VerificacaoFuncionarioStatus {
+  status: StatusVerificacao;
+  rotulo: string;
+  aprovada: boolean;
+  terminal: boolean;
+  url?: string;
+  atualizado_em?: string;
+}
+
+export interface VerificacaoListItem {
+  id: string;
+  funcionario_id: number;
+  funcionario_nome: string;
+  funcionario_nivel: number;
+  session_id: string;
+  url: string;
+  status: StatusVerificacao;
+  status_remoto: string | null;
+  decidido_em: string | null;
+  criado_em: string;
+  atualizado_em: string;
 }

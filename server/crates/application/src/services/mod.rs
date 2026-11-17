@@ -39,6 +39,7 @@ pub mod preditivo;
 pub mod reserva_busca;
 pub mod reservas;
 pub mod tesouraria;
+pub mod verificacao;
 
 pub use acomodacoes::AcomodacaoService;
 pub use atendimento::AtendimentoService;
@@ -129,6 +130,9 @@ pub struct Services {
     pub zapi: Option<Arc<ZApiService>>,
     /// Fiscal Spedy — `None` sem o cofre (api_key fica cifrada no vault).
     pub fiscal: Option<Arc<FiscalService>>,
+    /// Verificação Didit — `None` sem o cofre (api_key cifrada no vault).
+    pub verificacao: Option<Arc<VerificacaoService>>,
 }
 pub use fiscal::FiscalService;
+pub use verificacao::VerificacaoService;
 pub mod zapi;

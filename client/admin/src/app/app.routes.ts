@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, adminGuard, guestGuard } from '@core/guards/auth.guard';
+import { verificacaoGuard } from '@core/guards/verificacao.guard';
 import { ShellComponent } from './layout/shell.component';
 
 export const routes: Routes = [
@@ -8,11 +9,21 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     loadComponent: () => import('./features/auth/login.component').then((m) => m.LoginComponent),
   },
+  {
+    // Portão de identidade — autenticado mas fora do shell (sem menu),
+    // senão o verificacaoGuard criaria um loop de redirecionamento.
+    path: 'verificacao',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/verificacao/verificacao-pendente.component').then(
+        (m) => m.VerificacaoPendenteComponent,
+      ),
+  },
 
   {
     path: '',
     component: ShellComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, verificacaoGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
@@ -213,7 +224,15 @@ export const routes: Routes = [
           ),
       },
       {
-        // Z-API e Spedy têm telas dedicadas — antes da rota genérica.
+        // Z-API, Spedy e Didit têm telas dedicadas — antes da rota genérica.
+        path: 'integracoes/didit/:ambiente',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/integracoes/integracao-didit.component').then(
+            (m) => m.IntegracaoDiditComponent,
+          ),
+      },
+      {
         path: 'integracoes/spedy/:ambiente',
         canActivate: [adminGuard],
         loadComponent: () =>

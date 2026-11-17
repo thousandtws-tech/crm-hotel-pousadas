@@ -398,6 +398,33 @@ pub fn build(state: AppState) -> Router {
             "/fiscal/documentos/{iddoc}/arquivo/{tipo}",
             get(routes::fiscal::arquivo_doc),
         )
+        // ---- Verificação de identidade (Didit) — KYC de funcionários ---
+        .route("/verificacao/minha", get(routes::verificacao::minha))
+        .route(
+            "/verificacao/minha/sessao",
+            post(routes::verificacao::minha_sessao),
+        )
+        .route("/verificacao", get(routes::verificacao::listar))
+        .route(
+            "/verificacao/funcionarios/{idfuncionario}",
+            get(routes::verificacao::status_funcionario),
+        )
+        .route(
+            "/verificacao/funcionarios/{idfuncionario}/sessao",
+            post(routes::verificacao::sessao_funcionario),
+        )
+        .route(
+            "/verificacao/{id}/sincronizar",
+            post(routes::verificacao::sincronizar),
+        )
+        .route(
+            "/integracoes/didit/{ambiente}/config",
+            post(routes::verificacao::didit_config),
+        )
+        .route(
+            "/integracoes/didit/{ambiente}/webhook",
+            post(routes::verificacao::didit_webhook_config),
+        )
         .route("/comunicacao/fila", get(routes::comunicacao::fila_listar))
         .route(
             "/comunicacao/matriz",
@@ -1102,6 +1129,11 @@ pub fn build(state: AppState) -> Router {
         .route(
             "/api/v1/webhooks/spedy/{ambiente}",
             post(routes::fiscal::webhook_spedy),
+        )
+        // webhook Didit — X-Signature HMAC-SHA256 + X-Timestamp (obrigatórios).
+        .route(
+            "/api/v1/webhooks/didit/{ambiente}",
+            post(routes::verificacao::webhook_didit),
         )
         // Inná Concierge — chat do hóspede no portal, escopo = token opaco.
         .route(

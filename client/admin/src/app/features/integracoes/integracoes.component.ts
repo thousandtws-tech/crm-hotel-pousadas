@@ -35,6 +35,7 @@ const DESCRITOR_PROVEDOR: Record<M.ProvedorIntegracao, string> = {
   mercadopago: 'Checkout Pro',
   zapi: 'WhatsApp Business',
   spedy: 'NFS-e de hospedagem',
+  didit: 'Verificação de identidade (KYC)',
 };
 
 /**

@@ -23,6 +23,8 @@ fn campos_permitidos(provedor: ProvedorIntegracao) -> &'static [&'static str] {
         ProvedorIntegracao::Zapi => &["instance_token", "client_token", "webhook_segredo"],
         // Spedy: chave por empresa (X-Api-Key) + segredo whsec_ do webhook.
         ProvedorIntegracao::Spedy => &["api_key", "webhook_secret"],
+        // Didit: sk_test_/sk_live_ (x-api-key) + secret_shared_key do webhook.
+        ProvedorIntegracao::Didit => &["api_key", "webhook_secret"],
     }
 }
 
@@ -55,6 +57,14 @@ fn config_permitida(provedor: ProvedorIntegracao) -> &'static [&'static str] {
             "webhook_registrado",
             "automacao_evento",
         ],
+        // Didit: workflow KYC, retorno hospedado e o portão de login.
+        ProvedorIntegracao::Didit => &[
+            "workflow_id",
+            "callback_url",
+            "exigir_verificacao",
+            "webhook_registrado",
+            "webhook_destino_id",
+        ],
         _ => &[],
     }
 }
@@ -68,6 +78,7 @@ fn escopo_padrao(provedor: ProvedorIntegracao) -> &'static str {
     match provedor {
         ProvedorIntegracao::Zapi => "whatsapp",
         ProvedorIntegracao::Spedy => "fiscal",
+        ProvedorIntegracao::Didit => "verificacao",
         _ => ESCOPO_PAGAMENTOS_SITE,
     }
 }
@@ -98,6 +109,10 @@ fn capabilities_padrao(provedor: ProvedorIntegracao) -> serde_json::Value {
             "consulta_municipio": true, "documentos": ["pdf", "xml"],
             "idempotencia": "integrationId",
         }),
+        ProvedorIntegracao::Didit => serde_json::json!({
+            "kyc": true, "sessao_hospedada": true, "webhook_assinado": true,
+            "sincronizacao": true, "verificacao_login": true,
+        }),
     }
 }
 
@@ -110,6 +125,8 @@ pub struct IntegracoesService {
     com_eventos: Option<Arc<dyn ComunicacaoEventoRepository>>,
     /// Serviço fiscal (Spedy) — teste de conexão delega à empresa remota.
     fiscal: Option<Arc<crate::services::fiscal::FiscalService>>,
+    /// Serviço de verificação (Didit) — teste de conexão delega ao provedor.
+    verificacao: Option<Arc<crate::services::verificacao::VerificacaoService>>,
     pagamentos: Arc<dyn clarituz_domain::ports::PagamentoRepository>,
     stripe_env_ativo: bool,
 }
@@ -129,6 +146,7 @@ impl IntegracoesService {
         com: Option<Arc<dyn ComunicacaoResolver>>,
         com_eventos: Option<Arc<dyn ComunicacaoEventoRepository>>,
         fiscal: Option<Arc<crate::services::fiscal::FiscalService>>,
+        verificacao: Option<Arc<crate::services::verificacao::VerificacaoService>>,
         pagamentos: Arc<dyn clarituz_domain::ports::PagamentoRepository>,
         stripe_env_ativo: bool,
     ) -> Self {
@@ -139,6 +157,7 @@ impl IntegracoesService {
             com,
             com_eventos,
             fiscal,
+            verificacao,
             pagamentos,
             stripe_env_ativo,
         }
@@ -154,6 +173,7 @@ impl IntegracoesService {
             ProvedorIntegracao::Mercadopago,
             ProvedorIntegracao::Zapi,
             ProvedorIntegracao::Spedy,
+            ProvedorIntegracao::Didit,
         ] {
             let padrao = self.repo.padrao(escopo_padrao(provedor)).await?;
             for ambiente in provedor.ambientes() {
@@ -492,13 +512,47 @@ impl IntegracoesService {
             });
         }
 
+        // Didit: teste = leitura autenticada no provedor (destinos de
+        // webhook) — nunca cria sessão nem cobra.
+        if provedor == ProvedorIntegracao::Didit {
+            let resultado = match self.verificacao.as_ref() {
+                Some(v) => match v.testar(ambiente).await {
+                    Ok(rotulo) => (StatusVerificacao::Ok, None, Some(rotulo)),
+                    Err(e) => (StatusVerificacao::Falha, Some(e.to_string()), None),
+                },
+                None => (
+                    StatusVerificacao::Falha,
+                    Some("Serviço de verificação indisponível.".into()),
+                    None,
+                ),
+            };
+            let (status, erro, conta) = resultado;
+            let caps = capabilities_padrao(provedor);
+            self.repo
+                .registrar_verificacao(
+                    i.id,
+                    i.versao,
+                    status,
+                    erro.as_deref(),
+                    conta.as_deref(),
+                    &caps,
+                )
+                .await?;
+            return Ok(TesteConexaoOutput {
+                verificacao_status: status.as_str().into(),
+                nome_conta: conta,
+                mensagem: match status {
+                    StatusVerificacao::Ok => "Conexão verificada — conta Didit autenticada.".into(),
+                    _ => erro
+                        .clone()
+                        .unwrap_or_else(|| "Falha na verificação.".into()),
+                },
+            });
+        }
+
         // Teste de conexão é leitura — resolve mesmo com a integração
         // desabilitada (é assim que o operador valida antes de habilitar).
-        let resultado = match self
-            .resolver
-            .resolver_historico(provedor, ambiente)
-            .await?
-        {
+        let resultado = match self.resolver.resolver_historico(provedor, ambiente).await? {
             ResolucaoGateway::Persistida(gw) | ResolucaoGateway::Ambiente(gw) => {
                 match gw.testar_conexao().await {
                     Ok(rotulo) => (StatusVerificacao::Ok, None, Some(rotulo)),

@@ -4,7 +4,7 @@ use axum::http::request::Parts;
 use axum::http::{header, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
-use clarituz_application::actor::{Ator, RequestCtx};
+use clarituz_application::actor::{Ator, AtorBasico, RequestCtx};
 use clarituz_domain::enums::NivelAcesso;
 use clarituz_domain::DomainError;
 use serde_json::json;
@@ -45,6 +45,20 @@ fn extrair_ator(parts: &Parts, state: &AppState) -> Result<Ator, Response> {
     })
 }
 
+fn verificacao_pendente() -> Response {
+    (
+        StatusCode::FORBIDDEN,
+        Json(json!({"erro": {
+            "codigo": "VERIFICACAO_PENDENTE",
+            "mensagem": "Verificação de identidade pendente — conclua o KYC para continuar."
+        }})),
+    )
+        .into_response()
+}
+
+/// `Ator` = JWT válido + portão Didit (quando a integração exige).
+/// Rotas que o funcionário bloqueado ainda precisa acessar usam
+/// `AtorBasico` (só o JWT).
 impl FromRequestParts<AppState> for Ator {
     type Rejection = Response;
 
@@ -52,7 +66,27 @@ impl FromRequestParts<AppState> for Ator {
         parts: &mut Parts,
         state: &AppState,
     ) -> impl std::future::Future<Output = Result<Self, Self::Rejection>> {
-        std::future::ready(extrair_ator(parts, state))
+        async move {
+            let ator = extrair_ator(parts, state)?;
+            if let Some(v) = &state.services.verificacao {
+                if !v.acesso_permitido(ator.id, ator.is_admin()).await {
+                    return Err(verificacao_pendente());
+                }
+            }
+            Ok(ator)
+        }
+    }
+}
+
+/// Apenas JWT — portão Didit não se aplica (self-service da verificação).
+impl FromRequestParts<AppState> for AtorBasico {
+    type Rejection = Response;
+
+    fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> impl std::future::Future<Output = Result<Self, Self::Rejection>> {
+        async move { extrair_ator(parts, state).map(AtorBasico) }
     }
 }
 

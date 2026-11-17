@@ -57,3 +57,5 @@ pub use preditivo::PgPreditivoRepository;
 pub use reserva::PgReservaRepository;
 pub use suporte::{PgDashboardRepository, PgFinanceiroRepository, PgLogRepository};
 pub use tesouraria::PgTesourariaRepository;
+pub mod verificacao;
+pub use verificacao::PgVerificacaoRepository;

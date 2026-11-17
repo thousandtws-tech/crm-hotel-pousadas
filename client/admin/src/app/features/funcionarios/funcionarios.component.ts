@@ -6,6 +6,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { FuncionariosApi } from '@core/api/funcionarios.api';
+import { VerificacaoApi } from '@core/api/verificacao.api';
+import * as M from '@core/models';
 import { Funcionario, FuncionarioInput, FuncionarioUpdate } from '@core/models/funcionarios.models';
 import { Confirm } from '@core/services/confirm.service';
 import { Notify } from '@core/services/notify.service';
@@ -131,6 +133,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                 <th>CPF</th>
                 <th class="tc">Função</th>
                 <th class="tc">Status</th>
+                <th class="tc">Identidade</th>
                 <th class="tc">Ações</th>
               </tr>
             </thead>
@@ -142,6 +145,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                       <span class="skel-cell"><span class="skel sk-av"></span><span class="skel sk-txt-l"></span></span>
                     </td>
                     <td><span class="skel sk-txt"></span></td>
+                    <td><span class="skel sk-chip"></span></td>
                     <td><span class="skel sk-chip"></span></td>
                     <td><span class="skel sk-chip"></span></td>
                     <td><span class="skel sk-acoes"></span></td>
@@ -182,6 +186,19 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                       >{{ f.ativo ? 'Ativo' : 'Inativo' }}</button>
                     </td>
                     <td class="tc">
+                      <span class="v-pill" [class]="verificacaoDe(f.id).cls"
+                        [title]="'Verificação de identidade (KYC)'">
+                        {{ verificacaoDe(f.id).rotulo }}
+                      </span>
+                      <button
+                        type="button" class="acao-btn v-link"
+                        [disabled]="gerandoLink() === f.id"
+                        [title]="'Gerar link de verificação Didit para ' + f.nome"
+                        [attr.aria-label]="'Gerar link de verificação para ' + f.nome"
+                        (click)="verificar(f)"
+                      ><mat-icon>{{ gerandoLink() === f.id ? 'hourglass_top' : 'link' }}</mat-icon></button>
+                    </td>
+                    <td class="tc">
                       <div class="fn-acoes-linha">
                         <button
                           type="button" class="acao-btn" title="Editar"
@@ -200,7 +217,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="5" class="fn-vazio">
+                    <td colspan="6" class="fn-vazio">
                       <mat-icon>badge</mat-icon>
                       {{ termo() ? 'Nenhum funcionário encontrado para a busca.' : 'Nenhum funcionário cadastrado — clique em Novo funcionário.' }}
                     </td>
@@ -219,6 +236,27 @@ import { DateInputComponent } from '@shared/components/date-input.component';
         />
       </div>
     </div>
+
+    <!-- ================= Modal: link de verificação ================= -->
+    @if (linkVerificacao(); as lv) {
+      <div class="vl-backdrop" (click)="linkVerificacao.set(null)" role="presentation">
+        <div class="vl-modal" (click)="$event.stopPropagation()" role="dialog"
+          aria-modal="true" [attr.aria-label]="'Link de verificação de ' + lv.nome">
+          <h3 class="vl-t"><mat-icon>verified_user</mat-icon> Verificação de identidade</h3>
+          <p class="vl-sub">
+            Envie este link para <strong>{{ lv.nome }}</strong> — a pessoa abre no celular,
+            faz o KYC (documento + selfie) e o status aparece aqui sozinho.
+          </p>
+          <div class="vl-linha">
+            <input class="vl-url" [value]="lv.url" readonly aria-label="URL de verificação" />
+            <button type="button" class="btn-dark-blue" (click)="copiarLink()">
+              <mat-icon>content_copy</mat-icon> Copiar
+            </button>
+          </div>
+          <button type="button" class="vl-fechar" (click)="linkVerificacao.set(null)">Fechar</button>
+        </div>
+      </div>
+    }
 
     <!-- ================= Drawer: funcionário (criar/editar) ================= -->
     @if (drawerAberto()) {
@@ -517,6 +555,28 @@ import { DateInputComponent } from '@shared/components/date-input.component';
     .acao-btn:hover:not(:disabled) { background: #eef4f6; color: #054054; }
     .acao-btn.perigo:hover:not(:disabled) { background: #fbeaea; color: #b3343a; }
     .acao-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .acao-btn.v-link { color: #4B95AB; }
+
+    .v-pill { display: inline-block; padding: 3px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; vertical-align: middle; }
+    .v-ok { background: #e6f4ea; color: #1e7d32; }
+    .v-warn { background: #fff7e0; color: #8a5a00; }
+    .v-erro { background: #fdecea; color: #b3261e; }
+    .v-off { background: #eef2f4; color: #8aa0ac; }
+
+    .vl-backdrop { position: fixed; inset: 0; background: rgba(11,36,55,.5);
+      display: grid; place-items: center; z-index: 60; padding: 16px; }
+    .vl-modal { background: #fff; border-radius: 16px; padding: 24px;
+      width: min(520px, 100%); box-shadow: 0 24px 64px rgba(0,0,0,.3); }
+    .vl-t { display: flex; align-items: center; gap: 8px; font-size: 17px;
+      font-weight: 700; color: #0b2437; margin: 0 0 8px; }
+    .vl-t mat-icon { color: #054054; }
+    .vl-sub { font-size: 13px; color: #5a6b76; line-height: 1.55; margin: 0 0 16px; }
+    .vl-linha { display: flex; gap: 8px; flex-wrap: wrap; }
+    .vl-url { flex: 1; min-width: 220px; padding: 10px 12px; border: 1px solid #d5e0e6;
+      border-radius: 10px; font-size: 13px; background: #f7fafb; color: #39464f; }
+    .vl-fechar { margin-top: 16px; border: 0; background: none; color: #4B95AB;
+      font-size: 13px; font-weight: 600; cursor: pointer; }
     .fn-vazio {
       text-align: center; color: #8a99a4; padding: 40px !important; font-size: 0.86rem;
     }
@@ -623,12 +683,19 @@ import { DateInputComponent } from '@shared/components/date-input.component';
 })
 export class FuncionariosComponent implements OnInit {
   private readonly funcionariosApi = inject(FuncionariosApi);
+  private readonly verificacaoApi = inject(VerificacaoApi);
   private readonly notify = inject(Notify);
   private readonly confirm = inject(Confirm);
   private readonly rt = inject(Realtime);
   private readonly fb = inject(FormBuilder);
   private readonly tour = inject(TourGuiado);
   protected readonly auth = inject(AuthStore);
+
+  /** Última verificação de identidade por funcionário (produção). */
+  protected readonly verificacoes = signal(new Map<number, M.VerificacaoListItem>());
+  /** Link gerado para envio manual — exibido num modal com copiar. */
+  protected readonly linkVerificacao = signal<{ url: string; nome: string } | null>(null);
+  protected readonly gerandoLink = signal(0);
 
   protected readonly items = signal<Funcionario[]>([]);
   protected readonly total = signal(0);
@@ -708,6 +775,57 @@ export class FuncionariosComponent implements OnInit {
         this.notify.erro(e);
       },
     });
+    // Badges de identidade — falha silenciosa quando a Didit não está
+    // configurada (a coluna mostra "—" para todo mundo).
+    this.verificacaoApi.listar('producao').subscribe({
+      next: (p) => {
+        const mapa = new Map<number, M.VerificacaoListItem>();
+        for (const v of p.items) if (!mapa.has(v.funcionario_id)) mapa.set(v.funcionario_id, v);
+        this.verificacoes.set(mapa);
+      },
+      error: () => this.verificacoes.set(new Map()),
+    });
+  }
+
+  /** Rótulo + classe do badge de identidade. */
+  verificacaoDe(id: number): { rotulo: string; cls: string } {
+    const v = this.verificacoes().get(id);
+    if (!v) return { rotulo: '—', cls: 'v-off' };
+    switch (v.status) {
+      case 'aprovada':
+        return { rotulo: 'Verificado', cls: 'v-ok' };
+      case 'recusada':
+        return { rotulo: 'Recusada', cls: 'v-erro' };
+      case 'em_revisao':
+        return { rotulo: 'Em revisão', cls: 'v-warn' };
+      case 'expirada':
+      case 'abandonada':
+      case 'kyc_expirada':
+        return { rotulo: 'Expirada', cls: 'v-off' };
+      default:
+        return { rotulo: 'Pendente', cls: 'v-warn' };
+    }
+  }
+
+  /** Gera (ou recupera a viva) a sessão Didit e mostra o link para envio. */
+  verificar(f: Funcionario): void {
+    this.gerandoLink.set(f.id);
+    this.verificacaoApi.sessaoFuncionario(f.id).subscribe({
+      next: (s) => {
+        this.gerandoLink.set(0);
+        this.linkVerificacao.set({ url: s.url, nome: f.nome });
+        this.carregar();
+      },
+      error: (e) => {
+        this.gerandoLink.set(0);
+        this.notify.erro(e?.error?.message ?? 'Não foi possível gerar o link — Didit configurada?');
+      },
+    });
+  }
+
+  copiarLink(): void {
+    const l = this.linkVerificacao();
+    if (l) navigator.clipboard.writeText(l.url).then(() => this.notify.ok('Link copiado.'));
   }
 
   mudouPagina(e: PageEvent): void {

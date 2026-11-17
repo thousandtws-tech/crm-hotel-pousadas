@@ -2,6 +2,7 @@
 //! Mercado Pago), concierge de IA (Maria) e emissores de envio
 //! (e-mail, WhatsApp, Web Push).
 
+pub mod didit;
 pub mod maria;
 pub mod mercadopago;
 pub mod pagbank;

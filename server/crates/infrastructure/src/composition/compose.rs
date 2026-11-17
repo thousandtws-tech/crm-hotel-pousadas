@@ -202,6 +202,23 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             factory,
         ))
     });
+    // Verificação (Didit) — antes das integrações: o teste de conexão
+    // do card delega à leitura autenticada no provedor.
+    let verificacao_svc = vault.as_ref().map(|v| {
+        let factory: clarituz_application::services::verificacao::DiditFactory =
+            Arc::new(|api_key| {
+                Arc::new(crate::integrations::didit::DiditCliente::new(api_key))
+                    as Arc<dyn clarituz_domain::ports::ProvedorVerificacao>
+            });
+        Arc::new(clarituz_application::services::VerificacaoService::new(
+            Arc::new(crate::persistence::repositories::PgVerificacaoRepository::new(pool.clone()))
+                as Arc<dyn clarituz_domain::ports::VerificacaoRepository>,
+            integracoes_repo.clone() as Arc<dyn clarituz_domain::ports::IntegracaoRepository>,
+            funcionarios.clone(),
+            v.clone(),
+            factory,
+        ))
+    });
     let integracoes_svc = vault.map(|v| {
         Arc::new(IntegracoesService::new(
             integracoes_repo.clone() as Arc<dyn clarituz_domain::ports::IntegracaoRepository>,
@@ -211,6 +228,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             Some(com_eventos_repo.clone()
                 as Arc<dyn clarituz_domain::ports::ComunicacaoEventoRepository>),
             fiscal_svc.clone(),
+            verificacao_svc.clone(),
             pag_online_repo as Arc<dyn clarituz_domain::ports::PagamentoRepository>,
             settings.stripe_secret_key.is_some(),
         ))
@@ -357,6 +375,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         )))),
         zapi: zapi_svc,
         fiscal: fiscal_svc,
+        verificacao: verificacao_svc,
         preditivo: Arc::new(PreditivoService::new(Arc::new(PgPreditivoRepository::new(
             pool.clone(),
         )))),

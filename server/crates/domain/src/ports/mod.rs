@@ -50,3 +50,5 @@ pub use reserva::*;
 pub use storage::*;
 pub use suporte::*;
 pub use tesouraria::*;
+pub mod verificacao;
+pub use verificacao::*;
