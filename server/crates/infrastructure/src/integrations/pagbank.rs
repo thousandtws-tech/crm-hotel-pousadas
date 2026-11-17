@@ -223,7 +223,7 @@ impl PaymentGateway for PagBankGateway {
                 customer.insert("email".into(), email.into());
             }
             let doc: String = p.documento.chars().filter(|c| c.is_ascii_digit()).collect();
-            if doc.len() == 11 || doc.len() == 14 {
+            if super::tipo_documento_pagador(&doc).is_some() {
                 customer.insert("tax_id".into(), doc.into());
             }
             if !customer.is_empty() {

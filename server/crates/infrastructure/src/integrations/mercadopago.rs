@@ -237,11 +237,7 @@ fn corpo_preferencia(nova: &NovaCheckout) -> serde_json::Value {
             payer.insert("email".into(), email.into());
         }
         let doc: String = p.documento.chars().filter(|c| c.is_ascii_digit()).collect();
-        let tipo_doc = match doc.len() {
-            11 => Some("CPF"),
-            14 => Some("CNPJ"),
-            _ => None,
-        };
+        let tipo_doc = super::tipo_documento_pagador(&doc);
         if let Some(t) = tipo_doc {
             payer.insert(
                 "identification".into(),
@@ -501,13 +497,20 @@ mod tests {
 
     #[test]
     fn documento_invalido_omite_identification() {
-        let body = corpo_preferencia(&checkout(Some(PagadorCheckout {
-            nome: "X".into(),
-            documento: "000".into(),
-            email: None,
-            telefone: None,
-        })));
-        assert!(body["payer"].get("identification").is_none());
+        // "SITE-{fone}-{hash}" do fluxo público — vira 11 dígitos mas
+        // não é CPF de verdade: tem que ser omitido, não enviado.
+        for doc in ["000", "SITE-11999859785-18e8f5", "111.111.111-11"] {
+            let body = corpo_preferencia(&checkout(Some(PagadorCheckout {
+                nome: "X".into(),
+                documento: doc.into(),
+                email: None,
+                telefone: None,
+            })));
+            assert!(
+                body["payer"].get("identification").is_none(),
+                "documento {doc} vazou pro MP"
+            );
+        }
     }
 
     fn assinar(secret: &str, data_id: &str, request_id: &str, ts: i64) -> String {
