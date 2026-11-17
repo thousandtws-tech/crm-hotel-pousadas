@@ -146,8 +146,8 @@ impl PgAcomodacaoRepository {
     }
 }
 
-const ACOMODACAO_COLS: &str = "id, idtipo_acomodacao, nome, numero, andar, valor, capacidade,
-    descricao, cor, ativo, version, criado_em, atualizado_em";
+pub(crate) const ACOMODACAO_COLS: &str = "id, idtipo_acomodacao, nome, numero, andar, valor,
+    capacidade, descricao, cor, ativo, version, criado_em, atualizado_em";
 
 #[async_trait]
 impl AcomodacaoRepository for PgAcomodacaoRepository {

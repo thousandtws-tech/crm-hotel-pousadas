@@ -17,8 +17,7 @@ const CMS_COLS: &str = "id, idacomodacao, slug, subtitulo, descricao_curta, desc
 
 const MIDIA_COLS: &str = "id, idacomodacao, tipo, caminho, mime, capa, ordem, version, criado_em";
 
-const ACOM_COLS: &str = "id, idtipo_acomodacao, nome, numero, valor, capacidade,
-    descricao, cor, ativo, version, criado_em, atualizado_em";
+use super::catalogo::ACOMODACAO_COLS;
 
 fn midia_view(m: AcomodacaoMidia) -> MidiaView {
     MidiaView {
@@ -56,7 +55,7 @@ impl PgCmsRepository {
 impl CmsRepository for PgCmsRepository {
     async fn listar_com_cms(&self) -> Result<Vec<AcomodacaoCmsView>, DomainError> {
         let acoms = sqlx::query_as::<_, Acomodacao>(&format!(
-            "SELECT {ACOM_COLS} FROM acomodacao ORDER BY numero"
+            "SELECT {ACOMODACAO_COLS} FROM acomodacao ORDER BY numero"
         ))
         .fetch_all(&self.pool)
         .await
