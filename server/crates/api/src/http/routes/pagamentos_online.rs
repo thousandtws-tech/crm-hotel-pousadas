@@ -8,7 +8,7 @@
 use crate::http::error::ApiError as AppError;
 use crate::http::state::AppState;
 use axum::body::Bytes;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Path, Query, RawQuery, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::Json;
 use clarituz_application::actor::Ator;
@@ -24,6 +24,7 @@ use clarituz_domain::ports::{
 use clarituz_domain::DomainError;
 use clarituz_shared::{Page, PageParams};
 use serde::Deserialize;
+use tracing::warn;
 use uuid::Uuid;
 
 // ---------------------------------------------------------------------------
@@ -269,6 +270,7 @@ async fn processar_webhook_provedor(
 pub async fn webhook_mercadopago(
     State(s): State<AppState>,
     headers: HeaderMap,
+    RawQuery(query): RawQuery,
     corpo: Bytes,
 ) -> Result<StatusCode, AppError> {
     let assinatura = headers
@@ -282,10 +284,21 @@ pub async fn webhook_mercadopago(
         .to_string();
     let payload: serde_json::Value = serde_json::from_slice(&corpo)
         .map_err(|_| DomainError::validacao("Payload de webhook inválido."))?;
-    let data_id = payload["data"]["id"]
-        .as_str()
-        .map(str::to_string)
-        .or_else(|| payload["data"]["id"].as_i64().map(|i| i.to_string()))
+    // O MP assina com o `data.id` da query string quando presente
+    // (`?data.id=…&type=payment`); o corpo é o fallback — perder essa
+    // precedência invalida a assinatura de notificações legadas.
+    let data_id = query
+        .as_deref()
+        .and_then(|q| {
+            q.split('&')
+                .find_map(|par| par.strip_prefix("data.id=").map(str::to_owned))
+        })
+        .or_else(|| {
+            payload["data"]["id"]
+                .as_str()
+                .map(str::to_string)
+                .or_else(|| payload["data"]["id"].as_i64().map(|i| i.to_string()))
+        })
         .unwrap_or_default();
 
     let integ = integracao_autenticada(
@@ -303,7 +316,10 @@ pub async fn webhook_mercadopago(
         },
     )
     .await?
-    .ok_or_else(|| DomainError::nao_autenticado("Assinatura de webhook inválida."))?;
+    .ok_or_else(|| {
+        warn!(data_id, "webhook mercadopago: assinatura rejeitada");
+        DomainError::nao_autenticado("Assinatura de webhook inválida.")
+    })?;
 
     let event_id = format!(
         "mp-{}-{}",
