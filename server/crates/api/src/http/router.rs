@@ -1,16 +1,18 @@
 //! Árvore de rotas `/api/v1` + middlewares de observabilidade e robustez.
 
-use crate::http::middleware::{self, IpRateLimit};
+use crate::http::middleware::{self, AlertaErro, IpRateLimit};
 use crate::http::routes;
 use crate::http::state::AppState;
 use axum::extract::State;
 use axum::http::header;
 use axum::middleware::{from_fn, from_fn_with_state};
+use axum::response::IntoResponse;
 use axum::routing::{delete, get, patch, post, put};
 use axum::Json;
 use axum::Router;
 use serde_json::json;
 use std::time::Duration;
+use tower_http::catch_panic::CatchPanicLayer;
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::CorsLayer;
 use tower_http::request_id::{PropagateRequestIdLayer, SetRequestIdLayer};
@@ -60,11 +62,12 @@ pub fn build(state: AppState) -> Router {
     let (metric_layer, metric_handle) = axum_prometheus::PrometheusMetricLayer::pair();
     let api: Router<AppState> = Router::new()
         // auth — login/refresh públicos (login/register com rate limit
-        // por IP: Argon2 é CPU-bound — sem teto vira DoS + brute-force)
+        // por IP: Argon2 é CPU-bound — sem teto vira DoS + brute-force;
+        // teto do login é tunável via LOGIN_RATE_LIMIT_PER_MIN, default 10)
         .route(
             "/auth/login",
             post(routes::auth::login).route_layer(from_fn_with_state(
-                IpRateLimit::novo(10, Duration::from_secs(60)),
+                IpRateLimit::novo(state.login_rate_limit_per_min, Duration::from_secs(60)),
                 IpRateLimit::middleware,
             )),
         )
@@ -965,7 +968,7 @@ pub fn build(state: AppState) -> Router {
             Duration::from_secs(30),
         ));
 
-    Router::new()
+    let router = Router::new()
         .route("/healthz", get(healthz))
         .route("/readyz", get(readyz))
         // SSE fica fora do TimeoutLayer — conexão de vida longa por definição.
@@ -1107,5 +1110,31 @@ pub fn build(state: AppState) -> Router {
         .layer(from_fn(middleware::security_headers))
         .layer(cors_layer(&state.cors_origins))
         .layer(metric_layer)
-        .with_state(state)
+        // panic vira 500 no mesmo envelope do `DomainError::Infra` em vez
+        // de derrubar a conexão. O workspace compila release com
+        // `panic = "abort"` — lá a camada é inócua e o Railway reinicia o
+        // processo; em builds unwind (dev/test) o panic chega aqui como
+        // resposta e o layer de alerta abaixo ainda consegue reportá-lo.
+        .layer(CatchPanicLayer::custom(|_| {
+            (
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"erro": {
+                    "codigo": "INTERNO",
+                    "mensagem": "Erro interno. Tente novamente.",
+                }})),
+            )
+                .into_response()
+        }));
+
+    // Alerta de 5xx — layer mais externo: enxerga o status final de
+    // qualquer rota, incl. o 500 gerado pelo CatchPanic. Sem
+    // `ALERT_WEBHOOK_URL` o layer nem é instalado (custo zero).
+    let router = match state.alert_webhook_url.as_deref() {
+        Some(url) => router.layer(from_fn_with_state(
+            AlertaErro::novo(url),
+            AlertaErro::middleware,
+        )),
+        None => router,
+    };
+    router.with_state(state)
 }

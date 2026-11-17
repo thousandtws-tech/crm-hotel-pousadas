@@ -29,4 +29,9 @@ pub struct AppState {
     pub vapid_public_b64: Option<String>,
     /// URL pública do site — base do link/QR do motor de reservas.
     pub site_base: String,
+    /// Webhook de alertas 5xx (`ALERT_WEBHOOK_URL`) — `None` = o layer
+    /// de alerta nem é instalado (custo zero por request).
+    pub alert_webhook_url: Option<String>,
+    /// Teto de tentativas de login por IP/min (`LOGIN_RATE_LIMIT_PER_MIN`).
+    pub login_rate_limit_per_min: u32,
 }

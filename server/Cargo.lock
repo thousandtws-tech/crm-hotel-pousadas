@@ -511,6 +511,7 @@ dependencies = [
  "hmac",
  "hyper",
  "qrcode",
+ "reqwest",
  "rust_decimal",
  "serde",
  "serde_json",

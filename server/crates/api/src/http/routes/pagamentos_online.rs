@@ -89,15 +89,23 @@ pub async fn webhook_stripe(
     let event_type = payload["type"].as_str().unwrap_or_default().to_string();
 
     // Inbox idempotente — duplicado entra como no-op e já responde 200.
-    let novo = s
-        .services
-        .pagamentos_online
-        .registrar_evento(&NovoEventoWebhook {
-            event_id: event_id.clone(),
-            event_type: event_type.clone(),
-            payload: payload.clone(),
-        })
-        .await?;
+    // Evento sem `id` não pode ser deduplicado na inbox (event_id é
+    // UNIQUE NOT NULL — dois eventos sem id colidiriam entre si):
+    // processa direto, sem registro. A Stripe sempre envia `id` — a
+    // ausência num payload assinado é anomalia que vale log, não drop.
+    let novo = if event_id.is_empty() {
+        tracing::warn!(tipo = %event_type, "webhook Stripe sem id — processando fora da inbox");
+        true
+    } else {
+        s.services
+            .pagamentos_online
+            .registrar_evento(&NovoEventoWebhook {
+                event_id: event_id.clone(),
+                event_type: event_type.clone(),
+                payload: payload.clone(),
+            })
+            .await?
+    };
     if !novo {
         return Ok(StatusCode::OK);
     }

@@ -97,6 +97,13 @@ pub struct Settings {
     /// Janela de atendimento "HH:MM-HH:MM"; fora dela urgências ainda
     /// alertam, normais aguardam resposta na abertura.
     pub atendimento_horario: String,
+    /// Webhook de alertas operacionais (Discord/Slack genérico) — um POST
+    /// `{"content": "…"}` por resposta 5xx, com dedup por rota e teto
+    /// global. `None` = middleware nem é instalado (custo zero).
+    pub alert_webhook_url: Option<String>,
+    /// Teto de tentativas de login por IP/minuto (default 10 — Argon2 é
+    /// CPU-bound; sem teto o endpoint vira amplificador de DoS/brute-force).
+    pub login_rate_limit_per_min: u32,
 }
 
 impl Settings {
@@ -176,6 +183,10 @@ impl Settings {
                 .unwrap_or(5),
             atendimento_horario: env_string("ATENDIMENTO_HORARIO")
                 .unwrap_or_else(|| "07:00-22:00".into()),
+            alert_webhook_url: env_string("ALERT_WEBHOOK_URL"),
+            login_rate_limit_per_min: env_u32("LOGIN_RATE_LIMIT_PER_MIN")
+                .unwrap_or(10)
+                .clamp(1, 10_000),
         })
     }
 }

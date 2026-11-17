@@ -166,6 +166,8 @@ fn settings_teste() -> Settings {
         pousada_nome: "Pousada Teste".into(),
         atendimento_sla_aceite_min: 5,
         atendimento_horario: "07:00-22:00".into(),
+        alert_webhook_url: None,
+        login_rate_limit_per_min: 10,
     }
 }
 
