@@ -215,6 +215,17 @@ impl PaymentGateway for MercadoPagoGateway {
             "expires": true,
             "expiration_date_to": nova.expires_em.to_rfc3339(),
             "statement_descriptor": "POUSADA",
+            // Sem exclusão de meios: cartão de crédito, débito, Pix e
+            // boleto ficam à disposição do hóspede. `installments` é o
+            // teto — o MP respeita o máximo da conta. `binary_mode` off
+            // permite estados intermediários (análise/in_process).
+            "binary_mode": false,
+            "payment_methods": {
+                "excluded_payment_methods": [],
+                "excluded_payment_types": [],
+                "installments": 12,
+                "default_installments": 1
+            },
         });
         let p: PreferenceResp = self
             .post(

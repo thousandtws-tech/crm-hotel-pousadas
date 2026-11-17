@@ -40,6 +40,8 @@ export interface ResumoFinanceiro {
   recebido_estadias: string;
   recebido_itens: string;
   recebido_adicionais: string;
+  /** Cobranças online confirmadas (pagamento pago) — antecipado, não fatura. */
+  recebido_online: string;
   previsto: string;
   descontos: string;
   qtd_contas_fechadas: number;

@@ -134,6 +134,11 @@ function ttItem(fmtExtra: (p: { name: string; value: number; dataIndex: number }
         <div class="fin-est">
           <span class="fin-est-num">{{ fmt(num(resumo()?.recebido)) }}</span>
           <span class="fin-est-lbl"><mat-icon>payments</mat-icon> Recebido</span>
+          @if (num(resumo()?.recebido_online) > 0) {
+            <span class="fin-est-online" title="Cobranças online confirmadas (Pix/cartão antecipado) — entram na receita quando a estadia é faturada">
+              + {{ fmt(num(resumo()?.recebido_online)) }} online
+            </span>
+          }
         </div>
         <div class="fin-est">
           <span class="fin-est-num">{{ fmt(num(resumo()?.previsto)) }}</span>
@@ -416,6 +421,7 @@ function ttItem(fmtExtra: (p: { name: string; value: number; dataIndex: number }
       text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap;
     }
     .fin-est-lbl mat-icon { font-size: 14px; width: 14px; height: 14px; color: #a5b6bf; }
+    .fin-est-online { font-size: 0.68rem; font-weight: 700; color: #1e7d32; white-space: nowrap; }
     .fin-resumo-info {
       margin-left: auto; padding: 0 20px;
       display: inline-flex; align-items: center; gap: 6px;

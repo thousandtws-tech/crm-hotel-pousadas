@@ -11,6 +11,10 @@ pub struct ResumoFinanceiro {
     pub recebido_estadias: Decimal,
     pub recebido_itens: Decimal,
     pub recebido_adicionais: Decimal,
+    /// Cobranças online confirmadas (pagamento pago) no período — dinheiro
+    /// antecipado que ainda não virou fatura de check-out. Não soma em
+    /// `recebido`: a receita é reconhecida quando a estadia é faturada.
+    pub recebido_online: Decimal,
     /// A receber: reservas não canceladas/finalizadas com saída no período.
     pub previsto: Decimal,
     pub descontos: Decimal,

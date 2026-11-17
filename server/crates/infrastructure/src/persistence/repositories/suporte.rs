@@ -232,6 +232,10 @@ impl FinanceiroRepository for PgFinanceiroRepository {
                 COALESCE(SUM(c.valor_adicional) FILTER (WHERE c.status = 'concluido'), 0) AS recebido_adicionais,
                 COALESCE(SUM(c.total_desconto) FILTER (WHERE c.status = 'concluido'), 0) AS descontos,
                 COUNT(*) FILTER (WHERE c.status = 'concluido') AS qtd_contas_fechadas,
+                (SELECT COALESCE(SUM(p.valor_centavos), 0) / 100.0
+                   FROM pagamento p
+                   WHERE p.status IN ('pago','reembolso_parcial','reembolsado')
+                     AND p.paid_em::date BETWEEN $1 AND $2) AS recebido_online,
                 (SELECT COALESCE(SUM(c2.valor_estadia + c2.valor_itens), 0)
                    FROM consumo c2 JOIN reserva r ON r.id = c2.idreserva
                    WHERE r.status NOT IN ('c','f')
@@ -392,6 +396,7 @@ struct ResumoFinanceiroRow {
     recebido_estadias: Decimal,
     recebido_itens: Decimal,
     recebido_adicionais: Decimal,
+    recebido_online: Decimal,
     previsto: Decimal,
     descontos: Decimal,
     qtd_contas_fechadas: i64,
@@ -404,6 +409,7 @@ impl From<ResumoFinanceiroRow> for ResumoFinanceiro {
             recebido_estadias: r.recebido_estadias,
             recebido_itens: r.recebido_itens,
             recebido_adicionais: r.recebido_adicionais,
+            recebido_online: r.recebido_online,
             previsto: r.previsto,
             descontos: r.descontos,
             qtd_contas_fechadas: r.qtd_contas_fechadas,

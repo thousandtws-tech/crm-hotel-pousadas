@@ -171,7 +171,12 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
               <mat-icon class="kpi-ic">payments</mat-icon>
             </div>
             <span class="kpi-num kpi-din">{{ fmt(num(resumo()?.recebido)) }}</span>
-            <span class="kpi-sub">no período selecionado</span>
+            <span class="kpi-sub">
+              faturado no período
+              @if (num(resumo()?.recebido_online) > 0) {
+                · <strong class="kpi-online">{{ fmt(num(resumo()?.recebido_online)) }} já caído online</strong>
+              }
+            </span>
           </div>
 
           <div class="kpi">
@@ -458,6 +463,7 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
     .kpi-num.kpi-din { font-size: 1.3rem; padding-top: 4px; }
     .kpi-num.kpi-alerta { color: #b5811f; }
     .kpi-sub { font-size: 0.72rem; color: #8a99a4; }
+    .kpi-online { color: #1e7d32; font-weight: 600; }
     .kpi-bar {
       height: 5px; border-radius: 99px; background: #e9f0f4;
       overflow: hidden; margin: 2px 0;
