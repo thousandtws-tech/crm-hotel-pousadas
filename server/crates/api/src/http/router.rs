@@ -359,7 +359,6 @@ pub fn build(state: AppState) -> Router {
             post(routes::comunicacao::push_unsubscribe),
         )
         .route("/push/vapid-key", get(routes::comunicacao::push_vapid_key))
-        // avaliações — painel reputação
         .route("/avaliacoes", get(routes::comunicacao::avaliacoes_listar))
         .route(
             "/avaliacoes/dashboard",
@@ -382,7 +381,6 @@ pub fn build(state: AppState) -> Router {
             "/clientes/{id}/perfil360",
             get(routes::comunicacao::cliente_perfil360),
         )
-        // LGPD — solicitações do titular, export, anonimização, ECA
         .route("/lgpd/solicitacoes", get(routes::comunicacao::lgpd_listar))
         .route(
             "/lgpd/solicitacoes/{id}/responder",
@@ -396,7 +394,6 @@ pub fn build(state: AppState) -> Router {
             "/clientes/{id}/anonimizar",
             post(routes::comunicacao::lgpd_anonimizar),
         )
-        // LGPD art. 48 — incidentes de segurança (registro + comunicações)
         .route(
             "/lgpd/incidentes",
             get(routes::comunicacao::lgpd_incidente_listar)
@@ -406,7 +403,6 @@ pub fn build(state: AppState) -> Router {
             "/lgpd/incidentes/{id}/comunicar",
             post(routes::comunicacao::lgpd_incidente_comunicar),
         )
-        // Atendimento — fila de protocolos por setor com SLA
         .route("/atendimentos", get(routes::comunicacao::atendimentos_get))
         .route(
             "/atendimentos/{id}/aceitar",
@@ -420,7 +416,6 @@ pub fn build(state: AppState) -> Router {
             "/reservas/{id}/autorizacao-menor",
             post(routes::comunicacao::reserva_autorizacao_menor),
         )
-        // operação — manutenção & PMOC
         .route(
             "/manutencao/ordens",
             get(routes::operacao::ordens_listar).post(routes::operacao::ordem_criar),
@@ -434,7 +429,6 @@ pub fn build(state: AppState) -> Router {
             get(routes::operacao::pmoc_listar).post(routes::operacao::pmoc_registrar),
         )
         .route("/manutencao/pmoc/itens", get(routes::operacao::pmoc_itens))
-        // governança — tarefas, previsão, D-1
         .route(
             "/governanca/tarefas",
             get(routes::operacao::gov_quadro).post(routes::operacao::gov_criar),
@@ -449,7 +443,6 @@ pub fn build(state: AppState) -> Router {
         )
         .route("/governanca/previsao", get(routes::operacao::gov_previsao))
         .route("/governanca/gerar-d1", post(routes::operacao::gov_gerar_d1))
-        // lavanderia & enxoval
         .route(
             "/governanca/lavanderia",
             get(routes::operacao::lav_lotes).post(routes::operacao::lav_abrir),
@@ -470,7 +463,6 @@ pub fn build(state: AppState) -> Router {
             "/governanca/enxoval/saldo",
             get(routes::operacao::enxoval_saldo),
         )
-        // escalas & CLT
         .route(
             "/escalas/jornadas",
             get(routes::operacao::jornadas_listar).post(routes::operacao::jornada_gravar),
@@ -485,7 +477,6 @@ pub fn build(state: AppState) -> Router {
             "/escalas/clt/corrigir",
             post(routes::operacao::clt_corrigir),
         )
-        // inteligência preditiva (Inná) — leitura analítica
         .route("/ia/resumo", get(routes::preditivo::ia_resumo))
         .route("/ia/ocupacao-14d", get(routes::preditivo::ia_ocupacao))
         .route("/ia/receita-4sem", get(routes::preditivo::ia_receita))
@@ -664,7 +655,6 @@ pub fn build(state: AppState) -> Router {
             "/estabelecimento/logo",
             post(routes::catalogo::upload_logo).get(routes::catalogo::logo),
         )
-        // impressoras de setor (roteamento KOT)
         .route(
             "/impressoras",
             get(routes::impressoras::listar).post(routes::impressoras::criar),
@@ -732,7 +722,6 @@ pub fn build(state: AppState) -> Router {
             get(routes::relatorios::itens_mais_vendidos),
         )
         .route("/financeiro/vendas", get(routes::relatorios::vendas))
-        // tesouraria — plano de contas
         .route(
             "/financeiro/plano-contas",
             get(routes::tesouraria::listar_plano_contas)
@@ -747,7 +736,6 @@ pub fn build(state: AppState) -> Router {
             "/financeiro/plano-contas/{id}/status",
             patch(routes::tesouraria::status_plano_conta),
         )
-        // tesouraria — contas financeiras
         .route(
             "/financeiro/contas",
             get(routes::tesouraria::listar_contas).post(routes::tesouraria::criar_conta),
@@ -764,7 +752,6 @@ pub fn build(state: AppState) -> Router {
             "/financeiro/contas/{id}/saldo",
             get(routes::tesouraria::saldo_conta),
         )
-        // tesouraria — lançamentos (contas a pagar/receber)
         .route(
             "/financeiro/lancamentos",
             get(routes::tesouraria::listar_lancamentos).post(routes::tesouraria::criar_lancamento),
@@ -787,13 +774,11 @@ pub fn build(state: AppState) -> Router {
             "/financeiro/lancamentos/{id}/baixas",
             get(routes::tesouraria::listar_baixas),
         )
-        // tesouraria — fluxo de caixa e DRE
         .route(
             "/financeiro/fluxo-caixa",
             get(routes::tesouraria::fluxo_caixa),
         )
         .route("/financeiro/dre", get(routes::tesouraria::dre))
-        // tesouraria — extrato e conciliação
         .route(
             "/financeiro/extrato",
             get(routes::tesouraria::listar_extrato).post(routes::tesouraria::importar_extrato),
@@ -826,7 +811,6 @@ pub fn build(state: AppState) -> Router {
             "/financeiro/conciliar-auto/{idconta}",
             post(routes::tesouraria::auto_conciliar),
         )
-        // tesouraria — tributos e split payment IBS/CBS
         .route(
             "/financeiro/tributos",
             get(routes::tesouraria::tributo_config).post(routes::tesouraria::criar_tributo_config),
@@ -851,7 +835,6 @@ pub fn build(state: AppState) -> Router {
             "/financeiro/apuracoes/recolher",
             post(routes::tesouraria::recolher_apuracao),
         )
-        // controle de caixa — turnos de gaveta
         .route("/financeiro/caixa/aberto", get(routes::caixa::turno_aberto))
         .route(
             "/financeiro/caixa/turnos",
@@ -873,7 +856,6 @@ pub fn build(state: AppState) -> Router {
             "/financeiro/caixa/turnos/{id}/fechar",
             post(routes::caixa::fechar),
         )
-        // PDV & comandas — mesas, garçons, vendas salão/quarto/balcão
         .route(
             "/pdv/mesas",
             get(routes::pdv::listar_mesas).post(routes::pdv::criar_mesa),
@@ -908,7 +890,6 @@ pub fn build(state: AppState) -> Router {
             "/pdv/comandas/{id}/itens/{item}/cancelar",
             post(routes::pdv::cancelar_item),
         )
-        // KDS — cozinha em tempo real
         .route("/pdv/cozinha/fila", get(routes::pdv::fila_cozinha))
         .route(
             "/pdv/comandas/{id}/itens/{item}/preparar",
@@ -922,7 +903,6 @@ pub fn build(state: AppState) -> Router {
             "/pdv/comandas/{id}/itens/{item}/retornar",
             post(routes::pdv::retornar_fila),
         )
-        // café da manhã — presença por reserva/dia
         .route("/cafe/quadro", get(routes::cafe::quadro))
         .route("/cafe/presencas", post(routes::cafe::registrar))
         .route(
@@ -937,10 +917,8 @@ pub fn build(state: AppState) -> Router {
             "/pdv/comissoes/{id}/pagar",
             post(routes::pdv::pagar_comissao),
         )
-        // dashboard + auditoria
         .route("/dashboard", get(routes::relatorios::dashboard))
         .route("/auditoria/logs", get(routes::relatorios::logs))
-        // histórico de notificações (inbox + badge + read receipts)
         .route("/notificacoes", get(routes::notificacoes::inbox))
         .route(
             "/notificacoes/nao-lidas",
@@ -986,13 +964,11 @@ pub fn build(state: AppState) -> Router {
     let router = Router::new()
         .route("/healthz", get(healthz))
         .route("/readyz", get(readyz))
-        // SSE fica fora do TimeoutLayer — conexão de vida longa por definição.
         .route(
             "/api/v1/notificacoes/stream",
             get(routes::notificacoes::stream),
         )
         .route("/api/v1/publico/stream", get(routes::cms::publico_stream))
-        // site público — só conteúdo `publicado`
         .route("/api/v1/publico/cms/site", get(routes::cms::publico_site))
         .route(
             "/api/v1/publico/newsletter",
@@ -1017,8 +993,6 @@ pub fn build(state: AppState) -> Router {
                 IpRateLimit::middleware,
             )),
         )
-        // pagamento online — criação de checkout limitada por IP (cada
-        // sessão Stripe custa uma chamada ao provedor)
         .route(
             "/api/v1/publico/pagamentos/checkout",
             post(routes::pagamentos_online::checkout_publico).route_layer(from_fn_with_state(
@@ -1033,14 +1007,10 @@ pub fn build(state: AppState) -> Router {
                 IpRateLimit::middleware,
             )),
         )
-        // webhook Stripe — fora do /api/v1 autenticado; a assinatura HMAC
-        // do provedor é a credencial. Sem rate limit de IP (origem = Stripe).
         .route(
             "/api/v1/webhooks/stripe",
             post(routes::pagamentos_online::webhook_stripe),
         )
-        // webhooks PagBank + Mercado Pago — autenticação por segredo da
-        // integração configurada; fetch-back confirma o estado real.
         .route(
             "/api/v1/webhooks/pagbank",
             post(routes::pagamentos_online::webhook_pagbank),
