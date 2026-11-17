@@ -16,7 +16,7 @@ const MAX_PETS = MAX_PESSOAS; // teto coerente com a política de pessoas
   template: `
     <div role="group" aria-label="Composição de hóspedes" class="divide-y divide-[#E8F0F2]">
       @for (row of rows; track row.key) {
-        <div class="flex items-center justify-between gap-4 py-3">
+        <div class="flex items-center justify-between gap-4 py-3.5">
           <div>
             <p class="text-sm font-medium text-[#054054]">{{ row.titulo }}</p>
             <p class="text-xs text-[#536B73]">{{ row.descricao }}</p>
@@ -24,8 +24,8 @@ const MAX_PETS = MAX_PESSOAS; // teto coerente com a política de pessoas
           <div class="flex items-center gap-3">
             <button
               type="button"
-              class="w-8 h-8 rounded-full border border-[#B9CBD3] text-[#054054] text-lg leading-none
-                     disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#054054] transition-colors"
+              class="w-10 h-10 rounded-full border border-[#CBD7DC] text-[#054054] text-xl leading-none
+                     disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#4B95AB] hover:bg-[#EEF4F6] transition-colors"
               [disabled]="valor(row.key) <= 0"
               [attr.aria-label]="'Remover ' + row.titulo.toLowerCase()"
               (click)="alterar(row, -1)"
@@ -35,8 +35,8 @@ const MAX_PETS = MAX_PESSOAS; // teto coerente com a política de pessoas
             </span>
             <button
               type="button"
-              class="w-8 h-8 rounded-full border border-[#B9CBD3] text-[#054054] text-lg leading-none
-                     disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#054054] transition-colors"
+              class="w-10 h-10 rounded-full border border-[#CBD7DC] text-[#054054] text-xl leading-none
+                     disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#4B95AB] hover:bg-[#EEF4F6] transition-colors"
               [disabled]="!podeAdicionar(row)"
               [attr.aria-label]="'Adicionar ' + row.titulo.toLowerCase()"
               (click)="alterar(row, 1)"

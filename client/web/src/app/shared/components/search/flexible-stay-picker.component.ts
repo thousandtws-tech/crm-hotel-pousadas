@@ -23,7 +23,7 @@ const CARTOES_POR_JANELA = 6;
   selector: 'app-flexible-stay-picker',
   imports: [IconComponent],
   template: `
-    <h3 class="text-center text-sm font-semibold text-[#054054] mb-3">
+    <h3 class="font-serif text-center text-xl text-[#054054] mb-3">
       Por quanto tempo você gostaria de ficar?
     </h3>
     <div class="flex justify-center flex-wrap gap-2 mb-7" role="radiogroup" aria-label="Duração da estadia">
@@ -33,20 +33,20 @@ const CARTOES_POR_JANELA = 6;
           role="radio"
           [attr.aria-checked]="stayPreset() === p.valor"
           [attr.aria-label]="p.titulo + ' — ' + p.ariaDescricao"
-          class="px-5 py-2 rounded-full border text-sm transition-colors"
+          class="px-5 py-2.5 rounded-full border text-sm transition-colors"
           [class]="stayPreset() === p.valor
-            ? 'border-[#054054] bg-white text-[#054054] font-semibold shadow-sm'
-            : 'border-[#DCE6EA] text-[#054054] hover:border-[#054054]'"
+            ? 'border-2 border-[#054054] bg-[#EEF4F6] text-[#054054] font-semibold shadow-sm'
+            : 'border-[#DCE6EA] text-[#054054] hover:border-[#4B95AB]'"
           (click)="stayPreset.set(p.valor)"
         >{{ p.titulo }}</button>
       }
     </div>
 
-    <h3 class="text-center text-sm font-semibold text-[#054054] mb-3">Quando você quer ir?</h3>
+    <h3 class="font-serif text-center text-xl text-[#054054] mb-3">Quando você quer ir?</h3>
     <div class="flex items-center justify-between mb-2" aria-live="polite">
       <button
         type="button"
-        class="w-7 h-7 rounded-full border border-[#B9CBD3] text-[#054054] disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#054054]"
+        class="w-9 h-9 rounded-full border border-[#DCE6EA] text-[#054054] text-lg leading-none disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#4B95AB] hover:bg-[#EEF4F6] transition-colors"
         [disabled]="janela() === 0"
         aria-label="Meses anteriores"
         (click)="janela.set(janela() - 1)"
@@ -58,7 +58,7 @@ const CARTOES_POR_JANELA = 6;
       </span>
       <button
         type="button"
-        class="w-7 h-7 rounded-full border border-[#B9CBD3] text-[#054054] disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#054054]"
+        class="w-9 h-9 rounded-full border border-[#DCE6EA] text-[#054054] text-lg leading-none disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#4B95AB] hover:bg-[#EEF4F6] transition-colors"
         [disabled]="(janela() + 1) * CARTOES >= todos().length"
         aria-label="Meses seguintes"
         (click)="janela.set(janela() + 1)"
@@ -71,13 +71,15 @@ const CARTOES_POR_JANELA = 6;
           [attr.aria-pressed]="c.selecionado"
           class="rounded-2xl border p-4 flex flex-col items-start gap-2 transition-colors"
           [class]="c.selecionado
-            ? 'border-[#054054] bg-[#F0F5F6] text-[#054054] shadow-sm'
-            : 'border-[#DCE6EA] text-[#054054] hover:border-[#054054]'"
+            ? 'border-2 border-[#054054] bg-[#EEF4F6] text-[#054054] shadow-sm'
+            : 'border-[#DCE6EA] text-[#054054] hover:border-[#4B95AB]'"
           (click)="alternar(c.chave)"
         >
-          <app-icon name="calendar" [size]="22" aria-hidden="true" />
+          <span [class]="c.selecionado ? 'text-[#1A6F8A]' : 'text-[#8BA0A8]'">
+            <app-icon name="calendar" [size]="22" aria-hidden="true" />
+          </span>
           <span class="text-left">
-            <span class="block text-sm font-medium">{{ c.rotulo }}</span>
+            <span class="font-serif block text-lg leading-tight">{{ c.rotulo }}</span>
             <span class="block text-[11px] text-[#536B73]">{{ c.ano }}</span>
           </span>
         </button>

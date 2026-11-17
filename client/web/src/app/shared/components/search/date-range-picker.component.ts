@@ -29,10 +29,10 @@ export function rotuloMes(m: number): string {
 }
 
 /**
- * Calendário de intervalo com dois meses consecutivos (um em telas
- * pequenas), padrão Airbnb: título de cada mês centralizado na coluna,
- * setas de navegação nos cantos do painel, barra contínua nos dias
- * intermediários. Máquina de seleção:
+ * Calendário de intervalo — dois meses consecutivos no desktop, um em
+ * telas pequenas. Identidade Espírito do Mar: meses em serif (Cormorant),
+ * barra do intervalo em névoa oceânica, pontas navy, indicador de "hoje"
+ * no dourado do sol do logotipo. Máquina de seleção:
  * - sem intervalo → clique define entrada;
  * - só entrada → clique posterior define saída; igual/anterior redefine
  *   entrada e continua aguardando;
@@ -45,16 +45,16 @@ export function rotuloMes(m: number): string {
     <div class="relative">
       <button
         type="button"
-        class="absolute -top-1 left-0 w-8 h-8 rounded-full text-[#054054] text-lg leading-none
-               disabled:opacity-25 disabled:cursor-not-allowed hover:bg-[#F0F5F6] transition-colors"
+        class="absolute -top-1 left-0 w-10 h-10 rounded-full text-[#054054] text-xl leading-none
+               disabled:opacity-25 disabled:cursor-not-allowed hover:bg-[#EEF4F6] transition-colors"
         [disabled]="!podeVoltar()"
         aria-label="Mês anterior"
         (click)="navegar(-1)"
       >‹</button>
       <button
         type="button"
-        class="absolute -top-1 right-0 w-8 h-8 rounded-full text-[#054054] text-lg leading-none
-               disabled:opacity-25 disabled:cursor-not-allowed hover:bg-[#F0F5F6] transition-colors"
+        class="absolute -top-1 right-0 w-10 h-10 rounded-full text-[#054054] text-xl leading-none
+               disabled:opacity-25 disabled:cursor-not-allowed hover:bg-[#EEF4F6] transition-colors"
         [disabled]="!podeAvancar()"
         aria-label="Próximo mês"
         (click)="navegar(1)"
@@ -63,12 +63,12 @@ export function rotuloMes(m: number): string {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
         @for (mes of [mesVisivel(), mesSeguinte()]; track mes.y + '-' + mes.m; let i = $index) {
           <div [class]="i === 1 ? 'hidden sm:block' : ''">
-            <h4 class="text-center text-sm font-semibold text-[#054054] mb-2">
+            <h4 class="font-serif text-center text-lg text-[#054054] mb-1.5">
               {{ rotuloMes(mes.m) }} de {{ mes.y }}
             </h4>
             <div class="grid grid-cols-7" role="grid" [attr.aria-label]="rotuloMes(mes.m) + ' de ' + mes.y">
               @for (d of DIAS; track $index) {
-                <span class="text-center text-[10px] font-semibold text-[#536B73] py-1.5" role="columnheader">{{ d }}</span>
+                <span class="text-center text-[10px] font-semibold tracking-wider text-[#8BA0A8] py-1.5" role="columnheader">{{ d }}</span>
               }
               @for (cel of grade(mes); track cel.chave + $index) {
                 @if (cel.foraDoMes) {
@@ -77,7 +77,7 @@ export function rotuloMes(m: number): string {
                   <button
                     type="button"
                     role="gridcell"
-                    class="aspect-square text-xs transition-colors focus-visible:outline-2 focus-visible:outline-[#054054] focus-visible:rounded-full"
+                    class="relative aspect-square min-h-10 text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-[#1A6F8A] focus-visible:rounded-full"
                     [class]="classeCelula(cel.data)"
                     [disabled]="cel.desabilitada"
                     [attr.data-dia]="formatDate(cel.data)"
@@ -89,7 +89,12 @@ export function rotuloMes(m: number): string {
                     (mouseleave)="pairar(null)"
                     (blur)="pairar(null)"
                     (keydown)="teclaDia($event, cel.data)"
-                  >{{ cel.data.d }}</button>
+                  >
+                    {{ cel.data.d }}
+                    @if (ehHoje(cel.data) && !selecionada(cel.data)) {
+                      <span class="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#DDA554]" aria-hidden="true"></span>
+                    }
+                  </button>
                 }
               }
             </div>
@@ -125,6 +130,10 @@ export class DateRangePickerComponent {
 
   protected readonly entrada = computed(() => parseDate(this.checkIn()));
   protected readonly saida = computed(() => parseDate(this.checkOut()));
+
+  protected ehHoje(dia: CivilDate): boolean {
+    return diffDays(dia, this.hoje()) === 0;
+  }
 
   protected podeVoltar(): boolean {
     const h = this.hoje();
@@ -199,14 +208,14 @@ export class DateRangePickerComponent {
     const i = this.entrada();
     const f = this.saida() ?? this.previewFim();
     const desabilitada = compareDates(dia, this.hoje()) < 0 || compareDates(dia, this.horizonte()) > 0;
-    if (desabilitada) return 'text-[#C4D3D9] cursor-not-allowed';
+    if (desabilitada) return 'text-[#CBD7DC] cursor-not-allowed';
     const eBorda = (i && diffDays(dia, i) === 0) || (f && diffDays(dia, f) === 0);
-    if (eBorda) return 'bg-[#054054] text-white font-semibold rounded-full';
+    if (eBorda) return 'bg-[#054054] text-white font-semibold rounded-full shadow-md';
     if (i && f && compareDates(dia, i) > 0 && compareDates(dia, f) < 0) {
-      // Barra contínua entre entrada e saída (padrão Airbnb).
-      return 'bg-[#E8F0F2] text-[#054054]';
+      // Barra contínua em névoa oceânica entre entrada e saída.
+      return 'bg-[#EEF4F6] text-[#054054]';
     }
-    return 'text-[#054054] rounded-full hover:ring-1 hover:ring-[#054054]';
+    return 'text-[#054054] rounded-full hover:ring-1 hover:ring-[#4B95AB]';
   }
 
   protected ariaDia(dia: CivilDate): string {

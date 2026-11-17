@@ -6,15 +6,21 @@ import { DateToleranceSelectorComponent } from './date-tolerance-selector.compon
 import { FlexibleStayPickerComponent } from './flexible-stay-picker.component';
 import { GuestSelectorComponent } from './guest-selector.component';
 import { IconComponent } from '../icons/icon.component';
+import { StayPreset } from '../../../core/models/search.models';
 
 type Painel = 'quando' | 'quem' | null;
 
+const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
+  weekend: { quando: 'Qualquer fim de semana', curto: 'Fim de semana' },
+  week: { quando: 'Qualquer semana', curto: 'Semana' },
+  month: { quando: 'Qualquer mês', curto: 'Mês' },
+};
+
 /**
- * Barra de pesquisa do motor — padrão Airbnb: pílula compacta com
- * segmentos Quando/Quem + botão Buscar; clicar num segmento abre o
- * painel ancorado logo abaixo (toggle Datas/Flexível vive dentro do
- * painel "Quando"). Sem campo "Onde" — o destino é a própria pousada.
- * Estado em `SearchStateService` (rascunho × consulta aplicada).
+ * Barra de pesquisa do motor — pílula compacta Quando/Quem/Buscar com
+ * identidade Espírito do Mar (navy + dourado do sol, serif nos títulos).
+ * Desktop: painel ancorado abaixo da barra. Mobile: bottom-sheet com
+ * slide-up e área segura. Sem campo "Onde" — o destino é a pousada.
  */
 @Component({
   selector: 'app-search-bar',
@@ -25,17 +31,36 @@ type Painel = 'quando' | 'quem' | null;
     GuestSelectorComponent,
     IconComponent,
   ],
+  styles: [
+    `
+      @keyframes search-sheet-up {
+        from { transform: translateY(28px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      @keyframes search-panel-drop {
+        from { transform: translate(-50%, -6px); opacity: 0; }
+        to { transform: translate(-50%, 0); opacity: 1; }
+      }
+      @keyframes search-panel-drop-right {
+        from { transform: translateY(-6px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      .search-sheet { animation: search-sheet-up 160ms ease-out; }
+      .search-drop { animation: search-panel-drop 140ms ease-out; }
+      .search-drop-quem { animation: search-panel-drop-right 140ms ease-out; }
+    `,
+  ],
   template: `
     <div class="relative w-full max-w-3xl mx-auto px-4 sm:px-6">
 
       <!-- Pílula principal -->
       <div
-        class="grid grid-cols-[1fr_1fr_auto] items-center rounded-full border shadow-[0_8px_28px_rgba(5,64,84,0.10)] transition-colors"
-        [class]="painel() !== null ? 'bg-[#E8F0F2] border-[#DCE6EA]' : 'bg-white border-[#DCE6EA]'"
+        class="grid grid-cols-[1fr_1fr_auto] items-center rounded-full border shadow-[0_10px_30px_rgba(5,64,84,0.12)] transition-colors"
+        [class]="painel() !== null ? 'bg-[#EEF3F5] border-[#DCE6EA]' : 'bg-white border-[#DCE6EA]'"
       >
         <!-- Quando -->
         <button
-          #gatilhoQuando
+          id="search-gatilho-quando"
           type="button"
           class="text-left pl-6 pr-4 py-3 rounded-full transition-colors"
           [class]="painel() === 'quando' ? 'bg-white shadow-md' : 'hover:bg-[#F0F5F6]'"
@@ -51,7 +76,7 @@ type Painel = 'quando' | 'quem' | null;
 
         <!-- Quem -->
         <button
-          #gatilhoQuem
+          id="search-gatilho-quem"
           type="button"
           class="text-left pl-6 pr-4 py-3 rounded-full transition-colors border-l border-[#DCE6EA]"
           [class]="painel() === 'quem' ? 'bg-white shadow-md' : 'hover:bg-[#F0F5F6]'"
@@ -65,18 +90,18 @@ type Painel = 'quando' | 'quem' | null;
           </span>
         </button>
 
-        <!-- Buscar -->
+        <!-- Buscar — navy com lupa dourada (sol do logotipo) -->
         <div class="p-2">
           <button
             type="button"
             class="flex items-center justify-center gap-2 rounded-full bg-[#054054] text-white font-semibold
-                   hover:bg-[#0a5a73] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                   hover:bg-[#032B38] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             [class]="painel() !== null ? 'px-6 py-3 text-sm' : 'w-11 h-11'"
             [disabled]="!state.prontoParaBuscar() || state.loading()"
             [attr.aria-label]="state.loading() ? 'Buscando…' : 'Buscar'"
             (click)="buscar.emit()"
           >
-            <app-icon name="search" [size]="18" aria-hidden="true" />
+            <span class="text-[#DDA554]"><app-icon name="search" [size]="18" aria-hidden="true" /></span>
             @if (painel() !== null) {
               <span>{{ state.loading() ? 'Buscando…' : 'Buscar' }}</span>
             }
@@ -93,19 +118,26 @@ type Painel = 'quando' | 'quem' | null;
         </p>
       }
 
-      <!-- Painéis ancorados -->
+      <!-- Painel Quando: ancorado no desktop, bottom-sheet no mobile -->
       @if (painel() === 'quando') {
         <div
-          class="absolute z-50 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[min(92vw,700px)]
-                 top-full mt-3 bg-white rounded-3xl border border-[#DCE6EA] shadow-2xl p-5 sm:p-6
-                 max-h-[78vh] overflow-y-auto"
+          class="search-sheet sm:search-drop fixed sm:absolute z-50 inset-x-0 bottom-0 sm:inset-x-auto sm:bottom-auto
+                 sm:left-1/2 sm:-translate-x-1/2 sm:w-[min(92vw,700px)] sm:top-full sm:mt-3
+                 bg-white rounded-t-3xl sm:rounded-3xl border-t sm:border border-[#DCE6EA]
+                 shadow-[0_-12px_40px_rgba(5,64,84,0.18)] sm:shadow-2xl
+                 px-5 pt-3 pb-5 sm:p-6 max-h-[88vh] sm:max-h-[78vh] overflow-y-auto"
           role="dialog"
           aria-label="Escolher datas"
           (keydown.escape)="fecharPainel(true)"
         >
-          <!-- Toggle Datas/Flexível (dentro do painel, padrão Airbnb) -->
+          <!-- Handle mobile -->
+          <div class="sm:hidden flex justify-center pb-2" aria-hidden="true">
+            <span class="w-10 h-1 rounded-full bg-[#DCE6EA]"></span>
+          </div>
+
+          <!-- Toggle Datas/Flexível (dentro do painel) -->
           <div class="flex justify-center mb-5">
-            <div class="inline-flex bg-[#E8F0F2] rounded-full p-1" role="tablist" aria-label="Modo de busca">
+            <div class="inline-flex bg-[#EEF3F5] rounded-full p-1" role="tablist" aria-label="Modo de busca">
               @for (aba of abas; track aba.valor) {
                 <button
                   type="button"
@@ -138,7 +170,7 @@ type Painel = 'quando' | 'quem' | null;
             />
           }
 
-          <div class="flex justify-between items-center mt-5 pt-4 border-t border-[#F0F5F6]">
+          <div class="flex justify-between items-center mt-5 pt-4 border-t border-[#F0F5F6] pb-[env(safe-area-inset-bottom)]">
             <button
               type="button"
               class="text-xs font-medium text-[#536B73] underline underline-offset-2 hover:text-[#054054]"
@@ -146,23 +178,30 @@ type Painel = 'quando' | 'quem' | null;
             >Limpar</button>
             <button
               type="button"
-              class="px-5 py-2 rounded-full bg-[#054054] text-white text-xs font-semibold hover:bg-[#0a5a73]"
+              class="px-5 py-2 rounded-full bg-[#054054] text-white text-xs font-semibold hover:bg-[#032B38]"
               (click)="fecharPainel(true)"
             >Concluir</button>
           </div>
         </div>
       }
 
+      <!-- Painel Quem: dropdown à direita no desktop, bottom-sheet no mobile -->
       @if (painel() === 'quem') {
         <div
-          class="absolute z-50 right-4 sm:right-6 w-[min(92vw,380px)]
-                 top-full mt-3 bg-white rounded-3xl border border-[#DCE6EA] shadow-2xl px-5 py-4"
+          class="search-sheet sm:search-drop-quem fixed sm:absolute z-50 inset-x-0 bottom-0 sm:inset-x-auto sm:bottom-auto
+                 sm:right-6 sm:w-[380px] sm:top-full sm:mt-3
+                 bg-white rounded-t-3xl sm:rounded-3xl border-t sm:border border-[#DCE6EA]
+                 shadow-[0_-12px_40px_rgba(5,64,84,0.18)] sm:shadow-2xl
+                 px-5 pt-3 pb-4"
           role="dialog"
           aria-label="Escolher hóspedes"
           (keydown.escape)="fecharPainel(true)"
         >
+          <div class="sm:hidden flex justify-center pb-2" aria-hidden="true">
+            <span class="w-10 h-1 rounded-full bg-[#DCE6EA]"></span>
+          </div>
           <app-guest-selector [(guests)]="state.guests" />
-          <div class="flex justify-between items-center mt-3 pt-3 border-t border-[#F0F5F6]">
+          <div class="flex justify-between items-center mt-3 pt-3 border-t border-[#F0F5F6] pb-[env(safe-area-inset-bottom)]">
             <button
               type="button"
               class="text-xs font-medium text-[#536B73] underline underline-offset-2 hover:text-[#054054]"
@@ -170,7 +209,7 @@ type Painel = 'quando' | 'quem' | null;
             >Limpar</button>
             <button
               type="button"
-              class="px-5 py-2 rounded-full bg-[#054054] text-white text-xs font-semibold hover:bg-[#0a5a73]"
+              class="px-5 py-2 rounded-full bg-[#054054] text-white text-xs font-semibold hover:bg-[#032B38]"
               (click)="fecharPainel(true)"
             >Concluir</button>
           </div>
@@ -178,7 +217,7 @@ type Painel = 'quando' | 'quem' | null;
       }
     </div>
 
-    <!-- Click-catcher transparente (Airbnb não escurece a página) -->
+    <!-- Click-catcher transparente (sem escurecer a página) -->
     @if (painel() !== null) {
       <div class="fixed inset-0 z-40" aria-hidden="true" (click)="fecharPainel(false)"></div>
     }
@@ -208,7 +247,7 @@ export class SearchBarComponent {
     if (qual === null) return;
     this.painel.set(null);
     if (devolverFoco) {
-      const ref = qual === 'quando' ? '#gatilhoQuando' : '#gatilhoQuem';
+      const ref = qual === 'quando' ? '#search-gatilho-quando' : '#search-gatilho-quem';
       (this.host.nativeElement.querySelector(ref) as HTMLElement | null)?.focus();
     }
   }
@@ -237,7 +276,7 @@ export class SearchBarComponent {
   protected readonly temQuando = computed(
     () =>
       (this.state.mode() === 'dates' && Boolean(this.state.checkIn())) ||
-      (this.state.mode() === 'flexible' && this.state.months().length > 0),
+      this.state.mode() === 'flexible',
   );
 
   protected readonly temQuem = computed(() => {
@@ -247,12 +286,12 @@ export class SearchBarComponent {
 
   protected readonly resumoQuando = computed(() => {
     if (this.state.mode() === 'flexible') {
-      const preset = this.state.stayPreset();
-      const nome =
-        preset === 'weekend' ? 'Um fim de semana' : preset === 'week' ? 'Uma semana' : 'Um mês';
-      const n = this.state.months().length;
-      if (n === 0) return this.temQuando() ? nome : 'Qualquer dia';
-      return `${nome} · ${n} ${n === 1 ? 'mês' : 'meses'}`;
+      const preset = PRESETS[this.state.stayPreset()];
+      const meses = this.state.months();
+      if (meses.length === 0) return preset.quando;
+      const nomes = meses.slice(0, 3).map((k) => rotuloMes(Number(k.slice(5))).slice(0, 3));
+      const extra = meses.length > 3 ? ` +${meses.length - 3}` : '';
+      return `${preset.curto} · ${nomes.join(', ')}${extra}`;
     }
     const i = parseDate(this.state.checkIn());
     const f = parseDate(this.state.checkOut());
