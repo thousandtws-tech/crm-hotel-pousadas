@@ -390,8 +390,8 @@ impl PaymentGateway for MercadoPagoGateway {
 
 /// Valida `x-signature` do Mercado Pago — manifesto oficial:
 /// `id:{data.id};request-id:{x-request-id};ts:{ts};`
-/// `data.id` alfanumérico entra minúsculo; pares ausentes são omitidos.
-/// `ts` é em milissegundos com tolerância de 5 min.
+/// `data.id` alfanumérico entra minúsculo; os três pares sempre constam.
+/// `ts` vem em SEGUNDOS — normalizado pra ms antes da tolerância (5 min).
 pub fn verificar_assinatura(
     webhook_secret: &str,
     header_assinatura: &str,
@@ -414,8 +414,16 @@ pub fn verificar_assinatura(
         ));
     };
 
+    // O MP envia `ts` em SEGUNDOS (10 dígitos); assumir ms rejeita
+    // toda notificação real como "fora da janela" (~56 anos de drift).
+    // Normaliza: <10^11 = segundos → converte pra ms.
+    let ts_ms = if ts.abs() < 100_000_000_000 {
+        ts * 1_000
+    } else {
+        ts
+    };
     let agora_ms = Utc::now().timestamp_millis();
-    if (agora_ms - ts).abs() > TOLERANCIA_ASSINATURA_MS {
+    if (agora_ms - ts_ms).abs() > TOLERANCIA_ASSINATURA_MS {
         return Err(DomainError::nao_autenticado(
             "Webhook fora da janela de tolerância.",
         ));
@@ -536,6 +544,14 @@ mod tests {
         let ts = Utc::now().timestamp_millis() - 600_000;
         let h = assinar("segredo", "1", "r", ts);
         assert!(verificar_assinatura("segredo", &h, "r", "1").is_err());
+    }
+
+    #[test]
+    fn timestamp_em_segundos_aceita() {
+        // Formato real do MP: ts em segundos — era a causa dos 401s.
+        let ts = Utc::now().timestamp();
+        let h = assinar("segredo", "190217246070", "rid-x", ts);
+        assert!(verificar_assinatura("segredo", &h, "rid-x", "190217246070").is_ok());
     }
 
     #[test]
