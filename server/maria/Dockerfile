@@ -14,11 +14,13 @@ WORKDIR /app
 # (faster-whisper) nas imagens slim; ~1 MB, removível se os
 # providers locais de voz não forem usados.
 # postgresql-client-18 — pg_dump >= versão do servidor é obrigatório
-# (prod roda Postgres 18; o cliente stock do bookworm é 15 e falha).
+# (prod roda Postgres 18; o cliente stock da distro é mais antigo e falha).
+# O codename vem de /etc/os-release — a base python:*-slim migra de
+# Debian (bookworm→trixie) e o repo PGDG tem que acompanhar.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        libstdc++6 wget ca-certificates gnupg \
-    && echo "deb http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+    && echo "deb http://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
        > /etc/apt/sources.list.d/pgdg.list \
     && wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc \
        | gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg \
