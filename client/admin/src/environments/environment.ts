@@ -5,4 +5,6 @@ export const environment = {
   realtimeUrl: 'ws://localhost:4000/socket',
   // Serviço MAR IA (FastAPI) — sessão ElevenLabs + tools MCP
   mariaUrl: 'https://maria-production-b5c4.up.railway.app',
+  // Agente publicado no ElevenLabs (Conversational AI)
+  mariaAgentId: 'agent_0401m7n0e1nsfwb9zz08pey5a5gz',
 };

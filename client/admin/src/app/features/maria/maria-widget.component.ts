@@ -1,457 +1,145 @@
-import { Component, computed, effect, inject, signal, ElementRef, viewChild } from '@angular/core';
+// MAR IA — widget oficial ElevenLabs (<elevenlabs-convai>) no shell do CRM.
+// A sessão sai de POST /api/maria/session (signed_url) e as tools rodam
+// como client tools → POST /mcp com o JWT do funcionário. O card abaixo é
+// a única UI nossa: a confirmação de escrita (preparar_* → confirmar_acao).
+
+import { Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, inject, OnDestroy, OnInit, viewChild } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MariaService } from '@core/services/maria.service';
-import { environment } from '../../../environments/environment';
 
-const SUGESTOES = [
-  { icone: 'today', texto: 'Quais os check-ins de hoje?' },
-  { icone: 'inventory_2', texto: 'Quais itens estão em falta no estoque?' },
-  { icone: 'shopping_cart', texto: 'Sugira pedidos de compra' },
-  { icone: 'calendar_month', texto: 'Reservas da semana' },
-];
+interface CallEventDetail {
+  config: {
+    clientTools?: Record<string, (p: unknown) => Promise<string | object>>;
+    signedUrl?: string;
+    dynamicVariables?: Record<string, string>;
+  };
+}
 
 @Component({
   selector: 'app-maria',
   imports: [MatIconModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
-    @if (habilitado) {
-      <button
-        type="button"
-        class="mar-fab"
-        [class.mar-fab-live]="m.estado() === 'listening' || m.estado() === 'speaking'"
-        [class.mar-fab-think]="m.estado() === 'thinking'"
-        (click)="alternar()"
-        aria-label="Abrir Maria"
-        [attr.aria-expanded]="aberta()"
-      >
-        <mat-icon>auto_awesome</mat-icon>
-      </button>
+    <elevenlabs-convai
+      #convai
+      [attr.agent-id]="m.agentId"
+      [attr.signed-url]="m.signedUrl()"
+      [attr.dynamic-variables]="varsJson"
+      variant="compact"
+      placement="bottom-right"
+      text-input="true"
+      transcript="true"
+      mic-muting="true"
+      dismissible="false"
+      show-agent-status="true"
+      action-text="Falar com a MARIA"
+      start-call-text="Iniciar conversa"
+      end-call-text="Encerrar"
+      expand-text="Abrir assistente"
+      listening-text="Ouvindo…"
+      speaking-text="MARIA falando"
+    ></elevenlabs-convai>
 
-      @if (aberta()) {
-        <div
-          class="mar-panel"
-          role="dialog"
-          aria-label="Maria — assistente virtual"
-        >
-          <!-- header -->
-          <header class="mar-head">
-            <div class="mar-avatar">M</div>
-            <div class="mar-head-txt">
-              <strong>Maria</strong>
-              <span class="mar-st">
-                <span class="mar-dot" [class]="'mar-dot-' + m.estado()"></span>
-                {{ rotuloEstado() }}
-              </span>
-            </div>
-            <button type="button" class="mar-hbtn" (click)="aberta.set(false)" aria-label="Fechar">
-              <mat-icon>close</mat-icon>
-            </button>
-          </header>
-
-          @if (m.erro(); as err) {
-            <div class="mar-erro"><mat-icon>error_outline</mat-icon> {{ err }}</div>
+    @if (m.pendente(); as a) {
+      <section class="mar-acao" role="alertdialog" aria-label="Confirmação de ação">
+        <div class="mar-acao-tit"><mat-icon>verified_user</mat-icon> Confirmar ação</div>
+        <div class="mar-acao-res">
+          <b>{{ rotuloAcao(a.acao) }}</b>
+          @for (k of chaves(a.resumo); track k) {
+            <span>{{ rotuloCampo(k) }}: {{ a.resumo[k] ?? '—' }}</span>
           }
-
-          <!-- ===== mensagens (prompt-kit: ChatContainer) ===== -->
-          <div class="mar-scroll" #msgs (scroll)="aoRolar()">
-              @if (!m.mensagens().length && !m.assistenteParcial() && !m.transcricaoViva()) {
-                <div class="mar-vazio">
-                  <div class="mar-avatar mar-avatar-lg">M</div>
-                  <p class="mar-vazio-t">Olá! Como posso ajudar?</p>
-                  <div class="mar-sug">
-                    @for (s of sugestoes; track s.texto) {
-                      <button type="button" class="mar-chip" (click)="enviarTexto(s.texto)">
-                        <mat-icon>{{ s.icone }}</mat-icon>{{ s.texto }}
-                      </button>
-                    }
-                  </div>
-                </div>
-              }
-              <div class="mar-msgs" role="log" aria-live="polite" aria-label="Conversa">
-                @for (msg of m.mensagens(); track $index) {
-                  @if (msg.papel === 'user') {
-                    <div class="mar-linha mar-linha-user">
-                      <div class="mar-balao mar-balao-user">{{ msg.texto }}</div>
-                    </div>
-                  } @else if (msg.papel === 'sys') {
-                    <div class="mar-sys">{{ msg.texto }}</div>
-                  } @else {
-                    <div class="mar-linha">
-                      <div class="mar-avatar mar-avatar-sm">M</div>
-                      <div class="mar-balao mar-balao-ia" [innerHTML]="md(msg.texto)"></div>
-                    </div>
-                  }
-                }
-                @if (m.assistenteParcial()) {
-                  <div class="mar-linha">
-                    <div class="mar-avatar mar-avatar-sm">M</div>
-                    <div class="mar-balao mar-balao-ia mar-partial" [innerHTML]="md(m.assistenteParcial())"></div>
-                  </div>
-                }
-                @if (m.transcricaoViva()) {
-                  <div class="mar-linha mar-linha-user">
-                    <div class="mar-balao mar-balao-user mar-partial">{{ m.transcricaoViva() }}<span class="cur">▌</span></div>
-                  </div>
-                }
-                @if (m.estado() === 'thinking' && !m.assistenteParcial()) {
-                  <div class="mar-linha">
-                    <div class="mar-avatar mar-avatar-sm">M</div>
-                    <div class="mar-balao mar-balao-ia mar-typing" aria-label="Maria pensando">
-                      <span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>
-                    </div>
-                  </div>
-                }
-              </div>
-
-              @if (!pertoDoFim()) {
-                <button type="button" class="mar-voltar" (click)="rolarFim()" aria-label="Voltar ao fim da conversa">
-                  <mat-icon>arrow_downward</mat-icon>
-                </button>
-              }
-            </div>
-
-          <!-- confirmação de ação -->
-          @if (m.pendente(); as a) {
-            <div class="mar-acao">
-              <div class="mar-acao-tit"><mat-icon>verified_user</mat-icon> Confirmar ação</div>
-              <div class="mar-acao-res">
-                <b>{{ rotuloAcao(a.acao) }}</b>
-                @for (k of chaves(a.resumo); track k) {
-                  <span>{{ rotuloCampo(k) }}: {{ a.resumo[k] ?? '—' }}</span>
-                }
-              </div>
-              <div class="mar-acao-btns">
-                <button class="mar-ok" type="button" (click)="m.confirmar(a.idacao)">
-                  <mat-icon>check</mat-icon> Confirmar
-                </button>
-                <button class="mar-nok" type="button" (click)="m.recusar()">
-                  <mat-icon>close</mat-icon> Cancelar
-                </button>
-              </div>
-            </div>
-          }
-
-          <!-- ===== composer (prompt-kit: PromptInput) ===== -->
-          <footer class="mar-foot">
-            <div class="mar-composer">
-              <textarea
-                class="mar-txt"
-                rows="1"
-                placeholder="Pergunte à Maria…"
-                #entrada
-                (input)="autoResize(entrada)"
-                (keydown)="tecla($event, entrada)"
-                aria-label="Mensagem para a Maria"
-              ></textarea>
-              <div class="mar-acoes">
-                @if (m.estado() === 'speaking' || m.estado() === 'thinking') {
-                  <button type="button" class="mar-ibtn mar-ibtn-stop" (click)="m.interromper()" title="Interromper" aria-label="Interromper">
-                    <mat-icon>stop</mat-icon>
-                  </button>
-                } @else {
-                  <button
-                    type="button"
-                    class="mar-ibtn mar-ibtn-send"
-                    (click)="enviar(entrada)"
-                    [disabled]="!entrada.value.trim()"
-                    aria-label="Enviar"
-                  >
-                    <mat-icon>arrow_upward</mat-icon>
-                  </button>
-                }
-              </div>
-            </div>
-          </footer>
         </div>
-      }
+        <div class="mar-acao-btns">
+          <button class="mar-ok" type="button" (click)="m.confirmar(a.idacao)">
+            <mat-icon>check</mat-icon> Confirmar
+          </button>
+          <button class="mar-nok" type="button" (click)="m.recusar()">
+            <mat-icon>close</mat-icon> Cancelar
+          </button>
+        </div>
+      </section>
     }
   `,
   styles: `
-    :host { position: relative; z-index: 200; }
-
-    /* ===== FAB ===== */
-    .mar-fab {
-      position: fixed; right: 22px; bottom: 22px; z-index: 300;
-      width: 56px; height: 56px; border-radius: 50%;
-      background: #054054; color: #fff; border: 2px solid #1a6f8a;
-      cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 18px rgba(0,0,0,.35);
-      transition: transform .15s ease, box-shadow .15s ease;
-    }
-    .mar-fab:hover { transform: scale(1.06); }
-    .mar-fab mat-icon { font-size: 26px; width: 26px; height: 26px; }
-    .mar-fab-live { border-color: #b5811f; box-shadow: 0 0 0 6px rgba(221,165,84,.18), 0 4px 18px rgba(0,0,0,.35); }
-    .mar-fab-think { border-color: #4b95ab; animation: fab-think 1.2s ease-in-out infinite; }
-    @keyframes fab-think { 50% { box-shadow: 0 0 0 8px rgba(75,149,171,.16), 0 4px 18px rgba(0,0,0,.35); } }
-
-    /* ===== painel ===== */
-    .mar-panel {
-      position: fixed; right: 22px; bottom: 90px; z-index: 300;
-      width: min(410px, calc(100vw - 44px)); max-height: min(580px, calc(100vh - 120px));
-      background: #fff; border: 1px solid #d7e0e6; border-radius: 16px;
-      display: flex; flex-direction: column; overflow: hidden;
-      box-shadow: 0 12px 40px rgba(5, 40, 54, .28);
-    }
-
-    .mar-head {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-bottom: 1px solid #e3eaef;
-    }
-    .mar-avatar {
-      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
-      background: linear-gradient(135deg, #054054 0%, #1a6f8a 100%);
-      color: #fff; font-size: 14px; font-weight: 700; letter-spacing: 0.02em;
-      display: inline-flex; align-items: center; justify-content: center;
-      user-select: none;
-    }
-    .mar-avatar-sm { width: 26px; height: 26px; align-self: flex-end; margin-bottom: 2px; font-size: 11.5px; }
-    .mar-avatar-lg { width: 44px; height: 44px; font-size: 19px; }
-    .mar-head-txt { display: flex; flex-direction: column; line-height: 1.15; flex: 1; min-width: 0; }
-    .mar-head-txt strong { font-size: 0.95rem; letter-spacing: 0.02em; color: #054054; }
-    .mar-st { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; color: #8a99a4; }
-    .mar-dot { width: 7px; height: 7px; border-radius: 50%; background: #6c7f88; flex-shrink: 0; }
-    .mar-dot-idle { background: #2e9e6b; }
-    .mar-dot-listening { background: #b5811f; animation: pulse 1s infinite; }
-    .mar-dot-thinking { background: #4b95ab; animation: pulse .8s infinite; }
-    .mar-dot-speaking { background: #2e9e6b; animation: pulse .6s infinite; }
-    .mar-dot-offline { background: #9aa7ad; }
-    @keyframes pulse { 50% { opacity: .45; } }
-    .mar-hbtn {
-      background: transparent; border: none; color: #8a99a4; cursor: pointer;
-      border-radius: 8px; padding: 6px; display: inline-flex;
-    }
-    .mar-hbtn:hover { color: #054054; background: #eef3f6; }
-    .mar-hbtn mat-icon { font-size: 18px; width: 18px; height: 18px; }
-
-    .mar-erro {
-      display: flex; align-items: center; gap: 6px;
-      background: #fdecec; color: #dc3545; font-size: 0.78rem;
-      padding: 8px 12px; border-bottom: 1px solid #f3d3d1;
-    }
-    .mar-erro mat-icon { font-size: 16px; width: 16px; height: 16px; }
-
-    /* ===== área de mensagens ===== */
-    .mar-scroll {
-      flex: 1; overflow-y: auto; min-height: 180px; position: relative;
-      scroll-behavior: smooth;
-    }
-    .mar-msgs { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
-    .mar-linha { display: flex; align-items: flex-end; gap: 8px; }
-    .mar-linha-user { justify-content: flex-end; }
-    .mar-balao {
-      max-width: 82%; padding: 9px 13px; border-radius: 16px;
-      font-size: 0.88rem; line-height: 1.45;
-      animation: mar-in .18s ease-out;
-    }
-    @keyframes mar-in { from { opacity: 0; transform: translateY(4px); } }
-    .mar-balao-user {
-      background: #054054; color: #fff; border-bottom-right-radius: 6px;
-      white-space: pre-wrap;
-    }
-    .mar-balao-ia {
-      background: #f1f5f7; color: #1c3038; border-bottom-left-radius: 6px;
-    }
-    .mar-balao-ia code {
-      background: #e2eaee; border-radius: 4px; padding: 1px 5px;
-      font-size: 0.8rem; font-family: ui-monospace, monospace;
-    }
-    .mar-partial { opacity: .8; }
-    .cur { animation: pulse .7s infinite; }
-    .mar-sys {
-      align-self: center; color: #8a99a4;
-      font-size: 0.74rem; font-style: italic; padding: 2px 8px;
-    }
-
-    /* typing indicator */
-    .mar-typing { display: inline-flex; gap: 4px; align-items: center; padding: 12px 14px; }
-    .tdot {
-      width: 7px; height: 7px; border-radius: 50%; background: #8fa9b5;
-      animation: tbounce 1.2s infinite;
-    }
-    .tdot:nth-child(2) { animation-delay: .15s; }
-    .tdot:nth-child(3) { animation-delay: .3s; }
-    @keyframes tbounce { 0%, 60%, 100% { transform: none; opacity: .5; } 30% { transform: translateY(-4px); opacity: 1; } }
-
-    /* scroll-to-bottom */
-    .mar-voltar {
-      position: sticky; bottom: 8px; margin-left: auto; margin-right: 12px;
-      display: flex; float: right;
-      width: 32px; height: 32px; border-radius: 50%;
-      border: 1px solid #d7e0e6; background: #fff; color: #5d6d7e;
-      box-shadow: 0 2px 8px rgba(0,0,0,.12); cursor: pointer;
-      align-items: center; justify-content: center;
-    }
-    .mar-voltar:hover { color: #054054; }
-    .mar-voltar mat-icon { font-size: 17px; width: 17px; height: 17px; }
-
-    /* estado vazio + suggestions */
-    .mar-vazio {
-      display: flex; flex-direction: column; align-items: center; gap: 12px;
-      padding: 30px 18px 20px; text-align: center;
-    }
-    .mar-vazio-t { margin: 0; font-size: 0.95rem; color: #054054; font-weight: 600; }
-    .mar-sug { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
-    .mar-chip {
-      display: inline-flex; align-items: center; gap: 6px;
-      border: 1px solid #d7e0e6; border-radius: 999px; background: #fff;
-      padding: 7px 12px; font-size: 0.78rem; color: #3d5460;
-      cursor: pointer; font-family: inherit; transition: all .14s ease;
-    }
-    .mar-chip:hover { border-color: #4b95ab; color: #054054; background: #f0f7fa; }
-    .mar-chip mat-icon { font-size: 15px; width: 15px; height: 15px; color: #4b95ab; }
-
-    /* ===== confirmação ===== */
+    /* Card de confirmação — flutua acima do orb do widget (bottom-right). */
     .mar-acao {
-      margin: 0 12px 8px; border: 1.5px solid #b5811f; border-radius: 12px;
-      background: #fdf7ec; padding: 10px 12px;
+      position: fixed; right: 22px; bottom: 96px; z-index: 400;
+      width: 300px; padding: 14px 16px;
+      background: #fff; border: 1px solid #d8e4e8; border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(5, 40, 56, .22);
+      display: flex; flex-direction: column; gap: 10px;
     }
     .mar-acao-tit {
       display: flex; align-items: center; gap: 6px;
-      font-size: 0.72rem; font-weight: 700; color: #b5811f;
-      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;
+      font-size: 13px; font-weight: 700; color: #054054;
     }
-    .mar-acao-tit mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .mar-acao-res { display: flex; flex-direction: column; gap: 2px; font-size: 0.82rem; color: #33424c; margin-bottom: 8px; }
+    .mar-acao-tit mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    .mar-acao-res {
+      display: flex; flex-direction: column; gap: 3px;
+      font-size: 12.5px; color: #33474f; max-height: 160px; overflow-y: auto;
+    }
+    .mar-acao-res b { color: #054054; margin-bottom: 2px; }
     .mar-acao-btns { display: flex; gap: 8px; }
     .mar-ok, .mar-nok {
-      display: inline-flex; align-items: center; gap: 5px;
-      border: none; border-radius: 8px; padding: 8px 14px;
-      font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit;
+      flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 8px 10px; border-radius: 9px; border: none; cursor: pointer;
+      font-size: 12.5px; font-weight: 600;
     }
-    .mar-ok { background: #1a6f8a; color: #fff; }
-    .mar-ok:hover { background: #054054; }
-    .mar-nok { background: #e8edf0; color: #5d6d7e; }
+    .mar-ok { background: #054054; color: #fff; }
+    .mar-ok:hover { background: #0a5a74; }
+    .mar-nok { background: #eef3f5; color: #5a707a; }
+    .mar-nok:hover { background: #e0e9ec; }
     .mar-ok mat-icon, .mar-nok mat-icon { font-size: 16px; width: 16px; height: 16px; }
-
-    /* ===== composer ===== */
-    .mar-foot { padding: 10px 12px 12px; border-top: 1px solid #e3eaef; }
-    .mar-composer {
-      display: flex; flex-direction: column; gap: 6px;
-      border: 1px solid #d7e0e6; border-radius: 18px; background: #fff;
-      padding: 8px 8px 6px 14px;
-      transition: border-color .15s ease, box-shadow .15s ease;
-    }
-    .mar-composer:focus-within { border-color: #4b95ab; box-shadow: 0 0 0 3px rgba(75,149,171,.14); }
-    .mar-txt {
-      border: none; outline: none; resize: none; background: transparent;
-      font-size: 0.88rem; font-family: inherit; line-height: 1.45;
-      max-height: 120px; width: 100%; padding: 4px 0; color: #1c3038;
-    }
-    .mar-acoes { display: flex; justify-content: space-between; align-items: center; }
-    .mar-acoes > :last-child { margin-left: auto; }
-    .mar-ibtn {
-      border: none; border-radius: 50%; width: 34px; height: 34px; flex-shrink: 0;
-      display: inline-flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: all .15s ease;
-      background: #eef3f6; color: #5d6d7e;
-    }
-    .mar-ibtn:hover { background: #e2eaee; color: #054054; }
-    .mar-ibtn mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .mar-ibtn-send { background: #054054; color: #fff; }
-    .mar-ibtn-send:hover:not(:disabled) { background: #1a6f8a; }
-    .mar-ibtn-send:disabled { opacity: .35; cursor: default; }
-    .mar-ibtn-stop { background: #fdecec; color: #dc3545; }
   `,
 })
-export class MariaWidgetComponent {
-  protected readonly m = inject(MariaService);
-  protected readonly aberta = signal(false);
-  protected readonly habilitado = !!((environment as { mariaUrl?: string }).mariaUrl);
-  protected readonly pertoDoFim = signal(true);
-  protected readonly sugestoes = SUGESTOES;
-  private readonly msgs = viewChild<ElementRef<HTMLDivElement>>('msgs');
+export class MariaWidgetComponent implements OnInit, OnDestroy {
+  readonly m = inject(MariaService);
+  private readonly convai = viewChild<ElementRef<HTMLElement>>('convai');
 
-  protected readonly rotuloEstado = computed(() => {
-    if (!this.m.conectado()) return 'offline';
-    return this.m.estadoRotulo() ?? 'pronta';
-  });
+  private readonly onCall = (ev: Event) => this.aoIniciarChamada(ev);
 
-  constructor() {
-    effect(() => {
-      this.m.mensagens();
-      this.m.assistenteParcial();
-      if (this.pertoDoFim()) this.rolarFim();
+  get varsJson(): string {
+    return JSON.stringify({ funcionario: this.m.funcionario });
+  }
+
+  ngOnInit(): void {
+    // Bundle do widget (~self-contained) só carrega junto do shell logado.
+    void import('@elevenlabs/convai-widget-embed').then(() => {
+      // `elevenlabs-convai:call` tem ':' no nome — o event binding do
+      // Angular não aceita; addEventListener direto resolve.
+      this.convai()?.nativeElement.addEventListener('elevenlabs-convai:call', this.onCall);
     });
+    void this.m.preparar();
   }
 
-  alternar(): void {
-    this.aberta.update((v) => !v);
-    if (this.aberta()) this.m.conectar();
+  ngOnDestroy(): void {
+    this.convai()?.nativeElement.removeEventListener('elevenlabs-convai:call', this.onCall);
+    this.m.recusar();
   }
 
-  aoRolar(): void {
-    const el = this.msgs()?.nativeElement;
-    if (!el) return;
-    this.pertoDoFim.set(el.scrollHeight - el.scrollTop - el.clientHeight < 60);
-  }
-
-  rolarFim(): void {
-    const el = this.msgs()?.nativeElement;
-    if (el) {
-      el.scrollTop = el.scrollHeight;
-      this.pertoDoFim.set(true);
+  /** O evento `call` dispara quando o usuário inicia a conversa — o config
+   *  da sessão é mutável aqui: injetamos signed_url fresca + clientTools
+   *  (JWT real do funcionário) e já repomos o cache pra próxima chamada. */
+  aoIniciarChamada(ev: Event): void {
+    const cfg = (ev as CustomEvent<CallEventDetail>).detail?.config;
+    if (cfg) {
+      cfg.clientTools = this.m.clientTools();
+      const url = this.m.signedUrl();
+      if (url) cfg.signedUrl = url;
+      cfg.dynamicVariables = { funcionario: this.m.funcionario };
     }
+    void this.m.preparar(); // signed_url é descartável — repõe p/ próxima
   }
 
-  autoResize(ta: HTMLTextAreaElement): void {
-    ta.style.height = 'auto';
-    ta.style.height = `${Math.min(ta.scrollHeight, 120)}px`;
-  }
-
-  tecla(e: KeyboardEvent, ta: HTMLTextAreaElement): void {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      this.enviar(ta);
-    }
-  }
-
-  enviar(ta: HTMLTextAreaElement): void {
-    const t = ta.value.trim();
-    if (!t) return;
-    ta.value = '';
-    ta.style.height = 'auto';
-    this.enviarTexto(t);
-  }
-
-  enviarTexto(t: string): void {
-    this.m.enviarTexto(t);
-    this.pertoDoFim.set(true);
-    this.rolarFim();
-  }
-
-  /** Markdown mínimo (prompt-kit: respostas formatadas). Escape primeiro. */
-  md(texto: string): string {
-    const esc = texto
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-    return esc
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
-      .replace(/\n/g, '<br>');
-  }
-
-  chaves(o: Record<string, unknown>): string[] {
-    return Object.keys(o).filter((k) => !['idcliente', 'idacao'].includes(k));
+  chaves(resumo: Record<string, unknown>): string[] {
+    return Object.keys(resumo).filter((k) => k !== 'idacao').slice(0, 8);
   }
 
   rotuloAcao(acao: string): string {
-    return { criar_reserva: 'Criar reserva', cancelar_reserva: 'Cancelar reserva' }[acao] ?? acao;
+    return acao.replace(/^preparar_/, '').replace(/_/g, ' ');
   }
 
   rotuloCampo(k: string): string {
-    return (
-      {
-        hospede: 'Hóspede',
-        acomodacao: 'Acomodação',
-        entradaprevista: 'Entrada',
-        saidaprevista: 'Saída',
-        quantidade_hospedes: 'Hóspedes',
-        valordiaria: 'Diária',
-        status: 'Situação',
-        idreserva: 'Reserva',
-        idacomodacao: 'Acomodação',
-      }[k] ?? k
-    );
+    return k.replace(/_/g, ' ');
   }
 }

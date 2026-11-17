@@ -1,19 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { AuthStore } from './auth.store';
 import { MariaService } from './maria.service';
-
-const startSessionMock = vi.fn();
-const sendUserMessageMock = vi.fn();
-const sendContextualUpdateMock = vi.fn();
-const sendUserActivityMock = vi.fn();
-const endSessionMock = vi.fn().mockResolvedValue(undefined);
-
-vi.mock('@elevenlabs/client', () => ({
-  Conversation: {
-    startSession: (...args: unknown[]) => startSessionMock(...args),
-  },
-}));
 
 function fakeFetch(routes: Record<string, unknown>) {
   return vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
@@ -40,22 +27,11 @@ const MCP_TOOLS = {
   },
 };
 
-describe('MariaService — sessão ElevenLabs', () => {
+describe('MariaService — widget ElevenLabs', () => {
   let service: MariaService;
   const navigateByUrl = vi.fn();
 
   beforeEach(() => {
-    vi.useFakeTimers();
-    startSessionMock.mockReset().mockResolvedValue({
-      endSession: endSessionMock,
-      sendUserMessage: sendUserMessageMock,
-      sendContextualUpdate: sendContextualUpdateMock,
-      sendUserActivity: sendUserActivityMock,
-      getInputVolume: () => 0.3,
-      getOutputVolume: () => 0.8,
-      setVolume: vi.fn(),
-      setMicMuted: vi.fn(),
-    });
     vi.stubGlobal(
       'fetch',
       fakeFetch({
@@ -65,100 +41,81 @@ describe('MariaService — sessão ElevenLabs', () => {
     );
     TestBed.configureTestingModule({
       providers: [
+        MariaService,
         { provide: Router, useValue: { navigateByUrl } },
-        {
-          provide: AuthStore,
-          useValue: {
-            accessToken: () => 'tok',
-            user: () => ({ login: 'ana', nome: 'Ana' }),
-          },
-        },
       ],
     });
     service = TestBed.inject(MariaService);
-  });
-
-  afterEach(async () => {
-    await service.desconectar();
-    vi.useRealTimers();
-    vi.unstubAllGlobals();
+    localStorage.setItem('clarituz.access', 'jwt-teste');
     navigateByUrl.mockReset();
   });
 
-  it('conectar pede signed_url autenticada e abre a sessão com clientTools', async () => {
-    service.conectar();
-    await vi.waitFor(() => expect(startSessionMock).toHaveBeenCalled());
-
-    const fetchMock = fetch as ReturnType<typeof vi.fn>;
-    const chamadaSessao = fetchMock.mock.calls.find(([u]) =>
-      String(u).includes('/api/maria/session'),
+  it('preparar() emite signed_url e monta clientTools do tools/list', async () => {
+    await service.preparar();
+    expect(service.signedUrl()).toBe('wss://signed/fake');
+    const tools = service.clientTools();
+    expect(Object.keys(tools)).toEqual(
+      expect.arrayContaining(['get_reservas', 'preparar_reserva', 'confirmar_acao', 'abrir_pagina']),
     );
-    expect(chamadaSessao?.[1]?.headers).toMatchObject({
-      Authorization: 'Bearer tok',
-    });
-
-    const opts = startSessionMock.mock.calls[0][0] as {
-      signedUrl: string;
-      clientTools: Record<string, unknown>;
-      userId?: string;
-    };
-    expect(opts.signedUrl).toBe('wss://signed/fake');
-    expect(opts.userId).toBe('ana');
-    // nomes vêm do tools/list do /mcp — sem hardcode
-    expect(Object.keys(opts.clientTools)).toEqual([
-      'get_reservas', 'preparar_reserva', 'confirmar_acao', 'abrir_pagina',
-    ]);
   });
 
-  it('abrir_pagina navega só por rotas internas', async () => {
-    service.conectar();
-    await vi.waitFor(() => expect(startSessionMock).toHaveBeenCalled());
-    const tools = (startSessionMock.mock.calls[0][0] as {
-      clientTools: Record<string, (p: unknown) => Promise<string> | string>;
-    }).clientTools;
-
-    expect(await tools['abrir_pagina']({ rota: '/reservas' })).toContain('aberta');
+  it('clientTool abrir_pagina navega só rota interna', async () => {
+    await service.preparar();
+    const tools = service.clientTools();
+    await tools['abrir_pagina']({ rota: '/reservas' });
     expect(navigateByUrl).toHaveBeenCalledWith('/reservas');
-    expect(await tools['abrir_pagina']({ rota: 'https://evil.com' })).toContain('rejeitada');
+    const r = await tools['abrir_pagina']({ rota: 'https://evil.com' });
+    expect(r).toContain('rejeitada');
     expect(navigateByUrl).toHaveBeenCalledTimes(1);
   });
 
-  it('preparar_* com idacao abre o card; confirmar() chama o /mcp', async () => {
+  it('preparar_* via clientTool alimenta o card de confirmação', async () => {
     vi.stubGlobal(
       'fetch',
       fakeFetch({
         '/api/maria/session': { signed_url: 'wss://signed/fake' },
-        '/mcp': (body: { method: string }) =>
-          body.method === 'tools/list'
+        '/mcp': (b: { method: string }) =>
+          b.method === 'tools/list'
             ? MCP_TOOLS
             : {
                 result: {
-                  content: [{ text: '{"idacao":"abc","total":230}' }],
+                  content: [{ text: '{"idacao":"a-1","hospede":"Ana","total":500}' }],
                 },
               },
       }),
     );
-    service.conectar();
-    await vi.waitFor(() => expect(startSessionMock).toHaveBeenCalled());
-    const tools = (startSessionMock.mock.calls[0][0] as {
-      clientTools: Record<string, (p: unknown) => Promise<string>>;
-    }).clientTools;
-
-    await tools['preparar_reserva']({ quarto: 1 });
-    expect(service.pendente()?.idacao).toBe('abc');
-
-    await service.confirmar('abc');
-    expect(service.pendente()).toBeNull();
-    expect(sendContextualUpdateMock).toHaveBeenCalled();
+    await service.preparar();
+    const tools = service.clientTools();
+    await tools['preparar_reserva']({ hospede: 'Ana' });
+    expect(service.pendente()?.idacao).toBe('a-1');
+    expect(service.pendente()?.resumo['hospede']).toBe('Ana');
   });
 
-  it('desconectar encerra a sessão e cancela reconexão', async () => {
-    service.conectar();
-    await vi.waitFor(() => expect(startSessionMock).toHaveBeenCalled());
-    await service.desconectar();
-    expect(endSessionMock).toHaveBeenCalled();
-    vi.advanceTimersByTime(30000);
-    expect(startSessionMock).toHaveBeenCalledTimes(1);
-    expect(service.estado()).toBe('offline');
+  it('confirmar() chama confirmar_acao no /mcp e limpa o card', async () => {
+    const chamadas: { name?: string; arguments?: Record<string, unknown> }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      fakeFetch({
+        '/api/maria/session': { signed_url: 'wss://signed/fake' },
+        '/mcp': (b: { method: string; params?: { name?: string; arguments?: Record<string, unknown> } }) => {
+          if (b.method === 'tools/list') return MCP_TOOLS;
+          chamadas.push(b.params ?? {});
+          return { result: { content: [{ text: 'ok' }] } };
+        },
+      }),
+    );
+    await service.preparar();
+    service.pendente.set({ idacao: 'a-9', acao: 'preparar_checkin', resumo: {} });
+    await service.confirmar('a-9');
+    expect(service.pendente()).toBeNull();
+    expect(chamadas.at(-1)?.name).toBe('confirmar_acao');
+    expect(chamadas.at(-1)?.arguments).toEqual({ idacao: 'a-9' });
+  });
+
+  it('erro na sessão é sinalizado e não quebra o serviço', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('x', { status: 500 })));
+    await service.preparar();
+    expect(service.erro()).toContain('HTTP 500');
+    expect(service.signedUrl()).toBeNull();
   });
 });
