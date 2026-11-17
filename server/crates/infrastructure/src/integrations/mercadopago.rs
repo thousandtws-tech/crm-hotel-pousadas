@@ -23,7 +23,6 @@ use hmac::{Hmac, Mac};
 use reqwest::{Client, StatusCode};
 use serde::Deserialize;
 use sha2::Sha256;
-use std::fmt::Write as _;
 use std::time::Duration;
 use subtle::ConstantTimeEq;
 use tracing::{error, warn};
@@ -422,14 +421,13 @@ pub fn verificar_assinatura(
         ));
     }
 
-    let mut manifesto = String::new();
-    if !data_id.is_empty() {
-        let _ = write!(manifesto, "id:{};", data_id.to_lowercase());
-    }
-    if !request_id.is_empty() {
-        let _ = write!(manifesto, "request-id:{request_id};");
-    }
-    let _ = write!(manifesto, "ts:{ts};");
+    // O MP emite os três pares SEMPRE — ausente vira `id:;`, nunca é
+    // omitido. Omitir desloca o manifesto e invalida qualquer notificação
+    // sem data.id (ex.: merchant_order) ou sem x-request-id.
+    let manifesto = format!(
+        "id:{};request-id:{request_id};ts:{ts};",
+        data_id.to_lowercase()
+    );
 
     let mut mac = <HmacSha256 as Mac>::new_from_slice(webhook_secret.as_bytes())
         .map_err(|_| DomainError::Infra)?;

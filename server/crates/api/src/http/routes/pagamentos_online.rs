@@ -290,8 +290,11 @@ pub async fn webhook_mercadopago(
     let data_id = query
         .as_deref()
         .and_then(|q| {
-            q.split('&')
-                .find_map(|par| par.strip_prefix("data.id=").map(str::to_owned))
+            q.split('&').find_map(|par| {
+                par.strip_prefix("data.id=")
+                    .or_else(|| par.strip_prefix("id="))
+                    .map(str::to_owned)
+            })
         })
         .or_else(|| {
             payload["data"]["id"]
