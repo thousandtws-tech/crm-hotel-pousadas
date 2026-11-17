@@ -1,5 +1,8 @@
 export const environment = {
   production: true,
+  // Sentry — DSN público de ingestão (write-only); proteção fica no
+  // painel Sentry (rate limit + allowed domains), não em segredo.
+  sentryDsn: '',
   apiUrl: 'https://api-production-19dc.up.railway.app/api/v1',
   // Hub realtime (Phoenix/Elixir) — central de eventos WebSocket
   realtimeUrl: 'wss://realtime-production-92bc.up.railway.app/socket',

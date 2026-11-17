@@ -88,6 +88,42 @@ from .telemetry.tracing import init_tracing  # noqa: E402
 
 init_tracing(app)
 
+# Sentry — no-op quando SENTRY_DSN está vazio. before_send remove JWTs
+# (o WS carrega ?token=) e headers de auth antes de enviar o evento.
+_s = get_settings()
+if _s.sentry_dsn:
+    try:
+        import re
+
+        import sentry_sdk
+
+        _TOKEN_QS = re.compile(r"([?&]token=)[^&\s]+")
+
+        def _scrub(event: dict) -> dict:
+            req = event.get("request") or {}
+            if isinstance(req.get("url"), str):
+                req["url"] = _TOKEN_QS.sub(r"\1[redacted]", req["url"])
+            if isinstance(req.get("query_string"), str):
+                req["query_string"] = _TOKEN_QS.sub(
+                    r"\1[redacted]", req["query_string"])
+            headers = req.get("headers") or {}
+            for h in ("authorization", "cookie"):
+                if h in headers:
+                    headers[h] = "[redacted]"
+            return event
+
+        sentry_sdk.init(
+            dsn=_s.sentry_dsn,
+            environment=_s.otel_service_name,
+            send_default_pii=False,
+            before_send=_scrub,
+        )
+        log.info("sentry ativo")
+    except ImportError:
+        log.warning("SENTRY_DSN configurada mas sentry-sdk ausente")
+    except Exception:
+        log.exception("falha ao iniciar sentry — seguindo sem")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().cors_origins,

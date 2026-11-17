@@ -156,6 +156,9 @@ class Settings(BaseSettings):
     # Ex.: http://tempo:4318 — Langfuse também aceita OTLP.
     otel_endpoint: str = ""
     otel_service_name: str = "maria-ia"
+    # Sentry (erro tracking): vazio = desligado. O DSN é público por
+    # natureza (chave de ingestão, write-only) — seguro no Railway vars.
+    sentry_dsn: str = ""
     # Backup do data/ para S3-compatível (AWS S3 ou MinIO — endpoint
     # preenchido = MinIO/self-hosted; vazio = AWS).
     maria_backup_enabled: bool = False

@@ -25,6 +25,7 @@
     "@angular/service-worker": "^22.2.5",
     "@ng-bootstrap/ng-bootstrap": "^21.0.0",
     "@popperjs/core": "^2.11.8",
+    "@sentry/angular": "11.13.0",
     "bootstrap": "^5.3.8",
     "driver.js": "^1.10.2",
     "echarts": "^6.1.0",
