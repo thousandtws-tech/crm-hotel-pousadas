@@ -51,25 +51,25 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
     `,
   ],
   template: `
-    <div class="relative w-full max-w-3xl mx-auto px-4 sm:px-6">
+    <div class="relative w-full max-w-2xl sm:max-w-[880px] mx-auto px-4 sm:px-6">
 
       <!-- Pílula principal -->
       <div
-        class="grid grid-cols-[1fr_1fr_auto] items-center rounded-full border shadow-[0_10px_30px_rgba(5,64,84,0.12)] transition-colors"
+        class="grid grid-cols-[1fr_1fr_auto] items-center rounded-full border shadow-[0_12px_34px_rgba(5,64,84,0.14)] transition-colors"
         [class]="painel() !== null ? 'bg-[#EEF3F5] border-[#DCE6EA]' : 'bg-white border-[#DCE6EA]'"
       >
         <!-- Quando -->
         <button
           id="search-gatilho-quando"
           type="button"
-          class="text-left pl-6 pr-4 py-3 rounded-full transition-colors"
+          class="text-left pl-6 sm:pl-8 pr-4 py-3.5 sm:py-4 rounded-full transition-colors"
           [class]="painel() === 'quando' ? 'bg-white shadow-md' : 'hover:bg-[#F0F5F6]'"
           [attr.aria-expanded]="painel() === 'quando'"
           aria-haspopup="dialog"
           (click)="alternarPainel('quando')"
         >
-          <span class="block text-[10px] font-semibold uppercase tracking-wide text-[#054054]">Quando</span>
-          <span class="block text-sm truncate" [class]="temQuando() ? 'text-[#054054] font-medium' : 'text-[#536B73]'">
+          <span class="block text-[11px] font-semibold uppercase tracking-wide text-[#054054]">Quando</span>
+          <span class="block text-[15px] truncate" [class]="temQuando() ? 'text-[#054054] font-medium' : 'text-[#536B73]'">
             {{ resumoQuando() }}
           </span>
         </button>
@@ -78,30 +78,30 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
         <button
           id="search-gatilho-quem"
           type="button"
-          class="text-left pl-6 pr-4 py-3 rounded-full transition-colors border-l border-[#DCE6EA]"
+          class="text-left pl-6 sm:pl-8 pr-4 py-3.5 sm:py-4 rounded-full transition-colors border-l border-[#DCE6EA]"
           [class]="painel() === 'quem' ? 'bg-white shadow-md' : 'hover:bg-[#F0F5F6]'"
           [attr.aria-expanded]="painel() === 'quem'"
           aria-haspopup="dialog"
           (click)="alternarPainel('quem')"
         >
-          <span class="block text-[10px] font-semibold uppercase tracking-wide text-[#054054]">Quem</span>
-          <span class="block text-sm truncate" [class]="temQuem() ? 'text-[#054054] font-medium' : 'text-[#536B73]'">
+          <span class="block text-[11px] font-semibold uppercase tracking-wide text-[#054054]">Quem</span>
+          <span class="block text-[15px] truncate" [class]="temQuem() ? 'text-[#054054] font-medium' : 'text-[#536B73]'">
             {{ resumoQuem() }}
           </span>
         </button>
 
         <!-- Buscar — navy com lupa dourada (sol do logotipo) -->
-        <div class="p-2">
+        <div class="p-2 sm:p-2.5">
           <button
             type="button"
             class="flex items-center justify-center gap-2 rounded-full bg-[#054054] text-white font-semibold
                    hover:bg-[#032B38] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            [class]="painel() !== null ? 'px-6 py-3 text-sm' : 'w-11 h-11'"
+            [class]="painel() !== null ? 'px-7 py-3.5 text-[15px]' : 'w-12 h-12 sm:w-[52px] sm:h-[52px]'"
             [disabled]="!state.prontoParaBuscar() || state.loading()"
             [attr.aria-label]="state.loading() ? 'Buscando…' : 'Buscar'"
             (click)="buscar.emit()"
           >
-            <span class="text-[#DDA554]"><app-icon name="search" [size]="18" aria-hidden="true" /></span>
+            <span class="text-[#DDA554]"><app-icon name="search" [size]="20" aria-hidden="true" /></span>
             @if (painel() !== null) {
               <span>{{ state.loading() ? 'Buscando…' : 'Buscar' }}</span>
             }
@@ -110,7 +110,7 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
       </div>
 
       <!-- Validação / prévia -->
-      @if (state.validacaoRascunho(); as msg) {
+      @if (state.validacaoVisivel(); as msg) {
         <p class="px-6 pt-2 text-xs text-[#9A3B3B]" role="status">{{ msg }}</p>
       } @else if (state.previaPeriodos(); as n) {
         <p class="px-6 pt-2 text-[11px] text-[#536B73]">

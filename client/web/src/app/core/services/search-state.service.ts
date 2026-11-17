@@ -67,6 +67,21 @@ export class SearchStateService {
 
   public readonly prontoParaBuscar = computed(() => this.validacaoRascunho() === null);
 
+  /**
+   * Erro visível sob a barra: só aparece depois que o usuário tocou no
+   * rascunho — uma barra intocada não pode estar "errada".
+   */
+  public readonly validacaoVisivel = computed<string | null>(() => {
+    const err = this.validacaoRascunho();
+    if (!err) return null;
+    // Erros de hóspedes só ocorrem após edição (padrão já é válido).
+    if (!validarHospedes(this.guests()).ok) return err;
+    const tocou = this.mode() === 'dates'
+      ? Boolean(this.checkIn() || this.checkOut())
+      : this.months().length > 0;
+    return tocou ? err : null;
+  });
+
   private dateQueryRascunho(): SearchQuery['date'] {
     return this.mode() === 'dates'
       ? { mode: 'dates', checkIn: this.checkIn(), checkOut: this.checkOut(), toleranceDays: this.tolerance() }
