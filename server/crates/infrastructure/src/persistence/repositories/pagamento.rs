@@ -188,10 +188,14 @@ impl PagamentoRepository for PgPagamentoRepository {
         .map_err(map_db_err)
     }
 
-    async fn pendentes_com_pi(&self, limite: i64) -> Result<Vec<PagamentoOnline>, DomainError> {
+    async fn pendentes_reconciliaveis(
+        &self,
+        limite: i64,
+    ) -> Result<Vec<PagamentoOnline>, DomainError> {
         sqlx::query_as::<_, PagamentoOnline>(&format!(
             "SELECT {PAGAMENTO_COLS} FROM pagamento
-             WHERE status = 'pendente' AND pi_id IS NOT NULL
+             WHERE status = 'pendente'
+               AND (pi_id IS NOT NULL OR provedor = 'mercadopago')
              ORDER BY criado_em LIMIT $1"
         ))
         .bind(limite)

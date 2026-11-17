@@ -801,11 +801,15 @@ impl PagamentosOnlineService {
             }
         }
 
-        // Reconciliador: pagamentos pendentes com referência conhecida —
-        // cada um consulta o SEU provedor (webhook perdido recuperado).
-        for p in self.pagamentos.pendentes_com_pi(50).await? {
-            let Some(ref_id) = p.pi_id.clone() else {
-                continue;
+        // Reconciliador: cada pendente consulta o SEU provedor (webhook
+        // perdido recuperado). Ref de busca: `pi_id` quando existe; no
+        // Mercado Pago o `external_reference` é o próprio idpagamento —
+        // cobre Checkout Pro pago sem webhook configurado.
+        for p in self.pagamentos.pendentes_reconciliaveis(50).await? {
+            let ref_id = match &p.pi_id {
+                Some(pi) => pi.clone(),
+                None if p.provedor == "mercadopago" => p.id.to_string(),
+                None => continue,
             };
             let gateway = match self.gateway_do_pagamento(&p).await {
                 Ok(g) => g,
@@ -814,41 +818,56 @@ impl PagamentosOnlineService {
                     continue;
                 }
             };
-            match gateway.consultar_pagamento(&ref_id).await.map(|c| c.status) {
-                Ok(StatusPi::Pago) => {
-                    self.pagamentos
-                        .confirmar_pago(
-                            p.id,
-                            &ref_id,
-                            None,
-                            NovaAuditoriaPagamento {
-                                idpagamento: p.id,
-                                ator_tipo: "sistema",
-                                ator_id: None,
-                                acao: "pago_conciliado",
-                                dados: Some(json!({"ref": ref_id})),
-                            },
-                        )
-                        .await?;
-                    info!(idpagamento = p.id, "pagamento confirmado via conciliação");
-                }
-                Ok(StatusPi::Cancelado) => {
-                    self.pagamentos
-                        .marcar_status(
-                            p.id,
-                            StatusPagamento::Cancelado,
-                            NovaAuditoriaPagamento {
-                                idpagamento: p.id,
-                                ator_tipo: "sistema",
-                                ator_id: None,
-                                acao: "cancelado_conciliado",
-                                dados: Some(json!({"ref": ref_id})),
-                            },
-                        )
-                        .await?;
-                }
-                Ok(_) => {}
+            match gateway.consultar_pagamento(&ref_id).await {
                 Err(e) => warn!(idpagamento = p.id, erro = %e, "conciliação falhou"),
+                Ok(consulta) => {
+                    // Busca por referência pode devolver outro pagamento da
+                    // conta — confirma só quando a referência bate (ou o
+                    // provedor não a retorna).
+                    if let Some(r) = &consulta.referencia {
+                        if r != &p.id.to_string() {
+                            continue;
+                        }
+                    }
+                    // `id_provedor` é o id canônico — a ref de busca nunca
+                    // vira pi_id.
+                    let pi = consulta.id_provedor.clone().unwrap_or(ref_id.clone());
+                    match consulta.status {
+                        StatusPi::Pago => {
+                            self.pagamentos
+                                .confirmar_pago(
+                                    p.id,
+                                    &pi,
+                                    consulta.metodo.as_deref(),
+                                    NovaAuditoriaPagamento {
+                                        idpagamento: p.id,
+                                        ator_tipo: "sistema",
+                                        ator_id: None,
+                                        acao: "pago_conciliado",
+                                        dados: Some(json!({"ref": ref_id, "pi": pi})),
+                                    },
+                                )
+                                .await?;
+                            info!(idpagamento = p.id, "pagamento confirmado via conciliação");
+                        }
+                        StatusPi::Cancelado => {
+                            self.pagamentos
+                                .marcar_status(
+                                    p.id,
+                                    StatusPagamento::Cancelado,
+                                    NovaAuditoriaPagamento {
+                                        idpagamento: p.id,
+                                        ator_tipo: "sistema",
+                                        ator_id: None,
+                                        acao: "cancelado_conciliado",
+                                        dados: Some(json!({"ref": ref_id})),
+                                    },
+                                )
+                                .await?;
+                        }
+                        _ => {}
+                    }
+                }
             }
         }
         Ok(())

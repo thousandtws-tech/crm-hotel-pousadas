@@ -236,20 +236,30 @@ impl PaymentGateway for MercadoPagoGateway {
         })
     }
 
-    /// Consulta autoritativa: `payment_id` numérico consulta direto;
-    /// demais ref_ids tratam-se de `external_reference` (busca).
+    /// Consulta autoritativa: `payment_id` numérico consulta direto e, se
+    /// não existir lá, cai na busca por `external_reference` — nosso
+    /// `idpagamento` é numérico e o Checkout Pro só entrega o payment_id
+    /// pelo webhook; sem ele a busca por referência é o único caminho.
     /// Devolve estado + `external_reference` (nosso idpagamento).
     async fn consultar_pagamento(&self, ref_id: &str) -> Result<ConsultaPagamento, DomainError> {
         if ref_id.chars().all(|c| c.is_ascii_digit()) {
-            let p: PaymentResp = self
+            let direto: Result<PaymentResp, DomainError> = self
                 .get("payment.get", &format!("/v1/payments/{ref_id}"))
-                .await?;
-            return Ok(ConsultaPagamento {
-                status: Self::mapear_status(&p.status),
-                referencia: p.external_reference,
-                id_provedor: Some(p.id.to_string()),
-                metodo: p.payment_method_id,
-            });
+                .await;
+            match direto {
+                Ok(p) => {
+                    return Ok(ConsultaPagamento {
+                        status: Self::mapear_status(&p.status),
+                        referencia: p.external_reference,
+                        id_provedor: Some(p.id.to_string()),
+                        metodo: p.payment_method_id,
+                    })
+                }
+                // 4xx = payment_id não existe → tenta external_reference.
+                // Falha de transporte/5xx propaga (retry pelo reconciliador).
+                Err(e @ DomainError::Infra) => return Err(e),
+                Err(_) => {}
+            }
         }
         let s: SearchResp = self
             .get(

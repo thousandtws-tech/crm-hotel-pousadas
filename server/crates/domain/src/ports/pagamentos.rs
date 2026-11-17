@@ -225,9 +225,14 @@ pub trait PagamentoRepository: Send + Sync {
         idpagamento: i64,
     ) -> Result<Option<TentativaPagamento>, DomainError>;
 
-    /// Pagamentos 'pendente' com `pi_id` conhecido — reconciliador de
-    /// webhooks perdidos consulta o provedor por eles.
-    async fn pendentes_com_pi(&self, limite: i64) -> Result<Vec<PagamentoOnline>, DomainError>;
+    /// Pagamentos 'pendente' que o reconciliador consegue consultar no
+    /// provedor: `pi_id` conhecido, **ou** Mercado Pago (a busca por
+    /// `external_reference = idpagamento` cobre o Checkout Pro, cujo
+    /// payment_id só chegaria via webhook).
+    async fn pendentes_reconciliaveis(
+        &self,
+        limite: i64,
+    ) -> Result<Vec<PagamentoOnline>, DomainError>;
 
     /// Confirma o pagamento (webhook `completed`): status=pago + pi + método +
     /// auditoria ('pago') num commit. Idempotente — se já `pago`, é no-op.
