@@ -9,7 +9,7 @@ pub struct PlanoContaInput {
     pub nome: String,
     pub tipo: clarituz_domain::enums::TipoLancamento,
     pub grupo_dre: clarituz_domain::enums::GrupoDre,
-    /// Concorrência otimista — só em PUT.
+
     pub version: Option<i64>,
 }
 
@@ -23,7 +23,6 @@ pub struct ContaFinanceiraInput {
     #[serde(default, deserialize_with = "de_decimal_opt")]
     pub saldo_inicial: Option<Decimal>,
     pub saldo_inicial_em: Option<NaiveDate>,
-    /// Concorrência otimista — só em PUT.
     pub version: Option<i64>,
 }
 
@@ -39,13 +38,11 @@ pub struct LancamentoInput {
     pub idreserva: Option<i64>,
     #[serde(deserialize_with = "de_decimal")]
     pub valor: Decimal,
-    /// Parcelas mensais iguais a partir do vencimento (default 1).
     pub parcelas: Option<i32>,
     pub emissao: Option<NaiveDate>,
     pub vencimento: NaiveDate,
     pub competencia: Option<NaiveDate>,
     pub observacao: Option<String>,
-    /// Concorrência otimista — só em PUT.
     pub version: Option<i64>,
 }
 
@@ -62,7 +59,6 @@ pub struct BaixaInput {
 #[derive(Debug, Deserialize)]
 pub struct ImportarExtratoInput {
     pub idconta_financeira: i64,
-    /// Conteúdo bruto do arquivo (OFX ou CSV).
     pub conteudo: String,
 }
 
@@ -80,16 +76,13 @@ pub struct ConciliarInput {
 #[derive(Debug, Deserialize)]
 pub struct ClassificarExtratoInput {
     pub idplano_conta: i64,
-    /// Sobrescreve a descrição do extrato (default: a do extrato).
     pub descricao: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct TributoConfigInput {
-    /// Alíquota do IBS em % — ex.: 0.1 = 0,1%.
     #[serde(deserialize_with = "de_decimal")]
     pub aliq_ibs: Decimal,
-    /// Alíquota da CBS em % — ex.: 0.9 = 0,9%.
     #[serde(deserialize_with = "de_decimal")]
     pub aliq_cbs: Decimal,
     pub regime: Option<String>,

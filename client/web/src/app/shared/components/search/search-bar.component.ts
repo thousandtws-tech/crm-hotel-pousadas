@@ -65,7 +65,7 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
         <button
           id="search-gatilho-quando"
           type="button"
-          class="text-left pl-5 sm:pl-8 pr-3 sm:pr-4 py-3.5 sm:py-4 rounded-full transition-colors"
+          class="min-w-0 text-left pl-5 sm:pl-8 pr-3 sm:pr-4 py-3.5 sm:py-4 rounded-full transition-colors"
           [class]="painel() === 'quando' ? 'bg-white shadow-md' : 'hover:bg-[#F0F5F6]'"
           [attr.aria-expanded]="painel() === 'quando'"
           aria-haspopup="dialog"
@@ -81,7 +81,7 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
         <button
           id="search-gatilho-quem"
           type="button"
-          class="text-left pl-5 sm:pl-8 pr-3 sm:pr-4 py-3.5 sm:py-4 rounded-full transition-colors border-l border-[#DCE6EA]"
+          class="min-w-0 text-left pl-5 sm:pl-8 pr-3 sm:pr-4 py-3.5 sm:py-4 rounded-full transition-colors border-l border-[#DCE6EA]"
           [class]="painel() === 'quem' ? 'bg-white shadow-md' : 'hover:bg-[#F0F5F6]'"
           [attr.aria-expanded]="painel() === 'quem'"
           aria-haspopup="dialog"
@@ -99,14 +99,16 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
             type="button"
             class="flex items-center justify-center gap-2 rounded-full bg-[#054054] text-white font-semibold
                    hover:bg-[#032B38] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            [class]="painel() !== null ? 'px-7 py-3.5 text-[15px]' : 'w-12 h-12 sm:w-[52px] sm:h-[52px]'"
+            [class]="painel() !== null
+              ? 'w-12 h-12 sm:w-auto sm:h-auto sm:px-7 sm:py-3.5 sm:text-[15px]'
+              : 'w-12 h-12 sm:w-[52px] sm:h-[52px]'"
             [disabled]="!state.prontoParaBuscar() || state.loading()"
             [attr.aria-label]="state.loading() ? 'Buscando…' : 'Buscar'"
             (click)="buscar.emit()"
           >
             <span class="text-[#DDA554]"><app-icon name="search" [size]="20" aria-hidden="true" /></span>
             @if (painel() !== null) {
-              <span>{{ state.loading() ? 'Buscando…' : 'Buscar' }}</span>
+              <span class="hidden sm:inline">{{ state.loading() ? 'Buscando…' : 'Buscar' }}</span>
             }
           </button>
         </div>
