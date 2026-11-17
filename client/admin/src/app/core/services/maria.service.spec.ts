@@ -59,14 +59,16 @@ describe('MariaService — widget ElevenLabs', () => {
     );
   });
 
-  it('clientTool abrir_pagina navega só rota interna', async () => {
+  it('clientTool abrir_pagina navega pelo enum pagina', async () => {
     await service.preparar();
     const tools = service.clientTools();
-    await tools['abrir_pagina']({ rota: '/reservas' });
+    await tools['abrir_pagina']({ pagina: 'reservas' });
     expect(navigateByUrl).toHaveBeenCalledWith('/reservas');
-    const r = await tools['abrir_pagina']({ rota: 'https://evil.com' });
-    expect(r).toContain('rejeitada');
-    expect(navigateByUrl).toHaveBeenCalledTimes(1);
+    await tools['abrir_pagina']({ pagina: 'reservas', idreserva: 42 });
+    expect(navigateByUrl).toHaveBeenCalledWith('/reservas/42');
+    const r = await tools['abrir_pagina']({ pagina: 'https://evil.com' });
+    expect(r).toContain('desconhecida');
+    expect(navigateByUrl).toHaveBeenCalledTimes(2);
   });
 
   it('preparar_* via clientTool alimenta o card de confirmação', async () => {

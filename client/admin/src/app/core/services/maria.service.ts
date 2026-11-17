@@ -18,6 +18,35 @@ export interface AcaoPendente {
 const CONFIRMAR_ACAO = 'confirmar_acao';
 const ABRIR_PAGINA = 'abrir_pagina';
 
+/** Enum `pagina` da tool → rota Angular. Lista fechada: a IA nunca
+ *  navega para caminhos fora deste mapa nem para URLs externas. */
+const ROTAS_PAGINA: Record<string, string> = {
+  dashboard: '/dashboard',
+  reservas: '/reservas',
+  clientes: '/clientes',
+  acomodacoes: '/acomodacoes',
+  estoque: '/estoque',
+  insumos: '/insumos',
+  compras: '/compras',
+  frigobares: '/frigobares',
+  estacionamento: '/estacionamento',
+  pagamentos: '/pagamentos',
+  pdv: '/pdv',
+  cozinha: '/cozinha',
+  cafe: '/cafe',
+  financeiro: '/financeiro',
+  financeiro_contas: '/financeiro/contas',
+  financeiro_fluxo: '/financeiro/fluxo-caixa',
+  financeiro_dre: '/financeiro/dre',
+  financeiro_conciliacao: '/financeiro/conciliacao',
+  financeiro_split: '/financeiro/split',
+  financeiro_caixa: '/financeiro/caixa',
+  cms: '/cms',
+  estabelecimento: '/estabelecimento',
+  funcionarios: '/funcionarios',
+  auditoria: '/auditoria',
+};
+
 type ClientTools = Record<string, (params: unknown) => Promise<string | object>>;
 
 @Injectable({ providedIn: 'root' })
@@ -138,14 +167,20 @@ export class MariaService {
   }
 
   private async executarTool(nome: string, params: unknown, token: string): Promise<string> {
-    // Navegação é local — rotas Angular pré-autorizadas, nunca externas.
+    // Navegação é local — `pagina` é enum fechado mapeado pras rotas
+    // Angular; `idreserva` abre o detalhe da reserva.
     if (nome === ABRIR_PAGINA) {
-      const rota = String((params as Record<string, unknown>)?.['rota'] ?? '');
-      if (rota.startsWith('/') && !rota.startsWith('//') && !rota.includes('://')) {
+      const p = (params ?? {}) as Record<string, unknown>;
+      const pagina = String(p['pagina'] ?? '');
+      const idreserva = p['idreserva'];
+      const rota = pagina === 'reservas' && typeof idreserva === 'number'
+        ? `/reservas/${idreserva}`
+        : ROTAS_PAGINA[pagina];
+      if (rota) {
         void this.router.navigateByUrl(rota);
         return `página aberta: ${rota}`;
       }
-      return `rota rejeitada: ${rota || '(vazia)'}`;
+      return `página desconhecida: ${pagina || '(vazio)'}`;
     }
 
     const res = await this.mcp<{ content?: { text: string }[] }>(
