@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-// -- operação (manutenção, governança, escalas) ---------------------------------
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "prioridade_manut", rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]

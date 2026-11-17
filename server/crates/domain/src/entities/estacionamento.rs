@@ -1,5 +1,3 @@
-//! Vagas de estacionamento, opcionalmente vinculadas a uma acomodação.
-
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sqlx::FromRow;

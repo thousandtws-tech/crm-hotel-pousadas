@@ -4,13 +4,6 @@ use sqlx::FromRow;
 
 use crate::enums::{CanalEnvio, StatusAvaliacao, StatusEnvio};
 
-// ---------------------------------------------------------------------------
-// fila de envio (outbox)
-// ---------------------------------------------------------------------------
-
-/// Item da outbox persistente — toda saída externa passa por aqui para
-/// retry/backoff e rastreio. `destino` é opaco por canal (e-mail,
-/// telefone E.164, hash do endpoint push).
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct ItemFila {
     pub id: i64,
@@ -42,22 +35,14 @@ pub struct NovoEnvio {
     pub agendado_para: DateTime<Utc>,
 }
 
-// ---------------------------------------------------------------------------
-// matriz de notificação (evento × canal × papel)
-// ---------------------------------------------------------------------------
-
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct RegraMatriz {
     pub evento: String,
     pub canal: CanalEnvio,
-    /// Mesmo semântico de `notificacao.ate_nivel`: 1=admin, 2=gerente, 3=todos.
     pub papel: i16,
     pub ativo: bool,
 }
 
-// ---------------------------------------------------------------------------
-// push (PWA admin — VAPID tickle)
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct PushSubscription {
@@ -68,10 +53,6 @@ pub struct PushSubscription {
     pub auth: String,
     pub user_agent: Option<String>,
 }
-
-// ---------------------------------------------------------------------------
-// avaliações / reputação
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct Avaliacao {
@@ -96,7 +77,6 @@ pub struct Avaliacao {
     pub criado_em: DateTime<Utc>,
 }
 
-/// Notas do formulário público — validadas na aplicação (1–5 / 0–10).
 #[derive(Debug, Clone, Deserialize)]
 pub struct RespostaAvaliacao {
     pub nota_geral: i16,
@@ -107,10 +87,6 @@ pub struct RespostaAvaliacao {
     pub nps: Option<i16>,
     pub comentario: Option<String>,
 }
-
-// ---------------------------------------------------------------------------
-// fidelidade
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct NivelFidelidade {
@@ -127,7 +103,6 @@ pub struct NivelFidelidade {
 pub struct FidelidadeCliente {
     pub idcliente: i64,
     pub diarias: i32,
-    /// Soma dos consumos das estadias, em centavos — base do LTV cash.
     pub gasto_total: i64,
     pub idnivel: Option<i64>,
     pub nivel_nome: Option<String>,

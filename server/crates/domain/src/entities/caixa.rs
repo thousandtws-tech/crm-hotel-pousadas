@@ -1,9 +1,3 @@
-//! Entidades do controle de caixa (gaveta física por turno de operador).
-//!
-//! `caixa_turno` amarra uma conta financeira do tipo `caixa` a um operador
-//! por um intervalo [aberto_em, fechado_em]. O esperado no fechamento é
-//! derivado do ledger — o sistema nunca confia em valor digitado.
-
 use crate::enums::{StatusTurno, TipoMovimentoCaixa};
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;

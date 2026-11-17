@@ -1,5 +1,3 @@
-//! Funcionário — identidade operacional e autenticação.
-
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::Serialize;
 use sqlx::FromRow;
@@ -14,10 +12,8 @@ pub struct Funcionario {
     pub senha_hash: String,
     pub cpf: Option<String>,
     pub data_nascimento: Option<NaiveDate>,
-    /// 1 = administrador, 2 = gerente, 3+ = operacional.
     pub nivel: i16,
-    /// Permissão granular de operações financeiras (reembolso, conciliação).
-    /// Admin possui implicitamente — ver `Ator::exigir_financeiro`.
+
     pub financeiro: bool,
     pub ativo: bool,
     pub version: i64,
@@ -31,7 +27,6 @@ impl Funcionario {
     }
 }
 
-/// Registro de acesso (legado: `logacesso`).
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct LogAcesso {
     pub id: i64,
@@ -41,8 +36,6 @@ pub struct LogAcesso {
     pub criado_em: DateTime<Utc>,
 }
 
-/// Refresh token persistido apenas como hash SHA-256 — o valor claro
-/// nunca toca o banco (rotação + revogação por linha).
 #[derive(Debug, Clone, FromRow)]
 pub struct SessaoRefresh {
     pub id: Uuid,

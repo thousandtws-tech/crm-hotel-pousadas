@@ -1,6 +1,3 @@
-//! Ports do catálogo: acomodações, tipos, quartos, estacionamento, frigobar,
-//! formas de pagamento e estabelecimento.
-
 use crate::entities::{
     Acomodacao, EnderecoEstabelecimento, Estabelecimento, FormaPagamento, Frigobar, ItemFrigobar,
     NovoLog, Quarto, TarifaHistorico, TarifaOcupacao, TipoAcomodacao, VagaEstacionamento,
@@ -10,10 +7,6 @@ use crate::queries::ItemFrigobarView;
 use async_trait::async_trait;
 use clarituz_shared::{Page, PageParams};
 use rust_decimal::Decimal;
-
-// ---------------------------------------------------------------------------
-// Tipos de acomodação
-// ---------------------------------------------------------------------------
 
 #[async_trait]
 pub trait TipoAcomodacaoRepository: Send + Sync {
@@ -32,26 +25,19 @@ pub trait TipoAcomodacaoRepository: Send + Sync {
         ativo: bool,
         log: NovoLog,
     ) -> Result<TipoAcomodacao, DomainError>;
-    /// Remove em definitivo — falha (409) se houver acomodações vinculadas.
     async fn remover(&self, id: i64, log: NovoLog) -> Result<(), DomainError>;
 }
-
-// ---------------------------------------------------------------------------
-// Acomodações
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone)]
 pub struct NovaAcomodacao {
     pub idtipo_acomodacao: Option<i64>,
     pub nome: String,
     pub numero: i32,
-    /// Pavimento — 0 = térreo.
     pub andar: i32,
     pub valor: Decimal,
     pub capacidade: i32,
     pub descricao: Option<String>,
     pub cor: String,
-    /// Quantos quartos físicos criar automaticamente (legado cria 1: `Q{numero}`).
     pub criar_quarto: bool,
 }
 
@@ -64,7 +50,6 @@ pub struct AtualizaAcomodacao {
     pub capacidade: Option<i32>,
     pub descricao: Option<String>,
     pub cor: Option<String>,
-    /// Concorrência otimista — divergência → 409.
     pub version: Option<i64>,
     pub andar: Option<i32>,
 }
@@ -72,10 +57,7 @@ pub struct AtualizaAcomodacao {
 #[async_trait]
 pub trait AcomodacaoRepository: Send + Sync {
     async fn buscar(&self, id: i64) -> Result<Option<Acomodacao>, DomainError>;
-    /// Acomodação ativa publicada sob o slug do CMS — link direto do site.
     async fn buscar_ativa_por_slug(&self, slug: &str) -> Result<Option<Acomodacao>, DomainError>;
-    /// Primeira acomodação ativa por número — fallback do site quando o
-    /// visitante não escolheu quarto.
     async fn primeira_ativa(&self) -> Result<Option<Acomodacao>, DomainError>;
     async fn listar(
         &self,
@@ -83,9 +65,7 @@ pub trait AcomodacaoRepository: Send + Sync {
         page: PageParams,
     ) -> Result<Page<Acomodacao>, DomainError>;
     async fn numero_em_uso(&self, numero: i32, exceto_id: i64) -> Result<bool, DomainError>;
-    /// Cria acomodação (+ quarto físico `Q{numero}` quando `criar_quarto`).
     async fn criar(&self, nova: &NovaAcomodacao, log: NovoLog) -> Result<Acomodacao, DomainError>;
-    /// Atualiza e registra `tarifa_historico` quando o valor muda.
     async fn atualizar(
         &self,
         id: i64,
@@ -99,34 +79,21 @@ pub trait AcomodacaoRepository: Send + Sync {
         log: NovoLog,
     ) -> Result<Acomodacao, DomainError>;
     async fn historico_tarifas(&self, id: i64) -> Result<Vec<TarifaHistorico>, DomainError>;
-    /// Ocupação por tipo de acomodação (gráfico do legado `cDadosGrafico`).
     async fn contar_por_tipo(&self) -> Result<Vec<(String, i64)>, DomainError>;
-    /// Remove a acomodação e seus dependentes (quartos, frigobar+itens,
-    /// tarifas, conteúdo CMS) numa transação; desvincula vagas de
-    /// estacionamento. Falha (409) se houver reservas. Devolve as chaves
-    /// de mídia (fotos/vídeos) para a camada de API apagar no object store.
     async fn remover(&self, id: i64, log: NovoLog) -> Result<Vec<String>, DomainError>;
 
-    /// Faixas de preço por ocupação de um tipo (ordenadas por nº de hóspedes).
     async fn tarifas_ocupacao(&self, idtipo: i64) -> Result<Vec<TarifaOcupacao>, DomainError>;
-    /// Substitui o conjunto de faixas do tipo — transação de delete+insert.
     async fn salvar_tarifas_ocupacao(
         &self,
         idtipo: i64,
         faixas: &[(i32, Decimal)],
     ) -> Result<(), DomainError>;
-    /// Diária para N hóspedes no tipo: maior faixa <= N, senão a menor faixa.
-    /// `None` quando o tipo não tem faixas (cai no valor da acomodação).
     async fn diaria_para_ocupacao(
         &self,
         idtipo: i64,
         hospedes: i32,
     ) -> Result<Option<Decimal>, DomainError>;
 }
-
-// ---------------------------------------------------------------------------
-// Quartos físicos
-// ---------------------------------------------------------------------------
 
 #[async_trait]
 pub trait QuartoRepository: Send + Sync {
@@ -143,13 +110,8 @@ pub trait QuartoRepository: Send + Sync {
         ativo: bool,
         log: NovoLog,
     ) -> Result<Quarto, DomainError>;
-    /// Remove o quarto físico — falha (409) se houver reservas vinculadas.
     async fn remover(&self, id: i64, log: NovoLog) -> Result<(), DomainError>;
 }
-
-// ---------------------------------------------------------------------------
-// Estacionamento
-// ---------------------------------------------------------------------------
 
 #[async_trait]
 pub trait EstacionamentoRepository: Send + Sync {
@@ -170,16 +132,11 @@ pub trait EstacionamentoRepository: Send + Sync {
     async fn remover(&self, id: i64, log: NovoLog) -> Result<(), DomainError>;
 }
 
-// ---------------------------------------------------------------------------
-// Frigobar
-// ---------------------------------------------------------------------------
-
 #[derive(Debug, Clone)]
 pub struct NovoFrigobar {
     pub idacomodacao: i64,
     pub modelo: Option<String>,
     pub patrimonio: Option<String>,
-    /// Concorrência otimista — usada só no update.
     pub version: Option<i64>,
 }
 
@@ -203,8 +160,7 @@ pub trait FrigobarRepository: Send + Sync {
     ) -> Result<Frigobar, DomainError>;
 
     async fn listar_itens(&self, idfrigobar: i64) -> Result<Vec<ItemFrigobarView>, DomainError>;
-    /// Repõe item no frigobar **e** debita do estoque central na mesma
-    /// transação (movimento tipo 'saida' com motivo 'frigobar').
+
     async fn repor_item(
         &self,
         idfrigobar: i64,

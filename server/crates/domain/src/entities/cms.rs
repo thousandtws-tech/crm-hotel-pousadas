@@ -1,5 +1,3 @@
-//! CMS de quartos — conteúdo editorial do site público, por acomodação.
-
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -28,7 +26,6 @@ pub struct AcomodacaoCms {
     pub atualizado_em: DateTime<Utc>,
 }
 
-/// Seção editável do site institucional (hero, seo, faq, diferenciais…).
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct CmsSecao {
     pub id: i64,
@@ -52,8 +49,6 @@ pub struct AcomodacaoMidia {
     pub criado_em: DateTime<Utc>,
 }
 
-/// Mídia exposta — nunca vaza `caminho` (path do filesystem); o front usa
-/// `/api/v1/midia/{id}` como URL pública do binário.
 #[derive(Debug, Clone, Serialize)]
 pub struct MidiaView {
     pub id: i64,
@@ -63,7 +58,6 @@ pub struct MidiaView {
     pub ordem: i32,
 }
 
-/// Acomodação + conteúdo CMS + mídias — view de admin (rascunho incluído).
 #[derive(Debug, Clone, Serialize)]
 pub struct AcomodacaoCmsView {
     #[serde(flatten)]
@@ -72,7 +66,6 @@ pub struct AcomodacaoCmsView {
     pub midias: Vec<MidiaView>,
 }
 
-/// Card público do site — só `acomodacao` ativa + CMS `publicado`.
 #[derive(Debug, Clone, Serialize)]
 pub struct AcomodacaoPublica {
     pub id: i64,

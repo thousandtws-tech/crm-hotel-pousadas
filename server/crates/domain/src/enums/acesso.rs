@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-/// Nível de acesso do funcionário (legado: `nivel == 1` ⇒ administrador).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum NivelAcesso {
@@ -22,12 +21,10 @@ impl NivelAcesso {
         self as i16
     }
 
-    /// Administração irrestrita (funcionários, configurações, auditoria).
     pub fn is_admin(self) -> bool {
         self == Self::Administrador
     }
 
-    /// Pode operar rotinas administrativas sensíveis (admin + gerente).
     pub fn is_gerencial(self) -> bool {
         self <= Self::Gerente
     }

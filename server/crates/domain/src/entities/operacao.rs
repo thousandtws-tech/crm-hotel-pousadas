@@ -7,10 +7,6 @@ use crate::enums::{
     TipoTarefaGov,
 };
 
-// ---------------------------------------------------------------------------
-// manutenção
-// ---------------------------------------------------------------------------
-
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct ManutencaoOrdem {
     pub id: i64,
@@ -44,10 +40,6 @@ pub struct PmocRegistro {
     pub criado_por: Option<i64>,
     pub criado_em: DateTime<Utc>,
 }
-
-// ---------------------------------------------------------------------------
-// governança
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct GovernancaTarefa {
@@ -93,10 +85,6 @@ pub struct EnxovalMov {
     pub registrado_por: Option<i64>,
 }
 
-// ---------------------------------------------------------------------------
-// escalas & CLT
-// ---------------------------------------------------------------------------
-
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct FuncionarioJornada {
     pub id: i64,
@@ -121,32 +109,26 @@ pub struct EscalaTurno {
     pub version: i32,
 }
 
-/// Violação CLT detectada pelo validador — `correcao` descreve o fix
-/// aplicável em 1 clique (mesmo padrão das ações preparadas da Maria).
 #[derive(Debug, Clone, Serialize)]
 pub struct CltViolacao {
     pub idfuncionario: i64,
     pub funcionario_nome: String,
-    pub regra: String, // 'jornada_diaria' | 'dsr' | 'interjornada' | 'almoco'
+    pub regra: String, 
     pub detalhe: String,
     pub data: NaiveDate,
-    pub severidade: String, // 'alta' | 'media'
+    pub severidade: String, 
     pub correcao: Option<CltCorrecao>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "acao", rename_all = "snake_case")]
 pub enum CltCorrecao {
-    /// Reduzir fim do turno para caber na jornada máxima.
     EncurtarTurno {
         idturno: i64,
         novo_fim: DateTime<Utc>,
     },
-    /// Aumentar o intervalo de almoço para o mínimo legal.
     AjustarAlmoco { idturno: i64, novo_almoco_min: i16 },
-    /// Folgar o funcionário no dia (remove o turno).
     Folgar { idturno: i64 },
-    /// Empurrar início do próximo turno para respeitar 11h de interjornada.
     EmpurrarInicio {
         idturno: i64,
         novo_inicio: DateTime<Utc>,

@@ -18,7 +18,6 @@ pub struct Acomodacao {
     pub idtipo_acomodacao: Option<i64>,
     pub nome: String,
     pub numero: i32,
-    /// Pavimento — agrupa o mapa de ocupação (0 = térreo/recepção).
     pub andar: i32,
     pub valor: Decimal,
     pub capacidade: i32,
@@ -51,8 +50,6 @@ pub struct TarifaHistorico {
     pub criado_em: DateTime<Utc>,
 }
 
-/// Diária por faixa de ocupação de um tipo de acomodação — substitui o
-/// `acomodacao.valor` como default quando o tipo possui faixas definidas.
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct TarifaOcupacao {
     pub id: i64,

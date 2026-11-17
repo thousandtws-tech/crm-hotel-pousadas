@@ -1,5 +1,3 @@
-//! Frigobar: aparelho instalado na acomodação e seu estoque local.
-
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sqlx::FromRow;
@@ -15,7 +13,6 @@ pub struct Frigobar {
     pub criado_em: DateTime<Utc>,
 }
 
-/// Item do estoque alocado dentro de um frigobar.
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct ItemFrigobar {
     pub id: i64,

@@ -1,5 +1,3 @@
-//! Entidades e agregados do domínio — estado persistido com invariantes.
-
 pub mod acomodacao;
 pub mod auditoria;
 pub mod busca;
