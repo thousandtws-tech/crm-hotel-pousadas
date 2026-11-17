@@ -1,5 +1,3 @@
-//! Estoque: categorias, itens e movimentações em lote.
-
 use crate::http::error::ApiError as AppError;
 use crate::http::state::AppState;
 use axum::extract::{Path, Query, State};
@@ -32,9 +30,6 @@ pub struct AtivosQuery {
     pub apenas_ativos: bool,
 }
 
-// ---------------------------------------------------------------------------
-// categorias
-// ---------------------------------------------------------------------------
 
 pub async fn listar_categorias(
     State(s): State<AppState>,
@@ -80,10 +75,6 @@ pub async fn remover_categoria(
     s.services.estoque.remover_categoria(&ator, id).await?;
     Ok(Json(Mensagem::ok("Categoria removida.")))
 }
-
-// ---------------------------------------------------------------------------
-// itens
-// ---------------------------------------------------------------------------
 
 pub async fn listar_itens(
     State(s): State<AppState>,
@@ -140,7 +131,6 @@ pub async fn status_item(
     ))
 }
 
-/// Reimprime a etiqueta do item na impressora dedicada (agente local).
 pub async fn imprimir_etiqueta(
     State(s): State<AppState>,
     ator: Ator,
@@ -159,10 +149,6 @@ pub async fn remover_item(
     Ok(Json(Mensagem::ok("Item removido do estoque.")))
 }
 
-// ---------------------------------------------------------------------------
-// movimentações
-// ---------------------------------------------------------------------------
-
 #[derive(Debug, Deserialize)]
 pub struct MovimentosQuery {
     #[serde(flatten)]
@@ -170,7 +156,6 @@ pub struct MovimentosQuery {
     pub iditem: Option<i64>,
 }
 
-/// Entradas/saídas em lote — uma transação (`gEntrada.php`/`gSaida.php`).
 pub async fn movimentar(
     State(s): State<AppState>,
     ator: Ator,
@@ -195,9 +180,6 @@ pub async fn listar_movimentos(
     ))
 }
 
-// ---------------------------------------------------------------------------
-// ficha técnica / conversões / alertas / NF-e
-// ---------------------------------------------------------------------------
 
 pub async fn listar_ficha(
     State(s): State<AppState>,
@@ -258,7 +240,6 @@ pub async fn remover_conversao(
     Ok(Json(Mensagem::ok("Conversão removida.")))
 }
 
-/// Alertas de estoque mínimo — itens ativos com quantidade <= mínimo.
 pub async fn alertas_minimo(
     State(s): State<AppState>,
     _ator: Ator,
@@ -266,7 +247,6 @@ pub async fn alertas_minimo(
     Ok(Json(s.services.estoque.alertas_minimo().await?))
 }
 
-/// Lê o XML da NF-e e devolve a prévia — nada persiste.
 pub async fn preview_nfe(
     State(s): State<AppState>,
     _ator: Ator,
@@ -275,7 +255,6 @@ pub async fn preview_nfe(
     Ok(Json(s.services.estoque.preview_nfe(body).await?))
 }
 
-/// Confirma a importação — tx única: entradas + movimentos + a pagar.
 pub async fn importar_nfe(
     State(s): State<AppState>,
     ator: Ator,

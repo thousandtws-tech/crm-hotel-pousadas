@@ -1,6 +1,3 @@
-//! Bootstrap do processo — definição da CLI, comandos operacionais e
-//! subida do servidor HTTP.
-
 pub mod cli;
 mod commands;
 mod serve;

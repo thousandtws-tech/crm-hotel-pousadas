@@ -1,6 +1,3 @@
-//! Subida do servidor HTTP — wiring do estado, workers e
-//! shutdown gracioso.
-
 use crate::http::{router, state::AppState};
 use crate::workers;
 use clarituz_infrastructure::{spawn_pg_relay, EventBus};
@@ -46,9 +43,6 @@ pub async fn serve(
     Ok(())
 }
 
-/// Encerra no primeiro sinal recebido: SIGINT (dev) ou SIGTERM
-/// (orquestrador — Railway/K8s mandam SIGTERM no deploy/scale-down;
-/// sem isso requests em voo e SSE morriam no hard-kill).
 async fn shutdown_signal() {
     #[cfg(unix)]
     {

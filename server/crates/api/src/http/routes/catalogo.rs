@@ -1,6 +1,3 @@
-//! Catálogo: tipos de acomodação, acomodações, quartos, estacionamento,
-//! frigobares, formas de pagamento e estabelecimento.
-
 use crate::http::error::ApiError as AppError;
 use crate::http::state::AppState;
 use axum::extract::{Path, Query, State};
@@ -20,10 +17,6 @@ use clarituz_domain::queries::ItemFrigobarView;
 use clarituz_domain::DomainError;
 use clarituz_shared::{Page, PageParams};
 use serde::Deserialize;
-
-// ---------------------------------------------------------------------------
-// tipos de acomodação
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, Deserialize)]
 pub struct AtivosQuery {
@@ -64,7 +57,6 @@ pub async fn atualizar_tipo(
     ))
 }
 
-/// Faixas de preço por ocupação do tipo — lista (qualquer autenticado).
 pub async fn tarifas_ocupacao(
     State(s): State<AppState>,
     _ator: Ator,
@@ -73,7 +65,6 @@ pub async fn tarifas_ocupacao(
     Ok(Json(s.services.acomodacoes.tarifas_ocupacao(id).await?))
 }
 
-/// Substitui as faixas de preço por ocupação do tipo (admin).
 pub async fn salvar_tarifas_ocupacao(
     State(s): State<AppState>,
     ator: Ator,
@@ -111,9 +102,6 @@ pub async fn remover_tipo(
     Ok(Json(Mensagem::ok("Tipo de acomodação removido.")))
 }
 
-// ---------------------------------------------------------------------------
-// acomodações
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, Deserialize)]
 pub struct AcomodacoesQuery {
@@ -186,8 +174,6 @@ pub async fn tarifas_acomodacao(
     Ok(Json(s.services.acomodacoes.historico_tarifas(id).await?))
 }
 
-/// `DELETE /acomodacoes/{id}` — exclui acomodação + dependentes e apaga as
-/// mídias dela no object store (falha 409 quando há reservas).
 pub async fn remover_acomodacao(
     State(s): State<AppState>,
     ator: Ator,
@@ -200,9 +186,6 @@ pub async fn remover_acomodacao(
     Ok(Json(Mensagem::ok("Acomodação removida.")))
 }
 
-// ---------------------------------------------------------------------------
-// quartos
-// ---------------------------------------------------------------------------
 
 pub async fn listar_quartos(
     State(s): State<AppState>,
@@ -245,9 +228,6 @@ pub async fn remover_quarto(
     Ok(Json(Mensagem::ok("Quarto removido.")))
 }
 
-// ---------------------------------------------------------------------------
-// estacionamento
-// ---------------------------------------------------------------------------
 
 pub async fn listar_vagas(
     State(s): State<AppState>,
@@ -299,9 +279,6 @@ pub async fn remover_vaga(
     Ok(Json(Mensagem::ok("Vaga removida.")))
 }
 
-// ---------------------------------------------------------------------------
-// frigobares
-// ---------------------------------------------------------------------------
 
 pub async fn listar_frigobares(
     State(s): State<AppState>,
@@ -410,9 +387,6 @@ pub async fn remover_frigobar(
     Ok(Json(Mensagem::ok("Frigobar removido.")))
 }
 
-// ---------------------------------------------------------------------------
-// formas de pagamento
-// ---------------------------------------------------------------------------
 
 pub async fn listar_pagamentos(
     State(s): State<AppState>,
@@ -465,9 +439,6 @@ pub async fn remover_pagamento(
     Ok(Json(Mensagem::ok("Forma de pagamento removida.")))
 }
 
-// ---------------------------------------------------------------------------
-// estabelecimento
-// ---------------------------------------------------------------------------
 
 pub async fn obter_estabelecimento(
     State(s): State<AppState>,
@@ -506,8 +477,6 @@ pub async fn salvar_endereco(
     ))
 }
 
-/// Upload da logo (imagem cruda no body, `Content-Type: image/*`, ≤ 2 MB).
-/// Persiste na chave `logo/logo.{ext}` do object store — `mLogo.php`.
 pub async fn upload_logo(
     State(s): State<AppState>,
     ator: Ator,

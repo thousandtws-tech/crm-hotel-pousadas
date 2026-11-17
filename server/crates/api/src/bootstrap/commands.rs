@@ -1,6 +1,3 @@
-//! Comandos operacionais executados uma vez e encerram — seed de
-//! administrador, manutenção pontual. Não sobem o servidor.
-
 use clarituz_domain::entities::NovoLog;
 use clarituz_domain::ports::{FuncionarioRepository, NovoFuncionario, PasswordHasher};
 use clarituz_infrastructure::{repositories, Argon2Hasher};

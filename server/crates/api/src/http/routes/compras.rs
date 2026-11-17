@@ -1,5 +1,3 @@
-//! Compras: fornecedores e pedidos de compra.
-
 use crate::http::error::ApiError as AppError;
 use crate::http::state::AppState;
 use axum::extract::{Path, Query, State};
@@ -55,8 +53,6 @@ pub async fn status_fornecedor(
     ))
 }
 
-// ---------------------------------------------------------------------------
-
 #[derive(Debug, Deserialize)]
 pub struct PedidosQuery {
     #[serde(flatten)]
@@ -86,7 +82,6 @@ pub async fn buscar_pedido(
     Ok(Json(serde_json::json!({ "pedido": ped, "itens": itens })))
 }
 
-/// Aprovação (Maria) ou criação manual — tx: pedido + itens + conta a pagar.
 pub async fn criar_pedido(
     State(s): State<AppState>,
     ator: Ator,
@@ -97,7 +92,6 @@ pub async fn criar_pedido(
     Ok(Json(serde_json::json!({ "pedido": ped, "itens": itens })))
 }
 
-/// Recebimento parcial/total — entrada de estoque atômica + anti-duplicação.
 pub async fn receber_pedido(
     State(s): State<AppState>,
     ator: Ator,
@@ -118,6 +112,5 @@ pub async fn cancelar_pedido(
     Ok(Json(Mensagem::ok("Pedido cancelado.")))
 }
 
-// suprime aviso de tipo não usado diretamente
 #[allow(dead_code)]
 fn _t(_: PedidoItemView) {}

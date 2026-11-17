@@ -1,6 +1,3 @@
-//! Rotas do CMS de quartos — admin edita conteúdo/mídia; site público lê
-//! apenas o que está `publicado` (mais o SSE de deltas).
-
 use crate::http::error::ApiError as AppError;
 use crate::http::state::AppState;
 use axum::body::Bytes;
@@ -23,11 +20,6 @@ use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::{Stream, StreamExt};
 
-// ---------------------------------------------------------------------------
-// admin — conteúdo editorial
-// ---------------------------------------------------------------------------
-
-/// `GET /cms/acomodacoes` — acomodações + CMS + mídias (qualquer status).
 pub async fn listar(
     State(s): State<AppState>,
     _ator: Ator,
@@ -35,7 +27,6 @@ pub async fn listar(
     Ok(Json(s.services.cms.listar().await?))
 }
 
-/// `PUT /cms/acomodacoes/{id}` — upsert do conteúdo editorial (admin).
 pub async fn salvar(
     State(s): State<AppState>,
     ator: Ator,
@@ -45,7 +36,6 @@ pub async fn salvar(
     Ok(Json(s.services.cms.salvar(&ator, id, input).await?))
 }
 
-/// `PATCH /cms/acomodacoes/{id}/status` — `{publicar}` → publicado/rascunho.
 pub async fn status(
     State(s): State<AppState>,
     ator: Ator,
@@ -57,15 +47,10 @@ pub async fn status(
     ))
 }
 
-// ---------------------------------------------------------------------------
-// admin — mídia
-// ---------------------------------------------------------------------------
 
 const MAX_FOTO: usize = 8 * 1024 * 1024;
 const MAX_VIDEO: usize = 80 * 1024 * 1024;
 
-/// `POST /cms/acomodacoes/{id}/midia` — bytes crus no body,
-/// `Content-Type: image/*` (≤ 8 MB) ou `video/mp4|webm` (≤ 80 MB).
 pub async fn upload_midia(
     State(s): State<AppState>,
     ator: Ator,
@@ -120,7 +105,6 @@ pub async fn upload_midia(
     Ok((StatusCode::CREATED, Json(midia)))
 }
 
-/// `DELETE /cms/midia/{id}` — remove metadado + objeto.
 pub async fn remover_midia(
     State(s): State<AppState>,
     ator: Ator,
@@ -133,7 +117,6 @@ pub async fn remover_midia(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// `PATCH /cms/midia/{id}/capa` — marca a foto como capa da acomodação.
 pub async fn definir_capa(
     State(s): State<AppState>,
     ator: Ator,
@@ -143,7 +126,6 @@ pub async fn definir_capa(
     Ok(Json(serde_json::json!({"ok": true})))
 }
 
-/// `PATCH /cms/acomodacoes/{id}/midia/ordem` — `{ordem: [ids]}`.
 pub async fn ordenar_midia(
     State(s): State<AppState>,
     ator: Ator,
@@ -157,7 +139,6 @@ pub async fn ordenar_midia(
     Ok(Json(serde_json::json!({"ok": true})))
 }
 
-/// `GET /cms/site` — todas as seções editáveis (admin).
 pub async fn site_secoes(
     State(s): State<AppState>,
     _ator: Ator,
@@ -165,7 +146,6 @@ pub async fn site_secoes(
     Ok(Json(s.services.cms.site_secoes().await?))
 }
 
-/// `PUT /cms/site/{secao}` — upsert de uma seção (hero/seo/faq/diferenciais/mapa/contato).
 pub async fn site_salvar(
     State(s): State<AppState>,
     ator: Ator,
@@ -177,11 +157,7 @@ pub async fn site_salvar(
     ))
 }
 
-// ---------------------------------------------------------------------------
-// público — site da pousada
-// ---------------------------------------------------------------------------
 
-/// `GET /publico/cms/site` — seções visíveis do site institucional.
 pub async fn publico_site(
     State(s): State<AppState>,
 ) -> Result<Json<Vec<clarituz_domain::entities::CmsSecao>>, AppError> {
@@ -195,8 +171,6 @@ pub struct NewsletterInput {
     pub origem: Option<String>,
 }
 
-/// `POST /publico/newsletter` — captação de e-mail do rodapé do site.
-/// `novo` = inscrição criada/reativada; `false` = já estava inscrito.
 pub async fn publico_newsletter(
     State(s): State<AppState>,
     Json(input): Json<NewsletterInput>,
@@ -210,14 +184,12 @@ pub async fn publico_newsletter(
     Ok(Json(serde_json::json!({ "inscrito": true, "novo": novo })))
 }
 
-/// `GET /publico/acomodacoes` — cards `publicado` + acomodação ativa.
 pub async fn publico_listar(
     State(s): State<AppState>,
 ) -> Result<Json<Vec<AcomodacaoPublica>>, AppError> {
     Ok(Json(s.services.cms.listar_publicadas().await?))
 }
 
-/// `GET /publico/acomodacoes/{slug}` — detalhe publicado.
 pub async fn publico_detalhe(
     State(s): State<AppState>,
     Path(slug): Path<String>,
@@ -225,8 +197,6 @@ pub async fn publico_detalhe(
     Ok(Json(s.services.cms.publicada_por_slug(&slug).await?))
 }
 
-/// `GET /midia/{id}` — binário público: só mídia de acomodação `publicado`.
-/// Rascunho não vaza (retorna 404 igual a inexistente).
 pub async fn servir_midia(
     State(s): State<AppState>,
     Path(id): Path<i64>,
@@ -240,7 +210,6 @@ pub async fn servir_midia(
     servir_objeto(&s, &key, &mime).await
 }
 
-/// `GET /cms/midia/{id}/arquivo` — preview autenticado (enxerga rascunho).
 pub async fn servir_midia_admin(
     State(s): State<AppState>,
     _ator: Ator,
@@ -271,9 +240,6 @@ async fn servir_objeto(
     ))
 }
 
-/// `GET /publico/stream` — SSE público: só `delta` de tabelas do site
-/// (cms + acomodacao, para preço/status refletirem na hora). Sem auth,
-/// sem `aviso` (que carrega dados internos).
 pub async fn publico_stream(
     State(s): State<AppState>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
@@ -299,12 +265,7 @@ pub async fn publico_stream(
     )
 }
 
-// ---------------------------------------------------------------------------
-// público — reserva online pelo site (com notificação Realtime para o Admin)
-// ---------------------------------------------------------------------------
 
-/// `POST /publico/reservas` — validação, orquestração e avisos no
-/// `ReservaService::criar_reserva_site`; a rota só mapeia o resultado.
 pub async fn publico_criar_reserva(
     State(s): State<AppState>,
     ctx: clarituz_application::actor::RequestCtx,
@@ -321,9 +282,6 @@ pub async fn publico_criar_reserva(
     ))
 }
 
-/// `POST /publico/disponibilidade/busca` — motor de busca do site:
-/// datas+tolerância ou flexível+meses → alternativas com acomodações
-/// compatíveis. Leitura pura: não cria reserva, hold nem pagamento.
 pub async fn publico_busca_disponibilidade(
     State(s): State<AppState>,
     Json(input): Json<clarituz_application::dto::reservas::BuscaPublicaInput>,

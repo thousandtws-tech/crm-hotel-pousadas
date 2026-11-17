@@ -1,5 +1,3 @@
-//! Endpoints de autenticação — públicos: login/refresh/logout; privado: me.
-
 use crate::http::error::ApiError as AppError;
 use crate::http::state::AppState;
 use axum::extract::State;

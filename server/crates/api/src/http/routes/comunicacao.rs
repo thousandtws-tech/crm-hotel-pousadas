@@ -1,6 +1,3 @@
-//! Rotas do módulo de comunicação — público (token opaco), admin e
-//! webhooks de provedores (Resend bounces, WhatsApp inbound).
-
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::Json;
@@ -16,9 +13,6 @@ use crate::http::state::AppState;
 use clarituz_application::actor::Ator;
 use clarituz_application::actor::RequestCtx;
 
-// ---------------------------------------------------------------------------
-// público — pré-ficha FNRH (token da reserva, anti-enumeração)
-// ---------------------------------------------------------------------------
 
 pub async fn pre_ficha_get(
     State(st): State<AppState>,
@@ -42,12 +36,10 @@ pub async fn pre_ficha_post(
     ctx: RequestCtx,
     Json(dados): Json<serde_json::Value>,
 ) -> Result<StatusCode, ApiError> {
-    // Aceita o json do formulário tal qual — imutável após preenchida.
     st.services
         .comunicacao
         .gravar_pre_ficha(token, &dados)
         .await?;
-    // CDC/LGPD — a ficha também marca o aceite dos termos (data + IP).
     if let Ok(Some(r)) = st.services.comunicacao.pre_ficha(token).await {
         let _ = st
             .services
@@ -57,10 +49,6 @@ pub async fn pre_ficha_post(
     }
     Ok(StatusCode::NO_CONTENT)
 }
-
-// ---------------------------------------------------------------------------
-// público — pesquisa de avaliação
-// ---------------------------------------------------------------------------
 
 pub async fn avaliacao_get(
     State(st): State<AppState>,
@@ -87,9 +75,6 @@ pub async fn avaliacao_post(
     Ok(StatusCode::NO_CONTENT)
 }
 
-// ---------------------------------------------------------------------------
-// público — Inná Concierge (portal do hóspede, escopo = token da reserva)
-// ---------------------------------------------------------------------------
 
 pub async fn concierge_get(
     State(st): State<AppState>,
@@ -117,12 +102,6 @@ pub async fn concierge_post(
     ))
 }
 
-// ---------------------------------------------------------------------------
-// público — LGPD (art. 18): descadastrar, dados do titular, solicitações
-// ---------------------------------------------------------------------------
-
-/// Link "descadastrar" dos e-mails — `s` = HMAC_SHA256(secret, "lgpd:{id}").
-/// GET pra funcionar no clique do leitor de e-mail; idempotente.
 pub async fn lgpd_descadastrar(
     State(st): State<AppState>,
     Query(q): Query<std::collections::HashMap<String, String>>,
@@ -159,7 +138,6 @@ pub struct SolicitacaoLgpd {
     pub detalhe: Option<String>,
 }
 
-/// Titular abre solicitação pelo portal da reserva (token identifica).
 pub async fn lgpd_solicitar(
     State(st): State<AppState>,
     Path(token): Path<uuid::Uuid>,
@@ -188,7 +166,6 @@ pub async fn lgpd_solicitar(
     Ok(Json(serde_json::json!({"protocolo": id, "prazo_dias": 15})))
 }
 
-/// Titular baixa todos os seus dados (acesso — art. 18, II).
 pub async fn lgpd_exportar_publico(
     State(st): State<AppState>,
     Path(token): Path<uuid::Uuid>,
@@ -204,9 +181,6 @@ pub async fn lgpd_exportar_publico(
     ))
 }
 
-// ---------------------------------------------------------------------------
-// admin — LGPD: fila de solicitações, export, anonimização, autorização ECA
-// ---------------------------------------------------------------------------
 
 pub async fn lgpd_listar(
     State(st): State<AppState>,
@@ -240,7 +214,6 @@ pub async fn lgpd_responder(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// Eliminação do titular — anonimiza preservando trilha fiscal/FNRH.
 pub async fn lgpd_anonimizar(
     State(st): State<AppState>,
     ator: Ator,
@@ -254,7 +227,6 @@ pub async fn lgpd_anonimizar(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// Acesso do titular via admin — export completo (recepção entrega).
 pub async fn lgpd_exportar_admin(
     State(st): State<AppState>,
     ator: Ator,
@@ -268,12 +240,6 @@ pub async fn lgpd_exportar_admin(
     ))
 }
 
-// ---------------------------------------------------------------------------
-// admin — incidentes de segurança (LGPD art. 48)
-// ---------------------------------------------------------------------------
-
-/// Registra incidente de segurança — documenta fato, risco e medidas
-/// para a comunicação à ANPD e aos titulares.
 pub async fn lgpd_incidente_criar(
     State(st): State<AppState>,
     ator: Ator,
@@ -294,11 +260,9 @@ pub async fn lgpd_incidente_listar(
 
 #[derive(Deserialize)]
 pub struct ComunicacaoIncidente {
-    /// 'anpd' | 'titulares'
     pub destino: String,
 }
 
-/// Marca a comunicação do incidente à ANPD ou aos titulares.
 pub async fn lgpd_incidente_comunicar(
     State(st): State<AppState>,
     ator: Ator,
@@ -317,7 +281,6 @@ pub struct AutorizacaoMenor {
     pub documento: String,
 }
 
-/// ECA — registra a autorização dos pais p/ menor desacompanhado.
 pub async fn reserva_autorizacao_menor(
     State(st): State<AppState>,
     ator: Ator,
@@ -335,10 +298,6 @@ pub async fn reserva_autorizacao_menor(
     Ok(StatusCode::NO_CONTENT)
 }
 
-// ---------------------------------------------------------------------------
-// webhook WhatsApp (Meta Cloud API) — verify GET + mensagens inbound POST
-// ---------------------------------------------------------------------------
-
 #[derive(Deserialize)]
 pub struct WaVerify {
     #[serde(rename = "hub.mode")]
@@ -349,7 +308,6 @@ pub struct WaVerify {
     challenge: String,
 }
 
-/// Handshake da Meta: devolve o challenge quando o verify_token confere.
 pub async fn whatsapp_verify(
     State(st): State<AppState>,
     Query(q): Query<WaVerify>,
@@ -360,16 +318,11 @@ pub async fn whatsapp_verify(
         .ok_or(StatusCode::FORBIDDEN)
 }
 
-/// Mensagens inbound. A Meta reentrega até receber 200 — o processamento
-/// (LLM + envio da resposta) roda em background e a dedup por wamid
-/// descarta reentregas.
 pub async fn whatsapp_inbound(
     State(st): State<AppState>,
     headers: axum::http::HeaderMap,
     body: axum::body::Bytes,
 ) -> StatusCode {
-    // Assinatura HMAC — Meta usa `x-hub-signature-256`:
-    // "sha256=" + hex(HMAC(secret, corpo)).
     if let Some(secret) = st.services.concierge.whatsapp_app_secret() {
         use hmac::{Hmac, Mac};
         use sha2::Sha256;
@@ -393,9 +346,8 @@ pub async fn whatsapp_inbound(
     }
 
     let Ok(payload) = serde_json::from_slice::<serde_json::Value>(&body) else {
-        return StatusCode::OK; // corpo ilegível não deve gerar reentrega
+        return StatusCode::OK; 
     };
-    // Meta Cloud API: entry[].changes[].value.messages[].
     let mensagens: Vec<(String, Option<String>, String)> = payload["entry"]
         .as_array()
         .into_iter()
@@ -428,13 +380,6 @@ pub async fn whatsapp_inbound(
     StatusCode::OK
 }
 
-// ---------------------------------------------------------------------------
-// webhook Z-API — bearer no path + instanceId no payload; inbox antes do ACK
-// ---------------------------------------------------------------------------
-
-/// `/api/v1/webhooks/zapi/{segredo}` — a Z-API não assina callbacks;
-/// o segredo aleatório na URL + conferência de `instanceId` são a
-/// autenticidade. O evento só é processado depois de gravado na inbox.
 pub async fn webhook_zapi(
     State(st): State<AppState>,
     Path(segredo): Path<String>,
@@ -454,15 +399,10 @@ pub async fn webhook_zapi(
         Ok(_) => StatusCode::OK,
         Err(e) => {
             tracing::warn!(erro = %e, "zapi webhook: processamento falhou");
-            // 500 → provedor reentrega; a inbox deduplica o retry.
             StatusCode::INTERNAL_SERVER_ERROR
         }
     }
 }
-
-// ---------------------------------------------------------------------------
-// webhook Resend — bounces/complaints viram supressão imediata
-// ---------------------------------------------------------------------------
 
 pub async fn webhook_resend(
     State(st): State<AppState>,
@@ -485,9 +425,6 @@ pub async fn webhook_resend(
     StatusCode::OK
 }
 
-// ---------------------------------------------------------------------------
-// admin — fila de envio (monitor)
-// ---------------------------------------------------------------------------
 
 pub async fn fila_listar(
     State(st): State<AppState>,
@@ -498,9 +435,6 @@ pub async fn fila_listar(
     Ok(Json(serde_json::json!(itens)))
 }
 
-// ---------------------------------------------------------------------------
-// admin — matriz evento × canal × papel
-// ---------------------------------------------------------------------------
 
 pub async fn matriz_listar(
     State(st): State<AppState>,
@@ -532,10 +466,6 @@ pub async fn matriz_gravar(
         .await?;
     Ok(StatusCode::NO_CONTENT)
 }
-
-// ---------------------------------------------------------------------------
-// admin — avaliações
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, Deserialize)]
 pub struct AvaliacaoFiltro {
@@ -583,10 +513,6 @@ pub async fn avaliacao_responder(
         .await?;
     Ok(StatusCode::NO_CONTENT)
 }
-
-// ---------------------------------------------------------------------------
-// admin — fidelidade
-// ---------------------------------------------------------------------------
 
 pub async fn fidelidade_niveis_get(
     State(st): State<AppState>,
@@ -638,10 +564,6 @@ pub async fn cliente_perfil360(
     Ok(Json(st.services.fidelidade.perfil360(id).await?))
 }
 
-// ---------------------------------------------------------------------------
-// push — subscription do PWA (funcionário autenticado)
-// ---------------------------------------------------------------------------
-
 pub async fn push_subscribe(
     State(st): State<AppState>,
     ator: Ator,
@@ -682,9 +604,6 @@ pub async fn push_vapid_key(State(st): State<AppState>) -> Json<serde_json::Valu
     Json(serde_json::json!({ "publica": st.vapid_public_b64 }))
 }
 
-// ---------------------------------------------------------------------------
-// admin — cobrança manual por e-mail/WhatsApp
-// ---------------------------------------------------------------------------
 
 pub async fn cobranca_enviar(
     State(st): State<AppState>,
@@ -706,11 +625,6 @@ pub async fn cobranca_enviar(
     Ok(StatusCode::NO_CONTENT)
 }
 
-// ---------------------------------------------------------------------------
-// admin — Atendimento: fila de protocolos por setor (roteamento)
-// ---------------------------------------------------------------------------
-
-/// GET /atendimentos?status=aberto&setor=recepcao
 pub async fn atendimentos_get(
     State(st): State<AppState>,
     ator: Ator,
@@ -728,7 +642,6 @@ pub async fn atendimentos_get(
     Ok(Json(serde_json::json!(itens)))
 }
 
-/// Recepção/gerência assume o protocolo (aberto/escalado → em_atendimento).
 pub async fn atendimento_aceitar_post(
     State(st): State<AppState>,
     ator: Ator,
@@ -739,7 +652,6 @@ pub async fn atendimento_aceitar_post(
     )))
 }
 
-/// Encerra o protocolo como resolvido.
 pub async fn atendimento_resolver_post(
     State(st): State<AppState>,
     ator: Ator,

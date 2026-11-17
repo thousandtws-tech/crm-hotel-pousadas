@@ -9,11 +9,8 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Cmd {
-    /// Sobe o servidor HTTP (default).
     Serve,
-    /// Aplica as migrations do banco e sai.
     Migrate,
-    /// Cria um funcionário administrador (bootstrap/seed).
     CreateAdmin {
         #[arg(long)]
         login: String,
@@ -24,7 +21,5 @@ pub enum Cmd {
         #[arg(long, default_value_t = 1)]
         nivel: i16,
     },
-    /// Diagnóstico do object store — lista buckets, garante o bucket de
-    /// mídia e exercita put/get/delete. Não usa o banco (roda com o PG fora).
     S3Probe,
 }
