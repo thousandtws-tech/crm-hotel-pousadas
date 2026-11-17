@@ -21,7 +21,7 @@ ALTER TABLE integracao
 -- (status='enviado' continua significando "aceito pelo provedor").
 ALTER TABLE fila_envio ADD COLUMN provedor      TEXT;
 ALTER TABLE fila_envio ADD COLUMN idintegracao  BIGINT
-    REFERENCES integracao(idintegracao) ON DELETE SET NULL;
+    REFERENCES integracao(id) ON DELETE SET NULL;
 ALTER TABLE fila_envio ADD COLUMN entregue_em   TIMESTAMPTZ;
 ALTER TABLE fila_envio ADD COLUMN lido_em       TIMESTAMPTZ;
 
@@ -36,7 +36,7 @@ CREATE TABLE comunicacao_evento (
     event_id       TEXT NOT NULL,
     tipo           TEXT NOT NULL,
     payload        JSONB NOT NULL,
-    idintegracao   BIGINT REFERENCES integracao(idintegracao) ON DELETE SET NULL,
+    idintegracao   BIGINT REFERENCES integracao(id) ON DELETE SET NULL,
     status         TEXT NOT NULL DEFAULT 'recebido'
         CHECK (status IN ('recebido', 'processado', 'falhou', 'descartado')),
     tentativas     INT  NOT NULL DEFAULT 0,
