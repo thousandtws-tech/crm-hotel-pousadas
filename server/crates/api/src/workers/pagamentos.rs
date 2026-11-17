@@ -1,6 +1,3 @@
-//! Sweeper de conciliação: holds expirados, webhooks falhos e
-//! pagamentos pendentes consultados direto no provedor (a cada 5 min).
-
 use crate::http::state::AppState;
 
 pub(crate) fn spawn(state: &AppState) {

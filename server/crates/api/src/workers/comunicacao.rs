@@ -1,7 +1,3 @@
-//! Fila de comunicação — drenagem da outbox a cada 30 s e agendador
-//! de lembretes/pesquisas a cada hora (dedup por reserva+template no
-//! repo garante envio único por hóspede).
-
 use crate::http::state::AppState;
 
 pub(crate) fn spawn_fila(state: &AppState) {
@@ -18,8 +14,6 @@ pub(crate) fn spawn_fila(state: &AppState) {
     });
 }
 
-/// Agendador de lembretes/pesquisas — a cada hora (dedup por
-/// reserva+template no repo garante envio único por hóspede).
 pub(crate) fn spawn_lembretes(state: &AppState) {
     let svc = state.services.comunicacao.clone();
     tokio::spawn(async move {
@@ -34,8 +28,6 @@ pub(crate) fn spawn_lembretes(state: &AppState) {
     });
 }
 
-/// Sweeper da inbox Z-API — eventos que falharam no processamento
-/// voltam a rodar (dedup por event_id impede efeito duplo).
 pub(crate) fn spawn_zapi_eventos(state: &AppState) {
     let Some(zapi) = state.services.zapi.clone() else {
         return;
