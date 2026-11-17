@@ -4,7 +4,7 @@ pub(crate) fn spawn(state: &AppState) {
     let svc = state.services.pagamentos_online.clone();
     tokio::spawn(async move {
         let mut tick = tokio::time::interval(std::time::Duration::from_secs(300));
-        tick.tick().await; // pula o disparo imediato do boot
+        tick.tick().await;
         loop {
             tick.tick().await;
             if let Err(e) = svc.conciliar().await {

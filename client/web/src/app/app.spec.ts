@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { SwUpdate } from '@angular/service-worker';
+import { of } from 'rxjs';
 import { App } from './app';
 import { HOTEL_CONFIG } from './core/config/hotel-config';
 import { FALLBACK_ACCOMMODATIONS } from './core/services/accommodation.service';
@@ -10,7 +12,10 @@ describe('App & Authentic Copy Verification', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App, HeroComponent],
-      providers: [provideRouter([])]
+      providers: [
+        provideRouter([]),
+        { provide: SwUpdate, useValue: { versionUpdates: of(), unrecoverable: of() } },
+      ]
     }).compileComponents();
   });
 

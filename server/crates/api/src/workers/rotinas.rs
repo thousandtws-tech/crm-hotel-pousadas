@@ -1,8 +1,3 @@
-//! Rotinas diárias disparadas por horário UTC: retenção LGPD às 4h,
-//! purga dos registros de acesso e SLA das solicitações do titular às
-//! 5h, tarefas de governança D-1 às 22h e alerta de PMOC vencido às 8h.
-//! Idempotentes — seguras em todas as réplicas.
-
 use crate::http::state::AppState;
 
 pub(crate) fn spawn(state: &AppState) {
@@ -17,8 +12,6 @@ pub(crate) fn spawn(state: &AppState) {
         loop {
             tick.tick().await;
             let agora = chrono::Utc::now();
-            // LGPD art. 16 — retenção diária: anonimiza titulares sem
-            // estadia há `retencao_dados_anos` (default 5a).
             if chrono::Timelike::hour(&agora) == 4 {
                 let anos = estab
                     .obter()
@@ -30,10 +23,6 @@ pub(crate) fn spawn(state: &AppState) {
                     tracing::warn!(erro = %e, "lgpd: retenção falhou");
                 }
             }
-            // Marco Civil art. 15 + Decreto 8.771/16 art. 13 §2º —
-            // registros de acesso (logacesso + sessões mortas) vivem o
-            // piso legal de 6 meses e são excluídos depois. E LGPD
-            // art. 19 — alerta das solicitações abertas há >15 dias.
             if chrono::Timelike::hour(&agora) == 5 {
                 if let Err(e) = auth.purgar_registros_acesso().await {
                     tracing::warn!(erro = %e, "marco civil: purga de registros falhou");

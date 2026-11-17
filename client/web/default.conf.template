@@ -4,31 +4,57 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    location / {
-        try_files $uri $uri/ /index.html;
+    # Arquivos com hash do build Angular (main-*.js, chunk-*.js, styles-*.css,
+    # media/*): conteúdo novo = nome novo → cache longo seguro.
+    location ~* \.[0-9a-zA-Z_-]{8}\.(js|css)$ {
+        expires 1y;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
     }
 
-    # service worker e manifest nunca cacheados (update check do PWA).
+    # Nome de arquivo com hash também vale para media/* do outputPath.
+    location ~* /media/.*\.[0-9a-zA-Z_-]{8}\.[a-zA-Z0-9]+$ {
+        expires 1y;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
+    # Service worker, manifesto do SW e web manifest nunca cacheados:
+    # é assim que cada deploy é descoberto (update check do PWA).
     location ~* /(ngsw-worker|safety-worker|worker-basic\.min)\.js$ {
-        add_header Cache-Control "no-cache" always;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        try_files $uri =404;
+    }
+
+    location = /ngsw.json {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
         try_files $uri =404;
     }
 
     location = /manifest.webmanifest {
         default_type application/manifest+json;
-        add_header Cache-Control "no-cache" always;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
         try_files $uri =404;
     }
 
-    # index.html sem cache: referencia chunks com hash que expiram a cada deploy.
+    # index.html sem cache: referencia chunks com hash que mudam a cada deploy.
     location = /index.html {
-        add_header Cache-Control "no-cache" always;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        try_files $uri =404;
+    }
+    location = / {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        try_files $uri /index.html =404;
+    }
+
+    # Assets sem hash (favicon.svg, logo.svg, icons/*, fontes locais):
+    # revalida sempre — barato, e deploy novo aparece na hora.
+    location ~* \.(png|jpe?g|gif|svg|ico|webp|avif|woff2?|ttf|otf|json)$ {
+        add_header Cache-Control "public, max-age=0, must-revalidate" always;
         try_files $uri =404;
     }
 
-    location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?)$ {
-        expires 7d;
-        add_header Cache-Control "public, max-age=604800, immutable";
-        try_files $uri =404;
+    location / {
+        try_files $uri $uri/ /index.html;
     }
 }
