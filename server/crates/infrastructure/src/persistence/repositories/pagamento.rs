@@ -31,7 +31,7 @@ impl PgPagamentoRepository {
 }
 
 const PAGAMENTO_COLS: &str = "id, idreserva, tipo, status, valor_centavos, moeda,
-    pi_id, metodo, paid_em, criado_em, atualizado_em";
+    pi_id, metodo, paid_em, provedor, ambiente, idintegracao, criado_em, atualizado_em";
 
 const TENTATIVA_COLS: &str =
     "id, idpagamento, session_id, session_url, status, expires_em, criado_em";
@@ -39,8 +39,8 @@ const TENTATIVA_COLS: &str =
 const REEMBOLSO_COLS: &str = "id, idpagamento, refund_id, valor_centavos, motivo,
     status, criado_em, atualizado_em";
 
-const EVENTO_COLS: &str = "id, event_id, event_type, payload, status, tentativas,
-    ultimo_erro, recebido_em, processado_em";
+const EVENTO_COLS: &str = "id, provedor, event_id, event_type, payload, idintegracao,
+    status, tentativas, ultimo_erro, recebido_em, processado_em";
 
 /// Trilha imutável do pagamento — sempre dentro da transação do chamador.
 async fn auditar(
@@ -113,12 +113,15 @@ impl PagamentoRepository for PgPagamentoRepository {
     async fn criar(&self, novo: &NovoPagamento) -> Result<PagamentoOnline, DomainError> {
         let mut tx = self.pool.begin().await.map_err(map_db_err)?;
         let p = sqlx::query_as::<_, PagamentoOnline>(&format!(
-            "INSERT INTO pagamento (idreserva, tipo, valor_centavos)
-             VALUES ($1, $2, $3) RETURNING {PAGAMENTO_COLS}"
+            "INSERT INTO pagamento (idreserva, tipo, valor_centavos, provedor, ambiente, idintegracao)
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING {PAGAMENTO_COLS}"
         ))
         .bind(novo.idreserva)
         .bind(novo.tipo)
         .bind(novo.valor_centavos)
+        .bind(&novo.provedor)
+        .bind(&novo.ambiente)
+        .bind(novo.idintegracao)
         .fetch_one(&mut *tx)
         .await
         .map_err(map_db_err)?;
@@ -348,12 +351,15 @@ impl PagamentoRepository for PgPagamentoRepository {
 
     async fn registrar_evento(&self, evento: &NovoEventoWebhook) -> Result<bool, DomainError> {
         let rows = sqlx::query(
-            "INSERT INTO pagamento_webhook_evento (event_id, event_type, payload)
-             VALUES ($1, $2, $3) ON CONFLICT (event_id) DO NOTHING",
+            "INSERT INTO pagamento_webhook_evento (provedor, event_id, event_type, payload, idintegracao)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (provedor, event_id) DO NOTHING",
         )
+        .bind(&evento.provedor)
         .bind(&evento.event_id)
         .bind(&evento.event_type)
         .bind(&evento.payload)
+        .bind(evento.idintegracao)
         .execute(&self.pool)
         .await
         .map_err(map_db_err)?
@@ -363,16 +369,18 @@ impl PagamentoRepository for PgPagamentoRepository {
 
     async fn marcar_evento(
         &self,
+        provedor: &str,
         event_id: &str,
         status: StatusProcWebhook,
         erro: Option<&str>,
     ) -> Result<(), DomainError> {
         sqlx::query(
-            "UPDATE pagamento_webhook_evento SET status = $2, ultimo_erro = $3,
+            "UPDATE pagamento_webhook_evento SET status = $3, ultimo_erro = $4,
                 tentativas = tentativas + 1,
-                processado_em = CASE WHEN $2 = 'processado' THEN now() ELSE NULL END
-             WHERE event_id = $1",
+                processado_em = CASE WHEN $3 = 'processado' THEN now() ELSE NULL END
+             WHERE provedor = $1 AND event_id = $2",
         )
+        .bind(provedor)
         .bind(event_id)
         .bind(status)
         .bind(erro)
@@ -388,6 +396,23 @@ impl PagamentoRepository for PgPagamentoRepository {
              WHERE status IN ('recebido','falhou') AND tentativas < 10
              ORDER BY recebido_em LIMIT $1"
         ))
+        .bind(limite)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn eventos_da_integracao(
+        &self,
+        idintegracao: i64,
+        limite: i64,
+    ) -> Result<Vec<WebhookEvento>, DomainError> {
+        sqlx::query_as::<_, WebhookEvento>(&format!(
+            "SELECT {EVENTO_COLS} FROM pagamento_webhook_evento
+             WHERE idintegracao = $1
+             ORDER BY recebido_em DESC LIMIT $2"
+        ))
+        .bind(idintegracao)
         .bind(limite)
         .fetch_all(&self.pool)
         .await

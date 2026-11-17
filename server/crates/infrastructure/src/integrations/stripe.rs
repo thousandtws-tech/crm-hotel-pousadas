@@ -1,7 +1,9 @@
 use async_trait::async_trait;
 use chrono::{TimeZone, Utc};
 use clarituz_domain::enums::TipoPagamento;
-use clarituz_domain::ports::{NovaCheckout, PaymentGateway, SessaoCheckout, StatusPi};
+use clarituz_domain::ports::{
+    ConsultaPagamento, NovaCheckout, PaymentGateway, SessaoCheckout, StatusPi,
+};
 use clarituz_domain::DomainError;
 use hmac::{Hmac, Mac};
 use reqwest::{Client, StatusCode};
@@ -109,6 +111,10 @@ struct SessionResp {
 #[derive(Deserialize)]
 struct PiResp {
     status: String,
+    #[serde(default)]
+    metadata: std::collections::HashMap<String, String>,
+    #[serde(default)]
+    payment_method_types: Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -118,6 +124,10 @@ struct RefundResp {
 
 #[async_trait]
 impl PaymentGateway for StripeGateway {
+    fn provedor(&self) -> &'static str {
+        "stripe"
+    }
+
     async fn criar_checkout(&self, nova: &NovaCheckout) -> Result<SessaoCheckout, DomainError> {
         let expires_ts = nova.expires_em.timestamp().clamp(
             Utc::now().timestamp() + 1800,
@@ -174,7 +184,8 @@ impl PaymentGateway for StripeGateway {
         })
     }
 
-    async fn status_payment_intent(&self, pi_id: &str) -> Result<StatusPi, DomainError> {
+    async fn consultar_pagamento(&self, ref_id: &str) -> Result<ConsultaPagamento, DomainError> {
+        let pi_id = ref_id;
         let resp = self
             .http
             .get(format!("{}/v1/payment_intents/{pi_id}", self.base_url))
@@ -194,7 +205,7 @@ impl PaymentGateway for StripeGateway {
             error!(erro = %e, "stripe: payment_intent malformado");
             DomainError::Infra
         })?;
-        Ok(match pi.status.as_str() {
+        let status_pi = match pi.status.as_str() {
             "succeeded" => StatusPi::Pago,
             "processing" => StatusPi::Processando,
             "requires_action"
@@ -203,16 +214,23 @@ impl PaymentGateway for StripeGateway {
             | "requires_capture" => StatusPi::RequerAcao,
             "canceled" => StatusPi::Cancelado,
             _ => StatusPi::Falhou,
+        };
+        Ok(ConsultaPagamento {
+            status: status_pi,
+            referencia: pi.metadata.get("idpagamento").cloned(),
+            id_provedor: Some(pi_id.to_string()),
+            metodo: pi.payment_method_types.first().cloned(),
         })
     }
 
     async fn reembolsar(
         &self,
-        pi_id: &str,
+        ref_id: &str,
         valor_centavos: i64,
         motivo: Option<&str>,
         idempotency_key: Uuid,
     ) -> Result<String, DomainError> {
+        let pi_id = ref_id;
         let mut form = vec![
             ("payment_intent".to_string(), pi_id.to_string()),
             ("amount".to_string(), valor_centavos.to_string()),
@@ -236,6 +254,35 @@ impl PaymentGateway for StripeGateway {
             )
             .await?;
         Ok(())
+    }
+
+    /// `GET /v1/account` — leitura autenticada sem efeito lateral;
+    /// devolve `acct_…` como rótulo sanitizado da conta.
+    async fn testar_conexao(&self) -> Result<String, DomainError> {
+        #[derive(Deserialize)]
+        struct AccountResp {
+            id: String,
+        }
+        let resp = self
+            .http
+            .get(format!("{}/v1/account", self.base_url))
+            .bearer_auth(&self.secret)
+            .send()
+            .await
+            .map_err(|e| Self::erro_http("conta.get", &e))?;
+        let status = resp.status();
+        let corpo = resp
+            .text()
+            .await
+            .map_err(|e| Self::erro_http("conta.get", &e))?;
+        if !status.is_success() {
+            return Err(Self::erro_status("conta.get", status, &corpo));
+        }
+        let a: AccountResp = serde_json::from_str(&corpo).map_err(|e| {
+            error!(erro = %e, "stripe: account malformada");
+            DomainError::Infra
+        })?;
+        Ok(a.id)
     }
 }
 

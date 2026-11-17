@@ -27,6 +27,10 @@ pub struct NovoPagamento {
     pub idreserva: i64,
     pub tipo: TipoPagamento,
     pub valor_centavos: i64,
+    /// Identidade do provedor no lançamento — imutável.
+    pub provedor: String,
+    pub ambiente: Option<String>,
+    pub idintegracao: Option<i64>,
 }
 
 #[derive(Debug, Clone)]
@@ -39,9 +43,12 @@ pub struct NovaTentativa {
 
 #[derive(Debug, Clone)]
 pub struct NovoEventoWebhook {
+    /// Dedup escopado por provedor — `evt_…` Stripe não colide com ids MP.
+    pub provedor: String,
     pub event_id: String,
     pub event_type: String,
     pub payload: JsonValue,
+    pub idintegracao: Option<i64>,
 }
 
 /// Linha da listagem admin — pagamento + contexto mínimo da reserva.
@@ -122,35 +129,63 @@ pub struct SessaoCheckout {
     pub pi_id: Option<String>,
 }
 
-/// Estado normalizado do PaymentIntent (o domínio não conhece os enums Stripe).
+/// Estado normalizado do pagamento no provedor (o domínio não conhece
+/// os enums de cada gateway).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StatusPi {
     Pago,
-    Processando, // Pix aguardando compensação
+    Processando, // Pix/boleto aguardando compensação
     RequerAcao,  // 3DS / aguardando ação do cliente
     Falhou,
     Cancelado,
 }
 
+/// Resultado de `consultar_pagamento` — estado autoritativo + a
+/// correlação interna que o provedor devolveu.
+#[derive(Debug, Clone)]
+pub struct ConsultaPagamento {
+    pub status: StatusPi,
+    /// Referência interna (metadata/external_reference/reference_id) —
+    /// o `idpagamento` quando o provedor o carrega.
+    pub referencia: Option<String>,
+    /// Referência de pagamento canônica no provedor — o que persistimos
+    /// em `pi_id` (pi_…, charge CHAR_…, payment_id MP).
+    pub id_provedor: Option<String>,
+    /// Método liquidado ('card', 'pix', …) quando disponível.
+    pub metodo: Option<String>,
+}
+
 #[async_trait]
 pub trait PaymentGateway: Send + Sync {
+    /// Nome do provedor ('stripe'|'pagbank'|'mercadopago') — auditoria/log.
+    fn provedor(&self) -> &'static str;
+
     /// Cria sessão de checkout hospedada — redireciona o hóspede ao provedor.
     async fn criar_checkout(&self, nova: &NovaCheckout) -> Result<SessaoCheckout, DomainError>;
 
-    /// Consulta o estado atual do PaymentIntent (reconciliação/polling).
-    async fn status_payment_intent(&self, pi_id: &str) -> Result<StatusPi, DomainError>;
+    /// Consulta o estado autoritativo da referência de pagamento no
+    /// provedor — fetch-back de webhooks e reconciliação. `ref_id` é o
+    /// `pi_id` persistido — Stripe `pi_…`, PagBank `ORDE_…`/`CHAR_…`,
+    /// MP `payment_id`.
+    async fn consultar_pagamento(&self, ref_id: &str) -> Result<ConsultaPagamento, DomainError>;
 
-    /// Solicita reembolso parcial/integral. Retorna o `re_...` do provedor.
+    /// Solicita reembolso parcial/integral. Retorna o id do provedor.
     async fn reembolsar(
         &self,
-        pi_id: &str,
+        ref_id: &str,
         valor_centavos: i64,
         motivo: Option<&str>,
         idempotency_key: Uuid,
     ) -> Result<String, DomainError>;
 
     /// Expira uma sessão de checkout aberta (cancelamento de hold).
+    /// Provedores sem API de expiração retornam erro explícito — a UI
+    /// expõe isso via capability `checkout_expiravel`.
     async fn expirar_sessao(&self, session_id: &str) -> Result<(), DomainError>;
+
+    /// Teste de conexão: leitura autenticada sem efeito financeiro.
+    /// Retorna rótulo sanitizado da conta (ex.: `acct_…`, id de usuário).
+    async fn testar_conexao(&self) -> Result<String, DomainError>;
 }
 
 // ---------------------------------------------------------------------------
@@ -247,11 +282,12 @@ pub trait PagamentoRepository: Send + Sync {
 
     // -- webhook inbox --------------------------------------------------------
 
-    /// Insere o evento; retorna `false` se o event_id já existia (duplicado).
+    /// Insere o evento; retorna `false` se (provedor, event_id) já existia.
     async fn registrar_evento(&self, evento: &NovoEventoWebhook) -> Result<bool, DomainError>;
 
     async fn marcar_evento(
         &self,
+        provedor: &str,
         event_id: &str,
         status: StatusProcWebhook,
         erro: Option<&str>,
@@ -259,6 +295,13 @@ pub trait PagamentoRepository: Send + Sync {
 
     /// Eventos pendentes/retry para o sweeper de conciliação.
     async fn eventos_pendentes(&self, limite: i64) -> Result<Vec<WebhookEvento>, DomainError>;
+
+    /// Últimos eventos de uma integração — saúde do webhook na UI.
+    async fn eventos_da_integracao(
+        &self,
+        idintegracao: i64,
+        limite: i64,
+    ) -> Result<Vec<WebhookEvento>, DomainError>;
 
     // -- conciliação de holds --------------------------------------------------
 

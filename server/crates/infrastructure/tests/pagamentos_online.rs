@@ -14,7 +14,8 @@ use clarituz_application::dto::{CheckoutPublicoInput, ReembolsarPagamentoInput};
 use clarituz_application::services::PagamentosOnlineService;
 use clarituz_domain::enums::{StatusProcWebhook, TipoPagamento};
 use clarituz_domain::ports::{
-    NovaCheckout, NovoEventoWebhook, PagamentoRepository, PaymentGateway, SessaoCheckout, StatusPi,
+    ConsultaPagamento, NovaCheckout, NovoEventoWebhook, PagamentoRepository, PaymentGateway,
+    SessaoCheckout, StatusPi,
 };
 use clarituz_domain::DomainError;
 use clarituz_infrastructure::repositories::{PgPagamentoRepository, PgReservaRepository};
@@ -32,6 +33,10 @@ struct FakeGateway {
 
 #[async_trait]
 impl PaymentGateway for FakeGateway {
+    fn provedor(&self) -> &'static str {
+        "stripe"
+    }
+
     async fn criar_checkout(&self, nova: &NovaCheckout) -> Result<SessaoCheckout, DomainError> {
         Ok(SessaoCheckout {
             session_id: format!("cs_fake_{}", nova.idpagamento),
@@ -41,8 +46,13 @@ impl PaymentGateway for FakeGateway {
         })
     }
 
-    async fn status_payment_intent(&self, _pi_id: &str) -> Result<StatusPi, DomainError> {
-        Ok(self.pi_status)
+    async fn consultar_pagamento(&self, ref_id: &str) -> Result<ConsultaPagamento, DomainError> {
+        Ok(ConsultaPagamento {
+            status: self.pi_status,
+            referencia: Some(ref_id.to_string()),
+            id_provedor: Some(ref_id.to_string()),
+            metodo: Some("card".into()),
+        })
     }
 
     async fn reembolsar(
@@ -58,6 +68,10 @@ impl PaymentGateway for FakeGateway {
     async fn expirar_sessao(&self, _session_id: &str) -> Result<(), DomainError> {
         Ok(())
     }
+
+    async fn testar_conexao(&self) -> Result<String, DomainError> {
+        Ok("acct_fake".into())
+    }
 }
 
 fn service(pool: &PgPool) -> PagamentosOnlineService {
@@ -67,6 +81,8 @@ fn service(pool: &PgPool) -> PagamentosOnlineService {
         Some(Arc::new(FakeGateway {
             pi_status: StatusPi::Pago,
         })),
+        None, // resolver — sem integração persistida, cai no gateway_env
+        None, // integracoes
         Arc::new(EventBus::new()),
         30,
         30,
@@ -98,6 +114,7 @@ fn evento_session(
 ) -> clarituz_domain::entities::WebhookEvento {
     clarituz_domain::entities::WebhookEvento {
         id: 0,
+        provedor: "stripe".into(),
         event_id: format!("evt_{tipo}_{session_id}"),
         event_type: tipo.into(),
         payload: serde_json::json!({
@@ -107,6 +124,7 @@ fn evento_session(
                 "payment_method_types": ["card"],
             }}
         }),
+        idintegracao: None,
         status: StatusProcWebhook::Recebido,
         tentativas: 0,
         ultimo_erro: None,
@@ -312,9 +330,11 @@ async fn webhook_duplicado_na_inbox_e_noop(pool: PgPool) {
     let repo = PgPagamentoRepository::new(pool.clone());
 
     let ev = NovoEventoWebhook {
+        provedor: "stripe".into(),
         event_id: "evt_dup_1".into(),
         event_type: "checkout.session.completed".into(),
         payload: serde_json::json!({"data": {"object": {}}}),
+        idintegracao: None,
     };
     assert!(repo.registrar_evento(&ev).await.unwrap()); // 1ª vez: novo
     assert!(!repo.registrar_evento(&ev).await.unwrap()); // 2ª: duplicado
@@ -380,4 +400,45 @@ async fn conciliacao_confirma_pagamento_sem_webhook(pool: PgPool) {
         .await
         .unwrap();
     assert_eq!(st, "pago"); // reconciliador consultou o provedor e liquidou
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn checkout_persiste_identidade_do_provedor(pool: PgPool) {
+    let c = cenario(pool.clone()).await;
+    let (_idreserva, token) = reserva_do_site(&c, &pool).await;
+    let svc = service(&pool);
+
+    svc.criar_checkout_publico(CheckoutPublicoInput {
+        token,
+        tipo: TipoPagamento::Integral,
+    })
+    .await
+    .unwrap();
+
+    // Fallback de ambiente grava 'stripe' — o reembolso futuro saberá
+    // qual provedor consultar mesmo se o padrão mudar depois.
+    let provedor: String = sqlx::query_scalar("SELECT provedor FROM pagamento LIMIT 1")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(provedor, "stripe");
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn inbox_dedup_e_por_provedor(pool: PgPool) {
+    let c = cenario(pool.clone()).await;
+    let _ = reserva_do_site(&c, &pool).await;
+    let repo = PgPagamentoRepository::new(pool.clone());
+
+    let novo = |provedor: &str| NovoEventoWebhook {
+        provedor: provedor.into(),
+        event_id: "evt_mesmo_id".into(),
+        event_type: "payment".into(),
+        payload: serde_json::json!({}),
+        idintegracao: None,
+    };
+    assert!(repo.registrar_evento(&novo("stripe")).await.unwrap());
+    // Mesmo event_id de outro provedor NÃO colide — dedup é (provedor, event_id).
+    assert!(repo.registrar_evento(&novo("mercadopago")).await.unwrap());
+    assert!(!repo.registrar_evento(&novo("stripe")).await.unwrap());
 }

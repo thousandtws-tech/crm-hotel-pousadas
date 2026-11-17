@@ -1,5 +1,12 @@
 import { Component, computed, inject, signal, OnInit, OnDestroy } from '@angular/core';
-import { IsActiveMatchOptions, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import {
+  IsActiveMatchOptions,
+  NavigationEnd,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthStore } from '@core/services/auth.store';
 import { Realtime } from '@core/services/realtime.service';
@@ -18,10 +25,16 @@ interface NavItem {
 }
 
 const ATIVO_EXATO: IsActiveMatchOptions = {
-  paths: 'exact', queryParams: 'ignored', matrixParams: 'ignored', fragment: 'ignored',
+  paths: 'exact',
+  queryParams: 'ignored',
+  matrixParams: 'ignored',
+  fragment: 'ignored',
 };
 const ATIVO_PREFIXO: IsActiveMatchOptions = {
-  paths: 'subset', queryParams: 'ignored', matrixParams: 'ignored', fragment: 'ignored',
+  paths: 'subset',
+  queryParams: 'ignored',
+  matrixParams: 'ignored',
+  fragment: 'ignored',
 };
 /** Duração da transição de abrir/fechar grupo (casa com o CSS). */
 const ANIMACAO_GRUPO_MS = 260;
@@ -105,6 +118,7 @@ const NAV: NavItem[] = [
       { rota: '/cms', rotulo: 'Site / Quartos', icone: 'web' },
       { rota: '/estabelecimento', rotulo: 'Pousada / Hotel', icone: 'home' },
       { rota: '/funcionarios', rotulo: 'Administrador', icone: 'lock_open' },
+      { rota: '/integracoes', rotulo: 'Integrações', icone: 'cable' },
       { rota: '/auditoria', rotulo: 'Auditoria', icone: 'fact_check' },
     ],
   },
@@ -134,9 +148,7 @@ const NAV: NavItem[] = [
       </div>
 
       <div class="header-right">
-        <span class="hoje">
-          <mat-icon>event</mat-icon> {{ hoje }}
-        </span>
+        <span class="hoje"> <mat-icon>event</mat-icon> {{ hoje }} </span>
 
         <!-- ===== sino de notificações ===== -->
         <div class="sino-wrap">
@@ -150,12 +162,21 @@ const NAV: NavItem[] = [
           >
             <mat-icon>notifications</mat-icon>
             @if (notifs.naoLidas() > 0) {
-              <span class="sino-badge">{{ notifs.naoLidas() > 99 ? '99+' : notifs.naoLidas() }}</span>
+              <span class="sino-badge">{{
+                notifs.naoLidas() > 99 ? '99+' : notifs.naoLidas()
+              }}</span>
             }
           </button>
 
           @if (notifs.aberto()) {
-            <div class="sino-fechar" (click)="notifs.fecharPainel()" (keydown)="notifs.fecharPainel()" role="button" tabindex="-1" aria-label="Fechar"></div>
+            <div
+              class="sino-fechar"
+              (click)="notifs.fecharPainel()"
+              (keydown)="notifs.fecharPainel()"
+              role="button"
+              tabindex="-1"
+              aria-label="Fechar"
+            ></div>
             <div class="sino-painel" role="dialog" aria-label="Histórico de notificações">
               <div class="sino-head">
                 <strong>Notificações</strong>
@@ -171,11 +192,7 @@ const NAV: NavItem[] = [
                 } @else {
                   @for (n of notifs.inbox(); track n.id) {
                     <div class="sino-item" [class.sino-nova]="!n.lida">
-                      <button
-                        type="button"
-                        class="sino-item-btn"
-                        (click)="abrirNotificacao(n)"
-                      >
+                      <button type="button" class="sino-item-btn" (click)="abrirNotificacao(n)">
                         <span class="sino-dot" [class.sino-dot-alerta]="n.tipo === 'alerta'"></span>
                         <span class="sino-txt">
                           <span>{{ n.titulo }}</span>
@@ -225,7 +242,14 @@ const NAV: NavItem[] = [
           </button>
 
           @if (menuUser()) {
-            <div class="user-fechar" (click)="menuUser.set(false)" (keydown)="menuUser.set(false)" role="button" tabindex="-1" aria-label="Fechar menu"></div>
+            <div
+              class="user-fechar"
+              (click)="menuUser.set(false)"
+              (keydown)="menuUser.set(false)"
+              role="button"
+              tabindex="-1"
+              aria-label="Fechar menu"
+            ></div>
             <div class="user-menu" role="menu">
               <div class="user-card">
                 <span class="avatar avatar-lg" aria-hidden="true">{{ usuario().iniciais }}</span>
@@ -235,14 +259,29 @@ const NAV: NavItem[] = [
                 </span>
               </div>
               @if (auth.isAdmin()) {
-                <a class="user-item" role="menuitem" routerLink="/estabelecimento" (click)="menuUser.set(false)">
+                <a
+                  class="user-item"
+                  role="menuitem"
+                  routerLink="/estabelecimento"
+                  (click)="menuUser.set(false)"
+                >
                   <mat-icon>home</mat-icon> Dados da pousada
                 </a>
-                <a class="user-item" role="menuitem" routerLink="/funcionarios" (click)="menuUser.set(false)">
+                <a
+                  class="user-item"
+                  role="menuitem"
+                  routerLink="/funcionarios"
+                  (click)="menuUser.set(false)"
+                >
                   <mat-icon>group</mat-icon> Equipe e acessos
                 </a>
               }
-              <button type="button" class="user-item user-sair" role="menuitem" (click)="auth.logout()">
+              <button
+                type="button"
+                class="user-item user-sair"
+                role="menuitem"
+                (click)="auth.logout()"
+              >
                 <mat-icon>logout</mat-icon> Sair
               </button>
             </div>
@@ -252,7 +291,15 @@ const NAV: NavItem[] = [
     </header>
 
     <!-- backdrop mobile — toque fora fecha o menu -->
-    <div class="scrim" [class.scrim-visivel]="aberta()" (click)="aberta.set(false)" (keydown)="aberta.set(false)" role="button" tabindex="-1" aria-label="Fechar menu"></div>
+    <div
+      class="scrim"
+      [class.scrim-visivel]="aberta()"
+      (click)="aberta.set(false)"
+      (keydown)="aberta.set(false)"
+      role="button"
+      tabindex="-1"
+      aria-label="Fechar menu"
+    ></div>
 
     <aside class="l-navbar" [class.expanded]="aberta()" aria-label="Navegação principal">
       <a class="nav_logo" routerLink="/dashboard" aria-label="Início">
@@ -318,7 +365,9 @@ const NAV: NavItem[] = [
     }
   `,
   styles: `
-    :host { --shell-h: calc(var(--header-height) + 1rem); }
+    :host {
+      --shell-h: calc(var(--header-height) + 1rem);
+    }
 
     /* =====================================================================
        HEADER — começa à direita da sidebar, nunca passa por baixo dela
@@ -340,14 +389,22 @@ const NAV: NavItem[] = [
       z-index: 100;
       transition: left 0.25s ease;
     }
-    .header-open { left: var(--nav-width-open); }
+    .header-open {
+      left: var(--nav-width-open);
+    }
 
-    .header-left { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-width: 0;
+    }
     .header_toggle {
       flex: none;
       display: inline-grid;
       place-items: center;
-      width: 38px; height: 38px;
+      width: 38px;
+      height: 38px;
       color: #fff;
       background: none;
       border: none;
@@ -355,9 +412,17 @@ const NAV: NavItem[] = [
       cursor: pointer;
       transition: background 0.15s;
     }
-    .header_toggle:hover { background: rgba(255, 255, 255, 0.1); }
+    .header_toggle:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
 
-    .pagina { display: flex; flex-direction: column; justify-content: center; min-width: 0; line-height: 1.1; }
+    .pagina {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
+      line-height: 1.1;
+    }
     .pagina-grupo {
       font-size: 0.62rem;
       font-weight: 700;
@@ -372,69 +437,134 @@ const NAV: NavItem[] = [
       font-weight: 600;
       letter-spacing: 0.01em;
       color: #fff;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .header-right {
-      display: flex; align-items: center; gap: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
       justify-self: end;
       min-width: 0;
     }
     .hoje {
-      display: inline-flex; align-items: center; gap: 0.4rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
       font-size: 0.78rem;
       color: rgba(255, 255, 255, 0.8);
       white-space: nowrap;
       text-transform: capitalize;
     }
-    .hoje mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .hoje mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
 
     .header .sino {
       color: #fff;
-      width: 38px; height: 38px;
-      display: inline-grid; place-items: center;
+      width: 38px;
+      height: 38px;
+      display: inline-grid;
+      place-items: center;
       border-radius: 10px;
       padding: 0;
       transition: background 0.15s;
     }
-    .header .sino:hover { background: rgba(255, 255, 255, 0.1); }
-    .header .sino-badge { top: 3px; right: 2px; box-shadow: 0 0 0 2px var(--inn-navbar); }
+    .header .sino:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .header .sino-badge {
+      top: 3px;
+      right: 2px;
+      box-shadow: 0 0 0 2px var(--inn-navbar);
+    }
 
-    .divisor { width: 1px; height: 26px; background: rgba(255, 255, 255, 0.16); }
+    .divisor {
+      width: 1px;
+      height: 26px;
+      background: rgba(255, 255, 255, 0.16);
+    }
 
     /* ----- menu do usuário ----- */
-    .user-wrap { position: relative; }
+    .user-wrap {
+      position: relative;
+    }
     .user-btn {
-      display: flex; align-items: center; gap: 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
       padding: 4px 6px 4px 4px;
-      background: none; border: none; cursor: pointer;
+      background: none;
+      border: none;
+      cursor: pointer;
       border-radius: 999px;
-      color: #fff; font: inherit; text-align: left;
+      color: #fff;
+      font: inherit;
+      text-align: left;
       transition: background 0.15s;
     }
-    .user-btn:hover { background: rgba(255, 255, 255, 0.1); }
+    .user-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
     .avatar {
       flex: none;
-      display: inline-grid; place-items: center;
-      width: 34px; height: 34px;
+      display: inline-grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       background: var(--inn-first);
       border: 1.5px solid var(--inn-gold);
       color: #fff;
-      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
     }
-    .avatar-lg { width: 42px; height: 42px; font-size: 0.85rem; }
-    .user-txt { display: flex; flex-direction: column; line-height: 1.15; max-width: 150px; }
+    .avatar-lg {
+      width: 42px;
+      height: 42px;
+      font-size: 0.85rem;
+    }
+    .user-txt {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.15;
+      max-width: 150px;
+    }
     .user-nome {
-      font-size: 0.82rem; font-weight: 600;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      font-size: 0.82rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .user-papel { font-size: 0.68rem; color: rgba(255, 255, 255, 0.7); }
-    .user-seta { font-size: 18px; width: 18px; height: 18px; transition: transform 0.2s; }
-    .user-seta-aberta { transform: rotate(180deg); }
-    .user-fechar { position: fixed; inset: 0; z-index: 150; }
+    .user-papel {
+      font-size: 0.68rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+    .user-seta {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      transition: transform 0.2s;
+    }
+    .user-seta-aberta {
+      transform: rotate(180deg);
+    }
+    .user-fechar {
+      position: fixed;
+      inset: 0;
+      z-index: 150;
+    }
     .user-menu {
-      position: absolute; top: calc(100% + 10px); right: 0; z-index: 151;
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      z-index: 151;
       width: 260px;
       background: #fff;
       border-radius: 12px;
@@ -442,32 +572,68 @@ const NAV: NavItem[] = [
       padding: 6px;
       animation: user-in 0.15s ease-out;
     }
-    @keyframes user-in { from { transform: translateY(-8px); opacity: 0; } }
+    @keyframes user-in {
+      from {
+        transform: translateY(-8px);
+        opacity: 0;
+      }
+    }
     .user-card {
-      display: flex; align-items: center; gap: 0.7rem;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
       padding: 0.7rem 0.6rem 0.8rem;
       margin-bottom: 4px;
       border-bottom: 1px solid #e8eef1;
     }
-    .user-card-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
-    .user-card-txt strong {
-      font-size: 0.88rem; color: #14303c;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    .user-card-txt {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      line-height: 1.25;
     }
-    .user-card-txt span { font-size: 0.72rem; color: #5b6f78; }
+    .user-card-txt strong {
+      font-size: 0.88rem;
+      color: #14303c;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .user-card-txt span {
+      font-size: 0.72rem;
+      color: #5b6f78;
+    }
     .user-item {
-      display: flex; align-items: center; gap: 0.65rem;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
       width: 100%;
       padding: 0.55rem 0.6rem;
-      border: 0; background: none; cursor: pointer;
+      border: 0;
+      background: none;
+      cursor: pointer;
       border-radius: 8px;
-      font: inherit; font-size: 0.84rem; color: #24404b;
-      text-decoration: none; text-align: left;
+      font: inherit;
+      font-size: 0.84rem;
+      color: #24404b;
+      text-decoration: none;
+      text-align: left;
     }
-    .user-item:hover { background: #f1f6f8; }
-    .user-item mat-icon { font-size: 18px; width: 18px; height: 18px; color: #5b6f78; }
-    .user-sair { color: #b02a37; }
-    .user-sair mat-icon { color: #b02a37; }
+    .user-item:hover {
+      background: #f1f6f8;
+    }
+    .user-item mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #5b6f78;
+    }
+    .user-sair {
+      color: #b02a37;
+    }
+    .user-sair mat-icon {
+      color: #b02a37;
+    }
 
     /* =====================================================================
        SIDEBAR — marca fixa no topo, só a lista rola, rodapé fixo
@@ -481,7 +647,9 @@ const NAV: NavItem[] = [
       opacity: 0;
       transition: opacity 0.25s ease;
     }
-    .scrim-visivel { opacity: 1; }
+    .scrim-visivel {
+      opacity: 1;
+    }
 
     .l-navbar {
       position: fixed;
@@ -494,11 +662,15 @@ const NAV: NavItem[] = [
       flex-direction: column;
       background-color: var(--inn-first);
       border-right: 1px solid rgba(255, 255, 255, 0.05);
-      transition: width 0.25s ease, box-shadow 0.25s ease;
+      transition:
+        width 0.25s ease,
+        box-shadow 0.25s ease;
       z-index: 110;
       overflow: hidden;
     }
-    .l-navbar.expanded { width: var(--nav-width-open); }
+    .l-navbar.expanded {
+      width: var(--nav-width-open);
+    }
 
     /* desktop com mouse: rail expande temporariamente ao passar o cursor */
     @media (min-width: 769px) and (hover: hover) {
@@ -506,7 +678,9 @@ const NAV: NavItem[] = [
         width: var(--nav-width-open);
         box-shadow: 8px 0 28px rgba(4, 20, 28, 0.35);
       }
-      .l-navbar:not(.expanded):hover .nav_logo img { width: 130px; }
+      .l-navbar:not(.expanded):hover .nav_logo img {
+        width: 130px;
+      }
     }
 
     /* ----- marca: mesma altura do header, alinhada com ele ----- */
@@ -519,11 +693,15 @@ const NAV: NavItem[] = [
       border-bottom: 1px solid rgba(255, 255, 255, 0.07);
     }
     .nav_logo img {
-      width: 130px; max-height: 44px; object-fit: contain;
+      width: 130px;
+      max-height: 44px;
+      object-fit: contain;
       filter: brightness(0) invert(1);
       transition: width 0.25s ease;
     }
-    .l-navbar:not(.expanded) .nav_logo img { width: 44px; }
+    .l-navbar:not(.expanded) .nav_logo img {
+      width: 44px;
+    }
 
     /* ----- lista: única área com rolagem; sem barra nativa (zero salto de
        layout ao abrir um grupo) — o esmaecimento indica que há mais itens ----- */
@@ -535,10 +713,24 @@ const NAV: NavItem[] = [
       overscroll-behavior: contain;
       padding: 0.75rem 0 1rem;
       scrollbar-width: none;
-      -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12px, #000 calc(100% - 24px), transparent 100%);
-      mask-image: linear-gradient(to bottom, transparent 0, #000 12px, #000 calc(100% - 24px), transparent 100%);
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        transparent 0,
+        #000 12px,
+        #000 calc(100% - 24px),
+        transparent 100%
+      );
+      mask-image: linear-gradient(
+        to bottom,
+        transparent 0,
+        #000 12px,
+        #000 calc(100% - 24px),
+        transparent 100%
+      );
     }
-    .nav::-webkit-scrollbar { display: none; }
+    .nav::-webkit-scrollbar {
+      display: none;
+    }
 
     /* ----- links: pílulas com largura do container — na rail o texto é
        apenas recortado, sem regras duplicadas de mostrar/esconder ----- */
@@ -563,41 +755,79 @@ const NAV: NavItem[] = [
       white-space: nowrap;
       overflow: hidden;
       cursor: pointer;
-      transition: background 0.15s, color 0.15s;
+      transition:
+        background 0.15s,
+        color 0.15s;
     }
-    .nav_link:hover { color: #fff; background: var(--inn-navlink-hover); }
-    .nav_link:focus-visible { outline: 2px solid var(--inn-gold); outline-offset: -2px; }
-    .nav_link.active { color: #fff; background: var(--inn-navlink-hover); font-weight: 600; }
+    .nav_link:hover {
+      color: #fff;
+      background: var(--inn-navlink-hover);
+    }
+    .nav_link:focus-visible {
+      outline: 2px solid var(--inn-gold);
+      outline-offset: -2px;
+    }
+    .nav_link.active {
+      color: #fff;
+      background: var(--inn-navlink-hover);
+      font-weight: 600;
+    }
     .nav_link.active::before {
       content: '';
       position: absolute;
-      left: 0; top: 9px; bottom: 9px;
+      left: 0;
+      top: 9px;
+      bottom: 9px;
       width: 3px;
       border-radius: 0 3px 3px 0;
       background: var(--inn-gold);
     }
-    .nav_icon { font-size: 20px; width: 20px; height: 20px; }
-    .nav_name { overflow: hidden; text-overflow: ellipsis; }
+    .nav_icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+    .nav_name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
     /* ----- grupo (treeview) ----- */
-    .nav_group-btn { grid-template-columns: 20px minmax(0, 1fr) 18px; padding-right: 10px; }
+    .nav_group-btn {
+      grid-template-columns: 20px minmax(0, 1fr) 18px;
+      padding-right: 10px;
+    }
     .nav_arrow {
-      font-size: 18px; width: 18px; height: 18px;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
       transition: transform 0.25s;
     }
-    .nav_group.aberto .nav_arrow { transform: rotate(-90deg); }
+    .nav_group.aberto .nav_arrow {
+      transform: rotate(-90deg);
+    }
     /* grupo aberto: o destaque fica no filho ativo, não no pai */
-    .nav_group.aberto > .nav_group-btn.active { background: none; }
-    .nav_group.aberto > .nav_group-btn.active::before { display: none; }
-    .nav_group.aberto > .nav_group-btn.active:hover { background: var(--inn-navlink-hover); }
+    .nav_group.aberto > .nav_group-btn.active {
+      background: none;
+    }
+    .nav_group.aberto > .nav_group-btn.active::before {
+      display: none;
+    }
+    .nav_group.aberto > .nav_group-btn.active:hover {
+      background: var(--inn-navlink-hover);
+    }
 
     .nav_filhos {
       display: grid;
       grid-template-rows: 0fr;
       transition: grid-template-rows 0.25s ease;
     }
-    .nav_filhos-in { overflow: hidden; }
-    .nav_group.aberto .nav_filhos { grid-template-rows: 1fr; }
+    .nav_filhos-in {
+      overflow: hidden;
+    }
+    .nav_group.aberto .nav_filhos {
+      grid-template-rows: 1fr;
+    }
     .nav_sub {
       grid-template-columns: 7px minmax(0, 1fr);
       column-gap: 19px;
@@ -606,15 +836,21 @@ const NAV: NavItem[] = [
       font-size: 0.8rem;
     }
     .nav_bullet {
-      width: 7px; height: 7px;
+      width: 7px;
+      height: 7px;
       border: 1.5px solid currentColor;
       border-radius: 50%;
     }
-    .nav_sub.active .nav_bullet { background: var(--inn-gold); border-color: var(--inn-gold); }
+    .nav_sub.active .nav_bullet {
+      background: var(--inn-gold);
+      border-color: var(--inn-gold);
+    }
 
     /* rail recolhida (sem hover): filhos fechados e o pai volta a indicar a rota */
     @media (min-width: 769px) {
-      .l-navbar:not(.expanded):not(:hover) .nav_filhos { grid-template-rows: 0fr; }
+      .l-navbar:not(.expanded):not(:hover) .nav_filhos {
+        grid-template-rows: 0fr;
+      }
       .l-navbar:not(.expanded):not(:hover) .nav_group.aberto > .nav_group-btn.active {
         background: var(--inn-navlink-hover);
       }
@@ -622,9 +858,6 @@ const NAV: NavItem[] = [
         display: block;
       }
     }
-
-
-
 
     /* =====================================================================
        CONTEÚDO
@@ -636,26 +869,41 @@ const NAV: NavItem[] = [
       min-height: calc(100vh - var(--header-height) - 3rem);
       transition: margin-left 0.25s ease;
     }
-    .content-open { margin-left: calc(var(--nav-width-open) + 1rem); }
+    .content-open {
+      margin-left: calc(var(--nav-width-open) + 1rem);
+    }
 
     @media (max-width: 1180px) {
-      .hoje { display: none; }
+      .hoje {
+        display: none;
+      }
     }
     @media (max-width: 980px) {
-      .user-txt, .user-seta, .divisor { display: none; }
-      .user-btn { padding: 2px; }
+      .user-txt,
+      .user-seta,
+      .divisor {
+        display: none;
+      }
+      .user-btn {
+        padding: 2px;
+      }
     }
 
     /* ===== mobile: sidebar off-canvas, header de ponta a ponta ===== */
     @media (max-width: 768px) {
-      .header, .header-open {
+      .header,
+      .header-open {
         left: 0;
         grid-template-columns: auto minmax(0, 1fr) auto;
         gap: 0.5rem;
         padding: 0 0.6rem;
       }
-      .pagina { display: none; }
-      .header-right { gap: 0.35rem; }
+      .pagina {
+        display: none;
+      }
+      .header-right {
+        gap: 0.35rem;
+      }
 
       .l-navbar {
         left: -280px;
@@ -667,18 +915,33 @@ const NAV: NavItem[] = [
         width: 264px;
         box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
       }
-      .l-navbar:not(.expanded) .nav_logo img { width: 130px; }
-      .scrim { display: block; pointer-events: none; }
-      .scrim-visivel { pointer-events: auto; }
+      .l-navbar:not(.expanded) .nav_logo img {
+        width: 130px;
+      }
+      .scrim {
+        display: block;
+        pointer-events: none;
+      }
+      .scrim-visivel {
+        pointer-events: auto;
+      }
 
-      .content, .content-open {
+      .content,
+      .content-open {
         margin-left: 0.5rem;
         padding-right: 0.5rem;
       }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .l-navbar, .header, .content, .nav_filhos, .nav_arrow, .scrim { transition: none; }
+      .l-navbar,
+      .header,
+      .content,
+      .nav_filhos,
+      .nav_arrow,
+      .scrim {
+        transition: none;
+      }
     }
   `,
 })
@@ -690,9 +953,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   protected readonly aberta = signal(window.innerWidth > 768);
 
   /** Itens visíveis — filtra por permissão. */
-  protected readonly nav = computed(() =>
-    NAV.filter((i) => !i.admin || this.auth.isAdmin()),
-  );
+  protected readonly nav = computed(() => NAV.filter((i) => !i.admin || this.auth.isAdmin()));
 
   /** Rótulo do grupo aberto no dropdown — null = todos fechados. */
   protected readonly grupoAberto = signal<string | null>(null);
@@ -723,7 +984,9 @@ export class ShellComponent implements OnInit, OnDestroy {
   protected readonly usuario = computed(() => {
     const u = this.auth.user();
     const partes = (u?.nome ?? '').trim().split(/\s+/).filter(Boolean);
-    const iniciais = ((partes[0]?.[0] ?? '') + (partes.length > 1 ? partes[partes.length - 1][0] : '')).toUpperCase();
+    const iniciais = (
+      (partes[0]?.[0] ?? '') + (partes.length > 1 ? partes[partes.length - 1][0] : '')
+    ).toUpperCase();
     return {
       nome: u?.nome ?? '',
       login: u?.login ?? '',
@@ -766,7 +1029,9 @@ export class ShellComponent implements OnInit, OnDestroy {
    * só acende com match exato — senão dois subitens ficam ativos juntos.
    */
   protected opcoesAtivo(pai: NavItem, filho: NavItem): IsActiveMatchOptions {
-    const prefixoDeIrmao = !!pai.filhos?.some((f) => f !== filho && f.rota.startsWith(filho.rota + '/'));
+    const prefixoDeIrmao = !!pai.filhos?.some(
+      (f) => f !== filho && f.rota.startsWith(filho.rota + '/'),
+    );
     return prefixoDeIrmao ? ATIVO_EXATO : ATIVO_PREFIXO;
   }
 
@@ -783,7 +1048,10 @@ export class ShellComponent implements OnInit, OnDestroy {
     // após a animação, garante o grupo inteiro visível dentro da lista
     const grupo = (ev.currentTarget as HTMLElement).parentElement;
     if (abrindo && grupo) {
-      setTimeout(() => grupo.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), ANIMACAO_GRUPO_MS);
+      setTimeout(
+        () => grupo.scrollIntoView({ block: 'nearest', behavior: 'smooth' }),
+        ANIMACAO_GRUPO_MS,
+      );
     }
   }
 

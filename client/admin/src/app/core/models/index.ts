@@ -22,3 +22,4 @@ export * from './compras.models';
 export * from './operacao.models';
 export * from './inteligencia.models';
 export * from './geo.models';
+export * from './integracoes.models';

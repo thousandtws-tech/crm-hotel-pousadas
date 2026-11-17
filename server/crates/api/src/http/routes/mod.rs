@@ -7,6 +7,7 @@ pub mod compras;
 pub mod comunicacao;
 pub mod estoque;
 pub mod impressoras;
+pub mod integracoes;
 pub mod notificacoes;
 pub mod operacao;
 pub mod operadoras;

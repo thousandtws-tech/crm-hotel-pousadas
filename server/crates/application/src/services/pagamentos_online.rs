@@ -17,13 +17,15 @@ use crate::dto::{
     ReembolsoOutput, StatusPublicoOutput,
 };
 use crate::error::AppResult;
+use clarituz_domain::entities::{AmbienteIntegracao, ProvedorPagamento};
 use clarituz_domain::entities::{NovaAuditoriaPagamento, PagamentoOnline, WebhookEvento};
 use clarituz_domain::enums::{StatusPagamento, StatusProcWebhook, TipoPagamento};
 use clarituz_domain::events::{Aviso, TipoAviso};
 use clarituz_domain::ports::{
-    EventoPublisher, FiltroPagamento, NovaCheckout, NovaTentativa, NovoEventoWebhook,
-    NovoPagamento, PagamentoRepository, PagamentoView, PaymentGateway, ReceitaAcomodacao,
-    ReservaRepository, ResumoFinanceiro, StatusPi,
+    EventoPublisher, FiltroPagamento, GatewayResolver, IntegracaoRepository, NovaCheckout,
+    NovaTentativa, NovoEventoWebhook, NovoPagamento, PagamentoRepository, PagamentoView,
+    PaymentGateway, ReceitaAcomodacao, ReservaRepository, ResolucaoGateway, ResumoFinanceiro,
+    StatusPi, ESCOPO_PAGAMENTOS_SITE,
 };
 use clarituz_domain::DomainError;
 use clarituz_shared::{Page, PageParams};
@@ -36,9 +38,12 @@ use uuid::Uuid;
 pub struct PagamentosOnlineService {
     pagamentos: Arc<dyn PagamentoRepository>,
     reservas: Arc<dyn ReservaRepository>,
-    /// `None` quando `STRIPE_SECRET_KEY` não está configurada — o checkout
-    /// público falha com erro explícito em vez de panic.
-    gateway: Option<Arc<dyn PaymentGateway>>,
+    /// Gateway Stripe do ambiente — fallback enquanto não houver
+    /// `integracao` persistida habilitada (comportamento legado).
+    gateway_env: Option<Arc<dyn PaymentGateway>>,
+    /// Resolução dinâmica de configuração persistida — `None` sem vault.
+    resolver: Option<Arc<dyn GatewayResolver>>,
+    integracoes: Option<Arc<dyn IntegracaoRepository>>,
     eventos: Arc<dyn EventoPublisher>,
     sinal_percentual: u32,
     hold_minutos: i64,
@@ -46,12 +51,22 @@ pub struct PagamentosOnlineService {
     cancel_url: String,
 }
 
+/// Gateway + identidade a gravar no pagamento.
+struct Resolvido {
+    gateway: Arc<dyn PaymentGateway>,
+    provedor: ProvedorPagamento,
+    ambiente: Option<AmbienteIntegracao>,
+    idintegracao: Option<i64>,
+}
+
 impl PagamentosOnlineService {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         pagamentos: Arc<dyn PagamentoRepository>,
         reservas: Arc<dyn ReservaRepository>,
-        gateway: Option<Arc<dyn PaymentGateway>>,
+        gateway_env: Option<Arc<dyn PaymentGateway>>,
+        resolver: Option<Arc<dyn GatewayResolver>>,
+        integracoes: Option<Arc<dyn IntegracaoRepository>>,
         eventos: Arc<dyn EventoPublisher>,
         sinal_percentual: u32,
         hold_minutos: i64,
@@ -61,7 +76,9 @@ impl PagamentosOnlineService {
         Self {
             pagamentos,
             reservas,
-            gateway,
+            gateway_env,
+            resolver,
+            integracoes,
             eventos,
             sinal_percentual,
             hold_minutos,
@@ -70,10 +87,79 @@ impl PagamentosOnlineService {
         }
     }
 
-    fn gateway(&self) -> Result<&Arc<dyn PaymentGateway>, DomainError> {
-        self.gateway
-            .as_ref()
-            .ok_or_else(|| DomainError::regra("Pagamento online indisponível no momento."))
+    /// Gateway para NOVA cobrança: provedor padrão persistido tem
+    /// precedência; sem padrão (ou padrão indisponível) cai no Stripe
+    /// legado do env — nunca troca de provedor silenciosamente após erro.
+    async fn gateway_nova_cobranca(&self) -> Result<Resolvido, DomainError> {
+        if let (Some(resolver), Some(integracoes)) = (&self.resolver, &self.integracoes) {
+            if let Some((provedor, ambiente, idintegracao)) =
+                integracoes.padrao(ESCOPO_PAGAMENTOS_SITE).await?
+            {
+                match resolver.resolver(provedor, ambiente).await? {
+                    ResolucaoGateway::Persistida(gw) | ResolucaoGateway::Ambiente(gw) => {
+                        return Ok(Resolvido {
+                            gateway: gw,
+                            provedor,
+                            ambiente: Some(ambiente),
+                            idintegracao: Some(idintegracao),
+                        });
+                    }
+                    ResolucaoGateway::Indisponivel => {
+                        warn!(provedor = provedor.as_str(), "provedor padrão indisponível");
+                        return Err(DomainError::regra(
+                            "Pagamento online indisponível no momento.",
+                        ));
+                    }
+                }
+            }
+        }
+        let gateway = self
+            .gateway_env
+            .clone()
+            .ok_or_else(|| DomainError::regra("Pagamento online indisponível no momento."))?;
+        Ok(Resolvido {
+            gateway,
+            provedor: ProvedorPagamento::Stripe,
+            ambiente: None,
+            idintegracao: None,
+        })
+    }
+
+    /// Gateway do provedor ORIGINAL do pagamento — reembolso e
+    /// conciliação nunca consultam outro provedor (janela de transição:
+    /// config desativada ainda resolve para histórico).
+    async fn gateway_do_pagamento(
+        &self,
+        p: &PagamentoOnline,
+    ) -> Result<Arc<dyn PaymentGateway>, DomainError> {
+        if let Some(resolver) = &self.resolver {
+            let provedor =
+                ProvedorPagamento::parse(&p.provedor).unwrap_or(ProvedorPagamento::Stripe);
+            let ambiente = p
+                .ambiente
+                .as_deref()
+                .and_then(AmbienteIntegracao::parse)
+                .unwrap_or(AmbienteIntegracao::Producao);
+            // Pagamento legado Stripe sem integração → env.
+            if p.idintegracao.is_none() && provedor == ProvedorPagamento::Stripe {
+                if let Some(gw) = &self.gateway_env {
+                    return Ok(gw.clone());
+                }
+            }
+            if p.idintegracao.is_some() {
+                match resolver.resolver_historico(provedor, ambiente).await? {
+                    ResolucaoGateway::Persistida(gw) | ResolucaoGateway::Ambiente(gw) => {
+                        return Ok(gw)
+                    }
+                    ResolucaoGateway::Indisponivel => {}
+                }
+            }
+        }
+        self.gateway_env.clone().ok_or_else(|| {
+            DomainError::regra(
+                "Provedor de pagamento original indisponível — operação bloqueada por segurança.",
+            )
+        })
     }
 
     // -- fluxo público (site) --------------------------------------------------
@@ -86,7 +172,8 @@ impl PagamentosOnlineService {
         &self,
         input: CheckoutPublicoInput,
     ) -> AppResult<CheckoutPublicoOutput> {
-        let gateway = self.gateway()?;
+        let resolvido = self.gateway_nova_cobranca().await?;
+        let gateway = &resolvido.gateway;
         let idreserva = self
             .pagamentos
             .reserva_por_token(input.token)
@@ -157,6 +244,9 @@ impl PagamentosOnlineService {
                 idreserva,
                 tipo,
                 valor_centavos,
+                provedor: resolvido.provedor.as_str().into(),
+                ambiente: resolvido.ambiente.map(|a| a.as_str().into()),
+                idintegracao: resolvido.idintegracao,
             })
             .await?;
 
@@ -185,7 +275,8 @@ impl PagamentosOnlineService {
             .inspect_err(|_| {
                 warn!(
                     idpagamento = pagamento.id,
-                    "stripe: falha ao criar checkout"
+                    provedor = resolvido.provedor.as_str(),
+                    "falha ao criar checkout"
                 );
             })?;
 
@@ -249,29 +340,50 @@ impl PagamentosOnlineService {
 
     pub async fn marcar_evento(
         &self,
+        provedor: &str,
         event_id: &str,
         status: StatusProcWebhook,
         erro: Option<&str>,
     ) -> AppResult<()> {
         Ok(self
             .pagamentos
-            .marcar_evento(event_id, status, erro)
+            .marcar_evento(provedor, event_id, status, erro)
             .await?)
     }
 
     // -- webhook (chamado pela rota após validar assinatura + inbox) -----------
 
-    /// Despacha o evento persistido. Erros retornam para a rota marcar
+    /// Despacha o evento persistido por provedor — cada um com seu
+    /// contrato de evidência. Erros retornam para a rota marcar
     /// `falhou` e o sweeper re-tentar — evento nunca é perdido.
     #[instrument(skip(self, evento), fields(event_id = %evento.event_id, tipo = %evento.event_type))]
     pub async fn processar_evento(&self, evento: &WebhookEvento) -> AppResult<()> {
+        match ProvedorPagamento::parse(&evento.provedor) {
+            Some(ProvedorPagamento::Pagbank) => self.processar_pagbank(evento).await,
+            Some(ProvedorPagamento::Mercadopago) => self.processar_mercadopago(evento).await,
+            _ => self.processar_stripe(evento).await,
+        }
+    }
+
+    async fn processar_stripe(&self, evento: &WebhookEvento) -> AppResult<()> {
         let obj = &evento.payload["data"]["object"];
         match evento.event_type.as_str() {
             "checkout.session.completed" => {
+                // Só confirma com evidência de liquidação — métodos
+                // assíncronos (boleto/pix legado) chegam `unpaid` e
+                // continuam pendentes até `payment_intent.succeeded`.
+                if obj["payment_status"].as_str() != Some("paid") {
+                    return Ok(());
+                }
                 let session_id = obj["id"].as_str().unwrap_or_default();
                 let pi_id = obj["payment_intent"].as_str().unwrap_or_default();
                 let metodo = obj["payment_method_types"][0].as_str();
                 self.confirmar_por_session(session_id, pi_id, metodo).await
+            }
+            "payment_intent.succeeded" => {
+                let pi_id = obj["id"].as_str().unwrap_or_default();
+                let metodo = obj["payment_method_types"][0].as_str();
+                self.confirmar_por_pi(pi_id, metodo).await
             }
             "checkout.session.expired" => {
                 let session_id = obj["id"].as_str().unwrap_or_default();
@@ -287,6 +399,223 @@ impl PagamentosOnlineService {
             }
             _ => Ok(()), // evento fora do escopo → rota marca 'ignorado'
         }
+    }
+
+    /// Confirmação por `payment_intent.succeeded` — evidência de
+    /// liquidação de métodos assíncronos.
+    async fn confirmar_por_pi(&self, pi_id: &str, metodo: Option<&str>) -> AppResult<()> {
+        let Some(p) = self.pagamentos.buscar_por_pi(pi_id).await? else {
+            return Ok(());
+        };
+        if p.status.liquidado() {
+            return Ok(());
+        }
+        self.pagamentos
+            .confirmar_pago(
+                p.id,
+                pi_id,
+                metodo,
+                NovaAuditoriaPagamento {
+                    idpagamento: p.id,
+                    ator_tipo: "stripe",
+                    ator_id: None,
+                    acao: "pago",
+                    dados: Some(json!({"pi": pi_id})),
+                },
+            )
+            .await?;
+        info!(idpagamento = p.id, "pagamento confirmado (pi.succeeded)");
+        Ok(())
+    }
+
+    /// Gateway da integração que originou o evento — janela de
+    /// transição: integração desativada depois do pagamento ainda
+    /// processa o que está em voo.
+    async fn gateway_do_evento(
+        &self,
+        evento: &WebhookEvento,
+    ) -> Result<Option<Arc<dyn PaymentGateway>>, DomainError> {
+        let (Some(resolver), Some(integracoes)) = (&self.resolver, &self.integracoes) else {
+            return Ok(None);
+        };
+        let Some(idint) = evento.idintegracao else {
+            return Ok(None);
+        };
+        let Some(i) = integracoes.buscar_por_id(idint).await? else {
+            return Ok(None);
+        };
+        match resolver.resolver_historico(i.provedor, i.ambiente).await? {
+            ResolucaoGateway::Persistida(gw) | ResolucaoGateway::Ambiente(gw) => Ok(Some(gw)),
+            ResolucaoGateway::Indisponivel => Ok(None),
+        }
+    }
+
+    /// PagBank — fetch-back: o payload traz a referência; o estado real
+    /// vem de `consultar_pagamento` na API (payload nunca é a verdade).
+    async fn processar_pagbank(&self, evento: &WebhookEvento) -> AppResult<()> {
+        // ids possíveis na notificação de checkout: charge (CHAR_) ou ordem.
+        let ref_id = evento.payload["charges"]
+            .get(0)
+            .and_then(|c| c["id"].as_str())
+            .or_else(|| evento.payload["id"].as_str())
+            .unwrap_or_default()
+            .to_string();
+        if ref_id.is_empty() {
+            warn!(event_id = %evento.event_id, "pagbank: evento sem id de recurso");
+            return Ok(());
+        }
+        let Some(gw) = self.gateway_do_evento(evento).await? else {
+            warn!(event_id = %evento.event_id, "pagbank: gateway indisponível");
+            return Ok(());
+        };
+        let consulta = gw.consultar_pagamento(&ref_id).await?;
+        self.aplicar_consulta(evento.idintegracao, "pagbank", &consulta)
+            .await
+    }
+
+    /// Mercado Pago — fetch-back: `data.id` → `GET /v1/payments/{id}`.
+    async fn processar_mercadopago(&self, evento: &WebhookEvento) -> AppResult<()> {
+        if evento.event_type != "payment" {
+            return Ok(()); // merchant_order etc. — fora do escopo
+        }
+        let ref_id = evento.payload["data"]["id"]
+            .as_str()
+            .map(str::to_string)
+            .or_else(|| evento.payload["data"]["id"].as_i64().map(|i| i.to_string()))
+            .unwrap_or_default();
+        if ref_id.is_empty() {
+            warn!(event_id = %evento.event_id, "mercadopago: evento sem data.id");
+            return Ok(());
+        }
+        let Some(gw) = self.gateway_do_evento(evento).await? else {
+            warn!(event_id = %evento.event_id, "mercadopago: gateway indisponível");
+            return Ok(());
+        };
+        let consulta = gw.consultar_pagamento(&ref_id).await?;
+        self.aplicar_consulta(evento.idintegracao, "mercadopago", &consulta)
+            .await
+    }
+
+    /// Aplica o estado autoritativo da consulta ao pagamento interno —
+    /// compartilhado pelos fetch-back (PagBank/MP) e pela conciliação.
+    async fn aplicar_consulta(
+        &self,
+        _idintegracao: Option<i64>,
+        ator_tipo: &'static str,
+        consulta: &clarituz_domain::ports::ConsultaPagamento,
+    ) -> AppResult<()> {
+        let Some(idpagamento) = consulta
+            .referencia
+            .as_deref()
+            .and_then(|r| r.parse::<i64>().ok())
+        else {
+            warn!(ator = ator_tipo, "consulta sem referência interna");
+            return Ok(());
+        };
+        let Some(p) = self.pagamentos.buscar(idpagamento).await? else {
+            warn!(idpagamento, ator = ator_tipo, "pagamento desconhecido");
+            return Ok(());
+        };
+        if p.status.liquidado() {
+            return Ok(());
+        }
+        match consulta.status {
+            StatusPi::Pago => {
+                // Grava a referência canônica do provedor em `pi_id`.
+                self.confirmar_pagamento_provider(
+                    &p,
+                    consulta.id_provedor.as_deref().unwrap_or_default(),
+                    ator_tipo,
+                )
+                .await
+            }
+            StatusPi::Falhou | StatusPi::Cancelado => {
+                self.pagamentos
+                    .marcar_status(
+                        p.id,
+                        StatusPagamento::Falhou,
+                        NovaAuditoriaPagamento {
+                            idpagamento: p.id,
+                            ator_tipo,
+                            ator_id: None,
+                            acao: "falhou",
+                            dados: Some(json!({"status": format!("{:?}", consulta.status)})),
+                        },
+                    )
+                    .await?;
+                Ok(())
+            }
+            _ => Ok(()), // pendente/processando — aguarda evidência
+        }
+    }
+
+    /// Confirmação compartilhada dos fetch-back (PagBank/MP): a reserva
+    /// pode ter expirado — o pagamento confirma, mas a auditoria marca
+    /// a exceção para a recepção resolver (não reconfirma acomodação).
+    async fn confirmar_pagamento_provider(
+        &self,
+        p: &PagamentoOnline,
+        ref_id: &str,
+        ator_tipo: &'static str,
+    ) -> AppResult<()> {
+        let reserva_cancelada = self
+            .reservas
+            .buscar(p.idreserva)
+            .await?
+            .is_some_and(|r| r.status == clarituz_domain::enums::StatusReserva::Cancelada);
+        self.pagamentos
+            .confirmar_pago(
+                p.id,
+                ref_id,
+                None,
+                NovaAuditoriaPagamento {
+                    idpagamento: p.id,
+                    ator_tipo,
+                    ator_id: None,
+                    acao: if reserva_cancelada {
+                        "pago_pos_expiracao"
+                    } else {
+                        "pago"
+                    },
+                    dados: Some(json!({
+                        "ref": ref_id,
+                        "reserva_cancelada": reserva_cancelada,
+                    })),
+                },
+            )
+            .await?;
+        metrics::counter!("clarituz_pagamentos_confirmados_total").increment(1);
+        info!(
+            idpagamento = p.id,
+            reserva_cancelada, "pagamento confirmado"
+        );
+        self.eventos.avisar(
+            Aviso::novo(
+                if reserva_cancelada {
+                    TipoAviso::Alerta
+                } else {
+                    TipoAviso::Sucesso
+                },
+                if reserva_cancelada {
+                    "Pagamento após expiração"
+                } else {
+                    "Pagamento confirmado"
+                },
+                format!(
+                    "Reserva #{} — pagamento de R$ {:.2} recebido ({}).{}",
+                    p.idreserva,
+                    p.valor_reais(),
+                    ator_tipo,
+                    if reserva_cancelada {
+                        " A reserva expirou — verifique realocação ou reembolso."
+                    } else {
+                        ""
+                    }
+                ),
+            )
+            .dados(json!({"idreserva": p.idreserva, "idpagamento": p.id})),
+        );
+        Ok(())
     }
 
     async fn confirmar_por_session(
@@ -450,13 +779,19 @@ impl PagamentosOnlineService {
             match self.processar_evento(&evento).await {
                 Ok(()) => {
                     self.pagamentos
-                        .marcar_evento(&evento.event_id, StatusProcWebhook::Processado, None)
+                        .marcar_evento(
+                            &evento.provedor,
+                            &evento.event_id,
+                            StatusProcWebhook::Processado,
+                            None,
+                        )
                         .await?;
                 }
                 Err(e) => {
                     warn!(event_id = %evento.event_id, erro = %e, "webhook retry falhou");
                     self.pagamentos
                         .marcar_evento(
+                            &evento.provedor,
                             &evento.event_id,
                             StatusProcWebhook::Falhou,
                             Some(&e.to_string()),
@@ -466,49 +801,54 @@ impl PagamentosOnlineService {
             }
         }
 
-        // Reconciliador: pagamentos pendentes com pi conhecido — pergunta
-        // ao provedor (cobre webhook perdido/fora de ordem definitivamente).
-        if let Some(gateway) = &self.gateway {
-            for p in self.pagamentos.pendentes_com_pi(50).await? {
-                let Some(pi_id) = p.pi_id.clone() else {
+        // Reconciliador: pagamentos pendentes com referência conhecida —
+        // cada um consulta o SEU provedor (webhook perdido recuperado).
+        for p in self.pagamentos.pendentes_com_pi(50).await? {
+            let Some(ref_id) = p.pi_id.clone() else {
+                continue;
+            };
+            let gateway = match self.gateway_do_pagamento(&p).await {
+                Ok(g) => g,
+                Err(e) => {
+                    warn!(idpagamento = p.id, erro = %e, "conciliação sem gateway");
                     continue;
-                };
-                match gateway.status_payment_intent(&pi_id).await {
-                    Ok(StatusPi::Pago) => {
-                        self.pagamentos
-                            .confirmar_pago(
-                                p.id,
-                                &pi_id,
-                                None,
-                                NovaAuditoriaPagamento {
-                                    idpagamento: p.id,
-                                    ator_tipo: "sistema",
-                                    ator_id: None,
-                                    acao: "pago_conciliado",
-                                    dados: Some(json!({"pi": pi_id})),
-                                },
-                            )
-                            .await?;
-                        info!(idpagamento = p.id, "pagamento confirmado via conciliação");
-                    }
-                    Ok(StatusPi::Cancelado) => {
-                        self.pagamentos
-                            .marcar_status(
-                                p.id,
-                                StatusPagamento::Cancelado,
-                                NovaAuditoriaPagamento {
-                                    idpagamento: p.id,
-                                    ator_tipo: "sistema",
-                                    ator_id: None,
-                                    acao: "cancelado_conciliado",
-                                    dados: Some(json!({"pi": pi_id})),
-                                },
-                            )
-                            .await?;
-                    }
-                    Ok(_) => {}
-                    Err(e) => warn!(idpagamento = p.id, erro = %e, "conciliação pi falhou"),
                 }
+            };
+            match gateway.consultar_pagamento(&ref_id).await.map(|c| c.status) {
+                Ok(StatusPi::Pago) => {
+                    self.pagamentos
+                        .confirmar_pago(
+                            p.id,
+                            &ref_id,
+                            None,
+                            NovaAuditoriaPagamento {
+                                idpagamento: p.id,
+                                ator_tipo: "sistema",
+                                ator_id: None,
+                                acao: "pago_conciliado",
+                                dados: Some(json!({"ref": ref_id})),
+                            },
+                        )
+                        .await?;
+                    info!(idpagamento = p.id, "pagamento confirmado via conciliação");
+                }
+                Ok(StatusPi::Cancelado) => {
+                    self.pagamentos
+                        .marcar_status(
+                            p.id,
+                            StatusPagamento::Cancelado,
+                            NovaAuditoriaPagamento {
+                                idpagamento: p.id,
+                                ator_tipo: "sistema",
+                                ator_id: None,
+                                acao: "cancelado_conciliado",
+                                dados: Some(json!({"ref": ref_id})),
+                            },
+                        )
+                        .await?;
+                }
+                Ok(_) => {}
+                Err(e) => warn!(idpagamento = p.id, erro = %e, "conciliação falhou"),
             }
         }
         Ok(())
@@ -517,9 +857,10 @@ impl PagamentosOnlineService {
     // -- admin -----------------------------------------------------------------
 
     /// Reembolso parcial/integral — exige permissão financeira.
+    /// Sempre pelo provedor ORIGINAL do pagamento (janela de transição
+    /// resolve config desativada); nunca pelo padrão atual.
     /// O valor é conferido contra `pago − reembolsado` antes de chamar o
-    /// provedor; o reembolso Stripe é idempotente por chave derivada do
-    /// pagamento (retry do admin não duplica cobrança reversa).
+    /// provedor; idempotente por chave derivada do reembolso interno.
     #[instrument(skip(self, ator), fields(ator = %ator.login))]
     pub async fn reembolsar(
         &self,
@@ -528,7 +869,6 @@ impl PagamentosOnlineService {
         input: ReembolsarPagamentoInput,
     ) -> AppResult<ReembolsoOutput> {
         ator.exigir_financeiro()?;
-        let gateway = self.gateway()?;
         let p = self
             .pagamentos
             .buscar(idpagamento)
@@ -539,6 +879,7 @@ impl PagamentosOnlineService {
                 DomainError::regra("Só é possível reembolsar pagamento já confirmado.").into(),
             );
         }
+        let gateway = self.gateway_do_pagamento(&p).await?;
         let pi_id = p
             .pi_id
             .clone()

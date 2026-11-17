@@ -51,6 +51,11 @@ pub struct Settings {
     pub stripe_secret_key: Option<String>,
     /// Segredo de assinatura do webhook (`whsec_…`).
     pub stripe_webhook_secret: Option<String>,
+    /// Chave-mestra AES-256 do cofre de credenciais de integrações
+    /// (`INTEGRACOES_MASTER_KEY`, 64 hex = 32 bytes). Ausente: módulo de
+    /// integrações sobe em modo só-leitura — config persistida falha
+    /// explícito ao invés de cifrar com chave improvisada.
+    pub integracoes_master_key: Option<String>,
     /// URL de retorno pós-pagamento aprovado (site público).
     pub stripe_success_url: String,
     /// URL de retorno quando o hóspede abandona/cancela.
@@ -148,6 +153,7 @@ impl Settings {
             s3_region: env_string("S3_REGION").unwrap_or_else(|| "us-east-1".into()),
             stripe_secret_key: env_string("STRIPE_SECRET_KEY"),
             stripe_webhook_secret: env_string("STRIPE_WEBHOOK_SECRET"),
+            integracoes_master_key: env_string("INTEGRACOES_MASTER_KEY"),
             stripe_success_url: env_string("STRIPE_SUCCESS_URL")
                 .unwrap_or_else(|| "https://espiritodomar.com.br/reserva/pagamento/sucesso".into()),
             stripe_cancel_url: env_string("STRIPE_CANCEL_URL").unwrap_or_else(|| {

@@ -6,10 +6,9 @@ export const routes: Routes = [
   {
     path: 'login',
     canActivate: [guestGuard],
-    loadComponent: () =>
-      import('./features/auth/login.component').then((m) => m.LoginComponent),
+    loadComponent: () => import('./features/auth/login.component').then((m) => m.LoginComponent),
   },
-  
+
   {
     path: '',
     component: ShellComponent,
@@ -34,16 +33,12 @@ export const routes: Routes = [
       {
         path: 'operadoras',
         loadComponent: () =>
-          import('./features/operadoras/operadoras.component').then(
-            (m) => m.OperadorasComponent,
-          ),
+          import('./features/operadoras/operadoras.component').then((m) => m.OperadorasComponent),
       },
       {
         path: 'contratos',
         loadComponent: () =>
-          import('./features/contratos/contratos.component').then(
-            (m) => m.ContratosComponent,
-          ),
+          import('./features/contratos/contratos.component').then((m) => m.ContratosComponent),
       },
       {
         path: 'reservas/:id',
@@ -98,24 +93,20 @@ export const routes: Routes = [
       },
       {
         path: 'pdv',
-        loadComponent: () =>
-          import('./features/pdv/pdv.component').then((m) => m.PdvComponent),
+        loadComponent: () => import('./features/pdv/pdv.component').then((m) => m.PdvComponent),
       },
       {
         path: 'cozinha',
-        loadComponent: () =>
-          import('./features/pdv/kds.component').then((m) => m.KdsComponent),
+        loadComponent: () => import('./features/pdv/kds.component').then((m) => m.KdsComponent),
       },
       {
         path: 'cafe',
-        loadComponent: () =>
-          import('./features/cafe/cafe.component').then((m) => m.CafeComponent),
+        loadComponent: () => import('./features/cafe/cafe.component').then((m) => m.CafeComponent),
       },
       {
         path: 'cms',
         canActivate: [adminGuard],
-        loadComponent: () =>
-          import('./features/cms/cms.component').then((m) => m.CmsComponent),
+        loadComponent: () => import('./features/cms/cms.component').then((m) => m.CmsComponent),
       },
       {
         path: 'estabelecimento',
@@ -150,23 +141,17 @@ export const routes: Routes = [
       {
         path: 'operacao/governanca',
         loadComponent: () =>
-          import('./features/governanca/governanca.component').then(
-            (m) => m.GovernancaComponent,
-          ),
+          import('./features/governanca/governanca.component').then((m) => m.GovernancaComponent),
       },
       {
         path: 'operacao/manutencao',
         loadComponent: () =>
-          import('./features/manutencao/manutencao.component').then(
-            (m) => m.ManutencaoComponent,
-          ),
+          import('./features/manutencao/manutencao.component').then((m) => m.ManutencaoComponent),
       },
       {
         path: 'operacao/escalas',
         loadComponent: () =>
-          import('./features/escalas/escalas.component').then(
-            (m) => m.EscalasComponent,
-          ),
+          import('./features/escalas/escalas.component').then((m) => m.EscalasComponent),
       },
       {
         path: 'financeiro',
@@ -218,6 +203,22 @@ export const routes: Routes = [
         path: 'auditoria',
         loadComponent: () =>
           import('./features/auditoria/auditoria.component').then((m) => m.AuditoriaComponent),
+      },
+      {
+        path: 'integracoes',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/integracoes/integracoes.component').then(
+            (m) => m.IntegracoesComponent,
+          ),
+      },
+      {
+        path: 'integracoes/:provedor/:ambiente',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/integracoes/integracao-detalhe.component').then(
+            (m) => m.IntegracaoDetalheComponent,
+          ),
       },
     ],
   },

@@ -16,6 +16,7 @@ use clarituz_application::dto::{
     CheckoutPublicoInput, CheckoutPublicoOutput, ReembolsarPagamentoInput, ReembolsoOutput,
     StatusPublicoOutput,
 };
+use clarituz_domain::entities::{AmbienteIntegracao, ProvedorPagamento};
 use clarituz_domain::enums::StatusPagamento;
 use clarituz_domain::ports::{
     FiltroPagamento, NovoEventoWebhook, PagamentoView, ReceitaAcomodacao, ResumoFinanceiro,
@@ -70,17 +71,46 @@ pub async fn webhook_stripe(
     headers: HeaderMap,
     corpo: Bytes,
 ) -> Result<StatusCode, AppError> {
-    let secret = s
-        .stripe_webhook_secret
-        .as_deref()
-        .ok_or_else(|| DomainError::regra("Webhook de pagamento não configurado."))?;
+    // Precedência do segredo de webhook: integração persistida
+    // `stripe/producao` governa; sem linha → `STRIPE_WEBHOOK_SECRET`
+    // do env (legado). Uma linha existente NUNCA cai no env — mesmo
+    // desabilitada ou sem segredo (configuração explícita governa).
+    let (secret, idintegracao) = match s.services.integracoes.as_ref() {
+        Some(svc) => {
+            match svc
+                .buscar_integracao(ProvedorPagamento::Stripe, AmbienteIntegracao::Producao)
+                .await?
+            {
+                Some(i) => (
+                    svc.segredo_webhook(i.id, "webhook_secret")
+                        .await?
+                        .ok_or_else(|| {
+                            DomainError::regra("Webhook secret não configurado na integração.")
+                        })?,
+                    Some(i.id),
+                ),
+                None => (
+                    s.stripe_webhook_secret.clone().ok_or_else(|| {
+                        DomainError::regra("Webhook de pagamento não configurado.")
+                    })?,
+                    None,
+                ),
+            }
+        }
+        None => (
+            s.stripe_webhook_secret
+                .clone()
+                .ok_or_else(|| DomainError::regra("Webhook de pagamento não configurado."))?,
+            None,
+        ),
+    };
     let assinatura = headers
         .get("stripe-signature")
         .and_then(|v| v.to_str().ok())
         .ok_or_else(|| DomainError::nao_autenticado("Assinatura ausente."))?;
 
     clarituz_infrastructure::integrations::stripe::verificar_assinatura(
-        secret, &corpo, assinatura,
+        &secret, &corpo, assinatura,
     )?;
 
     let payload: serde_json::Value = serde_json::from_slice(&corpo)
@@ -100,9 +130,11 @@ pub async fn webhook_stripe(
         s.services
             .pagamentos_online
             .registrar_evento(&NovoEventoWebhook {
+                provedor: "stripe".into(),
                 event_id: event_id.clone(),
                 event_type: event_type.clone(),
                 payload: payload.clone(),
+                idintegracao,
             })
             .await?
     };
@@ -112,9 +144,11 @@ pub async fn webhook_stripe(
 
     let evento = clarituz_domain::entities::WebhookEvento {
         id: 0,
+        provedor: "stripe".into(),
         event_id,
         event_type,
         payload,
+        idintegracao,
         status: clarituz_domain::enums::StatusProcWebhook::Recebido,
         tentativas: 0,
         ultimo_erro: None,
@@ -128,6 +162,7 @@ pub async fn webhook_stripe(
             s.services
                 .pagamentos_online
                 .marcar_evento(
+                    &evento.provedor,
                     &evento.event_id,
                     clarituz_domain::enums::StatusProcWebhook::Processado,
                     None,
@@ -140,6 +175,7 @@ pub async fn webhook_stripe(
             s.services
                 .pagamentos_online
                 .marcar_evento(
+                    &evento.provedor,
                     &evento.event_id,
                     clarituz_domain::enums::StatusProcWebhook::Falhou,
                     Some(&e.to_string()),
@@ -148,6 +184,199 @@ pub async fn webhook_stripe(
         }
     }
     Ok(StatusCode::OK)
+}
+
+// ---------------------------------------------------------------------------
+// webhooks PagBank + Mercado Pago
+// ---------------------------------------------------------------------------
+
+/// Autentica o evento contra cada integração habilitada do provedor —
+/// a que validar processa (multi-ambiente: mesmo endpoint serve teste
+/// e produção; o segredo correspondente é quem desempata).
+async fn integracao_autenticada<F>(
+    s: &AppState,
+    provedor: ProvedorPagamento,
+    campo_segredo: &str,
+    verificar: F,
+) -> Result<Option<clarituz_domain::entities::Integracao>, AppError>
+where
+    F: Fn(&str) -> bool,
+{
+    let Some(svc) = s.services.integracoes.as_ref() else {
+        return Ok(None);
+    };
+    for i in svc.habilitadas(provedor).await? {
+        if let Some(secret) = svc.segredo_webhook(i.id, campo_segredo).await? {
+            if verificar(&secret) {
+                return Ok(Some(i));
+            }
+        }
+    }
+    Ok(None)
+}
+
+/// Processamento compartilhado pós-autenticação: inbox idempotente +
+/// dispatch para o service — sempre 200 (retry fica no sweeper).
+async fn processar_webhook_provedor(
+    s: &AppState,
+    integ: &clarituz_domain::entities::Integracao,
+    event_id: String,
+    event_type: String,
+    payload: serde_json::Value,
+) -> Result<StatusCode, AppError> {
+    let novo = s
+        .services
+        .pagamentos_online
+        .registrar_evento(&NovoEventoWebhook {
+            provedor: integ.provedor.as_str().into(),
+            event_id: event_id.clone(),
+            event_type: event_type.clone(),
+            payload: payload.clone(),
+            idintegracao: Some(integ.id),
+        })
+        .await?;
+    if !novo {
+        return Ok(StatusCode::OK);
+    }
+    let evento = clarituz_domain::entities::WebhookEvento {
+        id: 0,
+        provedor: integ.provedor.as_str().into(),
+        event_id,
+        event_type,
+        payload,
+        idintegracao: Some(integ.id),
+        status: clarituz_domain::enums::StatusProcWebhook::Recebido,
+        tentativas: 0,
+        ultimo_erro: None,
+        recebido_em: chrono::Utc::now(),
+        processado_em: None,
+    };
+    let status_proc = match s.services.pagamentos_online.processar_evento(&evento).await {
+        Ok(()) => clarituz_domain::enums::StatusProcWebhook::Processado,
+        Err(_) => clarituz_domain::enums::StatusProcWebhook::Falhou,
+    };
+    let _ = s
+        .services
+        .pagamentos_online
+        .marcar_evento(&evento.provedor, &evento.event_id, status_proc, None)
+        .await;
+    Ok(StatusCode::OK)
+}
+
+/// POST /api/v1/webhooks/mercadopago — `x-signature` HMAC obrigatória;
+/// estado real vem do fetch-back no processamento (payload nunca é
+/// fonte de verdade).
+pub async fn webhook_mercadopago(
+    State(s): State<AppState>,
+    headers: HeaderMap,
+    corpo: Bytes,
+) -> Result<StatusCode, AppError> {
+    let assinatura = headers
+        .get("x-signature")
+        .and_then(|v| v.to_str().ok())
+        .ok_or_else(|| DomainError::nao_autenticado("Assinatura ausente."))?;
+    let request_id = headers
+        .get("x-request-id")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or_default()
+        .to_string();
+    let payload: serde_json::Value = serde_json::from_slice(&corpo)
+        .map_err(|_| DomainError::validacao("Payload de webhook inválido."))?;
+    let data_id = payload["data"]["id"]
+        .as_str()
+        .map(str::to_string)
+        .or_else(|| payload["data"]["id"].as_i64().map(|i| i.to_string()))
+        .unwrap_or_default();
+
+    let integ = integracao_autenticada(
+        &s,
+        ProvedorPagamento::Mercadopago,
+        "webhook_secret",
+        |secret| {
+            clarituz_infrastructure::integrations::mercadopago::verificar_assinatura(
+                secret,
+                assinatura,
+                &request_id,
+                &data_id,
+            )
+            .is_ok()
+        },
+    )
+    .await?
+    .ok_or_else(|| DomainError::nao_autenticado("Assinatura de webhook inválida."))?;
+
+    let event_id = format!(
+        "mp-{}-{}",
+        payload["action"].as_str().unwrap_or("event"),
+        data_id
+    );
+    let event_type = payload["type"].as_str().unwrap_or("payment").to_string();
+    processar_webhook_provedor(&s, &integ, event_id, event_type, payload).await
+}
+
+/// POST /api/v1/webhooks/pagbank — autenticação por `x-authenticity-token`
+/// quando configurado; a prova definitiva é o fetch-back da ordem no
+/// processamento (estado só vem da API, nunca do payload).
+pub async fn webhook_pagbank(
+    State(s): State<AppState>,
+    headers: HeaderMap,
+    corpo: Bytes,
+) -> Result<StatusCode, AppError> {
+    let token = headers
+        .get("x-authenticity-token")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or_default()
+        .to_string();
+    let payload: serde_json::Value = serde_json::from_slice(&corpo)
+        .map_err(|_| DomainError::validacao("Payload de webhook inválido."))?;
+
+    // Autentica contra cada integração habilitada com token configurado;
+    // se nenhuma tem token configurado, a primeira habilitada processa —
+    // a autenticidade real vem do fetch-back (somente estado real da
+    // conta é aplicado, então evento forjado não produz efeito).
+    let Some(svc) = s.services.integracoes.as_ref() else {
+        return Err(DomainError::regra("Integrações não configuradas.").into());
+    };
+    let habilitadas = svc.habilitadas(ProvedorPagamento::Pagbank).await?;
+    if habilitadas.is_empty() {
+        return Err(DomainError::regra("Nenhuma integração PagBank habilitada.").into());
+    }
+    let mut integ = None;
+    let mut algum_token = false;
+    for i in &habilitadas {
+        if let Some(esperado) = svc.segredo_webhook(i.id, "authenticity_token").await? {
+            algum_token = true;
+            if clarituz_infrastructure::integrations::pagbank::verificar_authenticity_token(
+                &esperado, &token,
+            )
+            .is_ok()
+            {
+                integ = Some(i.clone());
+                break;
+            }
+        }
+    }
+    let integ = match (integ, algum_token) {
+        (Some(i), _) => i,
+        (None, true) => {
+            return Err(DomainError::nao_autenticado("Token de autenticidade inválido.").into())
+        }
+        (None, false) => habilitadas[0].clone(),
+    };
+
+    let charge_id = payload["charges"]
+        .get(0)
+        .and_then(|c| c["id"].as_str())
+        .unwrap_or_default();
+    let event_id = if charge_id.is_empty() {
+        payload["id"].as_str().unwrap_or_default().to_string()
+    } else {
+        charge_id.to_string()
+    };
+    if event_id.is_empty() {
+        return Err(DomainError::validacao("Notificação sem identificador.").into());
+    }
+    processar_webhook_provedor(&s, &integ, event_id, "payment".into(), payload).await
 }
 
 // ---------------------------------------------------------------------------

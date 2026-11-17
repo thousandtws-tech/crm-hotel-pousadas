@@ -327,6 +327,29 @@ pub fn build(state: AppState) -> Router {
             "/financeiro/pagamentos/receita-acomodacoes",
             get(routes::pagamentos_online::receita_acomodacoes),
         )
+        // integrações de pagamento — Configurações → Integrações (admin)
+        .route("/integracoes", get(routes::integracoes::listar_integracoes))
+        .route(
+            "/integracoes/{provedor}/{ambiente}",
+            get(routes::integracoes::detalhe_integracao)
+                .put(routes::integracoes::salvar_integracao),
+        )
+        .route(
+            "/integracoes/{provedor}/{ambiente}/habilitacao",
+            patch(routes::integracoes::habilitacao_integracao),
+        )
+        .route(
+            "/integracoes/{provedor}/{ambiente}/testar",
+            post(routes::integracoes::testar_integracao),
+        )
+        .route(
+            "/integracoes/{provedor}/{ambiente}/padrao",
+            put(routes::integracoes::padrao_integracao),
+        )
+        .route(
+            "/integracoes/{provedor}/{ambiente}/eventos",
+            get(routes::integracoes::eventos_integracao),
+        )
         // comunicação — fila, matriz, push, cobrança
         .route("/comunicacao/fila", get(routes::comunicacao::fila_listar))
         .route(
@@ -1023,6 +1046,16 @@ pub fn build(state: AppState) -> Router {
         .route(
             "/api/v1/webhooks/stripe",
             post(routes::pagamentos_online::webhook_stripe),
+        )
+        // webhooks PagBank + Mercado Pago — autenticação por segredo da
+        // integração configurada; fetch-back confirma o estado real.
+        .route(
+            "/api/v1/webhooks/pagbank",
+            post(routes::pagamentos_online::webhook_pagbank),
+        )
+        .route(
+            "/api/v1/webhooks/mercadopago",
+            post(routes::pagamentos_online::webhook_mercadopago),
         )
         // webhook Resend — bounce/complaint → supressão. Origem = Resend.
         .route(

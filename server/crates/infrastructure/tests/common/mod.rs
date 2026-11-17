@@ -168,6 +168,7 @@ fn settings_teste() -> Settings {
         atendimento_horario: "07:00-22:00".into(),
         alert_webhook_url: None,
         login_rate_limit_per_min: 10,
+        integracoes_master_key: Some("a".repeat(64)),
     }
 }
 

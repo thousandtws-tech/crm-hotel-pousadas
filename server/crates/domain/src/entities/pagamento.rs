@@ -22,9 +22,17 @@ pub struct PagamentoOnline {
     pub status: StatusPagamento,
     pub valor_centavos: i64,
     pub moeda: String,
+    /// Referência de pagamento no provedor — Stripe `pi_…`, PagBank
+    /// `ORDE_…`/`CHAR_…`, Mercado Pago `payment_id`. Nome histórico
+    /// mantido por compatibilidade de schema.
     pub pi_id: Option<String>,
     pub metodo: Option<String>,
     pub paid_em: Option<DateTime<Utc>>,
+    /// Identidade imutável do provedor (legados: `provedor='stripe'`,
+    /// `ambiente`/`idintegracao` NULL — não se inventa o que não se sabe).
+    pub provedor: String,
+    pub ambiente: Option<String>,
+    pub idintegracao: Option<i64>,
     pub criado_em: DateTime<Utc>,
     pub atualizado_em: DateTime<Utc>,
 }
@@ -61,9 +69,11 @@ pub struct ReembolsoPagamento {
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct WebhookEvento {
     pub id: i64,
+    pub provedor: String,
     pub event_id: String,
     pub event_type: String,
     pub payload: JsonValue,
+    pub idintegracao: Option<i64>,
     pub status: StatusProcWebhook,
     pub tentativas: i32,
     pub ultimo_erro: Option<String>,

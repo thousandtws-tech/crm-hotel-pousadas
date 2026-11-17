@@ -16,6 +16,7 @@ pub mod financeiro;
 pub mod frigobar;
 pub mod funcionario;
 pub mod impressora;
+pub mod integracao;
 pub mod notificacao;
 pub mod operacao;
 pub mod operadora;
@@ -49,6 +50,9 @@ pub use financeiro::{
 pub use frigobar::{Frigobar, ItemFrigobar};
 pub use funcionario::{Funcionario, LogAcesso, SessaoRefresh};
 pub use impressora::{ImpressaoJob, Impressora, ImpressoraDescoberta};
+pub use integracao::{
+    AmbienteIntegracao, Integracao, ProvedorPagamento, StatusIntegracao, StatusVerificacao,
+};
 pub use notificacao::Notificacao;
 pub use operacao::*;
 pub use operadora::*;

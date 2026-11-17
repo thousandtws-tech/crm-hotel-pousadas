@@ -63,6 +63,25 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         .stripe_secret_key
         .as_ref()
         .map(|k| Arc::new(crate::integrations::stripe::StripeGateway::new(k.clone())) as _);
+
+    // Módulo de integrações — o vault só existe com a chave-mestra; sem
+    // ela, config persistida é impossível por construção (nunca em claro).
+    let integracoes_repo = Arc::new(PgIntegracaoRepository::new(pool.clone()));
+    let vault: Option<Arc<dyn clarituz_domain::ports::CredentialVault>> =
+        settings.integracoes_master_key.as_deref().and_then(|k| {
+            crate::security::vault::AesCredentialVault::new(k)
+                .map(|v| Arc::new(v) as Arc<dyn clarituz_domain::ports::CredentialVault>)
+                .map_err(|e| tracing::warn!(erro = %e, "vault de integrações indisponível"))
+                .ok()
+        });
+    let gateway_resolver: Option<Arc<dyn clarituz_domain::ports::GatewayResolver>> =
+        vault.as_ref().map(|v| {
+            Arc::new(crate::integrations::resolver::PgGatewayResolver::new(
+                integracoes_repo.clone() as Arc<dyn clarituz_domain::ports::IntegracaoRepository>,
+                v.clone(),
+                gateway.clone(),
+            )) as Arc<dyn clarituz_domain::ports::GatewayResolver>
+        });
     // consumer do bus → histórico persistido (inbox/badges)
     let notif_repo = Arc::new(PgNotificacaoRepository::new(pool.clone()));
     spawn_aviso_persister(eventos.clone(), notif_repo.clone());
@@ -160,15 +179,26 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         hold_minutos: settings.hold_minutos,
     }));
     let pagamentos_online_svc = Arc::new(PagamentosOnlineService::new(
-        pag_online_repo,
+        pag_online_repo.clone(),
         reserva_repo.clone(),
         gateway,
+        gateway_resolver.clone(),
+        Some(integracoes_repo.clone() as Arc<dyn clarituz_domain::ports::IntegracaoRepository>),
         publisher.clone(),
         settings.sinal_percentual,
         settings.hold_minutos,
         settings.stripe_success_url.clone(),
         settings.stripe_cancel_url.clone(),
     ));
+    let integracoes_svc = vault.map(|v| {
+        Arc::new(IntegracoesService::new(
+            integracoes_repo as Arc<dyn clarituz_domain::ports::IntegracaoRepository>,
+            v,
+            gateway_resolver.clone().unwrap(),
+            pag_online_repo as Arc<dyn clarituz_domain::ports::PagamentoRepository>,
+            settings.stripe_secret_key.is_some(),
+        ))
+    });
     let pre_reserva_svc = Arc::new(PreReservaService::new(
         Arc::new(PgPreReservaRepository::new(pool.clone())),
         reserva_repo.clone(),
@@ -236,6 +266,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         )),
         reservas: reservas_svc,
         pagamentos_online: pagamentos_online_svc,
+        integracoes: integracoes_svc,
         estoque: Arc::new(
             EstoqueService::new(Arc::new(PgEstoqueRepository::new(pool.clone())))
                 .com_etiquetas(impressora_repo.clone(), impressora_gw.clone()),

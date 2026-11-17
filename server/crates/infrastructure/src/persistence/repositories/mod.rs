@@ -11,6 +11,7 @@ pub mod comunicacao;
 pub mod contrato;
 pub mod estoque;
 pub mod impressora;
+pub mod integracao;
 pub mod notificacao;
 pub mod operacao;
 pub mod operadora;
@@ -39,6 +40,7 @@ pub use comunicacao::{
 pub use contrato::PgContratoRepository;
 pub use estoque::PgEstoqueRepository;
 pub use impressora::PgImpressoraRepository;
+pub use integracao::PgIntegracaoRepository;
 pub use notificacao::PgNotificacaoRepository;
 pub use operacao::{PgEscalaRepository, PgGovernancaRepository, PgManutencaoRepository};
 pub use operadora::PgOperadoraRepository;
