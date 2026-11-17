@@ -317,7 +317,13 @@ pub async fn webhook_mercadopago(
     )
     .await?
     .ok_or_else(|| {
-        warn!(data_id, "webhook mercadopago: assinatura rejeitada");
+        warn!(
+            data_id,
+            assinatura,
+            request_id,
+            tem_query = query.is_some(),
+            "webhook mercadopago: assinatura rejeitada"
+        );
         DomainError::nao_autenticado("Assinatura de webhook inválida.")
     })?;
 
