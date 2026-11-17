@@ -1,10 +1,6 @@
-//! Helper interno: gravação de trilha de auditoria dentro da transação ativa.
-
 use clarituz_domain::entities::NovoLog;
 use clarituz_domain::DomainError;
 
-/// Insere uma entrada em `log`. Falhar o log **falha a operação** —
-/// auditabilidade não é best-effort neste sistema.
 pub async fn gravar<'e, E>(ex: E, log: &NovoLog) -> Result<(), DomainError>
 where
     E: sqlx::PgExecutor<'e>,

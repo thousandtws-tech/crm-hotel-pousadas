@@ -202,7 +202,6 @@ fn parse_csv(conteudo: &str) -> Result<Vec<TransacaoExtrato>, DomainError> {
     });
 
     let mut itens = Vec::new();
-    // dedup intra-arquivo preservando ocorrências legítimas repetidas
     let mut ocorrencias: HashMap<String, u32> = HashMap::new();
 
     for linha in resto {
@@ -306,7 +305,6 @@ VERSION:102
         assert_eq!(itens.len(), 2);
         assert_eq!(itens[0].valor, dec!(1500.00));
         assert_eq!(itens[1].valor, dec!(-45.90));
-        // fit_id sintético estável — reimportar deduplica no banco
         assert_eq!(itens[0].fit_id.len(), 32);
     }
 

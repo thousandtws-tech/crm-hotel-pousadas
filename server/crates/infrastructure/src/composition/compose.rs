@@ -94,17 +94,6 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             phone.clone(),
         )));
     }
-    if let (Some(url), Some(key), Some(sid)) = (
-        settings.waakg_url.as_ref(),
-        settings.waakg_api_key.as_ref(),
-        settings.waakg_session_id.as_ref(),
-    ) {
-        emissores.push(Arc::new(crate::integrations::senders::WaAkgEmissor::new(
-            url,
-            key.clone(),
-            sid.clone(),
-        )));
-    }
     if let (Some(pem), Some(pub_b64)) = (
         settings.vapid_private_pem.as_ref(),
         settings.vapid_public_b64.as_ref(),

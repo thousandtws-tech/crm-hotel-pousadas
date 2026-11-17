@@ -15,7 +15,7 @@ os fluxos de concierge/atendimento existentes.
 | Cliente | `ZApiCliente` infra — `api.z-api.io/instances/{id}/token/{tok}/…` + header `Client-Token` | Contrato oficial |
 | Sanitização | helper `erro_status` próprio — só o código HTTP + classe; nunca path (carrega token) nem corpo | URL carrega segredo |
 | Emissor | `ZApiEmissor: Emissor` + `provedor()='zapi'` | `Emissor` ganha `provedor()`; dispatcher filtra |
-| Seleção | `fila_envio.provedor` persiste quem envia; nulo → `integracao_padrao(escopo='whatsapp')` → env legado (meta→waakg) | Seleção explícita; retry nunca troca de provedor |
+| Seleção | `fila_envio.provedor` persiste quem envia; nulo → `integracao_padrao(escopo='whatsapp')` → env legado (meta) | Seleção explícita; retry nunca troca de provedor |
 | Inbox | `comunicacao_evento(provedor, event_id, tipo, payload, idintegracao, status)` UNIQUE(provedor, event_id) | ACK só após gravar — dedup **antes** dos efeitos |
 | Estados | `fila_envio` + `aceito_em`, `entregue_em`, `lido_em` (monotônicos) | aceite/entrega/leitura são marcos separados |
 | Telefone | dígitos completos com/sem DDI 55; sem sufixo | `right(8)` colide entre pessoas de DDDs diferentes |

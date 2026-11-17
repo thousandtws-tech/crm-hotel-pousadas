@@ -1,11 +1,3 @@
-//! Cliente HTTP Z-API (`api.z-api.io`) — chamadas administrativas
-//! (status, QR, webhooks, desconexão) e `ZApiEmissor` para a fila.
-//!
-//! Segurança: o `instance_token` viaja **no path** da URL e o
-//! `client_token` no header — nenhum dos dois pode aparecer em erro,
-//! log ou trace. Todos os erros passam por helpers que devolvem só
-//! contexto + status, sem URL nem corpo do provedor.
-
 use async_trait::async_trait;
 use reqwest::Client;
 
@@ -16,8 +8,6 @@ use clarituz_domain::ports::Emissor;
 const BASE: &str = "https://api.z-api.io";
 const TIMEOUT_S: u64 = 15;
 
-/// Credenciais de uma instância — `instance_id` é identificador público;
-/// os dois tokens são segredos do cofre.
 #[derive(Debug, Clone)]
 pub struct ZApiCredenciais {
     pub instance_id: String,
@@ -26,7 +16,6 @@ pub struct ZApiCredenciais {
 }
 
 impl ZApiCredenciais {
-    /// `…/instances/{id}/token/{token}` — nunca logar o retorno.
     fn prefixo(&self) -> String {
         format!(
             "{BASE}/instances/{}/token/{}",
@@ -42,7 +31,6 @@ fn http() -> Client {
         .unwrap_or_else(|_| Client::new())
 }
 
-/// Erro de transporte — sem URL (carrega token no path).
 fn erro_http(ctx: &str, e: &reqwest::Error) -> DomainError {
     let classe = if e.is_timeout() {
         "timeout"
@@ -54,7 +42,6 @@ fn erro_http(ctx: &str, e: &reqwest::Error) -> DomainError {
     DomainError::regra(format!("zapi.{ctx}: {classe}"))
 }
 
-/// Erro de status — só o código; o corpo pode repetir dados do path.
 fn erro_status(ctx: &str, r: &reqwest::Response) -> DomainError {
     let st = r.status().as_u16();
     let classe = match st {
@@ -67,23 +54,17 @@ fn erro_status(ctx: &str, r: &reqwest::Response) -> DomainError {
     DomainError::regra(format!("zapi.{ctx}: HTTP {st} — {classe}"))
 }
 
-/// Resultado de `GET /status` interpretado.
 #[derive(Debug)]
 pub struct ZApiStatus {
-    /// Sessão WhatsApp estabelecida.
     pub conectado: bool,
     pub smartphone_conectado: bool,
-    /// Número vinculado quando o provedor o informa (`/device`).
     pub telefone: Option<String>,
-    /// Mensagem do provedor, sanitizada (sem segredos).
     pub detalhe: Option<String>,
 }
 
-/// Resposta do QR Code — imagem base64 ou fluxo assistido (`challenge`).
 #[derive(Debug)]
 pub enum ZApiQr {
     Imagem(String),
-    /// Verificação adicional — a UI orienta ao painel oficial.
     Assistido(String),
 }
 
@@ -109,8 +90,6 @@ impl ZApiCliente {
             .header("Client-Token", &self.cred.client_token)
     }
 
-    /// Teste de conexão — consulta sem efeitos colaterais; interpreta
-    /// `connected` em vez de presumir pelo HTTP 200.
     pub async fn status(&self) -> Result<ZApiStatus, DomainError> {
         let r = self
             .get("/status")
@@ -129,7 +108,6 @@ impl ZApiCliente {
         })
     }
 
-    /// Número vinculado à sessão — `/device` (quando conectada).
     pub async fn telefone(&self) -> Result<Option<String>, DomainError> {
         let r = self
             .get("/device")
@@ -143,8 +121,6 @@ impl ZApiCliente {
         Ok(v["phone"].as_str().map(str::to_string))
     }
 
-    /// QR Code para pareamento — pode devolver imagem base64 ou um
-    /// objeto `challenge` (fluxo assistido do provedor).
     pub async fn qr_code(&self) -> Result<ZApiQr, DomainError> {
         let r = self
             .get("/qr-code/image")
@@ -158,7 +134,6 @@ impl ZApiCliente {
         if let Some(img) = v["value"].as_str().or_else(|| v["image"].as_str()) {
             return Ok(ZApiQr::Imagem(img.to_string()));
         }
-        // Verificação adicional — não renderizar como imagem.
         let hint = v["challenge"]
             .as_str()
             .or_else(|| v["message"].as_str())
@@ -167,8 +142,6 @@ impl ZApiCliente {
         Ok(ZApiQr::Assistido(hint))
     }
 
-    /// Envia texto — devolve `zaapId`/`messageId`/`id` do provedor
-    /// (não intercambiáveis: `id` é a referência dos callbacks).
     pub async fn send_text(
         &self,
         phone: &str,
@@ -188,8 +161,6 @@ impl ZApiCliente {
         r.json().await.map_err(|e| erro_http("send.parse", &e))
     }
 
-    /// Registra um callback — `nome` ∈ received | delivery |
-    /// message-status | connected | disconnected.
     pub async fn update_webhook(&self, nome: &str, url: &str) -> Result<(), DomainError> {
         let sufixo = format!("/update-webhook-{nome}");
         let r = self
@@ -204,7 +175,6 @@ impl ZApiCliente {
         Ok(())
     }
 
-    /// Logout remoto da sessão — só por ação explícita do operador.
     pub async fn desconectar(&self) -> Result<(), DomainError> {
         let r = self
             .get("/disconnect")
@@ -217,11 +187,6 @@ impl ZApiCliente {
         Ok(())
     }
 }
-
-// ---------------------------------------------------------------------------
-// Emissor da fila — mesmo contrato dos demais (`send-text`).
-// ---------------------------------------------------------------------------
-
 pub struct ZApiEmissor {
     cli: ZApiCliente,
 }
@@ -250,7 +215,6 @@ impl Emissor for ZApiEmissor {
         _template: &str,
         payload: &serde_json::Value,
     ) -> Result<Option<String>, DomainError> {
-        // Só dígitos — o contrato rejeita formatos; `@lid` não é telefone.
         let digitos: String = destino.chars().filter(char::is_ascii_digit).collect();
         if digitos.len() < 10 || destino.contains('@') {
             return Err(DomainError::validacao("telefone inválido"));
@@ -260,8 +224,6 @@ impl Emissor for ZApiEmissor {
             return Err(DomainError::validacao("mensagem vazia"));
         }
         let resp = self.cli.send_text(&digitos, texto).await?;
-        // `id` é a referência usada pelos callbacks de status;
-        // `messageId` fica composto pra reconciliação (`id|messageId`).
         let id = resp["id"].as_str();
         let msg = resp["messageId"].as_str();
         Ok(match (id, msg) {
