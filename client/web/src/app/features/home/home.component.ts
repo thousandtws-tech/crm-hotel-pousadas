@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, effect } from '@angular/core';
+import { Router } from '@angular/router';
 import { HeroComponent } from './components/hero/hero.component';
-import { BookingBarComponent } from '../../shared/components/booking-bar/booking-bar.component';
+import { SearchBarComponent } from '../../shared/components/search/search-bar.component';
 import { EssenceComponent } from './components/essence/essence.component';
 import { FeaturedAccommodationsComponent } from './components/featured-accommodations/featured-accommodations.component';
 import { FeaturedExperiencesComponent } from './components/featured-experiences/featured-experiences.component';
@@ -13,6 +14,7 @@ import { PhoneCtaComponent } from './components/phone-cta/phone-cta.component';
 import { FaqComponent } from './components/faq/faq.component';
 import { SeoService } from '../../core/services/seo.service';
 import { SiteContentService } from '../../core/services/site-content.service';
+import { SearchStateService } from '../../core/services/search-state.service';
 import { HOTEL_CONFIG } from '../../core/config/hotel-config';
 
 const DEFAULT_SEO_TITLE = 'Pousada Espírito do Mar | Hospedagem no Peró, Cabo Frio';
@@ -25,7 +27,7 @@ const DEFAULT_SEO_KEYWORDS =
   selector: 'app-home',
   imports: [
     HeroComponent,
-    BookingBarComponent,
+    SearchBarComponent,
     EssenceComponent,
     FeaturedAccommodationsComponent,
     FeaturedExperiencesComponent,
@@ -40,7 +42,7 @@ const DEFAULT_SEO_KEYWORDS =
   template: `
     <app-hero></app-hero>
     <section id="booking-section" class="relative z-30 -mt-8 sm:-mt-10 lg:-mt-12 mb-6 sm:mb-8 lg:mb-10">
-      <app-booking-bar></app-booking-bar>
+      <app-search-bar (buscar)="irParaBusca()" />
     </section>
 
     <app-essence></app-essence>
@@ -58,6 +60,8 @@ const DEFAULT_SEO_KEYWORDS =
 export class HomeComponent implements OnInit {
   private readonly seoService = inject(SeoService);
   private readonly site = inject(SiteContentService);
+  private readonly router = inject(Router);
+  private readonly searchState = inject(SearchStateService);
 
   constructor() {
     // SEO editável pelo CMS sobrescreve os valores padrão quando publicado.
@@ -76,5 +80,10 @@ export class HomeComponent implements OnInit {
   public ngOnInit(): void {
     this.seoService.setHotelStructuredData();
     void this.site.carregar();
+  }
+
+  /** Buscar serializa o rascunho na URL — a /buscar restaura e executa. */
+  protected irParaBusca(): void {
+    void this.router.navigate(['/buscar'], { queryParams: this.searchState.parametrosUrl() });
   }
 }

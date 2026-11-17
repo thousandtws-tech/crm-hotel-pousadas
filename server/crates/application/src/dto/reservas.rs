@@ -202,3 +202,80 @@ pub struct CancelamentoResponse {
     pub reserva: clarituz_domain::entities::Reserva,
     pub reembolso: Option<clarituz_domain::entities::Reembolso>,
 }
+
+/// Margem de dias ao redor da viagem inteira (somente `dates`).
+pub const TOLERANCIAS_VALIDAS: [i32; 6] = [0, 1, 2, 3, 7, 14];
+
+#[derive(Debug, Deserialize)]
+pub struct BuscaHospedesInput {
+    pub adults: i32,
+    #[serde(default)]
+    pub children: i32,
+    #[serde(default)]
+    pub infants: i32,
+    #[serde(default)]
+    pub pets: i32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum StayPresetInput {
+    Weekend,
+    Week,
+    Month,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "mode", rename_all = "lowercase")]
+pub enum BuscaDateInput {
+    Dates {
+        #[serde(rename = "checkIn")]
+        check_in: NaiveDate,
+        #[serde(rename = "checkOut")]
+        check_out: NaiveDate,
+        #[serde(rename = "toleranceDays")]
+        tolerance_days: i32,
+    },
+    Flexible {
+        #[serde(rename = "stayPreset")]
+        stay_preset: StayPresetInput,
+        months: Vec<String>,
+    },
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BuscaPublicaInput {
+    pub date: BuscaDateInput,
+    pub guests: BuscaHospedesInput,
+    #[serde(default)]
+    pub acomodacao_slug: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BuscaAcomodacaoOut {
+    pub id: i64,
+    pub slug: String,
+    pub nome: String,
+    pub numero: i32,
+    pub capacidade: i32,
+    pub valor: Decimal,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BuscaAlternativaOut {
+    pub inicio: NaiveDate,
+    pub fim: NaiveDate,
+    pub noites: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub deslocamento: Option<i32>,
+    pub acomodacoes: Vec<BuscaAcomodacaoOut>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BuscaPublicaResponse {
+    pub alternativas: Vec<BuscaAlternativaOut>,
+    pub periodos: usize,
+    pub com_disponibilidade: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub aviso: Option<String>,
+}

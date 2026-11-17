@@ -46,6 +46,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
     let acom_repo = Arc::new(PgAcomodacaoRepository::new(pool.clone()));
     let pag_repo = Arc::new(PgFormaPagamentoRepository::new(pool.clone()));
     let reserva_repo = Arc::new(PgReservaRepository::new(pool.clone()));
+    let cms_repo = Arc::new(PgCmsRepository::new(pool.clone()));
     let pag_online_repo = Arc::new(PgPagamentoRepository::new(pool.clone()));
     let impressora_repo = Arc::new(PgImpressoraRepository::new(pool.clone()));
     let impressora_gw: Arc<dyn ImpressoraGateway> = Arc::new(SpoolImpressora::new(pool.clone()));
@@ -266,10 +267,14 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             Arc::new(PgQuartoRepository::new(pool.clone())),
         )),
         cms: Arc::new(CmsService::new(
-            Arc::new(PgCmsRepository::new(pool.clone())),
+            cms_repo.clone(),
             acom_repo.clone(),
         )),
         reservas: reservas_svc,
+        reserva_busca: Arc::new(BuscaReservaService::new(
+            reserva_repo.clone(),
+            cms_repo,
+        )),
         pagamentos_online: pagamentos_online_svc,
         integracoes: integracoes_svc,
         estoque: Arc::new(

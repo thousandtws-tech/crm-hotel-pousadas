@@ -320,3 +320,13 @@ pub async fn publico_criar_reserva(
         ),
     ))
 }
+
+/// `POST /publico/disponibilidade/busca` — motor de busca do site:
+/// datas+tolerância ou flexível+meses → alternativas com acomodações
+/// compatíveis. Leitura pura: não cria reserva, hold nem pagamento.
+pub async fn publico_busca_disponibilidade(
+    State(s): State<AppState>,
+    Json(input): Json<clarituz_application::dto::reservas::BuscaPublicaInput>,
+) -> Result<Json<clarituz_application::dto::reservas::BuscaPublicaResponse>, AppError> {
+    Ok(Json(s.services.reserva_busca.buscar(input).await?))
+}

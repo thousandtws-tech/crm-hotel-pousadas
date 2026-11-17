@@ -35,6 +35,7 @@ pub mod pagamentos_online;
 pub mod pdv;
 pub mod pre_reserva;
 pub mod preditivo;
+pub mod reserva_busca;
 pub mod reservas;
 pub mod tesouraria;
 
@@ -72,6 +73,7 @@ pub use pagamentos_online::PagamentosOnlineService;
 pub use pdv::PdvService;
 pub use pre_reserva::PreReservaService;
 pub use preditivo::PreditivoService;
+pub use reserva_busca::BuscaReservaService;
 pub use reservas::{ReservaDeps, ReservaService};
 pub use tesouraria::TesourariaService;
 pub use zapi::ZApiService;
@@ -87,6 +89,8 @@ pub struct Services {
     pub acomodacoes: Arc<AcomodacaoService>,
     pub cms: Arc<CmsService>,
     pub reservas: Arc<ReservaService>,
+    /// Motor de busca público do site (datas+tolerância / flexível).
+    pub reserva_busca: Arc<BuscaReservaService>,
     pub estoque: Arc<EstoqueService>,
     pub frigobar: Arc<FrigobarService>,
     pub estacionamento: Arc<EstacionamentoService>,

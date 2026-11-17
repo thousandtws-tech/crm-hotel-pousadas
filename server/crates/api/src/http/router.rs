@@ -993,6 +993,17 @@ pub fn build(state: AppState) -> Router {
                 IpRateLimit::middleware,
             )),
         )
+        // Motor de busca do site — leitura, mas cada request consulta N
+        // períodos: limite maior que reserva, menor que status.
+        .route(
+            "/api/v1/publico/disponibilidade/busca",
+            post(routes::cms::publico_busca_disponibilidade).route_layer(
+                from_fn_with_state(
+                    IpRateLimit::novo(30, Duration::from_secs(60)),
+                    IpRateLimit::middleware,
+                ),
+            ),
+        )
         .route(
             "/api/v1/publico/pagamentos/checkout",
             post(routes::pagamentos_online::checkout_publico).route_layer(from_fn_with_state(
@@ -1055,7 +1066,6 @@ pub fn build(state: AppState) -> Router {
                     IpRateLimit::middleware,
                 )),
         )
-        // pesquisa pós-estadia pública — token único por avaliação
         .route(
             "/api/v1/publico/avaliacoes/{token}",
             get(routes::comunicacao::avaliacao_get)
@@ -1065,8 +1075,6 @@ pub fn build(state: AppState) -> Router {
                     IpRateLimit::middleware,
                 )),
         )
-        // LGPD público — descadastrar (link assinado) e direitos do titular
-        // pelo token opaco da reserva.
         .route(
             "/api/v1/publico/lgpd/descadastrar",
             get(routes::comunicacao::lgpd_descadastrar),
@@ -1081,7 +1089,6 @@ pub fn build(state: AppState) -> Router {
                 )),
         )
         .route("/api/v1/midia/{id}", get(routes::cms::servir_midia))
-        // scrape Prometheus — req/s, latência e status por rota
         .route(
             "/metrics",
             get(move || {

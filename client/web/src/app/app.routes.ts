@@ -51,6 +51,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/contact/contact.component').then((m) => m.ContactComponent)
       },
       {
+        path: 'buscar',
+        loadComponent: () => import('./features/busca/search-page.component').then((m) => m.SearchPageComponent)
+      },
+      {
         path: 'reservar',
         loadComponent: () => import('./features/booking/booking.component').then((m) => m.BookingComponent)
       },
