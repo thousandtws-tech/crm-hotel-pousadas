@@ -11,17 +11,17 @@ interface Opcao {
   selector: 'app-tolerance-selector',
   template: `
     <fieldset>
-      <legend class="type-eyebrow text-[10px] text-[#536B73] mb-2">Margem de datas</legend>
+      <legend class="sr-only">Margem de dias ao redor das datas</legend>
       <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Margem de dias ao redor das datas">
         @for (op of opcoes; track op.valor) {
           <button
             type="button"
             role="radio"
             [attr.aria-checked]="tolerance() === op.valor"
-            class="px-3.5 py-1.5 rounded-full border text-xs font-medium transition-colors"
+            class="px-4 py-1.5 rounded-full text-sm transition-colors"
             [class]="tolerance() === op.valor
-              ? 'bg-[#054054] border-[#054054] text-white'
-              : 'border-[#B9CBD3] text-[#054054] hover:border-[#054054]'"
+              ? 'border-2 border-[#054054] bg-white text-[#054054] font-semibold'
+              : 'border border-[#DCE6EA] text-[#054054] hover:border-[#054054]'"
             (click)="tolerance.set(op.valor)"
           >{{ op.rotulo }}</button>
         }

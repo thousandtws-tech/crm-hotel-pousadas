@@ -5,13 +5,16 @@ import { DateRangePickerComponent, rotuloMes } from './date-range-picker.compone
 import { DateToleranceSelectorComponent } from './date-tolerance-selector.component';
 import { FlexibleStayPickerComponent } from './flexible-stay-picker.component';
 import { GuestSelectorComponent } from './guest-selector.component';
+import { IconComponent } from '../icons/icon.component';
 
 type Painel = 'quando' | 'quem' | null;
 
 /**
- * Barra de pesquisa do motor — abas Datas/Flexível, popovers Quando e
- * Quem, resumo da seleção e ação Buscar. Todo o estado vive em
- * `SearchStateService` (rascunho × consulta aplicada separados).
+ * Barra de pesquisa do motor — padrão Airbnb: pílula compacta com
+ * segmentos Quando/Quem + botão Buscar; clicar num segmento abre o
+ * painel ancorado logo abaixo (toggle Datas/Flexível vive dentro do
+ * painel "Quando"). Sem campo "Onde" — o destino é a própria pousada.
+ * Estado em `SearchStateService` (rascunho × consulta aplicada).
  */
 @Component({
   selector: 'app-search-bar',
@@ -20,94 +23,102 @@ type Painel = 'quando' | 'quem' | null;
     DateToleranceSelectorComponent,
     FlexibleStayPickerComponent,
     GuestSelectorComponent,
+    IconComponent,
   ],
   template: `
-    <div class="w-full max-w-5xl mx-auto px-4 sm:px-6">
-      <div class="bg-white border border-[#DCE6EA] rounded-2xl shadow-[0_12px_32px_rgba(5,64,84,0.08)]">
+    <div class="relative w-full max-w-3xl mx-auto px-4 sm:px-6">
 
-        <!-- Abas -->
-        <div class="flex border-b border-[#E8F0F2] px-3 pt-3 gap-1" role="tablist" aria-label="Modo de busca">
-          @for (aba of abas; track aba.valor) {
-            <button
-              type="button"
-              role="tab"
-              [attr.aria-selected]="state.mode() === aba.valor"
-              class="px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 -mb-px transition-colors"
-              [class]="state.mode() === aba.valor
-                ? 'border-[#054054] text-[#054054]'
-                : 'border-transparent text-[#536B73] hover:text-[#054054]'"
-              (click)="state.mode.set(aba.valor)"
-            >{{ aba.rotulo }}</button>
-          }
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] divide-y sm:divide-y-0 sm:divide-x divide-[#E8F0F2]">
-          <!-- Quando -->
-          <div class="relative">
-            <button
-              #gatilhoQuando
-              type="button"
-              class="w-full text-left px-5 py-4 hover:bg-[#F4F8F9] transition-colors"
-              [attr.aria-expanded]="painel() === 'quando'"
-              aria-haspopup="dialog"
-              (click)="alternarPainel('quando')"
-            >
-              <span class="type-eyebrow block text-[10px] text-[#536B73] mb-1">Quando</span>
-              <span class="block text-sm font-medium text-[#054054]">{{ resumoQuando() }}</span>
-            </button>
-          </div>
-
-          <!-- Quem -->
-          <div class="relative">
-            <button
-              #gatilhoQuem
-              type="button"
-              class="w-full text-left px-5 py-4 hover:bg-[#F4F8F9] transition-colors"
-              [attr.aria-expanded]="painel() === 'quem'"
-              aria-haspopup="dialog"
-              (click)="alternarPainel('quem')"
-            >
-              <span class="type-eyebrow block text-[10px] text-[#536B73] mb-1">Quem</span>
-              <span class="block text-sm font-medium text-[#054054]">{{ resumoQuem() }}</span>
-            </button>
-          </div>
-
-          <!-- Buscar -->
-          <div class="flex items-center px-4 py-3">
-            <button
-              type="button"
-              class="w-full sm:w-auto px-8 py-3 rounded-full bg-[#054054] text-white text-sm font-semibold
-                     hover:bg-[#0a5a73] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              [disabled]="!state.prontoParaBuscar() || state.loading()"
-              (click)="buscar.emit()"
-            >
-              @if (state.loading()) { Buscando… } @else { Buscar }
-            </button>
-          </div>
-        </div>
-
-        <!-- Validação -->
-        @if (state.validacaoRascunho(); as msg) {
-          <p class="px-5 pb-3 text-xs text-[#9A3B3B]" role="status">{{ msg }}</p>
-        } @else if (state.previaPeriodos(); as n) {
-          <p class="px-5 pb-3 text-[11px] text-[#536B73]">
-            A busca vai consultar {{ n }} {{ n === 1 ? 'período' : 'períodos' }}.
-          </p>
-        }
-      </div>
-    </div>
-
-    <!-- Backdrop + painéis -->
-    @if (painel() !== null) {
-      <div class="fixed inset-0 z-40 bg-[#054054]/20" aria-hidden="true" (click)="fecharPainel(false)"></div>
+      <!-- Pílula principal -->
       <div
-        class="fixed z-50 inset-x-4 top-24 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-[min(92vw,680px)]
-               bg-white border border-[#DCE6EA] rounded-2xl shadow-2xl p-5 max-h-[75vh] overflow-y-auto"
-        role="dialog"
-        [attr.aria-label]="painel() === 'quando' ? 'Escolher datas' : 'Escolher hóspedes'"
-        (keydown.escape)="fecharPainel(true)"
+        class="grid grid-cols-[1fr_1fr_auto] items-center rounded-full border shadow-[0_8px_28px_rgba(5,64,84,0.10)] transition-colors"
+        [class]="painel() !== null ? 'bg-[#E8F0F2] border-[#DCE6EA]' : 'bg-white border-[#DCE6EA]'"
       >
-        @if (painel() === 'quando') {
+        <!-- Quando -->
+        <button
+          #gatilhoQuando
+          type="button"
+          class="text-left pl-6 pr-4 py-3 rounded-full transition-colors"
+          [class]="painel() === 'quando' ? 'bg-white shadow-md' : 'hover:bg-[#F0F5F6]'"
+          [attr.aria-expanded]="painel() === 'quando'"
+          aria-haspopup="dialog"
+          (click)="alternarPainel('quando')"
+        >
+          <span class="block text-[10px] font-semibold uppercase tracking-wide text-[#054054]">Quando</span>
+          <span class="block text-sm truncate" [class]="temQuando() ? 'text-[#054054] font-medium' : 'text-[#536B73]'">
+            {{ resumoQuando() }}
+          </span>
+        </button>
+
+        <!-- Quem -->
+        <button
+          #gatilhoQuem
+          type="button"
+          class="text-left pl-6 pr-4 py-3 rounded-full transition-colors border-l border-[#DCE6EA]"
+          [class]="painel() === 'quem' ? 'bg-white shadow-md' : 'hover:bg-[#F0F5F6]'"
+          [attr.aria-expanded]="painel() === 'quem'"
+          aria-haspopup="dialog"
+          (click)="alternarPainel('quem')"
+        >
+          <span class="block text-[10px] font-semibold uppercase tracking-wide text-[#054054]">Quem</span>
+          <span class="block text-sm truncate" [class]="temQuem() ? 'text-[#054054] font-medium' : 'text-[#536B73]'">
+            {{ resumoQuem() }}
+          </span>
+        </button>
+
+        <!-- Buscar -->
+        <div class="p-2">
+          <button
+            type="button"
+            class="flex items-center justify-center gap-2 rounded-full bg-[#054054] text-white font-semibold
+                   hover:bg-[#0a5a73] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            [class]="painel() !== null ? 'px-6 py-3 text-sm' : 'w-11 h-11'"
+            [disabled]="!state.prontoParaBuscar() || state.loading()"
+            [attr.aria-label]="state.loading() ? 'Buscando…' : 'Buscar'"
+            (click)="buscar.emit()"
+          >
+            <app-icon name="search" [size]="18" aria-hidden="true" />
+            @if (painel() !== null) {
+              <span>{{ state.loading() ? 'Buscando…' : 'Buscar' }}</span>
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- Validação / prévia -->
+      @if (state.validacaoRascunho(); as msg) {
+        <p class="px-6 pt-2 text-xs text-[#9A3B3B]" role="status">{{ msg }}</p>
+      } @else if (state.previaPeriodos(); as n) {
+        <p class="px-6 pt-2 text-[11px] text-[#536B73]">
+          A busca vai consultar {{ n }} {{ n === 1 ? 'período' : 'períodos' }}.
+        </p>
+      }
+
+      <!-- Painéis ancorados -->
+      @if (painel() === 'quando') {
+        <div
+          class="absolute z-50 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[min(92vw,700px)]
+                 top-full mt-3 bg-white rounded-3xl border border-[#DCE6EA] shadow-2xl p-5 sm:p-6
+                 max-h-[78vh] overflow-y-auto"
+          role="dialog"
+          aria-label="Escolher datas"
+          (keydown.escape)="fecharPainel(true)"
+        >
+          <!-- Toggle Datas/Flexível (dentro do painel, padrão Airbnb) -->
+          <div class="flex justify-center mb-5">
+            <div class="inline-flex bg-[#E8F0F2] rounded-full p-1" role="tablist" aria-label="Modo de busca">
+              @for (aba of abas; track aba.valor) {
+                <button
+                  type="button"
+                  role="tab"
+                  [attr.aria-selected]="state.mode() === aba.valor"
+                  class="px-6 py-2 rounded-full text-sm font-medium transition-colors"
+                  [class]="state.mode() === aba.valor ? 'bg-white text-[#054054] shadow-sm' : 'text-[#536B73] hover:text-[#054054]'"
+                  (click)="state.mode.set(aba.valor)"
+                >{{ aba.rotulo }}</button>
+              }
+            </div>
+          </div>
+
           @if (state.mode() === 'dates') {
             <app-date-range-picker
               [(checkIn)]="state.checkIn"
@@ -115,7 +126,7 @@ type Painel = 'quando' | 'quem' | null;
               [hoje]="state.hoje()"
               [horizonte]="state.horizonte()"
             />
-            <div class="mt-4 pt-4 border-t border-[#E8F0F2]">
+            <div class="mt-5">
               <app-tolerance-selector [(tolerance)]="state.tolerance" [noites]="noitesRascunho()" />
             </div>
           } @else {
@@ -126,23 +137,50 @@ type Painel = 'quando' | 'quem' | null;
               [horizonte]="state.horizonte()"
             />
           }
-        } @else {
-          <app-guest-selector [(guests)]="state.guests" />
-        }
 
-        <div class="flex justify-between items-center mt-4 pt-4 border-t border-[#E8F0F2]">
-          <button
-            type="button"
-            class="text-xs font-medium text-[#536B73] underline underline-offset-2 hover:text-[#054054]"
-            (click)="limpar()"
-          >Limpar</button>
-          <button
-            type="button"
-            class="px-5 py-2 rounded-full bg-[#054054] text-white text-xs font-semibold hover:bg-[#0a5a73]"
-            (click)="fecharPainel(true)"
-          >Concluir</button>
+          <div class="flex justify-between items-center mt-5 pt-4 border-t border-[#F0F5F6]">
+            <button
+              type="button"
+              class="text-xs font-medium text-[#536B73] underline underline-offset-2 hover:text-[#054054]"
+              (click)="limpar()"
+            >Limpar</button>
+            <button
+              type="button"
+              class="px-5 py-2 rounded-full bg-[#054054] text-white text-xs font-semibold hover:bg-[#0a5a73]"
+              (click)="fecharPainel(true)"
+            >Concluir</button>
+          </div>
         </div>
-      </div>
+      }
+
+      @if (painel() === 'quem') {
+        <div
+          class="absolute z-50 right-4 sm:right-6 w-[min(92vw,380px)]
+                 top-full mt-3 bg-white rounded-3xl border border-[#DCE6EA] shadow-2xl px-5 py-4"
+          role="dialog"
+          aria-label="Escolher hóspedes"
+          (keydown.escape)="fecharPainel(true)"
+        >
+          <app-guest-selector [(guests)]="state.guests" />
+          <div class="flex justify-between items-center mt-3 pt-3 border-t border-[#F0F5F6]">
+            <button
+              type="button"
+              class="text-xs font-medium text-[#536B73] underline underline-offset-2 hover:text-[#054054]"
+              (click)="limpar()"
+            >Limpar</button>
+            <button
+              type="button"
+              class="px-5 py-2 rounded-full bg-[#054054] text-white text-xs font-semibold hover:bg-[#0a5a73]"
+              (click)="fecharPainel(true)"
+            >Concluir</button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Click-catcher transparente (Airbnb não escurece a página) -->
+    @if (painel() !== null) {
+      <div class="fixed inset-0 z-40" aria-hidden="true" (click)="fecharPainel(false)"></div>
     }
   `,
   host: {
@@ -201,17 +239,29 @@ export class SearchBarComponent {
     return i && f ? diffDays(f, i) : null;
   });
 
+  protected readonly temQuando = computed(
+    () =>
+      (this.state.mode() === 'dates' && Boolean(this.state.checkIn())) ||
+      (this.state.mode() === 'flexible' && this.state.months().length > 0),
+  );
+
+  protected readonly temQuem = computed(() => {
+    const g = this.state.guests();
+    return g.adults + g.children + g.infants + g.pets > 0;
+  });
+
   protected readonly resumoQuando = computed(() => {
     if (this.state.mode() === 'flexible') {
       const preset = this.state.stayPreset();
       const nome =
         preset === 'weekend' ? 'Um fim de semana' : preset === 'week' ? 'Uma semana' : 'Um mês';
       const n = this.state.months().length;
-      return n === 0 ? nome : `${nome} · ${n} ${n === 1 ? 'mês' : 'meses'}`;
+      if (n === 0) return this.temQuando() ? nome : 'Qualquer dia';
+      return `${nome} · ${n} ${n === 1 ? 'mês' : 'meses'}`;
     }
     const i = parseDate(this.state.checkIn());
     const f = parseDate(this.state.checkOut());
-    if (!i) return 'Escolha as datas';
+    if (!i) return 'Insira as datas';
     if (!f) return `${diaCurto(i)} — saída`;
     const tol = this.state.tolerance();
     const margem = tol ? ` · ±${tol}d` : '';
@@ -222,7 +272,7 @@ export class SearchBarComponent {
     const g = this.state.guests();
     const pessoas = g.adults + g.children;
     const partes: string[] = [];
-    if (pessoas === 0 && g.infants === 0 && g.pets === 0) return 'Quem viaja?';
+    if (pessoas === 0 && g.infants === 0 && g.pets === 0) return 'Hóspedes?';
     if (pessoas > 0) partes.push(`${pessoas} ${pessoas === 1 ? 'hóspede' : 'hóspedes'}`);
     if (g.infants > 0) partes.push(`${g.infants} ${g.infants === 1 ? 'bebê' : 'bebês'}`);
     if (g.pets > 0) partes.push(`${g.pets} ${g.pets === 1 ? 'animal' : 'animais'}`);

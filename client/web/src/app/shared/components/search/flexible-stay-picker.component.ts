@@ -2,11 +2,12 @@ import { Component, computed, input, model, signal } from '@angular/core';
 import { StayPreset } from '../../../core/models/search.models';
 import { addCalendarMonths, CivilDate, compareDates } from '../../../core/services/search-periods';
 import { rotuloMes } from './date-range-picker.component';
+import { IconComponent } from '../icons/icon.component';
 
 interface Preset {
   valor: StayPreset;
   titulo: string;
-  descricao: string;
+  ariaDescricao: string;
 }
 
 interface CartaoMes {
@@ -20,77 +21,71 @@ const CARTOES_POR_JANELA = 6;
 
 @Component({
   selector: 'app-flexible-stay-picker',
+  imports: [IconComponent],
   template: `
-    <fieldset class="mb-4">
-      <legend class="type-eyebrow text-[10px] text-[#536B73] mb-2">Duração da estadia</legend>
-      <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Duração da estadia">
-        @for (p of presets; track p.valor) {
-          <button
-            type="button"
-            role="radio"
-            [attr.aria-checked]="stayPreset() === p.valor"
-            class="rounded-xl border p-3 text-left transition-colors"
-            [class]="stayPreset() === p.valor
-              ? 'bg-[#054054] border-[#054054] text-white'
-              : 'border-[#DCE6EA] text-[#054054] hover:border-[#054054]'"
-            (click)="stayPreset.set(p.valor)"
-          >
-            <span class="block text-sm font-semibold">{{ p.titulo }}</span>
-            <span class="block text-[11px] mt-0.5" [class]="stayPreset() === p.valor ? 'text-white/80' : 'text-[#536B73]'">
-              {{ p.descricao }}
-            </span>
-          </button>
-        }
-      </div>
-    </fieldset>
+    <h3 class="text-center text-sm font-semibold text-[#054054] mb-3">
+      Por quanto tempo você gostaria de ficar?
+    </h3>
+    <div class="flex justify-center flex-wrap gap-2 mb-7" role="radiogroup" aria-label="Duração da estadia">
+      @for (p of presets; track p.valor) {
+        <button
+          type="button"
+          role="radio"
+          [attr.aria-checked]="stayPreset() === p.valor"
+          [attr.aria-label]="p.titulo + ' — ' + p.ariaDescricao"
+          class="px-5 py-2 rounded-full border text-sm transition-colors"
+          [class]="stayPreset() === p.valor
+            ? 'border-[#054054] bg-white text-[#054054] font-semibold shadow-sm'
+            : 'border-[#DCE6EA] text-[#054054] hover:border-[#054054]'"
+          (click)="stayPreset.set(p.valor)"
+        >{{ p.titulo }}</button>
+      }
+    </div>
 
-    <fieldset>
-      <legend class="type-eyebrow text-[10px] text-[#536B73] mb-2">
-        Meses de entrada — selecione um ou mais
-      </legend>
-      <div class="flex items-center justify-between mb-2">
+    <h3 class="text-center text-sm font-semibold text-[#054054] mb-3">Quando você quer ir?</h3>
+    <div class="flex items-center justify-between mb-2" aria-live="polite">
+      <button
+        type="button"
+        class="w-7 h-7 rounded-full border border-[#B9CBD3] text-[#054054] disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#054054]"
+        [disabled]="janela() === 0"
+        aria-label="Meses anteriores"
+        (click)="janela.set(janela() - 1)"
+      >‹</button>
+      <span class="text-[11px] text-[#536B73]">
+        {{ mesesSelecionados() === 0
+          ? 'Selecione um ou mais meses de entrada'
+          : mesesSelecionados() + (mesesSelecionados() === 1 ? ' mês selecionado' : ' meses selecionados') }}
+      </span>
+      <button
+        type="button"
+        class="w-7 h-7 rounded-full border border-[#B9CBD3] text-[#054054] disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#054054]"
+        [disabled]="(janela() + 1) * CARTOES >= todos().length"
+        aria-label="Meses seguintes"
+        (click)="janela.set(janela() + 1)"
+      >›</button>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" role="group" aria-label="Meses disponíveis">
+      @for (c of cartoesVisiveis(); track c.chave) {
         <button
           type="button"
-          class="w-7 h-7 rounded-full border border-[#B9CBD3] text-[#054054] disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#054054]"
-          [disabled]="janela() === 0"
-          aria-label="Meses anteriores"
-          (click)="janela.set(janela() - 1)"
-        >‹</button>
-        <span class="text-[11px] text-[#536B73]">
-          {{ mesesSelecionados() === 0
-            ? 'Nenhum mês selecionado'
-            : mesesSelecionados() + (mesesSelecionados() === 1 ? ' mês selecionado' : ' meses selecionados') }}
-        </span>
-        <button
-          type="button"
-          class="w-7 h-7 rounded-full border border-[#B9CBD3] text-[#054054] disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#054054]"
-          [disabled]="(janela() + 1) * CARTOES >= todos().length"
-          aria-label="Meses seguintes"
-          (click)="janela.set(janela() + 1)"
-        >›</button>
-      </div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" role="group" aria-label="Meses disponíveis">
-        @for (c of cartoesVisiveis(); track c.chave) {
-          <button
-            type="button"
-            [attr.aria-pressed]="c.selecionado"
-            class="rounded-xl border p-3 text-left transition-colors"
-            [class]="c.selecionado
-              ? 'bg-[#054054] border-[#054054] text-white'
-              : 'border-[#DCE6EA] text-[#054054] hover:border-[#054054]'"
-            (click)="alternar(c.chave)"
-          >
-            <span class="block text-sm font-semibold capitalize">{{ c.rotulo }}</span>
-            <span class="block text-[11px] mt-0.5" [class]="c.selecionado ? 'text-white/80' : 'text-[#536B73]'">
-              {{ c.ano }}
-            </span>
-          </button>
-        }
-      </div>
-      <p class="mt-2 text-[11px] text-[#536B73]">
-        A saída pode cair no mês seguinte — cada período é validado no servidor.
-      </p>
-    </fieldset>
+          [attr.aria-pressed]="c.selecionado"
+          class="rounded-2xl border p-4 flex flex-col items-start gap-2 transition-colors"
+          [class]="c.selecionado
+            ? 'border-[#054054] bg-[#F0F5F6] text-[#054054] shadow-sm'
+            : 'border-[#DCE6EA] text-[#054054] hover:border-[#054054]'"
+          (click)="alternar(c.chave)"
+        >
+          <app-icon name="calendar" [size]="22" aria-hidden="true" />
+          <span class="text-left">
+            <span class="block text-sm font-medium">{{ c.rotulo }}</span>
+            <span class="block text-[11px] text-[#536B73]">{{ c.ano }}</span>
+          </span>
+        </button>
+      }
+    </div>
+    <p class="mt-3 text-[11px] text-center text-[#536B73]">
+      {{ descricaoPreset() }}
+    </p>
   `,
 })
 export class FlexibleStayPickerComponent {
@@ -105,10 +100,21 @@ export class FlexibleStayPickerComponent {
   protected readonly janela = signal(0);
 
   public readonly presets: Preset[] = [
-    { valor: 'weekend', titulo: 'Um fim de semana', descricao: 'Sexta a domingo · 2 noites' },
-    { valor: 'week', titulo: 'Uma semana', descricao: '7 noites a partir de cada entrada' },
-    { valor: 'month', titulo: 'Um mês', descricao: 'Um mês calendário por entrada' },
+    { valor: 'weekend', titulo: 'Um fim de semana', ariaDescricao: 'sexta a domingo, 2 noites' },
+    { valor: 'week', titulo: 'Uma semana', ariaDescricao: '7 noites a partir de cada entrada' },
+    { valor: 'month', titulo: 'Um mês', ariaDescricao: 'um mês calendário por entrada' },
   ];
+
+  protected readonly descricaoPreset = computed(() => {
+    switch (this.stayPreset()) {
+      case 'weekend':
+        return 'Entradas às sextas-feiras, saída no domingo — 2 noites por período.';
+      case 'week':
+        return 'Qualquer dia de entrada dentro dos meses — 7 noites por período.';
+      case 'month':
+        return 'Um mês calendário por entrada — a saída ajusta ao último dia válido do mês seguinte.';
+    }
+  });
 
   /** Todos os meses elegíveis: mês corrente até o horizonte. */
   protected readonly todos = computed<CivilDate[]>(() => {

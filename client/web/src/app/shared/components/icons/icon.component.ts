@@ -187,6 +187,12 @@ import { Component, input } from '@angular/core';
           <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
       }
+      @case ('search') {
+        <svg [attr.width]="size()" [attr.height]="size()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="inline-block">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.5" y2="16.5"></line>
+        </svg>
+      }
       @default {
         <svg [attr.width]="size()" [attr.height]="size()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="inline-block">
           <circle cx="12" cy="12" r="10"></circle>
