@@ -492,7 +492,13 @@ impl IntegracoesService {
             });
         }
 
-        let resultado = match self.resolver.resolver(provedor, ambiente).await? {
+        // Teste de conexão é leitura — resolve mesmo com a integração
+        // desabilitada (é assim que o operador valida antes de habilitar).
+        let resultado = match self
+            .resolver
+            .resolver_historico(provedor, ambiente)
+            .await?
+        {
             ResolucaoGateway::Persistida(gw) | ResolucaoGateway::Ambiente(gw) => {
                 match gw.testar_conexao().await {
                     Ok(rotulo) => (StatusVerificacao::Ok, None, Some(rotulo)),
@@ -506,6 +512,12 @@ impl IntegracoesService {
             ),
         };
         let (status, erro, conta) = resultado;
+        let mut erro = erro;
+        // Verificação ok em integração desabilitada — o teste passa,
+        // mas o aviso evita confundir "credencial válida" com "no ar".
+        if status == StatusVerificacao::Ok && !i.habilitado {
+            erro = Some("Credencial válida — integração desabilitada, habilite para usar.".into());
+        }
         let caps = capabilities_padrao(provedor);
         self.repo
             .registrar_verificacao(
@@ -521,6 +533,11 @@ impl IntegracoesService {
             verificacao_status: status.as_str().into(),
             nome_conta: conta,
             mensagem: match status {
+                StatusVerificacao::Ok if !i.habilitado => {
+                    "Conexão verificada — a integração segue desabilitada, \
+                     habilite para operar."
+                        .into()
+                }
                 StatusVerificacao::Ok => "Conexão verificada com sucesso.".into(),
                 StatusVerificacao::ValidacaoLocal => {
                     "Validação local concluída — sem leitura segura no provedor.".into()
