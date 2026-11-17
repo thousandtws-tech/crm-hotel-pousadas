@@ -192,6 +192,13 @@ class Settings(BaseSettings):
     maria_s3_region: str = "us-east-1"
     maria_s3_access_key: str = ""
     maria_s3_secret_key: str = ""
+    # Backup do Postgres → S3 (pg_dump custom + gzip, ver
+    # app/infra/pg_backup.py). Env NOVA, separada do DATABASE_URL da
+    # API — a MAR IA não abre conexão com o banco, só roda o binário
+    # num subprocesso. Vazio = task nem inicia (env-gate). Reaproveita
+    # bucket/credenciais/intervalo/retenção do backup do data/ acima.
+    # Destino: s3://BUCKET/backups/pg/maria-pg-<AAAAMMDD-HHMMSS>.dump.gz
+    backup_database_url: str = ""
 
     @property
     def cors_origins(self) -> list[str]:

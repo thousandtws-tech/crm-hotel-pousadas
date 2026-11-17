@@ -13,8 +13,10 @@ WORKDIR /app
 # libstdc++6 — exigida por onnxruntime (piper-tts) e ctranslate2
 # (faster-whisper) nas imagens slim; ~1 MB, removível se os
 # providers locais de voz não forem usados.
+# postgresql-client — pg_dump do backup agendado (BACKUP_DATABASE_URL).
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libstdc++6 \
+    && apt-get install -y --no-install-recommends \
+       libstdc++6 postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 COPY server/maria/requirements.txt .

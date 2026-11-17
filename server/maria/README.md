@@ -205,6 +205,7 @@ app/
 │   ├── auth.py         validação JWT + níveis
 │   ├── storage.py      store pluggable — JSON (dev) × SQLite (escala)
 │   ├── backup.py       backup do data/ para S3/MinIO (prefixo datado)
+│   ├── pg_backup.py    backup agendado do Postgres (pg_dump→gzip→S3)
 │   ├── memory.py       memórias aprendidas (escopo usuário/pousada)
 │   ├── transcripts.py  diário de turnos (dataset)
 │   └── knowledge.py    RAG — base de conhecimento + embeddings
@@ -259,6 +260,13 @@ Com `MARIA_BACKUP_ENABLED=true` + `MARIA_S3_*`, o serviço envia a cada
 Retenção de `MARIA_BACKUP_RETAIN` dias (podas automáticas). Funciona
 com MinIO (`MARIA_S3_ENDPOINT=http://minio:9000`, path-style
 automático) e AWS S3 (endpoint vazio). Credenciais fora do repo.
+
+Postgres: com `BACKUP_DATABASE_URL` preenchida (+ `MARIA_S3_*`), um
+segundo loop roda `pg_dump --format=custom` na janela diária ~04:00 UTC
+(depois a cada `MARIA_BACKUP_INTERVAL_H`), compacta em gzip e envia para
+`s3://BUCKET/backups/pg/maria-pg-<timestamp>.dump.gz`, mantendo os
+últimos `MARIA_BACKUP_RETAIN` dumps. Falhas viram log + métrica
+(`backup_pg_erros`) — nunca derrubam o serviço.
 
 ## Segurança e limites
 

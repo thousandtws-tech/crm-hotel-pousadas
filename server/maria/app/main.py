@@ -72,6 +72,14 @@ async def lifespan(app: FastAPI):
     if s.maria_backup_enabled and s.maria_s3_bucket:
         from .infra.backup import backup_periodico
         tarefas.append(asyncio.create_task(backup_periodico(store)))
+    # Backup do Postgres — gate próprio (BACKUP_DATABASE_URL + bucket),
+    # independente do backup do data/ acima.
+    from .infra import pg_backup
+    if pg_backup.backup_pg_habilitado():
+        tarefas.append(
+            asyncio.create_task(pg_backup.backup_pg_periodico()))
+        log.info("backup pg agendado — janela diária ~%02d:00 UTC",
+                 pg_backup._HORA_UTC)
     try:
         yield
     finally:

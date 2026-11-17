@@ -35,6 +35,8 @@ class Uso:
         "tool_calls": 0,
         "tool_erros": 0,
         "acoes_executadas": 0,
+        "backup_pg_ok": 0,
+        "backup_pg_erros": 0,
     }
     _por_ferramenta: dict[str, int] = {}
 
@@ -195,7 +197,7 @@ def prometheus() -> str:
     uso = Uso.resumo()
     for k in ("turnos", "turnos_erro", "llm_chamadas", "tokens_input",
               "tokens_output", "tokens_cached", "tool_calls", "tool_erros",
-              "acoes_executadas"):
+              "acoes_executadas", "backup_pg_ok", "backup_pg_erros"):
         nome = f"maria_{k}_total"
         linhas += [f"# TYPE {nome} counter", f"{nome} {uso.get(k, 0)}"]
     for nome, n in (uso.get("top_ferramentas") or {}).items():
