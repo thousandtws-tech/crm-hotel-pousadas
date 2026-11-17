@@ -1,5 +1,3 @@
-//! Definição da CLI operacional do binário `clarituz-api`.
-
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
