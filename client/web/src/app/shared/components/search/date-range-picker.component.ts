@@ -110,13 +110,18 @@ export class DateRangePickerComponent {
   protected readonly formatDate = formatDate;
   protected readonly rotuloMes = rotuloMes;
 
-  /** Primeiro mês da janela visível. */
-  protected readonly mesVisivel = signal<CivilDate>({ y: 0, m: 0, d: 1 });
+  /** Janela manual de navegação — null = segue a entrada (ou hoje). */
+  private readonly janelaManual = signal<CivilDate | null>(null);
+  /** Primeiro mês da janela visível — sempre válido desde o 1º render. */
+  protected readonly mesVisivel = computed<CivilDate>(() => {
+    const manual = this.janelaManual();
+    if (manual) return manual;
+    const base = this.entrada() ?? this.hoje();
+    return { y: base.y, m: base.m, d: 1 };
+  });
   protected readonly mesSeguinte = computed(() => addCalendarMonth(this.mesVisivel()));
   /** Saída candidata sob o cursor/foco (só quando aguardando saída). */
   protected readonly previewFim = signal<CivilDate | null>(null);
-
-  private inicializado = false;
 
   protected readonly entrada = computed(() => parseDate(this.checkIn()));
   protected readonly saida = computed(() => parseDate(this.checkOut()));
@@ -134,15 +139,7 @@ export class DateRangePickerComponent {
   }
 
   protected navegar(delta: number): void {
-    this.mesVisivel.update((m) => addCalendarMonths({ ...m, d: 1 }, delta));
-  }
-
-  /** Deve ser chamado pelo pai quando o painel abre (sincroniza janela). */
-  public sincronizarJanela(): void {
-    if (this.inicializado) return;
-    this.inicializado = true;
-    const base = this.entrada() ?? this.hoje();
-    this.mesVisivel.set({ y: base.y, m: base.m, d: 1 });
+    this.janelaManual.set(addCalendarMonths({ ...this.mesVisivel(), d: 1 }, delta));
   }
 
   public grade(mes: CivilDate): Celula[] {

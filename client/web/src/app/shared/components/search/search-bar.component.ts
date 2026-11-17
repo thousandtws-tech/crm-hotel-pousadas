@@ -1,4 +1,4 @@
-import { Component, computed, ElementRef, inject, output, signal, viewChild } from '@angular/core';
+import { Component, computed, ElementRef, inject, output, signal } from '@angular/core';
 import { SearchStateService } from '../../../core/services/search-state.service';
 import { diffDays, parseDate } from '../../../core/services/search-periods';
 import { DateRangePickerComponent, rotuloMes } from './date-range-picker.component';
@@ -192,7 +192,6 @@ export class SearchBarComponent {
   public readonly buscar = output<void>();
 
   protected readonly painel = signal<Painel>(null);
-  protected readonly picker = viewChild(DateRangePickerComponent);
   private readonly host = inject(ElementRef<HTMLElement>);
 
   protected readonly abas = [
@@ -202,10 +201,6 @@ export class SearchBarComponent {
 
   protected alternarPainel(p: Exclude<Painel, null>): void {
     this.painel.update((atual) => (atual === p ? null : p));
-    if (this.painel() === 'quando') {
-      // Sincroniza a janela do calendário com o rascunho atual.
-      setTimeout(() => this.picker()?.sincronizarJanela());
-    }
   }
 
   protected fecharPainel(devolverFoco: boolean): void {
