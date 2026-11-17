@@ -1,11 +1,3 @@
-//! Roteamento inteligente — protocolo de atendimento humano por setor.
-//!
-//! A escalada da Inná (portal ou WhatsApp) abre um protocolo `A-NNNNNN`
-//! roteado por palavra-chave: urgências alertam recepção+gerência na
-//! hora; normais vão pra fila do setor dentro do horário de atendimento;
-//! o worker (`sweep`, 60s) escala pra gerência o que vencer o SLA de
-//! aceite. Determinístico — a IA não decide setor nem prioridade.
-
 use std::sync::Arc;
 
 use chrono::{Duration, Timelike, Utc};
@@ -14,7 +6,6 @@ use clarituz_domain::ports::*;
 use crate::error::AppResult;
 use crate::services::ComunicacaoService;
 
-/// Urgência física/segurança — alerta imediato em qualquer horário.
 const URGENCIA: &[&str] = &[
     "urgente",
     "emergencia",

@@ -27,7 +27,6 @@ async fn erro_status(ctx: &str, r: reqwest::Response) -> DomainError {
     DomainError::regra("Operação recusada pelo provedor.")
 }
 
-
 pub struct ResendEmissor {
     http: Client,
     api_key: String,
@@ -77,7 +76,6 @@ impl Emissor for ResendEmissor {
         Ok(resp["id"].as_str().map(str::to_string))
     }
 }
-
 
 pub struct MetaWaEmissor {
     http: Client,

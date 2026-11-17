@@ -1,5 +1,3 @@
-//! Casos de uso do catálogo de acomodações (tipos, unidades, quartos, tarifas).
-
 use crate::actor::Ator;
 use crate::dto::{AcomodacaoInput, NomeInput, QuartoInput, TarifaOcupacaoInput};
 use crate::error::AppResult;
@@ -33,8 +31,6 @@ impl AcomodacaoService {
             quartos,
         }
     }
-
-    // -- tipos ---------------------------------------------------------------
 
     pub async fn listar_tipos(&self, apenas_ativos: bool) -> AppResult<Vec<TipoAcomodacao>> {
         self.tipos.listar(apenas_ativos).await.map_err(Into::into)
@@ -70,12 +66,10 @@ impl AcomodacaoService {
         Ok(self.tipos.atualizar(id, &nome, input.version, log).await?)
     }
 
-    /// Faixas de preço por ocupação do tipo — leitura livre à recepção.
     pub async fn tarifas_ocupacao(&self, idtipo: i64) -> AppResult<Vec<TarifaOcupacao>> {
         Ok(self.acomodacoes.tarifas_ocupacao(idtipo).await?)
     }
 
-    /// Substitui as faixas do tipo (admin) — valida faixas antes de gravar.
     pub async fn salvar_tarifas_ocupacao(
         &self,
         ator: &Ator,
@@ -134,8 +128,6 @@ impl AcomodacaoService {
         );
         Ok(self.tipos.definir_ativo(id, ativo, log).await?)
     }
-
-    // -- acomodações -----------------------------------------------------------
 
     pub async fn buscar(&self, id: i64) -> AppResult<Acomodacao> {
         self.acomodacoes
@@ -230,8 +222,6 @@ impl AcomodacaoService {
             .map_err(Into::into)
     }
 
-    // -- quartos ---------------------------------------------------------------
-
     pub async fn listar_quartos(&self, idacomodacao: i64) -> AppResult<Vec<Quarto>> {
         self.buscar(idacomodacao).await?;
         self.quartos
@@ -279,8 +269,6 @@ impl AcomodacaoService {
         Ok(self.quartos.definir_ativo(id, ativo, log).await?)
     }
 
-    // -- remoções (somente admin) ------------------------------------------------
-
     pub async fn remover_tipo(&self, ator: &Ator, id: i64) -> AppResult<()> {
         ator.exigir_admin()?;
         let log = ator.log(
@@ -293,7 +281,6 @@ impl AcomodacaoService {
         Ok(self.tipos.remover(id, log).await?)
     }
 
-    /// Exclui a acomodação e devolve as chaves de mídia para a API apagar.
     pub async fn remover(&self, ator: &Ator, id: i64) -> AppResult<Vec<String>> {
         ator.exigir_admin()?;
         let log = ator.log(
@@ -317,8 +304,6 @@ impl AcomodacaoService {
         );
         Ok(self.quartos.remover(id, log).await?)
     }
-
-    // -- internos --------------------------------------------------------------
 
     fn validar(input: AcomodacaoInput) -> AppResult<NovaAcomodacao> {
         let nome = validar_nome(&input.nome)?;

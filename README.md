@@ -8,8 +8,7 @@ editável) e a **MAR IA**, uma assistente de voz em português que conversa com 
 sistema inteiro — responde perguntas, executa ações com confirmação e abre telas
 por comando de voz.
 
-Tudo roda na nuvem (Railway) e foi pensado para gente que não é técnica: a
-recepção opera o dia inteiro sem tocar em nada complicado.
+
 
 ## As peças do sistema
 
@@ -22,13 +21,6 @@ recepção opera o dia inteiro sem tocar em nada complicado.
 | MAR IA (voz + texto) | Python · FastAPI · OpenAI · ElevenLabs | `server/maria/` |
 | Mídia (fotos, docs, logo) | MinIO / S3 | Railway |
 | Banco | PostgreSQL | Railway |
-
-## Em produção
-
-- Painel: `https://admin-production-2c55.up.railway.app`
-- Site: `https://web-production-5b3105.up.railway.app`
-- API: `https://api-production-19dc.up.railway.app`
-- MAR IA: `https://maria-production-b5c4.up.railway.app`
 
 ## Rodando local
 
