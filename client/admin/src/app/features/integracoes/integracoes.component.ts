@@ -6,30 +6,42 @@ import { Notify } from '@core/services/notify.service';
 import * as M from '@core/models';
 import {
   CAMPOS_POR_PROVEDOR,
+  CATEGORIA_PROVEDOR,
+  ORDEM_CATEGORIA,
   ORDEM_PROVEDOR,
+  ROTULO_CATEGORIA,
   estadoDe,
   rotuloAmbiente,
   rotuloProvedor,
+  sessaoZapi,
 } from './integracoes.const';
 
 interface ProvedorGrupo {
-  provedor: M.ProvedorPagamento;
+  provedor: M.ProvedorIntegracao;
   producao: M.IntegracaoView | null;
   teste: M.IntegracaoView | null;
 }
 
-/** Produto de checkout implementado pelo adapter — texto factual, não marketing. */
-const DESCRITOR_PROVEDOR: Record<M.ProvedorPagamento, string> = {
+interface CategoriaSecao {
+  categoria: M.CategoriaIntegracao;
+  rotulo: string;
+  grupos: ProvedorGrupo[];
+}
+
+/** Produto de checkout/canal implementado pelo adapter — factual, não marketing. */
+const DESCRITOR_PROVEDOR: Record<M.ProvedorIntegracao, string> = {
   stripe: 'Stripe Checkout',
   pagbank: 'Checkout PagBank',
   mercadopago: 'Checkout Pro',
+  zapi: 'WhatsApp Business',
 };
 
 /**
- * Integrações de pagamento — um card por provedor contendo os dois
- * ambientes como linhas navegáveis. A faixa superior responde a pergunta
- * operacional principal: quem cobra o site hoje. Credenciais são
- * cifradas e write-only; aqui só aparecem estado, conta e cobertura.
+ * Integrações — catálogo agrupado por categoria: Pagamentos (um card por
+ * provedor com as linhas Produção/Teste) e Comunicação (Z-API/WhatsApp,
+ * só Produção). A faixa superior responde a pergunta operacional
+ * principal: quem cobra o site hoje. Credenciais são cifradas e
+ * write-only; aqui só aparecem estado, conta, sessão e cobertura.
  */
 @Component({
   selector: 'app-integracoes',
@@ -41,8 +53,8 @@ const DESCRITOR_PROVEDOR: Record<M.ProvedorPagamento, string> = {
           <p class="eyebrow">Configurações</p>
           <h2 class="titulo">Integrações</h2>
           <p class="sub">
-            Provedores de pagamento do site — credenciais cifradas, webhooks e o padrão das novas
-            cobranças.
+            Provedores de pagamento do site e canais de comunicação — credenciais cifradas, webhooks
+            e padrões por escopo.
           </p>
         </div>
       </div>
@@ -72,56 +84,73 @@ const DESCRITOR_PROVEDOR: Record<M.ProvedorPagamento, string> = {
           </div>
         </div>
 
-        <div class="grade">
-          @for (g of grupos(); track g.provedor) {
-            <section class="card-prov">
-              <header class="prov-cab">
-                <div>
-                  <h3 class="prov-nome">{{ rotuloProvedor(g.provedor) }}</h3>
-                  <p class="prov-desc">{{ descriptorDe(g.provedor) }}</p>
-                </div>
-              </header>
+        @for (sec of secoes(); track sec.categoria) {
+          <section class="secao" [attr.aria-label]="sec.rotulo">
+            <h3 class="secao-t">{{ sec.rotulo }}</h3>
+            <div class="grade">
+              @for (g of sec.grupos; track g.provedor) {
+                <section class="card-prov">
+                  <header class="prov-cab">
+                    <div>
+                      <h3 class="prov-nome">{{ rotuloProvedor(g.provedor) }}</h3>
+                      <p class="prov-desc">{{ descriptorDe(g.provedor) }}</p>
+                    </div>
+                  </header>
 
-              <div class="prov-linhas">
-                @for (i of [g.producao, g.teste]; track $index) {
-                  @if (i) {
-                    <a
-                      class="env-linha"
-                      [routerLink]="['/integracoes', i.provedor, i.ambiente]"
-                      [attr.aria-label]="
-                        'Abrir ' + rotuloProvedor(i.provedor) + ' ' + rotuloAmbiente(i.ambiente)
-                      "
-                    >
-                      <span class="env" [class.env-teste]="i.ambiente === 'teste'">
-                        {{ rotuloAmbiente(i.ambiente) }}
-                      </span>
-
-                      <span class="env-meio">
-                        <span class="env-pills">
-                          <span [class]="'pill ' + estadoDe(i.estado).pill">
-                            {{ estadoDe(i.estado).rotulo }}
+                  <div class="prov-linhas">
+                    @for (i of [g.producao, g.teste]; track $index) {
+                      @if (i) {
+                        <a
+                          class="env-linha"
+                          [routerLink]="['/integracoes', i.provedor, i.ambiente]"
+                          [attr.aria-label]="
+                            'Abrir ' + rotuloProvedor(i.provedor) + ' ' + rotuloAmbiente(i.ambiente)
+                          "
+                        >
+                          <span class="env" [class.env-teste]="i.ambiente === 'teste'">
+                            {{ rotuloAmbiente(i.ambiente) }}
                           </span>
-                          @if (i.padrao_site) {
-                            <span class="pill pill-gold"> <mat-icon>star</mat-icon> Padrão </span>
-                          }
-                        </span>
-                        <span class="env-info">
-                          @if (i.verificacao_status === 'falha' && i.verificacao_erro) {
-                            {{ i.verificacao_erro }}
-                          } @else {
-                            {{ resumoDe(i) }}
-                          }
-                        </span>
-                      </span>
 
-                      <mat-icon class="env-seta">chevron_right</mat-icon>
-                    </a>
-                  }
-                }
-              </div>
-            </section>
-          }
-        </div>
+                          <span class="env-meio">
+                            <span class="env-pills">
+                              <span [class]="'pill ' + estadoDe(i.estado).pill">
+                                {{ estadoDe(i.estado).rotulo }}
+                              </span>
+                              @if (i.provedor === 'zapi' && i.estado !== 'nao_configurada') {
+                                <span
+                                  class="pill"
+                                  [class.pill-ok]="sessaoConectada(i)"
+                                  [class.pill-warn]="!sessaoConectada(i)"
+                                >
+                                  {{ sessaoConectada(i) ? 'Conectado' : 'Aguardando pareamento' }}
+                                </span>
+                              }
+                              @if (i.padrao_site) {
+                                <span class="pill pill-gold">
+                                  <mat-icon>star</mat-icon>
+                                  {{ i.provedor === 'zapi' ? 'Padrão WhatsApp' : 'Padrão' }}
+                                </span>
+                              }
+                            </span>
+                            <span class="env-info">
+                              @if (i.verificacao_status === 'falha' && i.verificacao_erro) {
+                                {{ i.verificacao_erro }}
+                              } @else {
+                                {{ resumoDe(i) }}
+                              }
+                            </span>
+                          </span>
+
+                          <mat-icon class="env-seta">chevron_right</mat-icon>
+                        </a>
+                      }
+                    }
+                  </div>
+                </section>
+              }
+            </div>
+          </section>
+        }
       }
     </div>
   `,
@@ -192,6 +221,21 @@ const DESCRITOR_PROVEDOR: Record<M.ProvedorPagamento, string> = {
     .faixa-padrao span {
       font-size: 0.78rem;
       color: #5d6d7e;
+    }
+
+    /* ---------- seções por categoria ---------- */
+    .secao {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .secao-t {
+      margin: 0;
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #4b95ab;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
     }
 
     /* ---------- grade de provedores ---------- */
@@ -423,11 +467,21 @@ export class IntegracoesComponent implements OnInit {
       provedor,
       producao: porPar.get(`${provedor}/producao`) ?? null,
       teste: porPar.get(`${provedor}/teste`) ?? null,
-    }));
+    })).filter((g) => g.producao !== null || g.teste !== null);
   });
 
+  /** Seções na ordem Pagamentos → Comunicação, sem categorias vazias. */
+  protected readonly secoes = computed<CategoriaSecao[]>(() =>
+    ORDEM_CATEGORIA.map((categoria) => ({
+      categoria,
+      rotulo: ROTULO_CATEGORIA[categoria],
+      grupos: this.grupos().filter((g) => CATEGORIA_PROVEDOR[g.provedor] === categoria),
+    })).filter((s) => s.grupos.length > 0),
+  );
+
+  /** Faixa do topo é só cobrança — o padrão WhatsApp aparece no card Z-API. */
   protected readonly padraoSite = computed(
-    () => this.integracoes().find((i) => i.padrao_site) ?? null,
+    () => this.integracoes().find((i) => i.categoria === 'pagamento' && i.padrao_site) ?? null,
   );
 
   /** Frase da faixa: quem cobra o site — padrão, env legado ou nada. */
@@ -468,12 +522,20 @@ export class IntegracoesComponent implements OnInit {
     });
   }
 
-  protected descriptorDe(p: M.ProvedorPagamento): string {
+  protected descriptorDe(p: M.ProvedorIntegracao): string {
     return DESCRITOR_PROVEDOR[p] ?? '';
+  }
+
+  /** Sessão WhatsApp ativa — credencial válida não implica pareamento. */
+  protected sessaoConectada(i: M.IntegracaoView): boolean {
+    return sessaoZapi(i)?.conectado === true;
   }
 
   /** Linha secundária: conta verificada, cobertura de credenciais ou dica. */
   protected resumoDe(i: M.IntegracaoView): string {
+    if (i.provedor === 'zapi') {
+      return this.resumoZapi(i);
+    }
     if (i.nome_conta) {
       return `Conta ${i.nome_conta}`;
     }
@@ -486,6 +548,21 @@ export class IntegracoesComponent implements OnInit {
       return `Verificada em ${this.dataBr(i.ultima_verificacao_em)}`;
     }
     return i.habilitado ? 'Habilitada' : 'Toque para configurar';
+  }
+
+  /** Z-API: o que interessa na listagem é a sessão — número ou pareamento. */
+  private resumoZapi(i: M.IntegracaoView): string {
+    const s = sessaoZapi(i);
+    if (s?.conectado) {
+      return s.telefone ? `Número ${s.telefone}` : 'Sessão ativa';
+    }
+    if (i.estado === 'nao_configurada') {
+      return 'Toque para configurar';
+    }
+    if (s?.desconectado_em) {
+      return `Desconectado em ${this.dataBr(s.desconectado_em)} — leia um novo QR Code`;
+    }
+    return 'Aguardando pareamento do WhatsApp';
   }
 
   protected dataBr(iso: string): string {

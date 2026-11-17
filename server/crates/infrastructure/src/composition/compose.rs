@@ -1,7 +1,3 @@
-//! Composition root compartilhado — `clarituz-api serve` e os testes de
-//! integração montam o mesmo grafo de dependências, então o que o teste
-//! exercita é a fiação real de produção, não uma réplica divergente.
-
 use crate::messaging::eventos::{spawn_aviso_persister, EventBus};
 use crate::persistence::repositories::*;
 use crate::printing::escpos::SpoolImpressora;
@@ -20,8 +16,6 @@ use clarituz_shared::Settings;
 use sqlx::PgPool;
 use std::sync::Arc;
 
-/// Grafo montado: os serviços de aplicação + as peças que a camada HTTP
-/// consome direto (issuer para o extractor e auth para `create-admin`).
 pub struct BuiltServices {
     pub services: Services,
     pub auth: Arc<AuthService>,
@@ -57,16 +51,13 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
     let impressora_gw: Arc<dyn ImpressoraGateway> = Arc::new(SpoolImpressora::new(pool.clone()));
     let publisher: Arc<dyn EventoPublisher> = Arc::new(eventos.clone());
 
-    // Gateway Stripe — sem `STRIPE_SECRET_KEY` o serviço sobe normalmente
-    // e o checkout público responde erro explícito (degradação segura).
     let gateway: Option<Arc<dyn clarituz_domain::ports::PaymentGateway>> = settings
         .stripe_secret_key
         .as_ref()
         .map(|k| Arc::new(crate::integrations::stripe::StripeGateway::new(k.clone())) as _);
 
-    // Módulo de integrações — o vault só existe com a chave-mestra; sem
-    // ela, config persistida é impossível por construção (nunca em claro).
     let integracoes_repo = Arc::new(PgIntegracaoRepository::new(pool.clone()));
+
     let vault: Option<Arc<dyn clarituz_domain::ports::CredentialVault>> =
         settings.integracoes_master_key.as_deref().and_then(|k| {
             crate::security::vault::AesCredentialVault::new(k)
@@ -74,6 +65,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
                 .map_err(|e| tracing::warn!(erro = %e, "vault de integrações indisponível"))
                 .ok()
         });
+
     let gateway_resolver: Option<Arc<dyn clarituz_domain::ports::GatewayResolver>> =
         vault.as_ref().map(|v| {
             Arc::new(crate::integrations::resolver::PgGatewayResolver::new(
@@ -82,13 +74,10 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
                 gateway.clone(),
             )) as Arc<dyn clarituz_domain::ports::GatewayResolver>
         });
-    // consumer do bus → histórico persistido (inbox/badges)
+
     let notif_repo = Arc::new(PgNotificacaoRepository::new(pool.clone()));
     spawn_aviso_persister(eventos.clone(), notif_repo.clone());
 
-    // Emissores externos — cada um entra só com as credenciais presentes.
-    // Sem credencial, o item da fila falha com backoff (degradação segura,
-    // igual ao gateway Stripe ausente).
     let mut emissores: Vec<Arc<dyn clarituz_domain::ports::Emissor>> = Vec::new();
     if let Some(key) = settings.resend_api_key.as_ref() {
         emissores.push(Arc::new(crate::integrations::senders::ResendEmissor::new(
@@ -128,15 +117,31 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             ),
         ));
     }
+    // WhatsApp legados (env) — fallback e alvo de seleção explícita.
+    let legados_wa: Vec<Arc<dyn clarituz_domain::ports::Emissor>> = emissores
+        .iter()
+        .filter(|e| e.canal() == clarituz_domain::enums::CanalEnvio::Whatsapp)
+        .cloned()
+        .collect();
+    let com_eventos_repo = Arc::new(PgComunicacaoEventos::new(pool.clone()));
+    let com_resolver: Option<Arc<dyn clarituz_domain::ports::ComunicacaoResolver>> =
+        vault.as_ref().map(|v| {
+            Arc::new(
+                crate::integrations::resolver_whatsapp::PgComunicacaoResolver::new(
+                    integracoes_repo.clone()
+                        as Arc<dyn clarituz_domain::ports::IntegracaoRepository>,
+                    v.clone(),
+                    legados_wa,
+                ),
+            ) as Arc<dyn clarituz_domain::ports::ComunicacaoResolver>
+        });
+
     let fila_envio_repo = Arc::new(PgFilaEnvio::new(pool.clone()));
     let fila_envio_repo2 = fila_envio_repo.clone();
     let avaliacao_repo = Arc::new(PgAvaliacaoRepository::new(pool.clone()));
     let fidelidade_repo = Arc::new(PgFidelidadeRepository::new(pool.clone()));
     let automacao_repo = Arc::new(PgAutomacaoRepository::new(pool.clone()));
 
-    // Inná Concierge — cliente HTTP do serviço Python só entra com
-    // MARIA_URL + INNA_INTERNAL_KEY; sem eles o concierge responde o
-    // fallback seguro e escala pra recepção (degradação controlada).
     let maria_ia: Option<Arc<dyn clarituz_domain::ports::ConciergeIa>> = settings
         .maria_url
         .as_ref()
@@ -156,11 +161,9 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         settings.jwt_secret.clone(),
         settings.pousada_nome.clone(),
         lgpd_repo.clone(),
+        com_resolver.clone(),
     ));
-    // Reservas + pagamentos online sobem antes do concierge: a
-    // pré-reserva por WhatsApp (fluxo determinístico, sem LLM) consome
-    // os dois — cria o hold via `criar_reserva_site` e o link de sinal
-    // via `criar_checkout_publico`.
+
     let reservas_svc = Arc::new(ReservaService::new(ReservaDeps {
         reservas: reserva_repo.clone(),
         acomodacoes: acom_repo.clone(),
@@ -192,9 +195,12 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
     ));
     let integracoes_svc = vault.map(|v| {
         Arc::new(IntegracoesService::new(
-            integracoes_repo as Arc<dyn clarituz_domain::ports::IntegracaoRepository>,
+            integracoes_repo.clone() as Arc<dyn clarituz_domain::ports::IntegracaoRepository>,
             v,
             gateway_resolver.clone().unwrap(),
+            com_resolver.clone(),
+            Some(com_eventos_repo.clone()
+                as Arc<dyn clarituz_domain::ports::ComunicacaoEventoRepository>),
             pag_online_repo as Arc<dyn clarituz_domain::ports::PagamentoRepository>,
             settings.stripe_secret_key.is_some(),
         ))
@@ -207,8 +213,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         comunicacao_svc.clone(),
         settings.sinal_percentual,
     ));
-    // Roteamento — protocolos por setor com SLA; a escalada da Inná e a
-    // tela de fila compartilham o mesmo service.
+
     let atendimento_svc = Arc::new(AtendimentoService::new(
         Arc::new(PgAtendimentoRepository::new(pool.clone())),
         comunicacao_svc.clone(),
@@ -228,6 +233,18 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         pre_reserva_svc,
         atendimento_svc.clone(),
     ));
+
+    // Z-API — webhook + provedor; precisa do cofre pra abrir segredos.
+    let zapi_svc = com_resolver.clone().map(|com| {
+        Arc::new(ZApiService::new(
+            com,
+            com_eventos_repo.clone()
+                as Arc<dyn clarituz_domain::ports::ComunicacaoEventoRepository>,
+            fila_envio_repo.clone(),
+            concierge_svc.clone(),
+            integracoes_repo.clone() as Arc<dyn clarituz_domain::ports::IntegracaoRepository>,
+        ))
+    });
     let lgpd_svc = Arc::new(LgpdService::new(
         lgpd_repo.clone(),
         publisher.clone(),
@@ -238,7 +255,6 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         pool.clone(),
     ))));
 
-    // B2B — operadoras/canal indireto com extranet por token e tarifa net.
     let operadoras_svc = Arc::new(OperadoraService::new(
         Arc::new(PgOperadoraRepository::new(pool.clone())),
         reserva_repo.clone(),
@@ -331,6 +347,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         escalas: Arc::new(EscalasService::new(Arc::new(PgEscalaRepository::new(
             pool.clone(),
         )))),
+        zapi: zapi_svc,
         preditivo: Arc::new(PreditivoService::new(Arc::new(PgPreditivoRepository::new(
             pool.clone(),
         )))),

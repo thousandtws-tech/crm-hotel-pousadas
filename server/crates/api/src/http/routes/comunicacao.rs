@@ -465,6 +465,38 @@ pub async fn whatsapp_inbound(
 }
 
 // ---------------------------------------------------------------------------
+// webhook Z-API — bearer no path + instanceId no payload; inbox antes do ACK
+// ---------------------------------------------------------------------------
+
+/// `/api/v1/webhooks/zapi/{segredo}` — a Z-API não assina callbacks;
+/// o segredo aleatório na URL + conferência de `instanceId` são a
+/// autenticidade. O evento só é processado depois de gravado na inbox.
+pub async fn webhook_zapi(
+    State(st): State<AppState>,
+    Path(segredo): Path<String>,
+    body: axum::body::Bytes,
+) -> StatusCode {
+    let Some(zapi) = &st.services.zapi else {
+        return StatusCode::SERVICE_UNAVAILABLE; // módulo sem cofre
+    };
+    let Ok(payload) = serde_json::from_slice::<serde_json::Value>(&body) else {
+        return StatusCode::BAD_REQUEST;
+    };
+    let instance = payload["instanceId"].as_str().unwrap_or_default();
+    let Ok(Some(idintegracao)) = zapi.autenticar(&segredo, instance).await else {
+        return StatusCode::UNAUTHORIZED;
+    };
+    match zapi.receber(&payload, idintegracao).await {
+        Ok(_) => StatusCode::OK,
+        Err(e) => {
+            tracing::warn!(erro = %e, "zapi webhook: processamento falhou");
+            // 500 → provedor reentrega; a inbox deduplica o retry.
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // webhook Resend — bounces/complaints viram supressão imediata
 // ---------------------------------------------------------------------------
 

@@ -28,6 +28,7 @@ pub async fn serve(
         link_secret: settings.jwt_secret.clone(),
         vapid_public_b64: settings.vapid_public_b64.clone(),
         site_base: settings.site_base.clone(),
+        api_base: settings.public_api_url.clone(),
         alert_webhook_url: settings.alert_webhook_url.clone(),
         login_rate_limit_per_min: settings.login_rate_limit_per_min,
     };

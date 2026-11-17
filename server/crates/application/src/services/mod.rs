@@ -74,6 +74,7 @@ pub use pre_reserva::PreReservaService;
 pub use preditivo::PreditivoService;
 pub use reservas::{ReservaDeps, ReservaService};
 pub use tesouraria::TesourariaService;
+pub use zapi::ZApiService;
 
 use std::sync::Arc;
 
@@ -119,4 +120,7 @@ pub struct Services {
     pub governanca: Arc<GovernancaService>,
     pub escalas: Arc<EscalasService>,
     pub preditivo: Arc<PreditivoService>,
+    /// Webhook/provedor Z-API — `None` sem o cofre (master key ausente).
+    pub zapi: Option<Arc<ZApiService>>,
 }
+pub mod zapi;

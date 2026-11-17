@@ -1,5 +1,3 @@
-//! Árvore de rotas `/api/v1` + middlewares de observabilidade e robustez.
-
 use crate::http::middleware::{self, AlertaErro, IpRateLimit};
 use crate::http::routes;
 use crate::http::state::AppState;
@@ -33,9 +31,6 @@ async fn readyz(State(s): State<AppState>) -> (axum::http::StatusCode, Json<serd
     }
 }
 
-/// CORS a partir de `CORS_ORIGINS`: `*` (dev) → permissive; caso
-/// contrário a lista exata de origens com métodos/headers da API.
-/// Auth é por `Authorization` header (não cookie) — credentials off.
 fn cors_layer(origins: &[String]) -> CorsLayer {
     if origins.iter().any(|o| o == "*") {
         return CorsLayer::permissive();
@@ -61,9 +56,6 @@ fn cors_layer(origins: &[String]) -> CorsLayer {
 pub fn build(state: AppState) -> Router {
     let (metric_layer, metric_handle) = axum_prometheus::PrometheusMetricLayer::pair();
     let api: Router<AppState> = Router::new()
-        // auth — login/refresh públicos (login/register com rate limit
-        // por IP: Argon2 é CPU-bound — sem teto vira DoS + brute-force;
-        // teto do login é tunável via LOGIN_RATE_LIMIT_PER_MIN, default 10)
         .route(
             "/auth/login",
             post(routes::auth::login).route_layer(from_fn_with_state(
@@ -87,7 +79,6 @@ pub fn build(state: AppState) -> Router {
         )
         .route("/auth/logout", post(routes::auth::logout))
         .route("/auth/me", get(routes::auth::me))
-        // clientes
         .route(
             "/clientes",
             get(routes::pessoas::listar_clientes).post(routes::pessoas::criar_cliente),
@@ -108,7 +99,6 @@ pub fn build(state: AppState) -> Router {
                 .get(routes::pessoas::foto_cliente)
                 .delete(routes::pessoas::remover_foto_cliente),
         )
-        // documentos de identidade do cliente
         .route(
             "/clientes/{id}/documentos",
             get(routes::pessoas::listar_documentos).post(routes::pessoas::criar_documento),
@@ -124,7 +114,6 @@ pub fn build(state: AppState) -> Router {
                 .get(routes::pessoas::scan_documento)
                 .delete(routes::pessoas::remover_scan_documento),
         )
-        // funcionários (admin)
         .route(
             "/funcionarios",
             get(routes::pessoas::listar_funcionarios).post(routes::pessoas::criar_funcionario),
@@ -139,7 +128,6 @@ pub fn build(state: AppState) -> Router {
             "/funcionarios/{id}/status",
             patch(routes::pessoas::status_funcionario),
         )
-        // tipos de acomodação
         .route(
             "/tipos-acomodacao",
             get(routes::catalogo::listar_tipos).post(routes::catalogo::criar_tipo),
@@ -156,7 +144,6 @@ pub fn build(state: AppState) -> Router {
             "/tipos-acomodacao/{id}/tarifas-ocupacao",
             get(routes::catalogo::tarifas_ocupacao).put(routes::catalogo::salvar_tarifas_ocupacao),
         )
-        // acomodações
         .route(
             "/acomodacoes",
             get(routes::catalogo::listar_acomodacoes).post(routes::catalogo::criar_acomodacao),
@@ -184,7 +171,6 @@ pub fn build(state: AppState) -> Router {
             "/quartos/{id}/status",
             patch(routes::catalogo::status_quarto),
         )
-        // reservas
         .route(
             "/reservas",
             get(routes::reservas::listar_reservas).post(routes::reservas::criar_reserva),
@@ -194,7 +180,6 @@ pub fn build(state: AppState) -> Router {
             get(routes::reservas::disponibilidade),
         )
         .route("/reservas/eventos", get(routes::reservas::eventos))
-        // Mapa por andar + bloqueio formal
         .route("/reservas/mapa", get(routes::reservas::mapa_quartos))
         .route("/reservas/widget", get(routes::reservas::widget_motor))
         .route(
@@ -210,7 +195,6 @@ pub fn build(state: AppState) -> Router {
             get(routes::reservas::grupo_unidades),
         )
         .route("/grupos/{id}", delete(routes::reservas::remover_grupo))
-        // B2B — operadoras (admin JWT) e extranet do parceiro (token opaco).
         .route(
             "/operadoras",
             get(routes::operadoras::listar).post(routes::operadoras::criar),
@@ -237,7 +221,6 @@ pub fn build(state: AppState) -> Router {
             "/extranet/reservas",
             post(routes::operadoras::extranet_reservar),
         )
-        // Contratos corporativos — desconto por código no motor.
         .route(
             "/contratos",
             get(routes::operadoras::contratos_listar).post(routes::operadoras::contratos_criar),
@@ -278,7 +261,6 @@ pub fn build(state: AppState) -> Router {
             "/reservas/{id}/consumo/imprimir",
             post(routes::reservas::imprimir_producao),
         )
-        // registro de hóspedes: acompanhantes + FNRH
         .route(
             "/reservas/{id}/acompanhantes",
             get(routes::reservas::acompanhantes).post(routes::reservas::adicionar_acompanhante),
@@ -291,9 +273,7 @@ pub fn build(state: AppState) -> Router {
             "/reservas/{id}/fnrh",
             get(routes::reservas::fnrh_reserva).post(routes::reservas::emitir_fnrh),
         )
-        // exportação SNE/CSV das fichas do período — envio manual ao MTur
         .route("/fnrh/exportar", get(routes::reservas::exportar_fnrh))
-        // fechamento do dia — pendências, no-show por PIN, relatório e-mail
         .route(
             "/fechamento/pendencias",
             get(routes::reservas::pendencias_fechamento),
@@ -306,7 +286,6 @@ pub fn build(state: AppState) -> Router {
             "/reservas/{id}/no-show",
             post(routes::reservas::marcar_no_show),
         )
-        // pagamentos online (Stripe) — painel financeiro
         .route(
             "/pagamentos",
             get(routes::pagamentos_online::listar_pagamentos),
@@ -327,7 +306,6 @@ pub fn build(state: AppState) -> Router {
             "/financeiro/pagamentos/receita-acomodacoes",
             get(routes::pagamentos_online::receita_acomodacoes),
         )
-        // integrações de pagamento — Configurações → Integrações (admin)
         .route("/integracoes", get(routes::integracoes::listar_integracoes))
         .route(
             "/integracoes/{provedor}/{ambiente}",
@@ -350,7 +328,22 @@ pub fn build(state: AppState) -> Router {
             "/integracoes/{provedor}/{ambiente}/eventos",
             get(routes::integracoes::eventos_integracao),
         )
-        // comunicação — fila, matriz, push, cobrança
+        .route(
+            "/integracoes/zapi/{ambiente}/qr-code",
+            post(routes::integracoes::zapi_qr),
+        )
+        .route(
+            "/integracoes/zapi/{ambiente}/webhooks",
+            post(routes::integracoes::zapi_webhooks),
+        )
+        .route(
+            "/integracoes/zapi/{ambiente}/teste-msg",
+            post(routes::integracoes::zapi_teste),
+        )
+        .route(
+            "/integracoes/zapi/{ambiente}/desconectar",
+            post(routes::integracoes::zapi_desconectar),
+        )
         .route("/comunicacao/fila", get(routes::comunicacao::fila_listar))
         .route(
             "/comunicacao/matriz",
@@ -376,7 +369,6 @@ pub fn build(state: AppState) -> Router {
             "/avaliacoes/{id}/responder",
             post(routes::comunicacao::avaliacao_responder),
         )
-        // fidelidade + perfil 360
         .route(
             "/fidelidade/niveis",
             get(routes::comunicacao::fidelidade_niveis_get)
@@ -1068,6 +1060,11 @@ pub fn build(state: AppState) -> Router {
             "/api/v1/webhooks/whatsapp",
             get(routes::comunicacao::whatsapp_verify).post(routes::comunicacao::whatsapp_inbound),
         )
+        // webhook Z-API — bearer no path + instanceId. Origem = Z-API.
+        .route(
+            "/api/v1/webhooks/zapi/{segredo}",
+            post(routes::comunicacao::webhook_zapi),
+        )
         // Inná Concierge — chat do hóspede no portal, escopo = token opaco.
         .route(
             "/api/v1/publico/concierge/{token}",
@@ -1123,8 +1120,6 @@ pub fn build(state: AppState) -> Router {
             }),
         )
         .nest("/api/v1", api)
-        // span registra método + path apenas — query string pode carregar
-        // credenciais (stream ticket) e filtros sensíveis; nunca vai a log.
         .layer(
             TraceLayer::new_for_http().make_span_with(|req: &axum::extract::Request| {
                 tracing::info_span!(
@@ -1138,16 +1133,10 @@ pub fn build(state: AppState) -> Router {
         .layer(SetRequestIdLayer::x_request_id(
             tower_http::request_id::MakeRequestUuid,
         ))
-        // DefaultPredicate já exclui text/event-stream — SSE não é comprimido.
         .layer(CompressionLayer::new())
         .layer(from_fn(middleware::security_headers))
         .layer(cors_layer(&state.cors_origins))
         .layer(metric_layer)
-        // panic vira 500 no mesmo envelope do `DomainError::Infra` em vez
-        // de derrubar a conexão. O workspace compila release com
-        // `panic = "abort"` — lá a camada é inócua e o Railway reinicia o
-        // processo; em builds unwind (dev/test) o panic chega aqui como
-        // resposta e o layer de alerta abaixo ainda consegue reportá-lo.
         .layer(CatchPanicLayer::custom(|_| {
             (
                 axum::http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -1159,9 +1148,6 @@ pub fn build(state: AppState) -> Router {
                 .into_response()
         }));
 
-    // Alerta de 5xx — layer mais externo: enxerga o status final de
-    // qualquer rota, incl. o 500 gerado pelo CatchPanic. Sem
-    // `ALERT_WEBHOOK_URL` o layer nem é instalado (custo zero).
     let router = match state.alert_webhook_url.as_deref() {
         Some(url) => router.layer(from_fn_with_state(
             AlertaErro::novo(url),

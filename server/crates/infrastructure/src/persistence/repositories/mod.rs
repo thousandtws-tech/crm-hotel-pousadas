@@ -34,8 +34,9 @@ pub use catalogo::{
 pub use cms::PgCmsRepository;
 pub use compras::PgComprasRepository;
 pub use comunicacao::{
-    PgAtendimentoRepository, PgAutomacaoRepository, PgAvaliacaoRepository, PgFidelidadeRepository,
-    PgFilaEnvio, PgInnaRepository, PgLgpdRepository, PgPreReservaRepository, PgPushRepository,
+    PgAtendimentoRepository, PgAutomacaoRepository, PgAvaliacaoRepository, PgComunicacaoEventos,
+    PgFidelidadeRepository, PgFilaEnvio, PgInnaRepository, PgLgpdRepository,
+    PgPreReservaRepository, PgPushRepository,
 };
 pub use contrato::PgContratoRepository;
 pub use estoque::PgEstoqueRepository;

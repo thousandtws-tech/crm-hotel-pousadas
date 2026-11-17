@@ -49,6 +49,10 @@ impl Emissor for ResendEmissor {
         CanalEnvio::Email
     }
 
+    fn provedor(&self) -> &'static str {
+        "resend"
+    }
+
     async fn enviar(
         &self,
         destino: &str,
@@ -97,6 +101,10 @@ impl MetaWaEmissor {
 impl Emissor for MetaWaEmissor {
     fn canal(&self) -> CanalEnvio {
         CanalEnvio::Whatsapp
+    }
+
+    fn provedor(&self) -> &'static str {
+        "meta"
     }
 
     async fn enviar(
@@ -168,6 +176,10 @@ impl Emissor for WaAkgEmissor {
         CanalEnvio::Whatsapp
     }
 
+    fn provedor(&self) -> &'static str {
+        "waakg"
+    }
+
     async fn enviar(
         &self,
         destino: &str,
@@ -226,6 +238,10 @@ impl VapidPushEmissor {
 impl Emissor for VapidPushEmissor {
     fn canal(&self) -> CanalEnvio {
         CanalEnvio::Push
+    }
+
+    fn provedor(&self) -> &'static str {
+        "push"
     }
 
     async fn enviar(

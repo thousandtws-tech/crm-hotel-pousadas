@@ -5,7 +5,7 @@
 use crate::persistence::db::map_db_err;
 use async_trait::async_trait;
 use clarituz_domain::entities::{
-    AmbienteIntegracao, Integracao, ProvedorPagamento, StatusVerificacao,
+    AmbienteIntegracao, Integracao, ProvedorIntegracao, StatusVerificacao,
 };
 use clarituz_domain::ports::{
     AtualizacaoIntegracao, IntegracaoRepository, MapaSegredos, NovaIntegracao,
@@ -14,9 +14,10 @@ use clarituz_domain::DomainError;
 use sqlx::PgPool;
 use std::collections::HashMap;
 
-const COLS: &str = "id, provedor, ambiente, nome_conta, status, habilitado,
-    capabilities, webhook_url, ultima_verificacao_em, verificacao_status,
-    verificacao_erro, versao, criado_por, atualizado_por, criado_em, atualizado_em";
+const COLS: &str = "id, provedor, ambiente, categoria, nome_conta, status,
+    habilitado, capabilities, config, webhook_url, ultima_verificacao_em,
+    verificacao_status, verificacao_erro, versao, criado_por, atualizado_por,
+    criado_em, atualizado_em";
 
 #[derive(Clone)]
 pub struct PgIntegracaoRepository {
@@ -42,7 +43,7 @@ impl IntegracaoRepository for PgIntegracaoRepository {
 
     async fn buscar(
         &self,
-        provedor: ProvedorPagamento,
+        provedor: ProvedorIntegracao,
         ambiente: AmbienteIntegracao,
     ) -> Result<Option<Integracao>, DomainError> {
         sqlx::query_as::<_, Integracao>(&format!(
@@ -65,13 +66,14 @@ impl IntegracaoRepository for PgIntegracaoRepository {
 
     async fn garantir(&self, nova: &NovaIntegracao) -> Result<Integracao, DomainError> {
         sqlx::query_as::<_, Integracao>(&format!(
-            "INSERT INTO integracao (provedor, ambiente, criado_por)
-             VALUES ($1, $2, $3)
+            "INSERT INTO integracao (provedor, ambiente, categoria, criado_por)
+             VALUES ($1, $2, $3, $4)
              ON CONFLICT (provedor, ambiente) DO UPDATE SET provedor = EXCLUDED.provedor
              RETURNING {COLS}"
         ))
         .bind(nova.provedor.as_str())
         .bind(nova.ambiente.as_str())
+        .bind(nova.provedor.categoria())
         .bind(nova.criado_por)
         .fetch_one(&self.pool)
         .await
@@ -93,6 +95,8 @@ impl IntegracaoRepository for PgIntegracaoRepository {
             "UPDATE integracao SET
                 nome_conta = COALESCE($2, nome_conta),
                 webhook_url = COALESCE($3, webhook_url),
+                config = CASE WHEN $6::jsonb IS NULL THEN config
+                              ELSE config || $6::jsonb END,
                 versao = versao + 1,
                 ultima_verificacao_em = NULL,
                 verificacao_status = NULL,
@@ -107,6 +111,7 @@ impl IntegracaoRepository for PgIntegracaoRepository {
         .bind(&atual.webhook_url)
         .bind(atualizado_por)
         .bind(versao_esperada)
+        .bind(&atual.config)
         .fetch_optional(&mut *tx)
         .await
         .map_err(map_db_err)?
@@ -244,7 +249,7 @@ impl IntegracaoRepository for PgIntegracaoRepository {
     async fn padrao(
         &self,
         escopo: &str,
-    ) -> Result<Option<(ProvedorPagamento, AmbienteIntegracao, i64)>, DomainError> {
+    ) -> Result<Option<(ProvedorIntegracao, AmbienteIntegracao, i64)>, DomainError> {
         let row: Option<(String, String, i64)> = sqlx::query_as(
             "SELECT i.provedor, i.ambiente, i.id
              FROM integracao_padrao p JOIN integracao i ON i.id = p.idintegracao
@@ -256,7 +261,7 @@ impl IntegracaoRepository for PgIntegracaoRepository {
         .map_err(map_db_err)?;
         Ok(row.and_then(|(p, a, id)| {
             Some((
-                ProvedorPagamento::parse(&p)?,
+                ProvedorIntegracao::parse(&p)?,
                 AmbienteIntegracao::parse(&a)?,
                 id,
             ))
@@ -290,6 +295,19 @@ impl IntegracaoRepository for PgIntegracaoRepository {
             .execute(&self.pool)
             .await
             .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    async fn mesclar_config(&self, id: i64, patch: &serde_json::Value) -> Result<(), DomainError> {
+        sqlx::query(
+            "UPDATE integracao SET config = config || $2, atualizado_em = now()
+             WHERE id = $1",
+        )
+        .bind(id)
+        .bind(patch)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
         Ok(())
     }
 }

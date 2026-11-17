@@ -4,18 +4,20 @@ use sqlx::FromRow;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, sqlx::Type)]
 #[sqlx(type_name = "text", rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
-pub enum ProvedorPagamento {
+pub enum ProvedorIntegracao {
     Stripe,
     Pagbank,
     Mercadopago,
+    Zapi,
 }
 
-impl ProvedorPagamento {
+impl ProvedorIntegracao {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Stripe => "stripe",
             Self::Pagbank => "pagbank",
             Self::Mercadopago => "mercadopago",
+            Self::Zapi => "zapi",
         }
     }
 
@@ -24,7 +26,22 @@ impl ProvedorPagamento {
             "stripe" => Some(Self::Stripe),
             "pagbank" => Some(Self::Pagbank),
             "mercadopago" => Some(Self::Mercadopago),
+            "zapi" => Some(Self::Zapi),
             _ => None,
+        }
+    }
+
+    pub fn categoria(&self) -> &'static str {
+        match self {
+            Self::Zapi => "comunicacao",
+            _ => "pagamento",
+        }
+    }
+
+    pub fn ambientes(&self) -> &'static [AmbienteIntegracao] {
+        match self {
+            Self::Zapi => &[AmbienteIntegracao::Producao],
+            _ => &[AmbienteIntegracao::Teste, AmbienteIntegracao::Producao],
         }
     }
 }
@@ -95,7 +112,8 @@ pub struct Integracao {
     pub id: i64,
     #[sqlx(try_from = "String")]
     #[serde(serialize_with = "ser_provedor")]
-    pub provedor: ProvedorPagamento,
+    pub provedor: ProvedorIntegracao,
+    pub categoria: String,
     #[sqlx(try_from = "String")]
     #[serde(serialize_with = "ser_ambiente")]
     pub ambiente: AmbienteIntegracao,
@@ -105,6 +123,7 @@ pub struct Integracao {
     pub status: StatusIntegracao,
     pub habilitado: bool,
     pub capabilities: serde_json::Value,
+    pub config: serde_json::Value,
     pub webhook_url: Option<String>,
     pub ultima_verificacao_em: Option<chrono::DateTime<chrono::Utc>>,
     pub verificacao_status: Option<String>,
@@ -117,7 +136,7 @@ pub struct Integracao {
 }
 
 #[allow(clippy::trivially_copy_pass_by_ref)] // serialize_with exige &T
-fn ser_provedor<S: serde::Serializer>(p: &ProvedorPagamento, s: S) -> Result<S::Ok, S::Error> {
+fn ser_provedor<S: serde::Serializer>(p: &ProvedorIntegracao, s: S) -> Result<S::Ok, S::Error> {
     s.serialize_str(p.as_str())
 }
 #[allow(clippy::trivially_copy_pass_by_ref)]
@@ -135,7 +154,7 @@ fn ser_status<S: serde::Serializer>(st: &StatusIntegracao, s: S) -> Result<S::Ok
     s.serialize_str(v)
 }
 
-impl From<String> for ProvedorPagamento {
+impl From<String> for ProvedorIntegracao {
     fn from(s: String) -> Self {
         Self::parse(&s).unwrap_or(Self::Stripe)
     }

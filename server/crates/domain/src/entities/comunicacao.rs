@@ -18,9 +18,18 @@ pub struct ItemFila {
     pub tentativas: i16,
     pub ultimo_erro: Option<String>,
     pub provider_msg_id: Option<String>,
+    #[sqlx(default)]
+    pub provedor: Option<String>,
+    #[sqlx(default)]
+    pub idintegracao: Option<i64>,
     pub status: StatusEnvio,
     pub criado_em: DateTime<Utc>,
     pub enviado_em: Option<DateTime<Utc>>,
+
+    #[sqlx(default)]
+    pub entregue_em: Option<DateTime<Utc>>,
+    #[sqlx(default)]
+    pub lido_em: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone)]
@@ -33,6 +42,23 @@ pub struct NovoEnvio {
     pub idcliente: Option<i64>,
     pub idfuncionario: Option<i64>,
     pub agendado_para: DateTime<Utc>,
+}
+
+/// Evento recebido de provedor de comunicação (webhook Z-API & cia) —
+/// inbox durável antes do processamento.
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct ComunicacaoEvento {
+    pub id: i64,
+    pub provedor: String,
+    pub event_id: String,
+    pub tipo: String,
+    pub payload: serde_json::Value,
+    pub idintegracao: Option<i64>,
+    pub status: String,
+    pub tentativas: i32,
+    pub ultimo_erro: Option<String>,
+    pub recebido_em: DateTime<Utc>,
+    pub processado_em: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone, FromRow, Serialize)]

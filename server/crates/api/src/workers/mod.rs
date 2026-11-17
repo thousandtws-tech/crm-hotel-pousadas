@@ -20,6 +20,7 @@ pub fn spawn_all(state: &AppState, stripe_ativo: bool) {
     }
     comunicacao::spawn_fila(state);
     comunicacao::spawn_lembretes(state);
+    comunicacao::spawn_zapi_eventos(state);
     atendimento::spawn(state);
     rotinas::spawn(state);
     metricas::spawn(state.pool.clone(), state.eventos.clone());

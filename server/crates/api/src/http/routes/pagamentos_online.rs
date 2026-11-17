@@ -16,7 +16,7 @@ use clarituz_application::dto::{
     CheckoutPublicoInput, CheckoutPublicoOutput, ReembolsarPagamentoInput, ReembolsoOutput,
     StatusPublicoOutput,
 };
-use clarituz_domain::entities::{AmbienteIntegracao, ProvedorPagamento};
+use clarituz_domain::entities::{AmbienteIntegracao, ProvedorIntegracao};
 use clarituz_domain::enums::StatusPagamento;
 use clarituz_domain::ports::{
     FiltroPagamento, NovoEventoWebhook, PagamentoView, ReceitaAcomodacao, ResumoFinanceiro,
@@ -78,7 +78,7 @@ pub async fn webhook_stripe(
     let (secret, idintegracao) = match s.services.integracoes.as_ref() {
         Some(svc) => {
             match svc
-                .buscar_integracao(ProvedorPagamento::Stripe, AmbienteIntegracao::Producao)
+                .buscar_integracao(ProvedorIntegracao::Stripe, AmbienteIntegracao::Producao)
                 .await?
             {
                 Some(i) => (
@@ -195,7 +195,7 @@ pub async fn webhook_stripe(
 /// e produção; o segredo correspondente é quem desempata).
 async fn integracao_autenticada<F>(
     s: &AppState,
-    provedor: ProvedorPagamento,
+    provedor: ProvedorIntegracao,
     campo_segredo: &str,
     verificar: F,
 ) -> Result<Option<clarituz_domain::entities::Integracao>, AppError>
@@ -290,7 +290,7 @@ pub async fn webhook_mercadopago(
 
     let integ = integracao_autenticada(
         &s,
-        ProvedorPagamento::Mercadopago,
+        ProvedorIntegracao::Mercadopago,
         "webhook_secret",
         |secret| {
             clarituz_infrastructure::integrations::mercadopago::verificar_assinatura(
@@ -337,7 +337,7 @@ pub async fn webhook_pagbank(
     let Some(svc) = s.services.integracoes.as_ref() else {
         return Err(DomainError::regra("Integrações não configuradas.").into());
     };
-    let habilitadas = svc.habilitadas(ProvedorPagamento::Pagbank).await?;
+    let habilitadas = svc.habilitadas(ProvedorIntegracao::Pagbank).await?;
     if habilitadas.is_empty() {
         return Err(DomainError::regra("Nenhuma integração PagBank habilitada.").into());
     }

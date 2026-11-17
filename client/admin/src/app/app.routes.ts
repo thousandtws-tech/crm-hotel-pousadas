@@ -213,6 +213,15 @@ export const routes: Routes = [
           ),
       },
       {
+        // Z-API tem tela dedicada — precisa vir antes da rota genérica.
+        path: 'integracoes/zapi/:ambiente',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/integracoes/integracao-zapi.component').then(
+            (m) => m.IntegracaoZapiComponent,
+          ),
+      },
+      {
         path: 'integracoes/:provedor/:ambiente',
         canActivate: [adminGuard],
         loadComponent: () =>

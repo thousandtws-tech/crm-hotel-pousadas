@@ -35,6 +35,8 @@ pub struct ComunicacaoService {
     link_secret: String,
     pousada: String,
     lgpd: Arc<dyn LgpdRepository>,
+    /// Seleção explícita do provedor WhatsApp — `None` em testes legados.
+    com_resolver: Option<Arc<dyn ComunicacaoResolver>>,
 }
 
 impl ComunicacaoService {
@@ -51,6 +53,7 @@ impl ComunicacaoService {
         link_secret: String,
         pousada: String,
         lgpd: Arc<dyn LgpdRepository>,
+        com_resolver: Option<Arc<dyn ComunicacaoResolver>>,
     ) -> Self {
         Self {
             fila,
@@ -64,6 +67,7 @@ impl ComunicacaoService {
             link_secret,
             pousada,
             lgpd,
+            com_resolver,
         }
     }
 
@@ -173,6 +177,23 @@ impl ComunicacaoService {
                 }
             }
         }
+        // WhatsApp: seleção explícita — provedor gravado no item tem
+        // precedência; quando vazio, o resolver decide e o resultado é
+        // persistido pra que retries nunca troquem de conta.
+        if item.canal == CanalEnvio::Whatsapp {
+            if let Some(resolver) = &self.com_resolver {
+                let r = resolver.whatsapp(item.provedor.as_deref()).await?;
+                if item.provedor.is_none() {
+                    self.fila
+                        .vincular_provedor(item.id, &r.provedor, r.idintegracao)
+                        .await?;
+                }
+                return r
+                    .emissor
+                    .enviar(&item.destino, &item.template, &payload)
+                    .await;
+            }
+        }
         let emissor = self
             .emissores
             .iter()
@@ -181,6 +202,14 @@ impl ComunicacaoService {
         emissor
             .enviar(&item.destino, &item.template, &payload)
             .await
+    }
+
+    /// Marcos de entrega/leitura — chamados pelo webhook Z-API.
+    pub async fn marcar_entrega(&self, provedor: &str, provider_msg_id: &str) -> AppResult<u64> {
+        Ok(self.fila.marcar_entrega(provedor, provider_msg_id).await?)
+    }
+    pub async fn marcar_lido(&self, provedor: &str, provider_msg_id: &str) -> AppResult<u64> {
+        Ok(self.fila.marcar_lido(provedor, provider_msg_id).await?)
     }
 
     /// Rodapé LGPD com link de descadastro assinado (HMAC `lgpd:{id}`).

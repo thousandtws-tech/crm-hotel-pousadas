@@ -1,13 +1,13 @@
 use crate::actor::Ator;
-use crate::dto::{HabilitacaoInput, SalvarIntegracaoInput};
+use crate::dto::{HabilitacaoInput, MensagemTesteInput, SalvarIntegracaoInput};
 use crate::error::AppResult;
 use clarituz_domain::entities::{
-    AmbienteIntegracao, Integracao, ProvedorPagamento, StatusVerificacao,
+    AmbienteIntegracao, Integracao, ProvedorIntegracao, StatusVerificacao,
 };
 use clarituz_domain::ports::{
-    AtualizacaoIntegracao, CredentialVault, EstadoEfetivo, EventoIntegracaoView, GatewayResolver,
-    IntegracaoRepository, IntegracaoView, MapaSegredosView, NovaIntegracao, ResolucaoGateway,
-    ESCOPO_PAGAMENTOS_SITE,
+    AtualizacaoIntegracao, ComunicacaoEventoRepository, ComunicacaoResolver, CredentialVault,
+    EstadoEfetivo, EventoIntegracaoView, GatewayResolver, IntegracaoRepository, IntegracaoView,
+    MapaSegredosView, NovaIntegracao, ResolucaoGateway, ZApiQrView, ESCOPO_PAGAMENTOS_SITE,
 };
 use clarituz_domain::DomainError;
 use serde::Serialize;
@@ -15,31 +15,55 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::info;
 
-fn campos_permitidos(provedor: ProvedorPagamento) -> &'static [&'static str] {
+fn campos_permitidos(provedor: ProvedorIntegracao) -> &'static [&'static str] {
     match provedor {
-        ProvedorPagamento::Stripe => &["secret_key", "webhook_secret", "public_key"],
-        ProvedorPagamento::Pagbank => &["access_token", "authenticity_token"],
-        ProvedorPagamento::Mercadopago => &["access_token", "webhook_secret", "public_key"],
+        ProvedorIntegracao::Stripe => &["secret_key", "webhook_secret", "public_key"],
+        ProvedorIntegracao::Pagbank => &["access_token", "authenticity_token"],
+        ProvedorIntegracao::Mercadopago => &["access_token", "webhook_secret", "public_key"],
+        ProvedorIntegracao::Zapi => &["instance_token", "client_token", "webhook_segredo"],
     }
 }
 
-fn contexto_aad(p: ProvedorPagamento, a: AmbienteIntegracao, campo: &str, id: i64) -> String {
+/// Chaves de `config` (não-secreta) aceitas por provedor — Z-API grava
+/// aqui o `instance_id`; sessão/número chegam via webhook (`mesclar_config`).
+fn config_permitida(provedor: ProvedorIntegracao) -> &'static [&'static str] {
+    match provedor {
+        ProvedorIntegracao::Zapi => &["instance_id"],
+        _ => &[],
+    }
+}
+
+fn contexto_aad(p: ProvedorIntegracao, a: AmbienteIntegracao, campo: &str, id: i64) -> String {
     format!("{}|{}|{campo}|{id}", p.as_str(), a.as_str())
 }
 
-fn capabilities_padrao(provedor: ProvedorPagamento) -> serde_json::Value {
+/// Escopo do botão "definir padrão" — comunicação usa `whatsapp`.
+fn escopo_padrao(provedor: ProvedorIntegracao) -> &'static str {
     match provedor {
-        ProvedorPagamento::Stripe => serde_json::json!({
+        ProvedorIntegracao::Zapi => "whatsapp",
+        _ => ESCOPO_PAGAMENTOS_SITE,
+    }
+}
+
+fn capabilities_padrao(provedor: ProvedorIntegracao) -> serde_json::Value {
+    match provedor {
+        ProvedorIntegracao::Stripe => serde_json::json!({
             "checkout": true, "reembolso": true, "checkout_expiravel": true,
             "webhook_assinado": true, "conciliacao": true,
         }),
-        ProvedorPagamento::Pagbank => serde_json::json!({
+        ProvedorIntegracao::Pagbank => serde_json::json!({
             "checkout": true, "reembolso": true, "checkout_expiravel": true,
             "webhook_assinado": false, "webhook_fetchback": true, "conciliacao": true,
         }),
-        ProvedorPagamento::Mercadopago => serde_json::json!({
+        ProvedorIntegracao::Mercadopago => serde_json::json!({
             "checkout": true, "reembolso": true, "checkout_expiravel": false,
             "webhook_assinado": true, "conciliacao": true,
+        }),
+        ProvedorIntegracao::Zapi => serde_json::json!({
+            "canal": "whatsapp", "qr_code": true, "desconexao_remota": true,
+            "callback_segredo_url": true,
+            "callbacks": ["received", "delivery", "message-status", "connected", "disconnected"],
+            "estados": ["aceito", "enviado", "entregue", "lido"],
         }),
     }
 }
@@ -48,6 +72,9 @@ pub struct IntegracoesService {
     repo: Arc<dyn IntegracaoRepository>,
     vault: Arc<dyn CredentialVault>,
     resolver: Arc<dyn GatewayResolver>,
+    /// Resolução/credenciais de comunicação (Z-API) — `None` em testes.
+    com: Option<Arc<dyn ComunicacaoResolver>>,
+    com_eventos: Option<Arc<dyn ComunicacaoEventoRepository>>,
     pagamentos: Arc<dyn clarituz_domain::ports::PagamentoRepository>,
     stripe_env_ativo: bool,
 }
@@ -64,6 +91,8 @@ impl IntegracoesService {
         repo: Arc<dyn IntegracaoRepository>,
         vault: Arc<dyn CredentialVault>,
         resolver: Arc<dyn GatewayResolver>,
+        com: Option<Arc<dyn ComunicacaoResolver>>,
+        com_eventos: Option<Arc<dyn ComunicacaoEventoRepository>>,
         pagamentos: Arc<dyn clarituz_domain::ports::PagamentoRepository>,
         stripe_env_ativo: bool,
     ) -> Self {
@@ -71,6 +100,8 @@ impl IntegracoesService {
             repo,
             vault,
             resolver,
+            com,
+            com_eventos,
             pagamentos,
             stripe_env_ativo,
         }
@@ -79,15 +110,16 @@ impl IntegracoesService {
     pub async fn catalogo(&self, ator: &Ator) -> AppResult<Vec<IntegracaoView>> {
         ator.exigir_admin()?;
         let rows = self.repo.listar().await?;
-        let padrao = self.repo.padrao(ESCOPO_PAGAMENTOS_SITE).await?;
         let mut out = Vec::new();
         for provedor in [
-            ProvedorPagamento::Stripe,
-            ProvedorPagamento::Pagbank,
-            ProvedorPagamento::Mercadopago,
+            ProvedorIntegracao::Stripe,
+            ProvedorIntegracao::Pagbank,
+            ProvedorIntegracao::Mercadopago,
+            ProvedorIntegracao::Zapi,
         ] {
-            for ambiente in [AmbienteIntegracao::Teste, AmbienteIntegracao::Producao] {
-                out.push(self.view(provedor, ambiente, &rows, padrao).await?);
+            let padrao = self.repo.padrao(escopo_padrao(provedor)).await?;
+            for ambiente in provedor.ambientes() {
+                out.push(self.view(provedor, *ambiente, &rows, padrao).await?);
             }
         }
         Ok(out)
@@ -95,16 +127,16 @@ impl IntegracoesService {
 
     async fn view(
         &self,
-        provedor: ProvedorPagamento,
+        provedor: ProvedorIntegracao,
         ambiente: AmbienteIntegracao,
         rows: &[Integracao],
-        padrao: Option<(ProvedorPagamento, AmbienteIntegracao, i64)>,
+        padrao: Option<(ProvedorIntegracao, AmbienteIntegracao, i64)>,
     ) -> AppResult<IntegracaoView> {
         let Some(i) = rows
             .iter()
             .find(|r| r.provedor == provedor && r.ambiente == ambiente)
         else {
-            let estado = if provedor == ProvedorPagamento::Stripe
+            let estado = if provedor == ProvedorIntegracao::Stripe
                 && ambiente == AmbienteIntegracao::Producao
                 && self.stripe_env_ativo
             {
@@ -115,10 +147,12 @@ impl IntegracoesService {
             return Ok(IntegracaoView {
                 provedor,
                 ambiente,
+                categoria: provedor.categoria().to_string(),
                 estado,
                 habilitado: false,
                 nome_conta: None,
                 capabilities: capabilities_padrao(provedor),
+                config: serde_json::json!({}),
                 webhook_url: None,
                 segredos: MapaSegredosView::default(),
                 ultima_verificacao_em: None,
@@ -141,10 +175,12 @@ impl IntegracoesService {
         Ok(IntegracaoView {
             provedor,
             ambiente,
+            categoria: i.categoria.clone(),
             estado,
             habilitado: i.habilitado,
             nome_conta: i.nome_conta.clone(),
             capabilities: i.capabilities.clone(),
+            config: i.config.clone(),
             webhook_url: i.webhook_url.clone(),
             segredos: segredos.into(),
             ultima_verificacao_em: i.ultima_verificacao_em,
@@ -159,19 +195,19 @@ impl IntegracoesService {
     pub async fn detalhe(
         &self,
         ator: &Ator,
-        provedor: ProvedorPagamento,
+        provedor: ProvedorIntegracao,
         ambiente: AmbienteIntegracao,
     ) -> AppResult<IntegracaoView> {
         ator.exigir_admin()?;
         let rows = self.repo.listar().await?;
-        let padrao = self.repo.padrao(ESCOPO_PAGAMENTOS_SITE).await?;
+        let padrao = self.repo.padrao(escopo_padrao(provedor)).await?;
         self.view(provedor, ambiente, &rows, padrao).await
     }
 
     pub async fn salvar(
         &self,
         ator: &Ator,
-        provedor: ProvedorPagamento,
+        provedor: ProvedorIntegracao,
         ambiente: AmbienteIntegracao,
         input: SalvarIntegracaoInput,
     ) -> AppResult<IntegracaoView> {
@@ -211,6 +247,45 @@ impl IntegracoesService {
             }
         }
 
+        // Config não-secreta — whitelist por provedor.
+        let config = input.config.clone();
+        if let Some(c) = &config {
+            for chave in c.as_object().map(|o| o.keys()).into_iter().flatten() {
+                if !config_permitida(provedor).contains(&chave.as_str()) {
+                    return Err(DomainError::validacao(format!(
+                        "Chave de config não suportada por {}: {chave}",
+                        provedor.as_str()
+                    ))
+                    .into());
+                }
+            }
+        }
+
+        // Z-API: gera o segredo de callback na 1ª gravação — bearer na
+        // URL é o único mecanismo de autenticidade do provedor.
+        if provedor == ProvedorIntegracao::Zapi {
+            let ja_tem = self
+                .repo
+                .mapa_segredos(atual.id)
+                .await?
+                .campos
+                .get("webhook_segredo")
+                .copied()
+                .unwrap_or(false);
+            if !ja_tem && !segredos_enc.contains_key("webhook_segredo") {
+                let segredo = format!(
+                    "{}{}",
+                    uuid::Uuid::new_v4().simple(),
+                    uuid::Uuid::new_v4().simple()
+                );
+                let enc = self.vault.selar(
+                    &contexto_aad(provedor, ambiente, "webhook_segredo", atual.id),
+                    &segredo,
+                )?;
+                segredos_enc.insert("webhook_segredo".into(), enc);
+            }
+        }
+
         let salvo = self
             .repo
             .salvar(
@@ -220,6 +295,7 @@ impl IntegracoesService {
                     segredos: None,
                     nome_conta: input.nome_conta.clone(),
                     webhook_url: input.webhook_url.clone(),
+                    config,
                 },
                 &segredos_enc,
                 Some(ator.id),
@@ -240,7 +316,7 @@ impl IntegracoesService {
     pub async fn habilitacao(
         &self,
         ator: &Ator,
-        provedor: ProvedorPagamento,
+        provedor: ProvedorIntegracao,
         ambiente: AmbienteIntegracao,
         input: HabilitacaoInput,
     ) -> AppResult<IntegracaoView> {
@@ -275,7 +351,7 @@ impl IntegracoesService {
     pub async fn testar(
         &self,
         ator: &Ator,
-        provedor: ProvedorPagamento,
+        provedor: ProvedorIntegracao,
         ambiente: AmbienteIntegracao,
     ) -> AppResult<TesteConexaoOutput> {
         ator.exigir_admin()?;
@@ -284,6 +360,58 @@ impl IntegracoesService {
             .buscar(provedor, ambiente)
             .await?
             .ok_or_else(|| DomainError::nao_encontrado("Integração não configurada."))?;
+
+        // Z-API: teste = GET /status — credencial válida ≠ sessão conectada.
+        if provedor == ProvedorIntegracao::Zapi {
+            let resultado = match self.com.as_ref() {
+                Some(com) => match com.zapi_status().await {
+                    Ok(Some(st)) => (
+                        StatusVerificacao::Ok,
+                        None,
+                        st.telefone.or_else(|| {
+                            Some(if st.conectado {
+                                "sessão conectada".into()
+                            } else {
+                                "credenciais válidas — aguardando pareamento".into()
+                            })
+                        }),
+                    ),
+                    Ok(None) => (
+                        StatusVerificacao::Falha,
+                        Some("Sem credenciais configuradas para teste.".into()),
+                        None,
+                    ),
+                    Err(e) => (StatusVerificacao::Falha, Some(e.to_string()), None),
+                },
+                None => (
+                    StatusVerificacao::Falha,
+                    Some("Resolver de comunicação indisponível.".into()),
+                    None,
+                ),
+            };
+            let (status, erro, conta) = resultado;
+            let caps = capabilities_padrao(provedor);
+            self.repo
+                .registrar_verificacao(
+                    i.id,
+                    i.versao,
+                    status,
+                    erro.as_deref(),
+                    conta.as_deref(),
+                    &caps,
+                )
+                .await?;
+            return Ok(TesteConexaoOutput {
+                verificacao_status: status.as_str().into(),
+                nome_conta: conta,
+                mensagem: match status {
+                    StatusVerificacao::Ok => "Conexão verificada — instância autenticada.".into(),
+                    _ => erro
+                        .clone()
+                        .unwrap_or_else(|| "Falha na verificação.".into()),
+                },
+            });
+        }
 
         let resultado = match self.resolver.resolver(provedor, ambiente).await? {
             ResolucaoGateway::Persistida(gw) | ResolucaoGateway::Ambiente(gw) => {
@@ -328,7 +456,7 @@ impl IntegracoesService {
     pub async fn definir_padrao(
         &self,
         ator: &Ator,
-        provedor: ProvedorPagamento,
+        provedor: ProvedorIntegracao,
         ambiente: AmbienteIntegracao,
     ) -> AppResult<()> {
         ator.exigir_admin()?;
@@ -344,7 +472,7 @@ impl IntegracoesService {
             .into());
         }
         self.repo
-            .definir_padrao(ESCOPO_PAGAMENTOS_SITE, i.id, Some(ator.id))
+            .definir_padrao(escopo_padrao(provedor), i.id, Some(ator.id))
             .await?;
         info!(provedor = provedor.as_str(), ator = %ator.login, "provedor padrão alterado");
         Ok(())
@@ -353,7 +481,7 @@ impl IntegracoesService {
     pub async fn eventos(
         &self,
         ator: &Ator,
-        provedor: ProvedorPagamento,
+        provedor: ProvedorIntegracao,
         ambiente: AmbienteIntegracao,
         limite: i64,
     ) -> AppResult<Vec<EventoIntegracaoView>> {
@@ -363,6 +491,25 @@ impl IntegracoesService {
             .buscar(provedor, ambiente)
             .await?
             .ok_or_else(|| DomainError::nao_encontrado("Integração não configurada."))?;
+        // Comunicação: inbox própria; pagamentos: inbox de webhooks.
+        if provedor == ProvedorIntegracao::Zapi {
+            let Some(repo) = &self.com_eventos else {
+                return Ok(Vec::new());
+            };
+            return Ok(repo
+                .da_integracao(i.id, limite.clamp(1, 100))
+                .await?
+                .into_iter()
+                .map(|e| EventoIntegracaoView {
+                    event_id: e.event_id,
+                    event_type: e.tipo,
+                    status: e.status,
+                    ultimo_erro: e.ultimo_erro,
+                    recebido_em: e.recebido_em,
+                    processado_em: e.processado_em,
+                })
+                .collect());
+        }
         let eventos = self
             .pagamentos
             .eventos_da_integracao(i.id, limite.clamp(1, 100))
@@ -382,7 +529,7 @@ impl IntegracoesService {
 
     pub async fn provedor_padrao_site(
         &self,
-    ) -> AppResult<Option<(ProvedorPagamento, AmbienteIntegracao, i64)>> {
+    ) -> AppResult<Option<(ProvedorIntegracao, AmbienteIntegracao, i64)>> {
         Ok(self.repo.padrao(ESCOPO_PAGAMENTOS_SITE).await?)
     }
 
@@ -391,13 +538,13 @@ impl IntegracoesService {
     /// decide a precedência (persistida governa, env não resgata).
     pub async fn buscar_integracao(
         &self,
-        provedor: ProvedorPagamento,
+        provedor: ProvedorIntegracao,
         ambiente: AmbienteIntegracao,
     ) -> AppResult<Option<Integracao>> {
         Ok(self.repo.buscar(provedor, ambiente).await?)
     }
 
-    pub async fn habilitadas(&self, provedor: ProvedorPagamento) -> AppResult<Vec<Integracao>> {
+    pub async fn habilitadas(&self, provedor: ProvedorIntegracao) -> AppResult<Vec<Integracao>> {
         Ok(self
             .repo
             .listar()
@@ -432,5 +579,74 @@ impl IntegracoesService {
                 ResolucaoGateway::Indisponivel => None,
             },
         )
+    }
+
+    // ------------------------------------------------------------------
+    // Z-API — operações administrativas da instância (admin-only).
+    // ------------------------------------------------------------------
+
+    fn com_resolver(&self) -> AppResult<&Arc<dyn ComunicacaoResolver>> {
+        self.com
+            .as_ref()
+            .ok_or_else(|| DomainError::regra("Resolver de comunicação indisponível.").into())
+    }
+
+    /// QR Code de pareamento — imagem base64 ou fluxo assistido.
+    pub async fn zapi_qr(&self, ator: &Ator) -> AppResult<serde_json::Value> {
+        ator.exigir_admin()?;
+        match self.com_resolver()?.zapi_qr().await? {
+            ZApiQrView::Imagem(i) => Ok(serde_json::json!({"tipo": "imagem", "valor": i})),
+            ZApiQrView::Assistido(h) => Ok(serde_json::json!({"tipo": "assistido", "mensagem": h})),
+        }
+    }
+
+    /// Registra os 5 callbacks da instância no callback público da API.
+    pub async fn zapi_configurar_webhooks(
+        &self,
+        ator: &Ator,
+        api_base: &str,
+    ) -> AppResult<serde_json::Value> {
+        ator.exigir_admin()?;
+        let n = self
+            .com_resolver()?
+            .zapi_configurar_webhooks(api_base)
+            .await?;
+        info!(callbacks = n, ator = %ator.login, "zapi: webhooks configurados");
+        Ok(serde_json::json!({"callbacks_configurados": n}))
+    }
+
+    /// Logout remoto — só por ação explícita do operador.
+    pub async fn zapi_desconectar(&self, ator: &Ator) -> AppResult<()> {
+        ator.exigir_admin()?;
+        self.com_resolver()?.zapi_desconectar().await?;
+        info!(ator = %ator.login, "zapi: sessão desconectada");
+        Ok(())
+    }
+
+    /// Mensagem de teste única — fora da fila, sem retry automático.
+    pub async fn zapi_enviar_teste(
+        &self,
+        ator: &Ator,
+        input: &MensagemTesteInput,
+    ) -> AppResult<serde_json::Value> {
+        ator.exigir_admin()?;
+        let digitos: String = input
+            .telefone
+            .chars()
+            .filter(char::is_ascii_digit)
+            .collect();
+        if digitos.len() < 10 || digitos.len() > 15 {
+            return Err(DomainError::validacao("Telefone inválido — envie com DDI+DDD.").into());
+        }
+        let texto = input
+            .texto
+            .as_deref()
+            .unwrap_or("Teste de integração Z-API — Pousada Espírito do Mar. Pode ignorar.");
+        let msgid = self
+            .com_resolver()?
+            .zapi_enviar_direto(&digitos, texto)
+            .await?;
+        info!(ator = %ator.login, "zapi: mensagem de teste enviada");
+        Ok(serde_json::json!({"enviado": true, "id_provedor": msgid}))
     }
 }

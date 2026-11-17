@@ -17,7 +17,7 @@ use crate::dto::{
     ReembolsoOutput, StatusPublicoOutput,
 };
 use crate::error::AppResult;
-use clarituz_domain::entities::{AmbienteIntegracao, ProvedorPagamento};
+use clarituz_domain::entities::{AmbienteIntegracao, ProvedorIntegracao};
 use clarituz_domain::entities::{NovaAuditoriaPagamento, PagamentoOnline, WebhookEvento};
 use clarituz_domain::enums::{StatusPagamento, StatusProcWebhook, TipoPagamento};
 use clarituz_domain::events::{Aviso, TipoAviso};
@@ -54,7 +54,7 @@ pub struct PagamentosOnlineService {
 /// Gateway + identidade a gravar no pagamento.
 struct Resolvido {
     gateway: Arc<dyn PaymentGateway>,
-    provedor: ProvedorPagamento,
+    provedor: ProvedorIntegracao,
     ambiente: Option<AmbienteIntegracao>,
     idintegracao: Option<i64>,
 }
@@ -119,7 +119,7 @@ impl PagamentosOnlineService {
             .ok_or_else(|| DomainError::regra("Pagamento online indisponível no momento."))?;
         Ok(Resolvido {
             gateway,
-            provedor: ProvedorPagamento::Stripe,
+            provedor: ProvedorIntegracao::Stripe,
             ambiente: None,
             idintegracao: None,
         })
@@ -134,14 +134,14 @@ impl PagamentosOnlineService {
     ) -> Result<Arc<dyn PaymentGateway>, DomainError> {
         if let Some(resolver) = &self.resolver {
             let provedor =
-                ProvedorPagamento::parse(&p.provedor).unwrap_or(ProvedorPagamento::Stripe);
+                ProvedorIntegracao::parse(&p.provedor).unwrap_or(ProvedorIntegracao::Stripe);
             let ambiente = p
                 .ambiente
                 .as_deref()
                 .and_then(AmbienteIntegracao::parse)
                 .unwrap_or(AmbienteIntegracao::Producao);
             // Pagamento legado Stripe sem integração → env.
-            if p.idintegracao.is_none() && provedor == ProvedorPagamento::Stripe {
+            if p.idintegracao.is_none() && provedor == ProvedorIntegracao::Stripe {
                 if let Some(gw) = &self.gateway_env {
                     return Ok(gw.clone());
                 }
@@ -358,9 +358,9 @@ impl PagamentosOnlineService {
     /// `falhou` e o sweeper re-tentar — evento nunca é perdido.
     #[instrument(skip(self, evento), fields(event_id = %evento.event_id, tipo = %evento.event_type))]
     pub async fn processar_evento(&self, evento: &WebhookEvento) -> AppResult<()> {
-        match ProvedorPagamento::parse(&evento.provedor) {
-            Some(ProvedorPagamento::Pagbank) => self.processar_pagbank(evento).await,
-            Some(ProvedorPagamento::Mercadopago) => self.processar_mercadopago(evento).await,
+        match ProvedorIntegracao::parse(&evento.provedor) {
+            Some(ProvedorIntegracao::Pagbank) => self.processar_pagbank(evento).await,
+            Some(ProvedorIntegracao::Mercadopago) => self.processar_mercadopago(evento).await,
             _ => self.processar_stripe(evento).await,
         }
     }

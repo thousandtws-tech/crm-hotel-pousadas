@@ -1,4 +1,4 @@
-use crate::entities::{AmbienteIntegracao, Integracao, ProvedorPagamento, StatusVerificacao};
+use crate::entities::{AmbienteIntegracao, Integracao, ProvedorIntegracao, StatusVerificacao};
 use crate::error::DomainError;
 use crate::ports::PaymentGateway;
 use async_trait::async_trait;
@@ -21,11 +21,13 @@ pub struct AtualizacaoIntegracao {
     pub segredos: Option<HashMap<String, String>>,
     pub nome_conta: Option<String>,
     pub webhook_url: Option<String>,
+    /// Config não-secreta (Z-API: `instance_id`) — merge por chave.
+    pub config: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone)]
 pub struct NovaIntegracao {
-    pub provedor: ProvedorPagamento,
+    pub provedor: ProvedorIntegracao,
     pub ambiente: AmbienteIntegracao,
     pub criado_por: Option<i64>,
 }
@@ -41,7 +43,7 @@ pub trait IntegracaoRepository: Send + Sync {
 
     async fn buscar(
         &self,
-        provedor: ProvedorPagamento,
+        provedor: ProvedorIntegracao,
         ambiente: AmbienteIntegracao,
     ) -> Result<Option<Integracao>, DomainError>;
 
@@ -87,7 +89,7 @@ pub trait IntegracaoRepository: Send + Sync {
     async fn padrao(
         &self,
         escopo: &str,
-    ) -> Result<Option<(ProvedorPagamento, AmbienteIntegracao, i64)>, DomainError>;
+    ) -> Result<Option<(ProvedorIntegracao, AmbienteIntegracao, i64)>, DomainError>;
 
     async fn definir_padrao(
         &self,
@@ -97,6 +99,10 @@ pub trait IntegracaoRepository: Send + Sync {
     ) -> Result<(), DomainError>;
 
     async fn limpar_padrao_se(&self, idintegracao: i64) -> Result<(), DomainError>;
+
+    /// Merge de chaves na `config` (sessão Z-API: número, conexão) —
+    /// webhooks atualizam sem passar pelo fluxo de salvar credenciais.
+    async fn mesclar_config(&self, id: i64, patch: &serde_json::Value) -> Result<(), DomainError>;
 }
 
 pub trait CredentialVault: Send + Sync {
@@ -114,13 +120,13 @@ pub enum ResolucaoGateway {
 pub trait GatewayResolver: Send + Sync {
     async fn resolver(
         &self,
-        provedor: ProvedorPagamento,
+        provedor: ProvedorIntegracao,
         ambiente: AmbienteIntegracao,
     ) -> Result<ResolucaoGateway, DomainError>;
 
     async fn resolver_historico(
         &self,
-        provedor: ProvedorPagamento,
+        provedor: ProvedorIntegracao,
         ambiente: AmbienteIntegracao,
     ) -> Result<ResolucaoGateway, DomainError>;
 
@@ -140,12 +146,15 @@ pub enum EstadoEfetivo {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct IntegracaoView {
-    pub provedor: ProvedorPagamento,
+    pub provedor: ProvedorIntegracao,
     pub ambiente: AmbienteIntegracao,
+    pub categoria: String,
     pub estado: EstadoEfetivo,
     pub habilitado: bool,
     pub nome_conta: Option<String>,
     pub capabilities: serde_json::Value,
+    /// Config não-secreta (Z-API: instance_id, sessão) — segura p/ UI.
+    pub config: serde_json::Value,
     pub webhook_url: Option<String>,
     pub segredos: MapaSegredosView,
     pub ultima_verificacao_em: Option<DateTime<Utc>>,
@@ -178,7 +187,7 @@ pub struct EventoIntegracaoView {
 
 #[derive(Debug, Clone, Copy)]
 pub struct IdentidadePagamento {
-    pub provedor: ProvedorPagamento,
+    pub provedor: ProvedorIntegracao,
     pub ambiente: Option<AmbienteIntegracao>,
     pub idintegracao: Option<i64>,
 }
@@ -186,7 +195,7 @@ pub struct IdentidadePagamento {
 impl IdentidadePagamento {
     pub fn legado() -> Self {
         Self {
-            provedor: ProvedorPagamento::Stripe,
+            provedor: ProvedorIntegracao::Stripe,
             ambiente: None,
             idintegracao: None,
         }

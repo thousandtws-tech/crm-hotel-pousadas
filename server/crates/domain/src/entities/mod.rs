@@ -51,7 +51,7 @@ pub use frigobar::{Frigobar, ItemFrigobar};
 pub use funcionario::{Funcionario, LogAcesso, SessaoRefresh};
 pub use impressora::{ImpressaoJob, Impressora, ImpressoraDescoberta};
 pub use integracao::{
-    AmbienteIntegracao, Integracao, ProvedorPagamento, StatusIntegracao, StatusVerificacao,
+    AmbienteIntegracao, Integracao, ProvedorIntegracao, StatusIntegracao, StatusVerificacao,
 };
 pub use notificacao::Notificacao;
 pub use operacao::*;

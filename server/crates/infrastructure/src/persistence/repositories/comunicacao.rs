@@ -120,6 +120,63 @@ impl FilaEnvioRepository for PgFilaEnvio {
         Ok(())
     }
 
+    async fn vincular_provedor(
+        &self,
+        id: i64,
+        provedor: &str,
+        idintegracao: Option<i64>,
+    ) -> Result<(), DomainError> {
+        sqlx::query("UPDATE fila_envio SET provedor=$2, idintegracao=$3 WHERE id=$1")
+            .bind(id)
+            .bind(provedor)
+            .bind(idintegracao)
+            .execute(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    /// O `provider_msg_id` pode compor `id|messageId` (Z-API) — casa
+    /// qualquer dos dois segmentos; o marco só avança (COALESCE).
+    async fn marcar_entrega(
+        &self,
+        provedor: &str,
+        provider_msg_id: &str,
+    ) -> Result<u64, DomainError> {
+        let r = sqlx::query(
+            "UPDATE fila_envio SET entregue_em = COALESCE(entregue_em, now())
+             WHERE provedor = $1 AND (
+                 provider_msg_id = $2
+                 OR provider_msg_id LIKE $2 || '|%'
+                 OR provider_msg_id LIKE '%|' || $2
+             )",
+        )
+        .bind(provedor)
+        .bind(provider_msg_id)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(r.rows_affected())
+    }
+
+    async fn marcar_lido(&self, provedor: &str, provider_msg_id: &str) -> Result<u64, DomainError> {
+        let r = sqlx::query(
+            "UPDATE fila_envio SET lido_em = COALESCE(lido_em, now()),
+                entregue_em = COALESCE(entregue_em, now())
+             WHERE provedor = $1 AND (
+                 provider_msg_id = $2
+                 OR provider_msg_id LIKE $2 || '|%'
+                 OR provider_msg_id LIKE '%|' || $2
+             )",
+        )
+        .bind(provedor)
+        .bind(provider_msg_id)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(r.rows_affected())
+    }
+
     async fn listar(&self, limite: i64) -> Result<Vec<ItemFila>, DomainError> {
         sqlx::query_as::<_, ItemFila>("SELECT * FROM fila_envio ORDER BY id DESC LIMIT $1")
             .bind(limite)
@@ -683,13 +740,19 @@ impl AutomacaoRepository for PgAutomacaoRepository {
     }
 
     async fn reserva_por_telefone(&self, finais: &str) -> Result<Option<ReservaAuto>, DomainError> {
-        // Compara só dígitos: o `from` da Meta chega "5581..." e o cadastro
-        // pode estar "(81) 9...". Sufixo de 8+ dígitos cobre o 9º dígito.
+        // Identidade por dígitos completos — sufixo de 8 pode colidir
+        // entre pessoas de DDDs diferentes e não deve liberar dados.
+        // Cobre cadastro com e sem DDI 55.
         sqlx::query_as::<_, ReservaAuto>(&format!(
             "SELECT {AUTO_COLS} {AUTO_FROM}
              WHERE r.status IN ('p','i')
-               AND right(regexp_replace(coalesce(c.telefone, ''), '\\\\D', '', 'g'), 8)
-                   = right($1, 8)
+               AND regexp_replace(coalesce(c.telefone, ''), '\\\\D', '', 'g') IN (
+                     $1,
+                     CASE WHEN $1 LIKE '55%' AND length($1) IN (12,13)
+                          THEN substring($1 from 3) ELSE '' END,
+                     CASE WHEN length($1) IN (10,11)
+                          THEN '55' || $1 ELSE '' END
+                   )
              ORDER BY CASE WHEN r.status = 'i' THEN 0 ELSE 1 END,
                       abs(r.entradaprevista - CURRENT_DATE)
              LIMIT 1"
@@ -722,11 +785,18 @@ impl LgpdRepository for PgLgpdRepository {
         telefone_digitos: &str,
         canal: &str,
     ) -> Result<u64, DomainError> {
+        // Opt-out por dígitos completos (com/sem DDI 55) — sufixo de 8
+        // poderia descadastrar a pessoa errada.
         let r = sqlx::query(
             "UPDATE cliente SET lgpd_opt_out = true, lgpd_opt_out_em = now(),
                     lgpd_opt_out_canal = $2, atualizado_em = now()
-             WHERE right(regexp_replace(coalesce(telefone, ''), '\\\\D', '', 'g'), 8)
-                   = right($1, 8)",
+             WHERE regexp_replace(coalesce(telefone, ''), '\\\\D', '', 'g') IN (
+                     $1,
+                     CASE WHEN $1 LIKE '55%' AND length($1) IN (12,13)
+                          THEN substring($1 from 3) ELSE '' END,
+                     CASE WHEN length($1) IN (10,11)
+                          THEN '55' || $1 ELSE '' END
+                   )",
         )
         .bind(telefone_digitos)
         .bind(canal)
@@ -1250,6 +1320,114 @@ impl AtendimentoRepository for PgAtendimentoRepository {
         ))
         .bind(id)
         .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Inbox de eventos de comunicação — webhooks ACK só depois daqui.
+// ---------------------------------------------------------------------------
+
+pub struct PgComunicacaoEventos {
+    pool: PgPool,
+}
+
+impl PgComunicacaoEventos {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl ComunicacaoEventoRepository for PgComunicacaoEventos {
+    async fn inbox(
+        &self,
+        provedor: &str,
+        event_id: &str,
+        tipo: &str,
+        payload: &serde_json::Value,
+        idintegracao: Option<i64>,
+    ) -> Result<Option<i64>, DomainError> {
+        // ON CONFLICT → reentrega do provedor: devolve None (dedup).
+        let id = sqlx::query_scalar::<_, i64>(
+            "INSERT INTO comunicacao_evento
+                (provedor, event_id, tipo, payload, idintegracao)
+             VALUES ($1,$2,$3,$4,$5)
+             ON CONFLICT (provedor, event_id) DO NOTHING
+             RETURNING id",
+        )
+        .bind(provedor)
+        .bind(event_id)
+        .bind(tipo)
+        .bind(payload)
+        .bind(idintegracao)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(id)
+    }
+
+    async fn marcar_processado(&self, id: i64) -> Result<(), DomainError> {
+        sqlx::query(
+            "UPDATE comunicacao_evento SET status='processado',
+             processado_em=now(), ultimo_erro=NULL WHERE id=$1",
+        )
+        .bind(id)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    async fn marcar_falha(&self, id: i64, erro: &str) -> Result<(), DomainError> {
+        sqlx::query(
+            "UPDATE comunicacao_evento SET status='falhou',
+             tentativas=tentativas+1, ultimo_erro=$2 WHERE id=$1",
+        )
+        .bind(id)
+        .bind(erro)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    async fn descartar(&self, id: i64) -> Result<(), DomainError> {
+        sqlx::query(
+            "UPDATE comunicacao_evento SET status='descartado', processado_em=now() WHERE id=$1",
+        )
+        .bind(id)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    async fn pendentes(&self, limite: i64) -> Result<Vec<ComunicacaoEvento>, DomainError> {
+        sqlx::query_as::<_, ComunicacaoEvento>(
+            "SELECT * FROM comunicacao_evento
+             WHERE status IN ('recebido','falhou') AND tentativas < 8
+             ORDER BY recebido_em LIMIT $1",
+        )
+        .bind(limite)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn da_integracao(
+        &self,
+        idintegracao: i64,
+        limite: i64,
+    ) -> Result<Vec<ComunicacaoEvento>, DomainError> {
+        sqlx::query_as::<_, ComunicacaoEvento>(
+            "SELECT * FROM comunicacao_evento
+             WHERE idintegracao = $1 ORDER BY id DESC LIMIT $2",
+        )
+        .bind(idintegracao)
+        .bind(limite)
+        .fetch_all(&self.pool)
         .await
         .map_err(map_db_err)
     }
