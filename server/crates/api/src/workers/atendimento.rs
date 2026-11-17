@@ -1,6 +1,3 @@
-//! Escalada de SLA — a cada 60 s escala protocolos abertos cujo
-//! aceite venceu.
-
 use crate::http::state::AppState;
 
 pub(crate) fn spawn(state: &AppState) {

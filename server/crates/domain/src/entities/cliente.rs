@@ -1,5 +1,3 @@
-//! Cliente (hóspede titular da reserva).
-
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::Serialize;
 use sqlx::FromRow;

@@ -12,9 +12,7 @@ pub struct AcomodacaoInput {
     pub capacidade: i32,
     pub descricao: Option<String>,
     pub cor: Option<String>,
-    /// Concorrência otimista — só em PUT.
     pub version: Option<i64>,
-    /// Pavimento do mapa de ocupação (0 = térreo).
     pub andar: Option<i32>,
 }
 

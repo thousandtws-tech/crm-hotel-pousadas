@@ -22,14 +22,9 @@ pub struct PagamentoOnline {
     pub status: StatusPagamento,
     pub valor_centavos: i64,
     pub moeda: String,
-    /// Referência de pagamento no provedor — Stripe `pi_…`, PagBank
-    /// `ORDE_…`/`CHAR_…`, Mercado Pago `payment_id`. Nome histórico
-    /// mantido por compatibilidade de schema.
     pub pi_id: Option<String>,
     pub metodo: Option<String>,
     pub paid_em: Option<DateTime<Utc>>,
-    /// Identidade imutável do provedor (legados: `provedor='stripe'`,
-    /// `ambiente`/`idintegracao` NULL — não se inventa o que não se sabe).
     pub provedor: String,
     pub ambiente: Option<String>,
     pub idintegracao: Option<i64>,

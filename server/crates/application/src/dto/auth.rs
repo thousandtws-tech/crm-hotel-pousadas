@@ -34,7 +34,6 @@ pub struct FuncionarioView {
     pub nivel: i16,
     pub nivel_nome: &'static str,
     pub ativo: bool,
-    /// Permissão granular de operações financeiras (reembolso).
     pub financeiro: bool,
 }
 

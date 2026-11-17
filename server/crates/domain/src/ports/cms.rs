@@ -1,5 +1,3 @@
-//! Port do CMS de quartos — conteúdo editorial e mídia do site público.
-
 use crate::entities::{
     AcomodacaoCms, AcomodacaoCmsView, AcomodacaoMidia, AcomodacaoPublica, CmsSecao, NovoLog,
 };
