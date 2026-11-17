@@ -95,9 +95,14 @@ export class MariaService {
     }
   }
 
-  /** clientTools para o config do evento `elevenlabs-convai:call`. */
+  /** clientTools para o config do evento `elevenlabs-convai:call`.
+   *  Se preparar() ainda não completou (ou falhou), registra ao menos
+   *  as garantias locais — sem elas o agente recebe "client tool not
+   *  defined" e desiste de navegar/confirmar. */
   clientTools(): ClientTools {
-    return this.tools ?? {};
+    if (this.tools) return this.tools;
+    const token = this.auth.accessToken();
+    return token ? this.montarClientTools([], token) : {};
   }
 
   /** Clique no card — executa confirmar_acao no /mcp com o JWT do
