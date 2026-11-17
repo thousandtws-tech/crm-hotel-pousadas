@@ -43,7 +43,6 @@ pub struct RegraMatriz {
     pub ativo: bool,
 }
 
-
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct PushSubscription {
     pub id: i64,

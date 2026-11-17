@@ -113,10 +113,10 @@ pub struct EscalaTurno {
 pub struct CltViolacao {
     pub idfuncionario: i64,
     pub funcionario_nome: String,
-    pub regra: String, 
+    pub regra: String,
     pub detalhe: String,
     pub data: NaiveDate,
-    pub severidade: String, 
+    pub severidade: String,
     pub correcao: Option<CltCorrecao>,
 }
 
@@ -127,8 +127,13 @@ pub enum CltCorrecao {
         idturno: i64,
         novo_fim: DateTime<Utc>,
     },
-    AjustarAlmoco { idturno: i64, novo_almoco_min: i16 },
-    Folgar { idturno: i64 },
+    AjustarAlmoco {
+        idturno: i64,
+        novo_almoco_min: i16,
+    },
+    Folgar {
+        idturno: i64,
+    },
     EmpurrarInicio {
         idturno: i64,
         novo_inicio: DateTime<Utc>,

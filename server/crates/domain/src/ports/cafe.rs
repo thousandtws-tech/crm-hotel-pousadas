@@ -23,7 +23,6 @@ pub struct ReservaDoCafe {
 
 #[async_trait]
 pub trait CafeRepository: Send + Sync {
-
     async fn quadro(&self, data: NaiveDate) -> Result<Vec<CafeQuadroItem>, DomainError>;
 
     async fn reserva(&self, idreserva: i64) -> Result<Option<ReservaDoCafe>, DomainError>;

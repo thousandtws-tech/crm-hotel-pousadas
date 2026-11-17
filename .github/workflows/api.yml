@@ -2,9 +2,9 @@ name: api
 
 on:
   push:
-    paths: ["server/crates/**", "server/migrations/**", "server/Cargo.*"]
+    paths: ["server/crates/**", "server/migrations/**", "server/Cargo.*", ".github/workflows/api.yml"]
   pull_request:
-    paths: ["server/crates/**", "server/migrations/**", "server/Cargo.*"]
+    paths: ["server/crates/**", "server/migrations/**", "server/Cargo.*", ".github/workflows/api.yml"]
 
 jobs:
   quality:

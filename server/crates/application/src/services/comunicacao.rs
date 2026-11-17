@@ -543,8 +543,7 @@ impl ComunicacaoService {
             r.entradaprevista.format("%d/%m"),
             r.acomodacao_nome
                 .as_ref()
-                .map(|n| format!(" — {n}"))
-                .unwrap_or_default()
+                .map_or_default(|n| format!(" — {n}"))
         )
     }
 

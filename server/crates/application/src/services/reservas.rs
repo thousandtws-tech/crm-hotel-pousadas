@@ -928,7 +928,7 @@ impl ReservaService {
             });
         if tem_menor && !titular_adulto && !adulto_acomp {
             let aut = self.lgpd.autorizacao_menor(id).await?;
-            if aut.as_deref().map(str::trim).unwrap_or_default().is_empty() {
+            if aut.as_deref().map_or_default(str::trim).is_empty() {
                 return Err(DomainError::regra(
                     "Menor desacompanhado (ECA art. 82): registre a autorização \
                      dos pais ou responsável legal antes do check-in.",
@@ -1111,9 +1111,7 @@ impl ReservaService {
             "cancelar",
             format!(
                 "Cancelou a reserva Nº{id}{}",
-                motivo
-                    .map(|m| format!(" (motivo: {m})"))
-                    .unwrap_or_default()
+                motivo.map_or_default(|m| format!(" (motivo: {m})"))
             ),
             "reserva",
             id,

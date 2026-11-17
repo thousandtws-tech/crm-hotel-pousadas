@@ -54,7 +54,6 @@ impl ObjectStore for FsStore {
     }
 }
 
-
 pub struct S3Store {
     bucket: Box<Bucket>,
 }

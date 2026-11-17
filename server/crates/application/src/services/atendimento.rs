@@ -171,9 +171,7 @@ impl AtendimentoService {
         } else {
             ("atendimento.novo", "Novo atendimento na fila")
         };
-        let reserva_txt = idreserva
-            .map(|r| format!("reserva #{r} · "))
-            .unwrap_or_default();
+        let reserva_txt = idreserva.map_or_default(|r| format!("reserva #{r} · "));
         if let Err(e) = self
             .comunicacao
             .avisar_equipe(
