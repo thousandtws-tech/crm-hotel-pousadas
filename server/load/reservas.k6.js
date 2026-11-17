@@ -1,18 +1,3 @@
-// Load test da API Clarituz — prova o scale-out e encontra o ponto de
-// saturação (pool do Postgres é o gargalo esperado).
-//
-// Cenários concorrentes:
-//   browse  — rampa de VUs lendo o catálogo público (read-heavy)
-//   reserva — writes reais a taxa constante (só com WRITE=1, ver aviso)
-//   sse     — VUs segurando /publico/stream (cada um = 1 conexão aberta)
-//
-// Uso:
-//   k6 run -e BASE_URL=http://localhost:3000 server/load/reservas.k6.js
-//   k6 run -e BASE_URL=https://<staging> -e WRITE=1 server/load/reservas.k6.js
-//
-// ATENÇÃO: WRITE=1 cria reservas 'p' e clientes de verdade — use só em
-// staging ou aceite limpar depois. Sem WRITE, o teste é 100% read-only.
-
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Rate, Trend } from 'k6/metrics';
@@ -20,8 +5,6 @@ import { Rate, Trend } from 'k6/metrics';
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000';
 const WRITE = __ENV.WRITE === '1';
 
-// erros_app conta falhas de aplicação (5xx, corpo inválido); 429 do
-// IpRateLimit é comportamento esperado e entra só em http_req_failed.
 const errosApp = new Rate('erros_app');
 const duracaoCatalogo = new Trend('duracao_catalogo_ms', true);
 
@@ -32,9 +15,9 @@ export const options = {
       exec: 'browse',
       startVUs: 0,
       stages: [
-        { duration: '1m', target: 150 }, // warm-up
-        { duration: '2m', target: 800 }, // rampa até o platô
-        { duration: '2m', target: 800 }, // platô — observa p95 e pool idle
+        { duration: '1m', target: 150 }, 
+        { duration: '2m', target: 800 },
+        { duration: '2m', target: 800 }, 
         { duration: '1m', target: 0 },
       ],
     },
@@ -43,8 +26,6 @@ export const options = {
           reserva: {
             executor: 'constant-arrival-rate',
             exec: 'reserva',
-            // 6/min fica abaixo do IpRateLimit (8/min/IP) de origem única;
-            // em k6 Cloud (multi-IP) pode subir — aí 429 vira dado válido.
             rate: 6,
             timeUnit: '1m',
             duration: '5m',
@@ -55,17 +36,15 @@ export const options = {
     sse: {
       executor: 'constant-vus',
       exec: 'sse',
-      vus: 200, // cada VU = 1 conexão SSE aberta na réplica
+      vus: 200, 
       duration: '6m',
     },
   },
   thresholds: {
-    // Critério de aprovação do scale-out:
-    //   p95 do catálogo abaixo de 500 ms e < 1% de erros de aplicação.
     http_req_duration: ['p(95)<800'],
     duracao_catalogo_ms: ['p(95)<500'],
     erros_app: ['rate<0.01'],
-    http_req_failed: ['rate<0.05'], // margem para 429s legítimos do limiter
+    http_req_failed: ['rate<0.05'],
   },
 };
 
@@ -94,12 +73,11 @@ export function browse() {
       errosApp.add(!check(det, { 'detalhe 200': (r) => r.status === 200 }));
     }
   }
-  sleep(0.3 + Math.random() * 0.7); // think time realista
+  sleep(0.3 + Math.random() * 0.7);
 }
 
 export function reserva() {
-  // Datas aleatórias em até ~1 ano: mistura reservas criadas e conflitos
-  // ("consulta_registrada") — os dois caminhos devem responder 201.
+
   const dia = 1 + Math.floor(Math.random() * 350);
   const checkIn = new Date(Date.now() + dia * 864e5).toISOString().slice(0, 10);
   const checkOut = new Date(Date.now() + (dia + 2) * 864e5).toISOString().slice(0, 10);
@@ -123,13 +101,10 @@ export function reserva() {
     'ou 201 consulta': (r) => r.status === 201 && r.json('status') === 'consulta_registrada',
     'ou 429 limite': (r) => r.status === 429,
   });
-  // 5xx ou corpo inválido é falha real; 429 é o limiter trabalhando.
   errosApp.add(res.status >= 500 || (res.status !== 201 && res.status !== 429));
 }
 
 export function sse() {
-  // Segura a conexão ~30 s; o servidor vê disconnect no timeout do cliente.
-  // Cada VU = 1 assinante no bus da réplica (gauge clarituz_sse_subscribers).
   const res = http.get(`${BASE_URL}/api/v1/publico/stream`, {
     timeout: '35s',
     tags: { endpoint: 'sse' },
