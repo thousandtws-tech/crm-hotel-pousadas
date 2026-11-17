@@ -47,6 +47,9 @@ pub struct ReservaDetalhe {
     pub acomodacao_valor: Decimal,
     pub cliente_nome: String,
     pub cliente_cpf: String,
+    /// Contato do titular — vai como `payer` nos checkouts (antifraude).
+    pub cliente_email: Option<String>,
+    pub cliente_telefone: Option<String>,
     /// Prazo de pagamento da reserva online (NULL = recepção, sem hold).
     pub expira_em: Option<DateTime<Utc>>,
     /// Preenchido por segunda consulta — não vem do join principal.

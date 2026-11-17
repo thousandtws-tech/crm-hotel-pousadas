@@ -70,7 +70,9 @@ impl ReservaRepository for PgReservaRepository {
                     r.quantidade_hospedes, r.entradaprevista, r.saidaprevista,
                     r.checkin_em, r.checkout_em, r.obs, r.status, r.valordiaria, r.criado_em,
                     a.nome AS acomodacao_nome, a.numero AS acomodacao_numero, a.valor AS acomodacao_valor,
-                    c.nome AS cliente_nome, c.cpf AS cliente_cpf, r.expira_em, r.fnrh_hospede
+                    c.nome AS cliente_nome, c.cpf AS cliente_cpf,
+                    c.email AS cliente_email, c.telefone AS cliente_telefone,
+                    r.expira_em, r.fnrh_hospede
              FROM reserva r
              JOIN acomodacao a ON a.id = r.idacomodacao
              JOIN cliente c ON c.id = r.idcliente

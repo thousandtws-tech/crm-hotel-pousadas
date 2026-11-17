@@ -49,6 +49,8 @@ pub struct PagamentosOnlineService {
     hold_minutos: i64,
     success_url: String,
     cancel_url: String,
+    /// URL pública da API — origem das `notification_url` por sessão.
+    public_api_url: Option<String>,
 }
 
 /// Gateway + identidade a gravar no pagamento.
@@ -72,6 +74,7 @@ impl PagamentosOnlineService {
         hold_minutos: i64,
         success_url: String,
         cancel_url: String,
+        public_api_url: Option<String>,
     ) -> Self {
         Self {
             pagamentos,
@@ -84,6 +87,7 @@ impl PagamentosOnlineService {
             hold_minutos,
             success_url,
             cancel_url,
+            public_api_url,
         }
     }
 
@@ -270,6 +274,19 @@ impl PagamentosOnlineService {
                 success_url: format!("{}?token={}", self.success_url, input.token),
                 cancel_url: format!("{}?token={}", self.cancel_url, input.token),
                 idempotency_key: Uuid::new_v4(),
+                pagador: Some(clarituz_domain::ports::PagadorCheckout {
+                    nome: reserva.cliente_nome.clone(),
+                    documento: reserva.cliente_cpf.clone(),
+                    email: reserva.cliente_email.clone(),
+                    telefone: reserva.cliente_telefone.clone(),
+                }),
+                notification_url: self.public_api_url.as_ref().map(|b| {
+                    format!(
+                        "{}/api/v1/webhooks/{}",
+                        b.trim_end_matches('/'),
+                        resolvido.provedor.as_str()
+                    )
+                }),
             })
             .await
             .inspect_err(|_| {

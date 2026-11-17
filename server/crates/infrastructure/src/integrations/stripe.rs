@@ -165,6 +165,16 @@ impl PaymentGateway for StripeGateway {
                 nova.idreserva.to_string(),
             ),
         ];
+        let mut form = form;
+        if let Some(email) = nova
+            .pagador
+            .as_ref()
+            .and_then(|p| p.email.as_deref())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            form.push(("customer_email".into(), email.into()));
+        }
         let s: SessionResp = self
             .post_form(
                 "checkout.create",

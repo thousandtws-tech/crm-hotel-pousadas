@@ -193,7 +193,7 @@ impl PaymentGateway for PagBankGateway {
     }
 
     async fn criar_checkout(&self, nova: &NovaCheckout) -> Result<SessaoCheckout, DomainError> {
-        let body = serde_json::json!({
+        let mut body = serde_json::json!({
             "reference_id": nova.idpagamento.to_string(),
             "expiration_date": nova.expires_em.to_rfc3339(),
             "customer_modifiable": false,
@@ -214,6 +214,31 @@ impl PaymentGateway for PagBankGateway {
                 "value": nova.idreserva.to_string(),
             }],
         });
+        if let Some(p) = &nova.pagador {
+            let mut customer = serde_json::Map::new();
+            if !p.nome.trim().is_empty() {
+                customer.insert("name".into(), p.nome.trim().into());
+            }
+            if let Some(email) = p.email.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+                customer.insert("email".into(), email.into());
+            }
+            let doc: String = p.documento.chars().filter(|c| c.is_ascii_digit()).collect();
+            if doc.len() == 11 || doc.len() == 14 {
+                customer.insert("tax_id".into(), doc.into());
+            }
+            if !customer.is_empty() {
+                body["customer"] = serde_json::Value::Object(customer);
+            }
+        }
+        if let Some(url) = nova
+            .notification_url
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            body["notification_urls"] = serde_json::json!([url]);
+            body["payment_notification_urls"] = serde_json::json!([url]);
+        }
         let c: CheckoutResp = self
             .post(
                 "checkout.create",

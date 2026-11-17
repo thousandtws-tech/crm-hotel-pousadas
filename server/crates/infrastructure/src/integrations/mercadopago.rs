@@ -191,6 +191,92 @@ struct SearchResp {
     results: Vec<PaymentResp>,
 }
 
+/// Corpo da preferência do Checkout Pro. `payer` identificado (CPF +
+/// e-mail) é o maior sinal anti-`cc_rejected_high_risk` do antifraude;
+/// `notification_url` garante o webhook mesmo sem config no painel MP.
+fn corpo_preferencia(nova: &NovaCheckout) -> serde_json::Value {
+    let mut body = serde_json::json!({
+        "items": [{
+            "title": nova.descricao,
+            "quantity": 1,
+            "unit_price": nova.valor_centavos as f64 / 100.0,
+            "currency_id": "BRL",
+        }],
+        "external_reference": nova.idpagamento.to_string(),
+        "back_urls": {
+            "success": nova.success_url,
+            "failure": nova.cancel_url,
+            "pending": nova.success_url,
+        },
+        "auto_return": "approved",
+        "expires": true,
+        "expiration_date_to": nova.expires_em.to_rfc3339(),
+        "statement_descriptor": "POUSADA",
+        // Sem exclusão de meios: cartão de crédito, débito, Pix e
+        // boleto ficam à disposição do hóspede. `installments` é o
+        // teto — o MP respeita o máximo da conta. `binary_mode` off
+        // permite estados intermediários (análise/in_process).
+        "binary_mode": false,
+        "payment_methods": {
+            "excluded_payment_methods": [],
+            "excluded_payment_types": [],
+            "installments": 12,
+            "default_installments": 1
+        },
+    });
+    if let Some(p) = &nova.pagador {
+        let mut payer = serde_json::Map::new();
+        let mut partes = p.nome.trim().splitn(2, ' ');
+        if let Some(nome) = partes.next().filter(|s| !s.is_empty()) {
+            payer.insert("name".into(), nome.into());
+            if let Some(sobrenome) = partes.next().map(str::trim).filter(|s| !s.is_empty()) {
+                payer.insert("surname".into(), sobrenome.into());
+            }
+        }
+        if let Some(email) = p.email.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+            payer.insert("email".into(), email.into());
+        }
+        let doc: String = p.documento.chars().filter(|c| c.is_ascii_digit()).collect();
+        let tipo_doc = match doc.len() {
+            11 => Some("CPF"),
+            14 => Some("CNPJ"),
+            _ => None,
+        };
+        if let Some(t) = tipo_doc {
+            payer.insert(
+                "identification".into(),
+                serde_json::json!({"type": t, "number": doc}),
+            );
+        }
+        if let Some(tel) = &p.telefone {
+            let d: String = tel.chars().filter(|c| c.is_ascii_digit()).collect();
+            let d = d
+                .strip_prefix("55")
+                .map(str::to_owned)
+                .filter(|s| s.len() >= 10)
+                .unwrap_or(d);
+            if d.len() >= 10 {
+                payer.insert(
+                    "phone".into(),
+                    serde_json::json!({"area_code": &d[..2], "number": &d[2..]}),
+                );
+            }
+        }
+        if !payer.is_empty() {
+            body["payer"] = serde_json::Value::Object(payer);
+        }
+    }
+    if let Some(url) = nova
+        .notification_url
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        body["notification_url"] = url.into();
+    }
+    body
+}
+
 #[async_trait]
 impl PaymentGateway for MercadoPagoGateway {
     fn provedor(&self) -> &'static str {
@@ -198,35 +284,7 @@ impl PaymentGateway for MercadoPagoGateway {
     }
 
     async fn criar_checkout(&self, nova: &NovaCheckout) -> Result<SessaoCheckout, DomainError> {
-        let body = serde_json::json!({
-            "items": [{
-                "title": nova.descricao,
-                "quantity": 1,
-                "unit_price": nova.valor_centavos as f64 / 100.0,
-                "currency_id": "BRL",
-            }],
-            "external_reference": nova.idpagamento.to_string(),
-            "back_urls": {
-                "success": nova.success_url,
-                "failure": nova.cancel_url,
-                "pending": nova.success_url,
-            },
-            "auto_return": "approved",
-            "expires": true,
-            "expiration_date_to": nova.expires_em.to_rfc3339(),
-            "statement_descriptor": "POUSADA",
-            // Sem exclusão de meios: cartão de crédito, débito, Pix e
-            // boleto ficam à disposição do hóspede. `installments` é o
-            // teto — o MP respeita o máximo da conta. `binary_mode` off
-            // permite estados intermediários (análise/in_process).
-            "binary_mode": false,
-            "payment_methods": {
-                "excluded_payment_methods": [],
-                "excluded_payment_types": [],
-                "installments": 12,
-                "default_installments": 1
-            },
-        });
+        let body = corpo_preferencia(nova);
         let p: PreferenceResp = self
             .post(
                 "preference.create",
@@ -394,6 +452,63 @@ pub fn verificar_assinatura(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use clarituz_domain::enums::TipoPagamento;
+    use clarituz_domain::ports::PagadorCheckout;
+
+    fn checkout(pagador: Option<PagadorCheckout>) -> NovaCheckout {
+        NovaCheckout {
+            idpagamento: 7,
+            idreserva: 3,
+            descricao: "Reserva #3".into(),
+            valor_centavos: 15_000,
+            tipo: TipoPagamento::Integral,
+            expires_em: Utc::now() + chrono::Duration::minutes(30),
+            success_url: "https://site/ok".into(),
+            cancel_url: "https://site/cancel".into(),
+            idempotency_key: uuid::Uuid::new_v4(),
+            pagador,
+            notification_url: Some("https://api/api/v1/webhooks/mercadopago".into()),
+        }
+    }
+
+    #[test]
+    fn preferencia_leva_payer_e_notification() {
+        let body = corpo_preferencia(&checkout(Some(PagadorCheckout {
+            nome: "Maria da Silva".into(),
+            documento: "123.456.789-09".into(),
+            email: Some("maria@x.com".into()),
+            telefone: Some("+55 (47) 99988-7766".into()),
+        })));
+        assert_eq!(body["payer"]["name"], "Maria");
+        assert_eq!(body["payer"]["surname"], "da Silva");
+        assert_eq!(body["payer"]["email"], "maria@x.com");
+        assert_eq!(body["payer"]["identification"]["type"], "CPF");
+        assert_eq!(body["payer"]["identification"]["number"], "12345678909");
+        assert_eq!(body["payer"]["phone"]["area_code"], "47");
+        assert_eq!(body["payer"]["phone"]["number"], "999887766");
+        assert_eq!(
+            body["notification_url"],
+            "https://api/api/v1/webhooks/mercadopago"
+        );
+    }
+
+    #[test]
+    fn preferencia_sem_pagador_nao_quebra() {
+        let body = corpo_preferencia(&checkout(None));
+        assert!(body.get("payer").is_none());
+        assert_eq!(body["external_reference"], "7");
+    }
+
+    #[test]
+    fn documento_invalido_omite_identification() {
+        let body = corpo_preferencia(&checkout(Some(PagadorCheckout {
+            nome: "X".into(),
+            documento: "000".into(),
+            email: None,
+            telefone: None,
+        })));
+        assert!(body["payer"].get("identification").is_none());
+    }
 
     fn assinar(secret: &str, data_id: &str, request_id: &str, ts: i64) -> String {
         let manifesto = format!("id:{data_id};request-id:{request_id};ts:{ts};");

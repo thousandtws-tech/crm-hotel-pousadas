@@ -182,6 +182,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         settings.hold_minutos,
         settings.stripe_success_url.clone(),
         settings.stripe_cancel_url.clone(),
+        settings.public_api_url.clone(),
     ));
     // Fiscal (Spedy) — antes das integrações: o teste de conexão do
     // card delega à consulta da empresa remota.

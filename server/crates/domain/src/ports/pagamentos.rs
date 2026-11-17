@@ -118,6 +118,23 @@ pub struct NovaCheckout {
     pub cancel_url: String,
     /// Chave de idempotência enviada ao provedor (retry-safe).
     pub idempotency_key: Uuid,
+    /// Titular da reserva — antifraude do provedor pontua melhor com
+    /// dados do pagador identificados (CPF + e-mail pesam muito no MP).
+    pub pagador: Option<PagadorCheckout>,
+    /// Webhook por-sessão (MP `notification_url`, PagBank
+    /// `notification_urls`) — sem ele o provedor só avisa quem configurou
+    /// o endpoint no painel deles. Stripe ignora (endpoint fixo no painel).
+    pub notification_url: Option<String>,
+}
+
+/// Titular informado ao provedor — cada gateway mapeia o que suporta.
+#[derive(Debug, Clone)]
+pub struct PagadorCheckout {
+    pub nome: String,
+    /// CPF/CNPJ como persistido — o gateway normaliza para dígitos.
+    pub documento: String,
+    pub email: Option<String>,
+    pub telefone: Option<String>,
 }
 
 #[derive(Debug, Clone)]
