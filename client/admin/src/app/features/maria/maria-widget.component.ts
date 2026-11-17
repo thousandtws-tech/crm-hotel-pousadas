@@ -3,7 +3,7 @@
 // como client tools → POST /mcp com o JWT do funcionário. O card abaixo é
 // a única UI nossa: a confirmação de escrita (preparar_* → confirmar_acao).
 
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, inject, OnDestroy, OnInit, viewChild } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, inject, OnDestroy, OnInit } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MariaService } from '@core/services/maria.service';
 
@@ -21,7 +21,6 @@ interface CallEventDetail {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <elevenlabs-convai
-      #convai
       [attr.agent-id]="m.agentId"
       [attr.signed-url]="m.signedUrl()"
       [attr.dynamic-variables]="varsJson"
@@ -94,7 +93,6 @@ interface CallEventDetail {
 })
 export class MariaWidgetComponent implements OnInit, OnDestroy {
   readonly m = inject(MariaService);
-  private readonly convai = viewChild<ElementRef<HTMLElement>>('convai');
 
   private readonly onCall = (ev: Event) => this.aoIniciarChamada(ev);
 
@@ -103,17 +101,19 @@ export class MariaWidgetComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // `elevenlabs-convai:call` borbulha do shadow pro document — escutar
+    // aqui dispensa viewChild e não depende de quando o bundle define o
+    // elemento (':' no nome inviabiliza o event binding do template).
+    document.addEventListener('elevenlabs-convai:call', this.onCall);
     // Bundle do widget (~self-contained) só carrega junto do shell logado.
-    void import('@elevenlabs/convai-widget-embed').then(() => {
-      // `elevenlabs-convai:call` tem ':' no nome — o event binding do
-      // Angular não aceita; addEventListener direto resolve.
-      this.convai()?.nativeElement.addEventListener('elevenlabs-convai:call', this.onCall);
+    void import('@elevenlabs/convai-widget-embed').catch((e: unknown) => {
+      this.m.erro.set(`widget maria indisponível: ${e instanceof Error ? e.message : 'erro'}`);
     });
     void this.m.preparar();
   }
 
   ngOnDestroy(): void {
-    this.convai()?.nativeElement.removeEventListener('elevenlabs-convai:call', this.onCall);
+    document.removeEventListener('elevenlabs-convai:call', this.onCall);
     this.m.recusar();
   }
 
