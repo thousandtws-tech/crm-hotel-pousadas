@@ -48,6 +48,9 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
       .search-sheet { animation: search-sheet-up 160ms ease-out; }
       .search-drop { animation: search-panel-drop 140ms ease-out; }
       .search-drop-quem { animation: search-panel-drop-right 140ms ease-out; }
+      /* A regra editorial main div.bg-white.border tem especificidade
+         maior que .rounded-full — a pílula precisa vencê-la. */
+      .search-pill { border-radius: 9999px !important; }
     `,
   ],
   template: `
@@ -55,7 +58,7 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
 
       <!-- Pílula principal -->
       <div
-        class="grid grid-cols-[1fr_1fr_auto] items-center rounded-full border shadow-[0_12px_34px_rgba(5,64,84,0.14)] transition-colors"
+        class="search-pill grid grid-cols-[1fr_1fr_auto] items-center rounded-full border shadow-[0_12px_34px_rgba(5,64,84,0.14)] transition-colors"
         [class]="painel() !== null ? 'bg-[#EEF3F5] border-[#DCE6EA]' : 'bg-white border-[#DCE6EA]'"
       >
         <!-- Quando -->
