@@ -10,7 +10,7 @@ import type {
   ZapiSessao,
 } from '@core/models/integracoes.models';
 
-export const ORDEM_PROVEDOR: ProvedorIntegracao[] = ['stripe', 'pagbank', 'mercadopago', 'zapi'];
+export const ORDEM_PROVEDOR: ProvedorIntegracao[] = ['stripe', 'pagbank', 'mercadopago', 'zapi', 'spedy'];
 export const ORDEM_AMBIENTE: AmbienteIntegracao[] = ['producao', 'teste'];
 
 export const ROTULO_PROVEDOR: Record<ProvedorIntegracao, string> = {
@@ -18,19 +18,21 @@ export const ROTULO_PROVEDOR: Record<ProvedorIntegracao, string> = {
   pagbank: 'PagBank',
   mercadopago: 'Mercado Pago',
   zapi: 'Z-API',
+  spedy: 'Spedy',
 };
 
 export const ROTULO_AMBIENTE: Record<AmbienteIntegracao, string> = {
   producao: 'Produção',
-  teste: 'Teste',
+  teste: 'Teste (sandbox)',
 };
 
 /** Agrupamento do catálogo — pagamentos primeiro, comunicação depois. */
-export const ORDEM_CATEGORIA: CategoriaIntegracao[] = ['pagamento', 'comunicacao'];
+export const ORDEM_CATEGORIA: CategoriaIntegracao[] = ['pagamento', 'comunicacao', 'fiscal'];
 
 export const ROTULO_CATEGORIA: Record<CategoriaIntegracao, string> = {
   pagamento: 'Pagamentos',
   comunicacao: 'Comunicação',
+  fiscal: 'Fiscal',
 };
 
 /** Categoria estática por provedor — igual à regra do backend. */
@@ -39,6 +41,7 @@ export const CATEGORIA_PROVEDOR: Record<ProvedorIntegracao, CategoriaIntegracao>
   pagbank: 'pagamento',
   mercadopago: 'pagamento',
   zapi: 'comunicacao',
+  spedy: 'fiscal',
 };
 
 /** estado → rótulo + variante de pill (semântica, sem cor arbitrária). */
@@ -155,6 +158,24 @@ export const CAMPOS_POR_PROVEDOR: Record<ProvedorIntegracao, CampoCredencial[]> 
       segredo: true,
       obrigatorio: true,
       dica: 'Token de segurança da conta (Client-Token)',
+    },
+  ],
+  // Spedy: a X-Api-Key é por empresa — gerada no painel Spedy da conta.
+  // `webhook_secret` (formato whsec_...) valida a assinatura dos eventos.
+  spedy: [
+    {
+      nome: 'api_key',
+      rotulo: 'API key (X-Api-Key)',
+      segredo: true,
+      obrigatorio: true,
+      dica: 'Chave da empresa em Produção ou Sandbox — vinculada a um CNPJ',
+    },
+    {
+      nome: 'webhook_secret',
+      rotulo: 'Webhook signing secret',
+      segredo: true,
+      dica: 'Formato whsec_… — obrigatório para receber eventos de status',
+      placeholder: 'whsec_…',
     },
   ],
 };

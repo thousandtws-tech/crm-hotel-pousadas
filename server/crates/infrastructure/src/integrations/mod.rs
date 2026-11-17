@@ -8,5 +8,6 @@ pub mod pagbank;
 pub mod resolver;
 pub mod resolver_whatsapp;
 pub mod senders;
+pub mod spedy;
 pub mod stripe;
 pub mod zapi;

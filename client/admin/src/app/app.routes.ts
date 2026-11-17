@@ -213,7 +213,15 @@ export const routes: Routes = [
           ),
       },
       {
-        // Z-API tem tela dedicada — precisa vir antes da rota genérica.
+        // Z-API e Spedy têm telas dedicadas — antes da rota genérica.
+        path: 'integracoes/spedy/:ambiente',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/integracoes/integracao-spedy.component').then(
+            (m) => m.IntegracaoSpedyComponent,
+          ),
+      },
+      {
         path: 'integracoes/zapi/:ambiente',
         canActivate: [adminGuard],
         loadComponent: () =>

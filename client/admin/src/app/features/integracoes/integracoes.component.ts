@@ -34,6 +34,7 @@ const DESCRITOR_PROVEDOR: Record<M.ProvedorIntegracao, string> = {
   pagbank: 'Checkout PagBank',
   mercadopago: 'Checkout Pro',
   zapi: 'WhatsApp Business',
+  spedy: 'NFS-e de hospedagem',
 };
 
 /**

@@ -10,6 +10,7 @@ pub mod compras;
 pub mod comunicacao;
 pub mod contrato;
 pub mod estoque;
+pub mod fiscal;
 pub mod impressora;
 pub mod integracao;
 pub mod notificacao;
@@ -40,6 +41,7 @@ pub use comunicacao::{
 };
 pub use contrato::PgContratoRepository;
 pub use estoque::PgEstoqueRepository;
+pub use fiscal::PgFiscalRepository;
 pub use impressora::PgImpressoraRepository;
 pub use integracao::PgIntegracaoRepository;
 pub use notificacao::PgNotificacaoRepository;

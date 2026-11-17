@@ -22,6 +22,7 @@ import { AuthStore } from '@core/services/auth.store';
 import { DateInputComponent } from '@shared/components/date-input.component';
 import { imprimirFnrh } from '@shared/utils/fnrh-print';
 import { switchMap } from 'rxjs';
+import { ReservaFiscalComponent } from './reserva-fiscal.component';
 
 type Modal =
   | 'checkin'
@@ -74,6 +75,7 @@ interface AdicionalLinha {
     MatIconModule,
     MatProgressSpinnerModule,
     DateInputComponent,
+    ReservaFiscalComponent,
   ],
   template: `
     <div class="page">
@@ -501,6 +503,9 @@ interface AdicionalLinha {
             </div>
           </div>
         }
+
+        <!-- ===== Notas fiscais (NFS-e via Spedy) ===== -->
+        <app-reserva-fiscal [idreserva]="res.id" />
       }
     </div>
 

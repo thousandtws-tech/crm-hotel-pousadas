@@ -22,7 +22,16 @@ fn stack(pool: &PgPool) -> (IntegracoesService, Arc<PgGatewayResolver>) {
     let resolver = Arc::new(PgGatewayResolver::new(repo.clone(), vault.clone(), None));
     let pagamentos = Arc::new(PgPagamentoRepository::new(pool.clone()));
     (
-        IntegracoesService::new(repo, vault, resolver.clone(), None, None, pagamentos, false),
+        IntegracoesService::new(
+            repo,
+            vault,
+            resolver.clone(),
+            None,
+            None,
+            None,
+            pagamentos,
+            false,
+        ),
         resolver,
     )
 }

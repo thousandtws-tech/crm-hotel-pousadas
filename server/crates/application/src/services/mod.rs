@@ -21,6 +21,7 @@ pub mod estabelecimento;
 pub mod estacionamento;
 pub mod estoque;
 pub mod financeiro;
+pub mod fiscal;
 pub mod frigobar;
 pub mod funcionarios;
 pub mod governanca;
@@ -126,5 +127,8 @@ pub struct Services {
     pub preditivo: Arc<PreditivoService>,
     /// Webhook/provedor Z-API — `None` sem o cofre (master key ausente).
     pub zapi: Option<Arc<ZApiService>>,
+    /// Fiscal Spedy — `None` sem o cofre (api_key fica cifrada no vault).
+    pub fiscal: Option<Arc<FiscalService>>,
 }
+pub use fiscal::FiscalService;
 pub mod zapi;

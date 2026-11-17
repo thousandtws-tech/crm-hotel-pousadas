@@ -9,6 +9,7 @@ pub enum ProvedorIntegracao {
     Pagbank,
     Mercadopago,
     Zapi,
+    Spedy,
 }
 
 impl ProvedorIntegracao {
@@ -18,6 +19,7 @@ impl ProvedorIntegracao {
             Self::Pagbank => "pagbank",
             Self::Mercadopago => "mercadopago",
             Self::Zapi => "zapi",
+            Self::Spedy => "spedy",
         }
     }
 
@@ -27,6 +29,7 @@ impl ProvedorIntegracao {
             "pagbank" => Some(Self::Pagbank),
             "mercadopago" => Some(Self::Mercadopago),
             "zapi" => Some(Self::Zapi),
+            "spedy" => Some(Self::Spedy),
             _ => None,
         }
     }
@@ -34,6 +37,7 @@ impl ProvedorIntegracao {
     pub fn categoria(&self) -> &'static str {
         match self {
             Self::Zapi => "comunicacao",
+            Self::Spedy => "fiscal",
             _ => "pagamento",
         }
     }

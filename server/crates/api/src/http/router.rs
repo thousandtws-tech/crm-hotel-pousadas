@@ -344,6 +344,60 @@ pub fn build(state: AppState) -> Router {
             "/integracoes/zapi/{ambiente}/desconectar",
             post(routes::integracoes::zapi_desconectar),
         )
+        // ---- Fiscal (Spedy/NFS-e) — config + documentos -------------------
+        .route(
+            "/integracoes/spedy/{ambiente}/empresa",
+            post(routes::fiscal::spedy_empresa),
+        )
+        .route(
+            "/integracoes/spedy/{ambiente}/municipio/{ibge}",
+            get(routes::fiscal::spedy_municipio),
+        )
+        .route(
+            "/integracoes/spedy/{ambiente}/settings",
+            get(routes::fiscal::spedy_settings),
+        )
+        .route(
+            "/integracoes/spedy/{ambiente}/webhook",
+            post(routes::fiscal::spedy_webhook_config),
+        )
+        .route(
+            "/fiscal/nfse/{ambiente}/reserva/{idreserva}/preparar",
+            post(routes::fiscal::preparar_nfse),
+        )
+        .route("/fiscal/documentos", get(routes::fiscal::listar_docs))
+        .route(
+            "/fiscal/reserva/{idreserva}",
+            get(routes::fiscal::docs_reserva),
+        )
+        .route(
+            "/fiscal/documentos/{iddoc}",
+            get(routes::fiscal::detalhe_doc),
+        )
+        .route(
+            "/fiscal/documentos/{iddoc}/confirmar",
+            post(routes::fiscal::confirmar_doc),
+        )
+        .route(
+            "/fiscal/documentos/{iddoc}/sincronizar",
+            post(routes::fiscal::sincronizar_doc),
+        )
+        .route(
+            "/fiscal/documentos/{iddoc}/reconciliar",
+            post(routes::fiscal::reconciliar_doc),
+        )
+        .route(
+            "/fiscal/documentos/{iddoc}/reprocessar",
+            post(routes::fiscal::reprocessar_doc),
+        )
+        .route(
+            "/fiscal/documentos/{iddoc}/cancelar",
+            post(routes::fiscal::cancelar_doc),
+        )
+        .route(
+            "/fiscal/documentos/{iddoc}/arquivo/{tipo}",
+            get(routes::fiscal::arquivo_doc),
+        )
         .route("/comunicacao/fila", get(routes::comunicacao::fila_listar))
         .route(
             "/comunicacao/matriz",
@@ -997,12 +1051,10 @@ pub fn build(state: AppState) -> Router {
         // períodos: limite maior que reserva, menor que status.
         .route(
             "/api/v1/publico/disponibilidade/busca",
-            post(routes::cms::publico_busca_disponibilidade).route_layer(
-                from_fn_with_state(
-                    IpRateLimit::novo(30, Duration::from_secs(60)),
-                    IpRateLimit::middleware,
-                ),
-            ),
+            post(routes::cms::publico_busca_disponibilidade).route_layer(from_fn_with_state(
+                IpRateLimit::novo(30, Duration::from_secs(60)),
+                IpRateLimit::middleware,
+            )),
         )
         .route(
             "/api/v1/publico/pagamentos/checkout",
@@ -1045,6 +1097,11 @@ pub fn build(state: AppState) -> Router {
         .route(
             "/api/v1/webhooks/zapi/{segredo}",
             post(routes::comunicacao::webhook_zapi),
+        )
+        // webhook Spedy — Standard Webhooks (assinatura HMAC obrigatória).
+        .route(
+            "/api/v1/webhooks/spedy/{ambiente}",
+            post(routes::fiscal::webhook_spedy),
         )
         // Inná Concierge — chat do hóspede no portal, escopo = token opaco.
         .route(

@@ -13,6 +13,7 @@ pub mod estabelecimento;
 pub mod estacionamento;
 pub mod estoque;
 pub mod financeiro;
+pub mod fiscal;
 pub mod frigobar;
 pub mod funcionario;
 pub mod impressora;
@@ -47,6 +48,7 @@ pub use financeiro::{
     calcular_split, BaixaLancamento, Conciliacao, ContaFinanceira, ExtratoItem, Lancamento,
     PlanoConta, SplitPayment, SplitValor, TributoApuracao, TributoConfig,
 };
+pub use fiscal::{integration_id, FiscalDocumento, FiscalEvento, StatusFiscal};
 pub use frigobar::{Frigobar, ItemFrigobar};
 pub use funcionario::{Funcionario, LogAcesso, SessaoRefresh};
 pub use impressora::{ImpressaoJob, Impressora, ImpressoraDescoberta};

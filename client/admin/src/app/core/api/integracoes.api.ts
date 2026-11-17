@@ -66,4 +66,28 @@ export class IntegracoesApi extends ApiHttp {
   desconectar(ambiente: M.AmbienteIntegracao) {
     return this.post<null>(`/integracoes/zapi/${ambiente}/desconectar`, {});
   }
+
+  // -----------------------------------------------------------------------
+  // Spedy — configuração da empresa/município/webhook (categoria 'fiscal').
+  // -----------------------------------------------------------------------
+
+  /** Consulta/vincula a empresa da X-Api-Key configurada. */
+  spedyEmpresa(ambiente: M.AmbienteIntegracao) {
+    return this.post<M.SpedyEmpresa>(`/integracoes/spedy/${ambiente}/empresa`, {});
+  }
+
+  /** Provedores e obrigatoriedades do município de emissão (código IBGE). */
+  spedyMunicipio(ambiente: M.AmbienteIntegracao, ibge: string) {
+    return this.get<M.SpedyMunicipioSettings>(`/integracoes/spedy/${ambiente}/municipio/${ibge}`);
+  }
+
+  /** Settings fiscais atuais da empresa remota. */
+  spedySettings(ambiente: M.AmbienteIntegracao) {
+    return this.get<M.SpedyEmpresaSettings>(`/integracoes/spedy/${ambiente}/settings`);
+  }
+
+  /** Registra o webhook na empresa remota — devolve a URL configurada. */
+  spedyConfigurarWebhook(ambiente: M.AmbienteIntegracao) {
+    return this.post<{ webhook_url: string }>(`/integracoes/spedy/${ambiente}/webhook`, {});
+  }
 }

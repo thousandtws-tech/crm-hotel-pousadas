@@ -21,6 +21,8 @@ fn campos_permitidos(provedor: ProvedorIntegracao) -> &'static [&'static str] {
         ProvedorIntegracao::Pagbank => &["access_token", "authenticity_token"],
         ProvedorIntegracao::Mercadopago => &["access_token", "webhook_secret", "public_key"],
         ProvedorIntegracao::Zapi => &["instance_token", "client_token", "webhook_segredo"],
+        // Spedy: chave por empresa (X-Api-Key) + segredo whsec_ do webhook.
+        ProvedorIntegracao::Spedy => &["api_key", "webhook_secret"],
     }
 }
 
@@ -29,6 +31,30 @@ fn campos_permitidos(provedor: ProvedorIntegracao) -> &'static [&'static str] {
 fn config_permitida(provedor: ProvedorIntegracao) -> &'static [&'static str] {
     match provedor {
         ProvedorIntegracao::Zapi => &["instance_id"],
+        // Spedy: vínculo da empresa, município de emissão e a
+        // parametrização fiscal aprovada pelo responsável — nada de
+        // valores fiscais inventados pelo código.
+        ProvedorIntegracao::Spedy => &[
+            "empresa_id",
+            "empresa_cnpj",
+            "empresa_razao",
+            "empresa_cnpj_divergente",
+            "municipio_codigo",
+            "municipio_nome",
+            "municipio_provedores",
+            "fiscal_service_code",
+            "fiscal_city_service_code",
+            "fiscal_cnae",
+            "fiscal_nbs",
+            "fiscal_national_taxation_code",
+            "fiscal_taxation_type",
+            "fiscal_iss_rate",
+            "fiscal_descricao",
+            "fiscal_ambiente",
+            "fiscal_issue_type",
+            "webhook_registrado",
+            "automacao_evento",
+        ],
         _ => &[],
     }
 }
@@ -41,6 +67,7 @@ fn contexto_aad(p: ProvedorIntegracao, a: AmbienteIntegracao, campo: &str, id: i
 fn escopo_padrao(provedor: ProvedorIntegracao) -> &'static str {
     match provedor {
         ProvedorIntegracao::Zapi => "whatsapp",
+        ProvedorIntegracao::Spedy => "fiscal",
         _ => ESCOPO_PAGAMENTOS_SITE,
     }
 }
@@ -65,6 +92,12 @@ fn capabilities_padrao(provedor: ProvedorIntegracao) -> serde_json::Value {
             "callbacks": ["received", "delivery", "message-status", "connected", "disconnected"],
             "estados": ["aceito", "enviado", "entregue", "lido"],
         }),
+        ProvedorIntegracao::Spedy => serde_json::json!({
+            "modelos": ["nfse"], "emissao_assincrona": true,
+            "webhook_assinado": true, "cancelamento": true,
+            "consulta_municipio": true, "documentos": ["pdf", "xml"],
+            "idempotencia": "integrationId",
+        }),
     }
 }
 
@@ -75,6 +108,8 @@ pub struct IntegracoesService {
     /// Resolução/credenciais de comunicação (Z-API) — `None` em testes.
     com: Option<Arc<dyn ComunicacaoResolver>>,
     com_eventos: Option<Arc<dyn ComunicacaoEventoRepository>>,
+    /// Serviço fiscal (Spedy) — teste de conexão delega à empresa remota.
+    fiscal: Option<Arc<crate::services::fiscal::FiscalService>>,
     pagamentos: Arc<dyn clarituz_domain::ports::PagamentoRepository>,
     stripe_env_ativo: bool,
 }
@@ -93,6 +128,7 @@ impl IntegracoesService {
         resolver: Arc<dyn GatewayResolver>,
         com: Option<Arc<dyn ComunicacaoResolver>>,
         com_eventos: Option<Arc<dyn ComunicacaoEventoRepository>>,
+        fiscal: Option<Arc<crate::services::fiscal::FiscalService>>,
         pagamentos: Arc<dyn clarituz_domain::ports::PagamentoRepository>,
         stripe_env_ativo: bool,
     ) -> Self {
@@ -102,6 +138,7 @@ impl IntegracoesService {
             resolver,
             com,
             com_eventos,
+            fiscal,
             pagamentos,
             stripe_env_ativo,
         }
@@ -116,6 +153,7 @@ impl IntegracoesService {
             ProvedorIntegracao::Pagbank,
             ProvedorIntegracao::Mercadopago,
             ProvedorIntegracao::Zapi,
+            ProvedorIntegracao::Spedy,
         ] {
             let padrao = self.repo.padrao(escopo_padrao(provedor)).await?;
             for ambiente in provedor.ambientes() {
@@ -406,6 +444,47 @@ impl IntegracoesService {
                 nome_conta: conta,
                 mensagem: match status {
                     StatusVerificacao::Ok => "Conexão verificada — instância autenticada.".into(),
+                    _ => erro
+                        .clone()
+                        .unwrap_or_else(|| "Falha na verificação.".into()),
+                },
+            });
+        }
+
+        // Spedy: teste = consulta à empresa — leitura, nunca emite.
+        if provedor == ProvedorIntegracao::Spedy {
+            let resultado = match self.fiscal.as_ref() {
+                Some(f) => match f.testar(ator, ambiente).await {
+                    Ok(emp) => (
+                        StatusVerificacao::Ok,
+                        None,
+                        emp.razao_social.or(Some(emp.cnpj.unwrap_or(emp.id))),
+                    ),
+                    Err(e) => (StatusVerificacao::Falha, Some(e.to_string()), None),
+                },
+                None => (
+                    StatusVerificacao::Falha,
+                    Some("Serviço fiscal indisponível.".into()),
+                    None,
+                ),
+            };
+            let (status, erro, conta) = resultado;
+            let caps = capabilities_padrao(provedor);
+            self.repo
+                .registrar_verificacao(
+                    i.id,
+                    i.versao,
+                    status,
+                    erro.as_deref(),
+                    conta.as_deref(),
+                    &caps,
+                )
+                .await?;
+            return Ok(TesteConexaoOutput {
+                verificacao_status: status.as_str().into(),
+                nome_conta: conta,
+                mensagem: match status {
+                    StatusVerificacao::Ok => "Conexão verificada — empresa autenticada.".into(),
                     _ => erro
                         .clone()
                         .unwrap_or_else(|| "Falha na verificação.".into()),

@@ -4,7 +4,7 @@
 // Categorias: 'pagamento' (Stripe/PagBank/Mercado Pago ×2 ambientes) e
 // 'comunicacao' (Z-API/WhatsApp — só producao).
 
-export type ProvedorIntegracao = 'stripe' | 'pagbank' | 'mercadopago' | 'zapi';
+export type ProvedorIntegracao = 'stripe' | 'pagbank' | 'mercadopago' | 'zapi' | 'spedy';
 
 /** @deprecated Alias legado — prefira `ProvedorIntegracao`. */
 export type ProvedorPagamento = ProvedorIntegracao;
@@ -12,7 +12,7 @@ export type ProvedorPagamento = ProvedorIntegracao;
 export type AmbienteIntegracao = 'producao' | 'teste';
 
 /** Grupo operacional do catálogo — vem sempre preenchida pela API. */
-export type CategoriaIntegracao = 'pagamento' | 'comunicacao';
+export type CategoriaIntegracao = 'pagamento' | 'comunicacao' | 'fiscal';
 
 export type EstadoIntegracao =
   'ativa' | 'pendente' | 'falha' | 'desativada' | 'gerenciado_pelo_ambiente' | 'nao_configurada';
@@ -110,4 +110,87 @@ export interface ZapiTesteInput {
 export interface ZapiTesteResultado {
   enviado: boolean;
   id_provedor: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Spedy (categoria 'fiscal') — NFS-e de hospedagem/serviços.
+// ---------------------------------------------------------------------------
+
+/** POST .../spedy/{ambiente}/empresa — empresa vinculada à X-Api-Key. */
+export interface SpedyEmpresa {
+  id: string;
+  cnpj: string | null;
+  razao_social: string | null;
+}
+
+/** GET .../spedy/{ambiente}/settings — settings atuais da empresa remota. */
+export type SpedyEmpresaSettings = Record<string, unknown>;
+
+/** GET .../spedy/{ambiente}/municipio/{ibge} — provedores e obrigatoriedades. */
+export type SpedyMunicipioSettings = Record<string, unknown>;
+
+/** Status interno do documento — mapeado do `status_remoto`, nunca do POST. */
+export type StatusFiscal =
+  | 'rascunho'
+  | 'enfileirada'
+  | 'processando'
+  | 'autorizada'
+  | 'rejeitada'
+  | 'cancelamento_solicitado'
+  | 'cancelada'
+  | 'falha';
+
+export interface FiscalDocumento {
+  id: number;
+  idintegracao: number;
+  idreserva: number | null;
+  modelo: string;
+  integration_id: string;
+  remote_id: string | null;
+  status: StatusFiscal;
+  status_remoto: string | null;
+  processing_detail: string | null;
+  tomador: Record<string, unknown>;
+  payload: Record<string, unknown>;
+  valor_total: string;
+  descricao: string | null;
+  competencia: string | null;
+  motivo_cancelamento: string | null;
+  numero_nota: string | null;
+  url_consulta: string | null;
+  ultimo_erro: string | null;
+  tentativas: number;
+  proxima_tentativa: string | null;
+  transmitido_em: string | null;
+  autorizado_em: string | null;
+  cancelado_em: string | null;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface FiscalDocumentoView extends FiscalDocumento {
+  reserva: number | null;
+}
+
+/** POST .../fiscal/nfse/{ambiente}/reserva/{id}/preparar — prévia para revisão. */
+export interface PreparaNfse {
+  iddocumento: number;
+  tomador: Record<string, unknown>;
+  valor_total: string;
+  descricao: string;
+  competencia: string;
+  aviso: string;
+  pendencias: string[];
+}
+
+export interface PrepararNfseInput {
+  tomadorNome?: string;
+  tomadorDocumento?: string;
+  tomadorEmail?: string;
+  competencia?: string;
+}
+
+export interface FiscalLista {
+  documentos: FiscalDocumento[];
+  total: number;
 }

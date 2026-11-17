@@ -17,6 +17,7 @@ fn campo_chave(provedor: ProvedorIntegracao) -> &'static str {
         ProvedorIntegracao::Stripe => "secret_key",
         ProvedorIntegracao::Pagbank | ProvedorIntegracao::Mercadopago => "access_token",
         ProvedorIntegracao::Zapi => "webhook_segredo",
+        ProvedorIntegracao::Spedy => "api_key",
     }
 }
 
@@ -63,9 +64,12 @@ impl PgGatewayResolver {
         idintegracao: i64,
         segredos: &HashMap<String, Vec<u8>>,
     ) -> Result<Arc<dyn PaymentGateway>, DomainError> {
-        if provedor == ProvedorIntegracao::Zapi {
+        if matches!(
+            provedor,
+            ProvedorIntegracao::Zapi | ProvedorIntegracao::Spedy
+        ) {
             return Err(DomainError::regra(
-                "zapi é integração de comunicação, não gateway de pagamento",
+                "provedor sem gateway de pagamento — use o resolver da categoria",
             ));
         }
         let campo = campo_chave(provedor);
@@ -81,7 +85,7 @@ impl PgGatewayResolver {
             ProvedorIntegracao::Stripe => Arc::new(StripeGateway::new(segredo)),
             ProvedorIntegracao::Pagbank => Arc::new(PagBankGateway::new(segredo, ambiente)),
             ProvedorIntegracao::Mercadopago => Arc::new(MercadoPagoGateway::new(segredo)),
-            ProvedorIntegracao::Zapi => unreachable!(),
+            ProvedorIntegracao::Zapi | ProvedorIntegracao::Spedy => unreachable!(),
         };
         Ok(gw)
     }

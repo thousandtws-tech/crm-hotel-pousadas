@@ -183,6 +183,25 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         settings.stripe_success_url.clone(),
         settings.stripe_cancel_url.clone(),
     ));
+    // Fiscal (Spedy) — antes das integrações: o teste de conexão do
+    // card delega à consulta da empresa remota.
+    let fiscal_svc = vault.as_ref().map(|v| {
+        let factory: clarituz_application::services::fiscal::SpedyFactory =
+            Arc::new(|api_key, amb| {
+                Arc::new(crate::integrations::spedy::SpedyCliente::new(api_key, amb))
+                    as Arc<dyn clarituz_domain::ports::ProvedorFiscal>
+            });
+        Arc::new(FiscalService::new(
+            Arc::new(PgFiscalRepository::new(pool.clone()))
+                as Arc<dyn clarituz_domain::ports::FiscalRepository>,
+            integracoes_repo.clone() as Arc<dyn clarituz_domain::ports::IntegracaoRepository>,
+            v.clone(),
+            reserva_repo.clone(),
+            clientes_repo.clone(),
+            Arc::new(PgEstabelecimentoRepository::new(pool.clone())),
+            factory,
+        ))
+    });
     let integracoes_svc = vault.map(|v| {
         Arc::new(IntegracoesService::new(
             integracoes_repo.clone() as Arc<dyn clarituz_domain::ports::IntegracaoRepository>,
@@ -191,6 +210,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             com_resolver.clone(),
             Some(com_eventos_repo.clone()
                 as Arc<dyn clarituz_domain::ports::ComunicacaoEventoRepository>),
+            fiscal_svc.clone(),
             pag_online_repo as Arc<dyn clarituz_domain::ports::PagamentoRepository>,
             settings.stripe_secret_key.is_some(),
         ))
@@ -266,15 +286,9 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             Arc::new(PgTipoAcomodacaoRepository::new(pool.clone())),
             Arc::new(PgQuartoRepository::new(pool.clone())),
         )),
-        cms: Arc::new(CmsService::new(
-            cms_repo.clone(),
-            acom_repo.clone(),
-        )),
+        cms: Arc::new(CmsService::new(cms_repo.clone(), acom_repo.clone())),
         reservas: reservas_svc,
-        reserva_busca: Arc::new(BuscaReservaService::new(
-            reserva_repo.clone(),
-            cms_repo,
-        )),
+        reserva_busca: Arc::new(BuscaReservaService::new(reserva_repo.clone(), cms_repo)),
         pagamentos_online: pagamentos_online_svc,
         integracoes: integracoes_svc,
         estoque: Arc::new(
@@ -342,6 +356,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             pool.clone(),
         )))),
         zapi: zapi_svc,
+        fiscal: fiscal_svc,
         preditivo: Arc::new(PreditivoService::new(Arc::new(PgPreditivoRepository::new(
             pool.clone(),
         )))),

@@ -6,6 +6,7 @@ pub mod cms;
 pub mod compras;
 pub mod comunicacao;
 pub mod estoque;
+pub mod fiscal;
 pub mod impressoras;
 pub mod integracoes;
 pub mod notificacoes;
