@@ -50,6 +50,19 @@ reconhecimento curto ("deixa eu ver aqui…") — sem silêncio percebido.
   LLM numa nota de contexto (`MARIA_SUMMARY_ENABLED`) em vez de sumir —
   sessões longas não perdem os fatos já ditos.
 
+## Provedores de voz
+
+STT e TTS são selecionáveis por env — cloud continua o default, os
+locais eliminam o custo por minuto/caractere:
+
+| Env | Opções | Troca |
+| --- | --- | --- |
+| `MARIA_STT_PROVIDER` | `openai` (default) / `whisper` | faster-whisper local (`WHISPER_MODEL=small`, int8, CPU). Sem partials — transcrição sai no fim da fala; VAD local webrtcvad→energia, ou `commit` manual do front. |
+| `MARIA_TTS_PROVIDER` | `elevenlabs` (default) / `piper` | piper-tts ONNX pt-BR (`PIPER_VOICE=pt_BR-faber-medium`), resample p/ 24 kHz. Voz sintética — zero custo. |
+
+Modelos baixam uma vez em `data/whisper` e `data/piper` — monte
+volumes no Railway para não repetir o download a cada deploy.
+
 ## Servidor MCP (`POST /mcp`)
 
 As tools também são expostas via **Model Context Protocol** — qualquer

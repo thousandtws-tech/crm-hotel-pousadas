@@ -10,6 +10,13 @@ ENV PYTHONUNBUFFERED=1 \
 # Railway: railway up + variável RAILWAY_DOCKERFILE_PATH=server/maria/Dockerfile
 WORKDIR /app
 
+# libstdc++6 — exigida por onnxruntime (piper-tts) e ctranslate2
+# (faster-whisper) nas imagens slim; ~1 MB, removível se os
+# providers locais de voz não forem usados.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libstdc++6 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY server/maria/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

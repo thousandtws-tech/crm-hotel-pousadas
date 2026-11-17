@@ -71,6 +71,31 @@ class Settings(BaseSettings):
     elevenlabs_similarity: float = 0.75
     elevenlabs_style: float = 0.2
 
+    # Provedores de voz — adapters trocáveis, o pipeline não muda.
+    # STT: "openai" (Realtime, streaming c/ partials + VAD remoto) |
+    #      "whisper" (faster-whisper local — grátis, sem partials)
+    # TTS: "elevenlabs" (natural, custo/caractere) |
+    #      "piper" (ONNX local pt-BR — grátis, voz sintética)
+    maria_stt_provider: str = "openai"
+    maria_tts_provider: str = "elevenlabs"
+
+    # faster-whisper local — transcrição por fala inteira (fim via VAD
+    # local quando openai_server_vad=true, ou commit manual do front).
+    # Modelo baixado uma vez p/ whisper_dir (volume persiste).
+    whisper_model: str = "small"          # tiny|base|small|medium
+    whisper_compute: str = "int8"         # int8|float16|float32
+    whisper_lang: str = "pt"
+    whisper_dir: str = "data/whisper"
+    whisper_beam: int = 1                 # 1 = greedy — o mais rápido
+    whisper_vad_silence_ms: int = 700     # silêncio que encerra a fala
+    whisper_vad_min_ms: int = 300         # fala mínima p/ transcrever
+
+    # Piper TTS local — voz ONNX brasileira baixada do HuggingFace
+    # (rhasspy/piper-voices) p/ piper_dir no primeiro uso.
+    piper_voice: str = "pt_BR-faber-medium"
+    piper_dir: str = "data/piper"
+    piper_length_scale: float = 1.0       # <1.0 fala mais rápido
+
     # MAR IA
     maria_voice_enabled: bool = True
     maria_default_language: str = "pt-BR"
@@ -184,10 +209,11 @@ class Settings(BaseSettings):
             faltando.append("JWT_SECRET")
         if not self.openai_api_key:
             faltando.append("OPENAI_API_KEY")
-        if self.maria_voice_enabled and not self.elevenlabs_api_key:
-            faltando.append("ELEVENLABS_API_KEY")
-        if self.maria_voice_enabled and not self.elevenlabs_voice_id:
-            faltando.append("ELEVENLABS_VOICE_ID")
+        if self.maria_voice_enabled and self.maria_tts_provider == "elevenlabs":
+            if not self.elevenlabs_api_key:
+                faltando.append("ELEVENLABS_API_KEY")
+            if not self.elevenlabs_voice_id:
+                faltando.append("ELEVENLABS_VOICE_ID")
         return faltando
 
 

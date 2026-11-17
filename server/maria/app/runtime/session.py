@@ -26,8 +26,8 @@ from ..infra import transcripts
 from ..infra.api_client import PousadaApi
 from ..infra.auth import Ator
 from ..pipeline.sentences import SentenceBuffer
-from ..pipeline.stt import OpenAiStt
-from ..pipeline.tts import ElevenTts
+from ..pipeline.stt import OpenAiStt, WhisperLocalStt
+from ..pipeline.tts import ElevenTts, PiperTts
 from ..telemetry.metrics import Latencia, Uso
 from ..tools.helpers import rotulo_tool
 
@@ -82,13 +82,21 @@ class MariaSession:
                 "type": "hello",
                 "nome": self.ator.nome,
                 "nivel": self.ator.nivel,
-                "voz": s.maria_voice_enabled and bool(s.elevenlabs_api_key),
-                "mic": bool(s.openai_api_key),
+                "voz": s.maria_voice_enabled and (
+                    s.maria_tts_provider == "piper"
+                    or bool(s.elevenlabs_api_key)),
+                "mic": (s.maria_stt_provider == "whisper"
+                        or bool(s.openai_api_key)),
                 "vad": s.openai_server_vad,
             }
         )
-        if s.openai_api_key:
-            self.stt = OpenAiStt(
+        stt_cls = None
+        if s.maria_stt_provider == "whisper":
+            stt_cls = WhisperLocalStt
+        elif s.openai_api_key:
+            stt_cls = OpenAiStt
+        if stt_cls:
+            self.stt = stt_cls(
                 on_delta=self._stt_delta,
                 on_final=self._stt_final,
                 on_speech_end=self._speech_end,
@@ -243,12 +251,19 @@ class MariaSession:
                 await self._estado("listening")
 
             s = get_settings()
-            if s.maria_voice_enabled and s.elevenlabs_api_key and s.elevenlabs_voice_id:
-                self.tts = ElevenTts(on_audio=on_audio, on_done=on_tts_done)
+            tts_cls = None
+            if s.maria_voice_enabled:
+                if s.maria_tts_provider == "piper":
+                    tts_cls = PiperTts
+                elif s.elevenlabs_api_key and s.elevenlabs_voice_id:
+                    tts_cls = ElevenTts
+            if tts_cls:
+                self.tts = tts_cls(on_audio=on_audio, on_done=on_tts_done)
                 try:
                     await self.tts.connect()
                 except Exception:
-                    log.exception("falha ao conectar ElevenLabs")
+                    log.exception("falha ao conectar TTS (%s)",
+                                  s.maria_tts_provider)
                     self.tts = None
                     await self._send(
                         {"type": "error", "code": "tts", "message": "Voz indisponível."}
