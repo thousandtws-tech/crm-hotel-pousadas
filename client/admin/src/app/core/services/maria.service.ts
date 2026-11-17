@@ -1,9 +1,12 @@
-// MAR IA — cliente WebSocket do assistente de voz.
-// Protocolo: binário = PCM16 24k mono (mic → serviço, voz ← serviço);
-// texto JSON = controle/eventos. O serviço Python valida o JWT do sistema.
+// MAR IA — cliente da conversa ElevenLabs Agents.
+// O serviço Python emite a signed_url (a chave fica no backend) e serve
+// as tools via POST /mcp com o JWT do funcionário — clientTools do SDK
+// fazem a ponte, então toda escrita segue preparar_* → confirmar_acao
+// com as permissões do usuário logado.
 
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
+import { Conversation } from '@elevenlabs/client';
 import { AuthStore } from './auth.store';
 import { environment } from '../../../environments/environment';
 
@@ -21,17 +24,8 @@ export interface AcaoPendente {
   resumo: Record<string, unknown>;
 }
 
-/** AudioWorklet inline: recebe Float32 da taxa do contexto e repassa. */
-const WORKLET_SRC = `
-class MarCap extends AudioWorkletProcessor {
-  process(inputs) {
-    const ch = inputs[0] && inputs[0][0];
-    if (ch && ch.length) this.port.postMessage(ch.slice(0));
-    return true;
-  }
-}
-registerProcessor('mar-cap', MarCap);
-`;
+const CONFIRMAR_ACAO = 'confirmar_acao';
+const ABRIR_PAGINA = 'abrir_pagina';
 
 @Injectable({ providedIn: 'root' })
 export class MariaService {
@@ -40,342 +34,253 @@ export class MariaService {
 
   readonly estado = signal<MariaEstado>('offline');
   readonly conectado = signal(false);
-  readonly vozDisponivel = signal(false);   // servidor informou TTS ok
-  readonly micDisponivel = signal(false);   // servidor informou STT ok
-  readonly serverVad = signal(true);
   readonly mensagens = signal<MariaMsg[]>([]);
   readonly transcricaoViva = signal('');
   readonly assistenteParcial = signal('');
   readonly pendente = signal<AcaoPendente | null>(null);
   readonly micLigado = signal(false);
-  readonly nivelMic = signal(0);            // 0..1 — onda de áudio
   readonly vozLigada = signal(true);
   readonly erro = signal<string | null>(null);
 
-  private ws: WebSocket | null = null;
-  private parcial = '';
+  private conv: Conversation | null = null;
   private retry = 0;
   private querConectar = false;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
-
-  // ---- captura de microfone ----
-  private micStream: MediaStream | null = null;
-  private capCtx: AudioContext | null = null;
-  private capNode: AudioWorkletNode | null = null;
-  private capBuf: number[] = [];
-  private micAnalyser: AnalyserNode | null = null;
-
-  // ---- reprodução ----
-  private playCtx: AudioContext | null = null;
-  private playProx = 0;
-  private fontes: AudioBufferSourceNode[] = [];
-  private ttsAnalyser: AnalyserNode | null = null;
-  private scratch = new Uint8Array(512);
+  private ferramentas = 0; // tools em execução — 'thinking' enquanto > 0
 
   readonly estadoRotulo = computed(() =>
     ({ offline: 'offline', idle: 'pronta', listening: 'ouvindo', thinking: 'pensando', speaking: 'falando' })[this.estado()],
   );
 
+  /** Base HTTP do serviço (session + MCP) — antes era a URL ws. */
   get url(): string {
     return (environment as { mariaUrl?: string }).mariaUrl ?? '';
   }
 
+  // ------------------------------------------------------------ sessão --
+
   conectar(): void {
     this.querConectar = true;
-    if (this.ws || !this.url || !this.auth.accessToken()) return;
+    if (this.conv || !this.url || !this.auth.accessToken()) return;
+    void this.abrirSessao();
+  }
+
+  private async abrirSessao(): Promise<void> {
+    const token = this.auth.accessToken();
+    if (!token) return;
     try {
-      this.ws = new WebSocket(`${this.url}?token=${encodeURIComponent(this.auth.accessToken() ?? '')}`);
-      this.ws.binaryType = 'arraybuffer';
-      this.ws.onopen = () => {
-        this.conectado.set(true);
-        this.retry = 0;
-        this.erro.set(null);
-        this.estado.set('idle');
-      };
-      this.ws.onclose = () => {
-        this.ws = null;
-        this.conectado.set(false);
-        this.estado.set('offline');
-        this.pararMic();
-        if (this.querConectar) {
-          const wait = Math.min(15000, 1000 * Math.pow(2, this.retry++));
-          this.retryTimer = setTimeout(() => {
-            this.retryTimer = null;
-            this.conectar();
-          }, wait);
-        }
-      };
-      this.ws.onerror = () => this.erro.set('serviço Maria fora do ar');
-      this.ws.onmessage = (e) => this.onMsg(e);
-    } catch {
-      this.ws = null;
+      this.erro.set(null);
+      // 1) signed_url — credencial ElevenLabs nunca toca o navegador.
+      const sessao = await this.post<{ signed_url: string }>(
+        `${this.url}/api/maria/session`, token,
+      );
+      // 2) tools dinâmicas — o /mcp é a fonte de verdade dos nomes;
+      //    se o agente chama como client tool, caí aqui com o JWT real.
+      const nomes = await this.listarTools(token);
+      const clientTools = Object.fromEntries(
+        nomes.map((n) => [n, (p: unknown) => this.executarTool(n, p, token)]),
+      );
+
+      const conv = await Conversation.startSession({
+        signedUrl: sessao.signed_url,
+        clientTools,
+        userId: this.auth.user()?.login,
+        dynamicVariables: {
+          funcionario: this.auth.user()?.nome ?? '',
+        },
+        onConnect: () => {
+          this.conectado.set(true);
+          this.micLigado.set(true);
+          this.retry = 0;
+          this.estado.set('idle');
+        },
+        onDisconnect: (det) => this.onQueda(det?.reason),
+        onStatusChange: ({ status }) => {
+          if (status === 'disconnecting') this.estado.set('offline');
+        },
+        onModeChange: ({ mode }) => {
+          this.estado.set(mode === 'speaking' ? 'speaking' : 'listening');
+        },
+        onMessage: ({ message, source }) => {
+          if (message) this.addMsg(source === 'user' ? 'user' : 'assistant', message);
+        },
+        onUnhandledClientToolCall: (call) => {
+          this.addMsg('sys', `ferramenta desconhecida: ${call?.tool_name ?? '?'}`);
+        },
+        onError: (msg) => this.erro.set(String(msg)),
+      });
+      this.conv = conv;
+    } catch (e) {
+      this.erro.set(e instanceof Error ? e.message : 'falha ao abrir sessão');
+      this.onQueda('erro');
     }
   }
 
-  desconectar(): void {
+  private onQueda(motivo?: string): void {
+    this.conv = null;
+    this.conectado.set(false);
+    this.micLigado.set(false);
+    this.estado.set('offline');
+    if (motivo && motivo !== 'user') this.erro.set(`sessão encerrada (${motivo})`);
+    if (this.querConectar) {
+      const wait = Math.min(15000, 1000 * Math.pow(2, this.retry++));
+      this.retryTimer = setTimeout(() => {
+        this.retryTimer = null;
+        void this.abrirSessao(); // signed_url é descartável — emite outra
+      }, wait);
+    }
+  }
+
+  async desconectar(): Promise<void> {
     this.querConectar = false;
     if (this.retryTimer) {
       clearTimeout(this.retryTimer);
       this.retryTimer = null;
     }
-    this.ws?.close();
-    this.ws = null;
+    const conv = this.conv;
+    this.conv = null;
+    await conv?.endSession().catch(() => undefined);
     this.conectado.set(false);
-    this.estado.set('offline');
-    this.pararMic();
-    this.limparAudio();
-    void this.playCtx?.close();
-    this.playCtx = null;
-    this.ttsAnalyser = null;
-  }
-
-  private onMsg(e: MessageEvent): void {
-    if (e.data instanceof ArrayBuffer) {
-      this.tocar(new Int16Array(e.data));
-      return;
-    }
-    let ev: Record<string, unknown>;
-    try {
-      ev = JSON.parse(e.data as string);
-    } catch {
-      return;
-    }
-    switch (ev['type']) {
-      case 'hello':
-        this.vozDisponivel.set(!!ev['voz']);
-        this.micDisponivel.set(!!ev['mic']);
-        this.serverVad.set(ev['vad'] !== false);
-        break;
-      case 'state':
-        this.estado.set(ev['state'] as MariaEstado);
-        break;
-      case 'transcript':
-        if (ev['final']) {
-          this.transcricaoViva.set('');
-          if (ev['text']) this.addMsg('user', String(ev['text']));
-        } else {
-          this.transcricaoViva.set(String(ev['text']));
-        }
-        break;
-      case 'assistant_delta':
-        this.parcial += String(ev['text']);
-        this.assistenteParcial.set(this.parcial);
-        break;
-      case 'assistant_done':
-        this.parcial = '';
-        this.assistenteParcial.set('');
-        if (ev['text']) this.addMsg('assistant', String(ev['text']));
-        break;
-      case 'audio.clear':
-        this.limparAudio();
-        this.assistenteParcial.set('');
-        this.parcial = '';
-        break;
-      case 'action_required':
-        this.pendente.set({
-          idacao: String(ev['idacao']),
-          acao: String(ev['acao']),
-          resumo: (ev['resumo'] as Record<string, unknown>) ?? {},
-        });
-        break;
-      case 'action_done':
-        this.pendente.set(null);
-        this.addMsg('sys', String(ev['mensagem'] ?? 'ação concluída'));
-        break;
-      case 'tool':
-        // label amigável vem do backend; fallback = nome sem prefixos
-        this.addMsg('sys', `${String(
-          ev['label'] ?? String(ev['name']).replace(/^(get|preparar|set)_/, '').replace(/_/g, ' '),
-        )}…`);
-        break;
-      case 'nav': {
-        const rota = String(ev['rota'] ?? '');
-        if (rota.startsWith('/')) {
-          this.addMsg('sys', `abrindo ${rota}…`);
-          void this.router.navigateByUrl(rota);
-        }
-        break;
-      }
-      case 'error':
-        this.erro.set(String(ev['message']));
-        break;
-    }
-  }
-
-  private addMsg(papel: MariaMsg['papel'], texto: string): void {
-    this.mensagens.update((m) => [...m.slice(-60), { papel, texto, ts: Date.now() }]);
-  }
-
-  // ------------------------------------------------------------- mic --
-
-  async ligarMic(): Promise<void> {
-    if (this.micLigado()) return;
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        channelCount: 1,
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-    });
-    this.micStream = stream;
-    this.capCtx = new AudioContext();
-    const blob = new Blob([WORKLET_SRC], { type: 'application/javascript' });
-    await this.capCtx.audioWorklet.addModule(URL.createObjectURL(blob));
-    const src = this.capCtx.createMediaStreamSource(stream);
-    this.capNode = new AudioWorkletNode(this.capCtx, 'mar-cap');
-    src.connect(this.capNode);
-    // Tap de volume para o visualizador Aura (mesmo perfil do
-    // useTrackVolume do LiveKit: fft 512, smoothing 0.55).
-    this.micAnalyser = this.capCtx.createAnalyser();
-    this.micAnalyser.fftSize = 512;
-    this.micAnalyser.smoothingTimeConstant = 0.55;
-    src.connect(this.micAnalyser);
-    const taxaCtx = this.capCtx.sampleRate;
-    // ---- porta de ruído adaptativa ----
-    // Piso = EMA lenta do RMS em trechos abaixo do limiar; só sai áudio
-    // quando RMS > portao (com "hangover" para não cortar final de palavra).
-    let piso = 0.012;           // chute inicial (sala silenciosa)
-    let hold = 0;               // chunks ainda liberados após a fala cair
-    const HOLD_MAX = 4;         // ~4 × 80 ms ≈ 320 ms de tolerância
-    this.capNode.port.onmessage = (e) => {
-      const f = e.data as Float32Array;
-      let soma = 0;
-      for (let i = 0; i < f.length; i++) soma += f[i] * f[i];
-      const rms = Math.sqrt(soma / f.length);
-      this.nivelMic.set(Math.min(1, rms * 5));
-
-      // downsample → PCM16 24 kHz
-      for (let i = 0; i < f.length; i++) this.capBuf.push(f[i]);
-      const alvo = Math.floor((this.capBuf.length * 24000) / taxaCtx);
-      if (alvo < 1920) return; // ~80 ms por envio
-
-      const portao = Math.max(piso * 2.8, 0.009);
-      const falando = rms > portao;
-      if (!falando) {
-        // ambiente: recalibra o piso devagar (conversa, ventilador, rua)
-        piso = piso * 0.97 + rms * 0.03;
-        if (hold > 0) {
-          hold--; // ainda dentro do hangover — envia o restinho da palavra
-        } else {
-          // silêncio/ruído: descarta o chunk acumulado e não envia nada
-          this.capBuf = this.capBuf.slice(Math.floor((alvo * taxaCtx) / 24000));
-          return;
-        }
-      } else {
-        hold = HOLD_MAX;
-      }
-
-      const out = new Int16Array(alvo);
-      for (let i = 0; i < alvo; i++) {
-        const idx = Math.floor((i * taxaCtx) / 24000);
-        const v = Math.max(-1, Math.min(1, this.capBuf[idx]));
-        out[i] = v < 0 ? v * 0x8000 : v * 0x7fff;
-      }
-      this.capBuf = this.capBuf.slice(Math.floor((alvo * taxaCtx) / 24000));
-      if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(out.buffer);
-    };
-    this.micLigado.set(true);
-    this.estado.set('listening');
-  }
-
-  pararMic(): void {
-    this.capNode?.disconnect();
-    this.capCtx?.close();
-    this.micStream?.getTracks().forEach((t) => t.stop());
-    this.capNode = null;
-    this.capCtx = null;
-    this.micStream = null;
-    this.micAnalyser = null;
-    this.capBuf = [];
     this.micLigado.set(false);
-    this.nivelMic.set(0);
+    this.estado.set('offline');
   }
 
-  // ------------------------------------------------------ reprodução --
-  private ctx(): AudioContext {
-    this.playCtx ??= new AudioContext({ sampleRate: 24000 });
-    if (this.playCtx.state === 'suspended') void this.playCtx.resume();
-    if (!this.ttsAnalyser) {
-      this.ttsAnalyser = this.playCtx.createAnalyser();
-      this.ttsAnalyser.fftSize = 512;
-      this.ttsAnalyser.smoothingTimeConstant = 0.55;
-    }
-    return this.playCtx;
-  }
+  // ------------------------------------------------------- transporte --
 
-  private tocar(pcm: Int16Array): void {
-    const ctx = this.ctx();
-    const buf = ctx.createBuffer(1, pcm.length, 24000);
-    const ch = buf.getChannelData(0);
-    for (let i = 0; i < pcm.length; i++) ch[i] = pcm[i] / 0x8000;
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.connect(ctx.destination);
-    if (this.ttsAnalyser) src.connect(this.ttsAnalyser);
-    // Lookahead de 120ms: jitter buffer que absorve atraso de rede.
-    // Com 20ms qualquer oscilação cortava o áudio ("voz travando").
-    const t = Math.max(ctx.currentTime + 0.12, this.playProx);
-    src.start(t);
-    this.playProx = t + buf.duration;
-    this.fontes.push(src);
-    src.onended = () => {
-      this.fontes = this.fontes.filter((f) => f !== src);
-    };
-  }
-
-  private limparAudio(): void {
-    this.fontes.forEach((f) => {
-      try {
-        f.stop();
-      } catch { /* já parada */ }
+  private async post<T>(url: string, token: string, body?: unknown): Promise<T> {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: body === undefined ? '{}' : JSON.stringify(body),
     });
-    this.fontes = [];
-    this.playProx = 0;
+    if (!r.ok) throw new Error(`serviço maria: HTTP ${r.status}`);
+    return (await r.json()) as T;
   }
 
-  /**
-   * Volume RMS 0..1 para o visualizador Aura — espelha o useTrackVolume
-   * do LiveKit: quando falando, mede a voz da MAR IA (TTS); senão, o mic.
-   */
-  volumeAura(): number {
-    const a = this.estado() === 'speaking' ? this.ttsAnalyser : this.micAnalyser;
-    if (!a) return 0;
-    if (this.scratch.length !== a.fftSize) this.scratch = new Uint8Array(a.fftSize);
-    a.getByteTimeDomainData(this.scratch);
-    let soma = 0;
-    for (let i = 0; i < a.fftSize; i++) {
-      const v = (this.scratch[i] - 128) / 128;
-      soma += v * v;
+  private async mcp<T>(metodo: string, params: unknown, token: string): Promise<T> {
+    const r = await this.post<{ result?: T; error?: { message: string } }>(
+      `${this.url}/mcp`, token,
+      { jsonrpc: '2.0', id: Date.now(), method: metodo, params },
+    );
+    if (r.error) throw new Error(r.error.message);
+    return r.result as T;
+  }
+
+  private async listarTools(token: string): Promise<string[]> {
+    try {
+      const res = await this.mcp<{ tools?: { name: string }[] }>('tools/list', {}, token);
+      return (res.tools ?? []).map((t) => t.name);
+    } catch {
+      return []; // sem lista — clientTools vazio, voz continua funcionando
     }
-    return Math.min(1, Math.sqrt(soma / a.fftSize) * 2.4);
   }
 
-  // ------------------------------------------------------ comandos --
+  // ----------------------------------------------------------- tools --
+
+  private async executarTool(nome: string, params: unknown, token: string): Promise<string> {
+    // Navegação é local — rotas Angular pré-autorizadas, nunca externas.
+    if (nome === ABRIR_PAGINA) {
+      const rota = String((params as Record<string, unknown>)?.['rota'] ?? '');
+      if (rota.startsWith('/') && !rota.startsWith('//') && !rota.includes('://')) {
+        this.addMsg('sys', `abrindo ${rota}…`);
+        void this.router.navigateByUrl(rota);
+        return `página aberta: ${rota}`;
+      }
+      return `rota rejeitada: ${rota || '(vazia)'}`;
+    }
+
+    this.ferramentas++;
+    if (this.estado() !== 'speaking') this.estado.set('thinking');
+    try {
+      const res = await this.mcp<{ content?: { text: string }[]; isError?: boolean }>(
+        'tools/call', { name: nome, arguments: params ?? {} }, token,
+      );
+      const texto = res.content?.[0]?.text ?? '{}';
+      this.addMsg('sys', `${nome.replace(/^(get|preparar|set)_/, '').replace(/_/g, ' ')}…`);
+      try {
+        const resultado = JSON.parse(texto) as Record<string, unknown>;
+        // preparar_* devolve idacao+resumo — o card aparece pro clique.
+        if (nome.startsWith('preparar_') && resultado['idacao']) {
+          this.pendente.set({
+            idacao: String(resultado['idacao']),
+            acao: nome,
+            resumo: resultado,
+          });
+        }
+        if (nome === CONFIRMAR_ACAO) this.pendente.set(null);
+      } catch { /* resultado não-JSON segue como texto */ }
+      return texto;
+    } finally {
+      if (--this.ferramentas === 0 && this.estado() === 'thinking') {
+        this.estado.set('listening');
+      }
+    }
+  }
+
+  // --------------------------------------------------------- comandos --
+
   enviarTexto(t: string): void {
     if (!t.trim()) return;
     this.addMsg('user', t);
-    this.ws?.send(
-      JSON.stringify({ type: 'text', text: t, tela: window.location.pathname }),
-    );
+    this.conv?.sendUserMessage(t);
   }
 
   interromper(): void {
-    this.ws?.send(JSON.stringify({ type: 'interrupt' }));
-    this.limparAudio();
+    this.conv?.sendUserActivity();
   }
 
-  confirmar(idacao: string): void {
-    this.ws?.send(JSON.stringify({ type: 'confirm', idacao }));
+  /** Clique no card — executa o confirmar_acao no /mcp e avisa o agente
+   *  por contextual update (não vira fala do usuário). */
+  async confirmar(idacao: string): Promise<void> {
     this.pendente.set(null);
+    const token = this.auth.accessToken();
+    if (!token) return;
+    try {
+      const res = await this.mcp<{ content?: { text: string }[] }>(
+        'tools/call', { name: CONFIRMAR_ACAO, arguments: { idacao } }, token,
+      );
+      const texto = res.content?.[0]?.text ?? 'ação confirmada';
+      this.addMsg('sys', texto);
+      this.conv?.sendContextualUpdate(
+        'O colaborador confirmou a ação pelo botão do CRM — já executada.',
+      );
+    } catch (e) {
+      this.erro.set(e instanceof Error ? e.message : 'falha ao confirmar');
+    }
   }
 
   recusar(): void {
     this.pendente.set(null);
-    this.enviarTexto('Não, cancele.');
+    this.conv?.sendContextualUpdate(
+      'O colaborador recusou a ação pelo botão do CRM — não execute.',
+    );
+    this.addMsg('sys', 'ação recusada');
   }
 
-  commit(): void {
-    this.ws?.send(JSON.stringify({ type: 'commit' }));
+  alternarVoz(): void {
+    const on = !this.vozLigada();
+    this.vozLigada.set(on);
+    this.conv?.setVolume({ volume: on ? 1 : 0 });
+  }
+
+  alternarMic(): void {
+    const on = !this.micLigado();
+    this.micLigado.set(on);
+    this.conv?.setMicMuted(!on);
+  }
+
+  /** Volume 0..1 pro visualizador Aura — voz do agente falando, senão mic. */
+  volumeAura(): number {
+    if (!this.conv) return 0;
+    return this.estado() === 'speaking'
+      ? this.conv.getOutputVolume()
+      : this.conv.getInputVolume();
+  }
+
+  private addMsg(papel: MariaMsg['papel'], texto: string): void {
+    this.mensagens.update((m) => [...m.slice(-60), { papel, texto, ts: Date.now() }]);
   }
 }

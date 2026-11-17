@@ -1,40 +1,30 @@
-# MAR IA — Assistente de voz da Pousada Espírito do Mar
+# MAR IA — Assistente da Pousada Espírito do Mar
 
-Serviço Python (FastAPI) que conecta o admin Angular a:
+A MARIA é um **agente publicado na ElevenLabs** (Conversational AI). Este
+serviço Python (FastAPI) tem três papéis:
 
-- **OpenAI Realtime API** — transcrição de voz em tempo real
-- **OpenAI Responses API** — raciocínio + function calling
-- **ElevenLabs** — síntese de voz em streaming (pt-BR, baixa latência)
-- **API do sistema** (Rust/Axum) — dados e ações reais com o JWT do usuário
-
-## Pipeline
+- **Sessão** — `POST /api/maria/session` emite a `signed_url` de
+  conversação por funcionário autenticado (`ELEVENLABS_API_KEY` nunca
+  sai do backend).
+- **Ferramentas** — `POST /mcp` stateless expõe ~90 tools (leitura,
+  `preparar_*`, `confirmar_acao`) autenticadas pelo JWT do usuário —
+  executadas como client tools no navegador ou server tools chamando
+  este endpoint; RBAC idêntico em ambos.
+- **Inná** — `POST /ia/concierge` (chave interna) e
+  `/ia/resposta-avaliacao`: a IA dos hóspedes, separada da MARIA.
 
 ```text
-mic PCM16 → WebSocket → STT (Realtime, VAD 450 ms) → Responses API (+ tools,
-          execução em paralelo) → texto stream → ElevenLabs WS → PCM 24 kHz
-          → frontend
+admin Angular → POST /api/maria/session (JWT) → signed_url
+            → WebSocket ElevenLabs (voz STT/LLM/TTS na plataforma)
+            → clientTools → POST /mcp (Bearer JWT) → API Rust
 ```
 
-Ao conectar, a MAR IA fala uma saudação personalizada (período do dia +
-primeiro nome do usuário). Enquanto ferramentas rodam, ela fala um
-reconhecimento curto ("deixa eu ver aqui…") — sem silêncio percebido.
+A orquestração local anterior (WS próprio + STT/LLM/TTS em processo)
+foi removida — voz e raciocínio são do agente ElevenLabs.
 
 ## Resiliência e contexto
 
-- **Fallback de modelo**: se `OPENAI_LLM_MODEL` falha antes de emitir o
-  primeiro token, o turno é refeito em `OPENAI_LLM_FALLBACK_MODEL`.
-  Texto parcial nunca é reemitido — o retry só acontece com zero deltas
-  enviados (calls coletadas num stream que caiu ainda não executaram,
-  então refazer não tem efeito colateral).
-- **Fallback multi-provedor (Cerebras)**: último elo da cadeia quando
-  `CEREBRAS_API_KEY` + `CEREBRAS_MODEL` estão configurados. Endpoint
-  OpenAI-compatível via **Chat Completions** — o contexto canônico
-  (formato Responses) é traduzido na chamada (`developer`→`system`,
-  `function_call`→`tool_calls`, saída→`tool`), e `tool_calls`
-  fragmentadas por `index` são reagrupadas no consumo do stream.
-  Wafer-scale = latência de tokens muito baixa — bom para voz.
-  **Circuit breaker por provedor**: `openai-llm` e `cerebras-llm`
-  contam falhas separadamente — a queda de um não derruba o outro.
+
 - **Orçamento de contexto**: histórico limita por turnos
   (`MARIA_HISTORY_MAX_TURNS`) *e* por tamanho
   (`MARIA_HISTORY_MAX_CHARS`); cada saída de ferramenta devolvida ao
@@ -50,18 +40,6 @@ reconhecimento curto ("deixa eu ver aqui…") — sem silêncio percebido.
   LLM numa nota de contexto (`MARIA_SUMMARY_ENABLED`) em vez de sumir —
   sessões longas não perdem os fatos já ditos.
 
-## Provedores de voz
-
-STT e TTS são selecionáveis por env — cloud continua o default, os
-locais eliminam o custo por minuto/caractere:
-
-| Env | Opções | Troca |
-| --- | --- | --- |
-| `MARIA_STT_PROVIDER` | `openai` (default) / `whisper` | faster-whisper local (`WHISPER_MODEL=small`, int8, CPU). Sem partials — transcrição sai no fim da fala; VAD local webrtcvad→energia, ou `commit` manual do front. |
-| `MARIA_TTS_PROVIDER` | `elevenlabs` (default) / `piper` | piper-tts ONNX pt-BR (`PIPER_VOICE=pt_BR-faber-medium`), resample p/ 24 kHz. Voz sintética — zero custo. |
-
-Modelos baixam uma vez em `data/whisper` e `data/piper` — monte
-volumes no Railway para não repetir o download a cada deploy.
 
 ## Servidor MCP (`POST /mcp`)
 
@@ -161,7 +139,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8090
 
 ## Autenticação
 
-O frontend conecta com `?token=<jwt do sistema>`. O serviço valida com o
+O frontend obtém a sessão em `POST /api/maria/session` e chama
+`POST /mcp` com `Authorization: Bearer <jwt>`. O serviço valida com o
 mesmo `JWT_SECRET` do backend — permissões por nível continuam valendo,
 pois as ferramentas chamam a API real com o Bearer do usuário.
 RBAC: recepção (3) não acessa financeiro/CMS/funcionários; gerente (2)
@@ -270,7 +249,7 @@ segundo loop roda `pg_dump --format=custom` na janela diária ~04:00 UTC
 
 ## Segurança e limites
 
-- JWT validado em `/ws/maria`; ferramentas chamam a API com o Bearer
+- JWT validado em `/api/maria/session` e `/mcp`; ferramentas chamam a API com o Bearer
   do próprio usuário (RBAC do backend sempre vale).
 - Defense-in-depth: conjuntos `_ACOES_*`/`_LEITURAS_*` em
   `tools/constantes.py` restringem por nível antes de bater na API.

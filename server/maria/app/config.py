@@ -18,124 +18,39 @@ class Settings(BaseSettings):
     jwt_secret: str = ""
     jwt_issuer: str = "clarituz-api"
 
-    # OpenAI
+    # OpenAI — Inná (concierge do hóspede, resposta de avaliação) e a
+    # tool get_inteligencia; a conversa da MARIA roda no ElevenLabs.
     openai_api_key: str = ""
     # timeout/retry do SDK — default do client é 10min, longo demais
-    # para um assistente de voz por turno
+    # para um turno de assistente
     openai_timeout_secs: float = 45.0
     openai_max_retries: int = 2
     openai_llm_model: str = "gpt-5.2"
-    # Esforço de raciocínio da Responses API: low = TTFT bem menor
-    # (ideal p/ voz). Use "none" para desativar o parâmetro.
-    openai_llm_reasoning_effort: str = "low"
-    # Modelo reserva do LLM — se a chamada do modelo principal falha
-    # antes do primeiro token emitido, o turno é refeito neste modelo
-    # (idealmente menor/mais barato, ex.: gpt-5-mini). Vazio = sem fallback.
-    openai_llm_fallback_model: str = ""
-    # Fallback multi-provedor — endpoint OpenAI-compatível via Chat
-    # Completions (a Responses API é exclusiva da OpenAI). Cerebras
-    # (wafer-scale) é ideal para voz: latência de tokens muito baixa.
-    # Ativado quando cerebras_api_key + cerebras_model estão preenchidos.
-    cerebras_api_key: str = ""
-    cerebras_base_url: str = "https://api.cerebras.ai/v1"
-    cerebras_model: str = "llama-3.3-70b"
-    # Modelo da sessão realtime (vai na query ?model=) — versão GA.
-    openai_realtime_model: str = "gpt-realtime-mini"
-    # Modelo de transcrição (vai em audio.input.transcription.model)
-    openai_transcription_model: str = "gpt-4o-transcribe"
-    # Dica de vocabulário p/ a transcrição — termos do domínio aumentam
-    # a precisão do STT em fala rápida e sotaques (vai em
-    # audio.input.transcription.prompt).
-    openai_transcription_prompt: str = (
-        "Conversa em português do Brasil sobre gestão de pousada: "
-        "check-in, check-out, reserva, hóspede, suíte, diária, frigobar, "
-        "comanda, PDV, caixa, sangria, FNRH, café da manhã, estoque, "
-        "Pousada Espírito do Mar, Maria."
-    )
-    openai_server_vad: bool = True
-    # VAD server-side: silêncio curto = resposta mais rápida ao fim da fala.
-    openai_vad_threshold: float = 0.5
-    openai_vad_prefix_ms: int = 300
-    openai_vad_silence_ms: int = 450
-    # Redução de ruído da Realtime: near_field (mic perto) | far_field | off
-    openai_noise_reduction: str = "near_field"
+    openai_embed_model: str = "text-embedding-3-small"
+    # Fine-tuning — snapshot do modelo base para os jobs (finetune/).
+    openai_ft_base_model: str = "gpt-4o-mini-2024-07-18"
 
-    # ElevenLabs
+    # ElevenLabs Agents — a MARIA é um agente publicado na plataforma;
+    # o serviço só emite signed_url de sessão (a chave nunca sai do
+    # backend) e serve as tools via /mcp.
     elevenlabs_api_key: str = ""
-    elevenlabs_voice_id: str = ""
-    elevenlabs_model_id: str = "eleven_turbo_v2_5"
-    elevenlabs_speed: float = 1.0
-    # Voz limpa e consistente (estilo ChatGPT): estabilidade mediana
-    # evita oscilações; estilo baixo reduz artefatos de expressividade.
-    elevenlabs_stability: float = 0.5
-    elevenlabs_similarity: float = 0.75
-    elevenlabs_style: float = 0.2
+    elevenlabs_agent_id: str = ""
 
-    # Provedores de voz — adapters trocáveis, o pipeline não muda.
-    # STT: "openai" (Realtime, streaming c/ partials + VAD remoto) |
-    #      "whisper" (faster-whisper local — grátis, sem partials)
-    # TTS: "elevenlabs" (natural, custo/caractere) |
-    #      "piper" (ONNX local pt-BR — grátis, voz sintética)
-    maria_stt_provider: str = "openai"
-    maria_tts_provider: str = "elevenlabs"
-
-    # faster-whisper local — transcrição por fala inteira (fim via VAD
-    # local quando openai_server_vad=true, ou commit manual do front).
-    # Modelo baixado uma vez p/ whisper_dir (volume persiste).
-    whisper_model: str = "small"          # tiny|base|small|medium
-    whisper_compute: str = "int8"         # int8|float16|float32
-    whisper_lang: str = "pt"
-    whisper_dir: str = "data/whisper"
-    whisper_beam: int = 1                 # 1 = greedy — o mais rápido
-    whisper_vad_silence_ms: int = 700     # silêncio que encerra a fala
-    whisper_vad_min_ms: int = 300         # fala mínima p/ transcrever
-
-    # Piper TTS local — voz ONNX brasileira baixada do HuggingFace
-    # (rhasspy/piper-voices) p/ piper_dir no primeiro uso.
-    piper_voice: str = "pt_BR-faber-medium"
-    piper_dir: str = "data/piper"
-    piper_length_scale: float = 1.0       # <1.0 fala mais rápido
-
-    # MAR IA
-    maria_voice_enabled: bool = True
+    # MAR IA — comportamento das tools e memória
     maria_default_language: str = "pt-BR"
-    maria_history_enabled: bool = True
-    maria_history_max_turns: int = 12
-    # Teto de contexto: o histórico também é cortado por tamanho —
-    # turnos longos (respostas com muitos dados) não estouram o orçamento
-    # mesmo dentro do limite de turnos.
-    maria_history_max_chars: int = 24000
-    # Corte por saída de ferramenta devolvida ao modelo — listas grandes
-    # (ex.: 200 reservas) não consomem a janela inteira. O resultado
-    # completo segue gravado no diário de turnos (dataset).
-    maria_tool_result_max_chars: int = 6000
     # Cache de leituras na sessão: a mesma pergunta repetida (mesma tool +
     # mesmos args) reutiliza o resultado por N segundos — menos latência e
     # menos chamadas à API. Qualquer escrita/alteração invalida tudo.
     maria_tool_cache_enabled: bool = True
     maria_tool_cache_ttl_secs: float = 45.0
-    # Rolling summary: pares cortados do histórico são resumidos pelo LLM
-    # em vez de sumirem — preserva contexto de sessões longas.
-    maria_summary_enabled: bool = True
     maria_timezone: str = "America/Sao_Paulo"
     # Memória persistente (aprendizado no dia a dia)
-    maria_memory_enabled: bool = True
     maria_memory_file: str = "data/memories.json"
-    maria_memory_max_contexto: int = 12
-    # Fillers falados ("deixa eu ver…") enquanto tools rodam — corta o
-    # silêncio percebido e humaniza o turno.
-    maria_filler_enabled: bool = True
-    # Tools independentes na mesma rodada executam em paralelo.
-    maria_parallel_tools: bool = True
 
     # circuit breaker das dependências externas — após N falhas seguidas
     # chamadas falham na hora durante o cooldown (ver app/infra/resilience.py)
     maria_circuit_failures: int = 3
     maria_circuit_cooldown_secs: float = 60.0
-    # Diário de turnos (JSONL) — vira dataset de avaliação/treino.
-    maria_transcript_enabled: bool = True
-    maria_transcript_file: str = "data/turns.jsonl"
-    maria_transcript_max_bytes: int = 10 * 1024 * 1024
     # RAG — base de conhecimento editorial (arquivos .md versionados no
     # repositório). A ferramenta buscar_conhecimento recupera trechos
     # por similaridade de embedding. Cache de vetores em data/ (runtime).
@@ -147,9 +62,6 @@ class Settings(BaseSettings):
     # Com ela ligada, a base responde mesmo sem embeddings indexados
     # (só lexical); desligada, volta ao cosseno puro.
     maria_rag_hybrid: bool = True
-    openai_embed_model: str = "text-embedding-3-small"
-    # Fine-tuning — snapshot do modelo base para os jobs (finetune/).
-    openai_ft_base_model: str = "gpt-4o-mini-2024-07-18"
 
     # Servidor
     maria_host: str = "0.0.0.0"
@@ -157,26 +69,15 @@ class Settings(BaseSettings):
     # Origens permitidas no CORS (vírgula-separadas). "*" só em dev
     # local — em produção liste a origem do admin explicitamente.
     maria_cors_origins: str = "http://localhost:4200,http://127.0.0.1:4200"
-    # Teto de uso por sessão — proteção de custo contra loops/abuso:
-    # máximo de turnos LLM por conexão e de tokens (in+out) por turno.
-    maria_limite_turnos_sessao: int = 200
-    maria_limite_tokens_turno: int = 40000
     # Persistência: "json" (um arquivo por coleção em data/) ou
     # "sqlite" (data/maria.db — volume/múltiplas instâncias; migra os
     # JSONs legados na primeira abertura).
     maria_storage: str = "json"
     maria_sqlite_file: str = "data/maria.db"
     # Estado compartilhado entre réplicas (pendentes, cache de tools,
-    # histórico de conversa, rate limit, budget). Vazio = tudo em
-    # memória de processo — uma réplica só.
+    # rate limit, budget). Vazio = tudo em memória de processo — uma
+    # réplica só.
     redis_url: str = ""
-    # TTL do histórico persistido por usuário (segundos). Reconexão
-    # dentro da janela retoma a conversa até em outra réplica.
-    maria_hist_ttl_secs: int = 4 * 3600
-    # Controle de custo por usuário — 0 = desligado. Janela deslizante
-    # de 1 min p/ turnos; budget soma input+output de tokens no dia.
-    maria_rate_turnos_min: int = 0
-    maria_budget_tokens_dia: int = 0
     # Tracing OpenTelemetry (OTLP/HTTP): vazio = desligado.
     # Ex.: http://tempo:4318 — Langfuse também aceita OTLP.
     otel_endpoint: str = ""
@@ -216,11 +117,10 @@ class Settings(BaseSettings):
             faltando.append("JWT_SECRET")
         if not self.openai_api_key:
             faltando.append("OPENAI_API_KEY")
-        if self.maria_voice_enabled and self.maria_tts_provider == "elevenlabs":
-            if not self.elevenlabs_api_key:
-                faltando.append("ELEVENLABS_API_KEY")
-            if not self.elevenlabs_voice_id:
-                faltando.append("ELEVENLABS_VOICE_ID")
+        if not self.elevenlabs_api_key:
+            faltando.append("ELEVENLABS_API_KEY")
+        if not self.elevenlabs_agent_id:
+            faltando.append("ELEVENLABS_AGENT_ID")
         return faltando
 
 

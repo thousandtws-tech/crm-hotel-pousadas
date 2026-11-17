@@ -1,38 +1,27 @@
 """MAR IA — serviço FastAPI.
 
-Endpoints:
-  GET  /healthz      → status + pendências de configuração
-  GET  /readyz       → pronto para tráfego
-  GET  /metrics      → latências p50/p95 + contadores (JSON)
-  GET  /metrics.prom → mesmas métricas no formato Prometheus
-  WS   /ws/maria?token=<jwt>  → sessão de voz/texto
+A conversa da MARIA roda no agente ElevenLabs publicado — este serviço
+expõe as ferramentas (MCP stateless) e emite a sessão segura.
 
-Protocolo WS:
-  Cliente → serviço
-    binário            → áudio PCM16 24 kHz mono (entrada do microfone)
-    {"type":"text"}    → pergunta digitada
-    {"type":"commit"}  → fim de fala manual (quando server_vad off)
-    {"type":"interrupt"} → barge-in: para a fala atual
-    {"type":"confirm","idacao"} → confirma ação preparada
-    {"type":"reset"}   → limpa o turno atual
-  Serviço → cliente
-    binário            → áudio PCM16 24 kHz da voz do MAR IA
-    state / transcript / assistant_delta / assistant_done
-    tool / action_required / action_done / error / hello / pong
+Endpoints:
+  GET  /healthz             → status + pendências de configuração
+  GET  /readyz              → pronto para tráfego
+  GET  /metrics             → latências p50/p95 + contadores (JSON)
+  GET  /metrics.prom        → mesmas métricas no formato Prometheus
+  POST /api/maria/session   → signed_url ElevenLabs p/ o funcionário
+  POST /mcp                 → tools MCP (Bearer JWT do funcionário)
+  POST /ia/resposta-avaliacao, /ia/concierge → Inná (hóspedes)
 """
 import asyncio
-import json
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 
 from .config import get_settings
-from .infra.auth import AuthError, validar_token
 from .infra.storage import get_store
-from .runtime.session import MariaSession
 from .telemetry.metrics import (
     Latencia,
     persistir_metricas,
@@ -54,7 +43,7 @@ async def lifespan(app: FastAPI):
     if pend:
         log.warning("configuração incompleta: %s", ", ".join(pend))
     else:
-        log.info("MAR IA pronto — voz=%s model=%s", s.maria_voice_enabled, s.openai_llm_model)
+        log.info("MAR IA pronto — agente elevenlabs=%s", s.elevenlabs_agent_id)
     store = get_store()
     await restaurar_metricas(store)
     # Sonda o estado compartilhado no boot — Redis indisponível cai
@@ -107,9 +96,11 @@ app.add_middleware(
 # Routers registrados após o app existir (import tardio intencional).
 from .mcp import router as mcp_router  # noqa: E402
 from .rotas_ia import router as ia_router  # noqa: E402
+from .rotas_eleven import router as eleven_router  # noqa: E402
 
 app.include_router(ia_router)
 app.include_router(mcp_router)
+app.include_router(eleven_router)
 
 
 @app.get("/healthz")
@@ -119,7 +110,6 @@ async def healthz():
     s = get_settings()
     return {
         "status": "ok",
-        "voz": s.maria_voice_enabled,
         "config_pendente": s.validate_runtime(),
         "circuitos": circuitos(),
     }
@@ -141,45 +131,6 @@ async def metrics():
 @app.get("/metrics.prom", response_class=PlainTextResponse)
 async def metrics_prom():
     return prometheus()
-
-
-@app.websocket("/ws/maria")
-async def ws_maria(ws: WebSocket, token: str = Query(default="")):
-    s = get_settings()
-    if not s.openai_api_key:
-        await ws.close(code=1011, reason="OPENAI_API_KEY ausente")
-        return
-    try:
-        ator = await validar_token(token)
-    except AuthError:
-        await ws.close(code=4401, reason="não autenticado")
-        return
-
-    await ws.accept()
-    session = MariaSession(ws, ator, token)
-    log.info("sessão iniciada — %s (nível %s)", ator.login, ator.nivel)
-
-    try:
-        await session.iniciar()
-        await session.saudar()
-        while True:
-            msg = await ws.receive()
-            if msg["type"] == "websocket.disconnect":
-                break
-            if msg.get("bytes"):
-                await session.on_audio(msg["bytes"])
-            elif msg.get("text"):
-                try:
-                    await session.on_control(json.loads(msg["text"]))
-                except json.JSONDecodeError:
-                    continue
-    except WebSocketDisconnect:
-        pass
-    except Exception:
-        log.exception("sessão falhou")
-    finally:
-        await session.encerrar()
-        log.info("sessão encerrada — %s", ator.login)
 
 
 if __name__ == "__main__":
