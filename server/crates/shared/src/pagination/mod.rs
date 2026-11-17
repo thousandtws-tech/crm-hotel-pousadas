@@ -1,10 +1,5 @@
-//! Paginação limit/offset com limites rígidos — nunca permitir varreduras ilimitadas.
-
 use serde::{Deserialize, Serialize};
 
-/// Parâmetros de paginação aceitos via query string.
-/// `deserialize_with` aceita string e número — `serde_urlencoded` entrega
-/// tudo como string quando a struct é `#[serde(flatten)]`ada.
 #[derive(Debug, Clone, Copy, Deserialize)]
 pub struct PageParams {
     #[serde(
@@ -76,7 +71,6 @@ impl PageParams {
     }
 }
 
-/// Envelope de resposta paginada.
 #[derive(Debug, Clone, Serialize)]
 pub struct Page<T> {
     pub items: Vec<T>,

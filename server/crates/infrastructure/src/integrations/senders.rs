@@ -1,14 +1,3 @@
-//! Senders externos por trÃ¡s da port `Emissor` (domain):
-//!   `ResendEmissor`   â€” e-mail transacional (api.resend.com);
-//!   `MetaWaEmissor`   â€” WhatsApp Cloud API (graph.facebook.com) â€” ativa com
-//!                       `WHATSAPP_TOKEN` + `WHATSAPP_PHONE_ID`; sem eles o
-//!                       envio falha controlado e o worker aplica backoff;
-//!   `VapidPushEmissor`â€” push PWA "tickle": POST VAPID-assinado sem payload;
-//!                       o service worker busca o conteÃºdo na API.
-//!
-//! Nenhum payload do provedor vaza para o cliente â€” erros viram texto
-//! curto em `ultimo_erro` (mesmo contrato do adaptador Stripe).
-
 use std::time::Duration;
 
 use async_trait::async_trait;
@@ -38,14 +27,10 @@ async fn erro_status(ctx: &str, r: reqwest::Response) -> DomainError {
     DomainError::regra("Operação recusada pelo provedor.")
 }
 
-// ---------------------------------------------------------------------------
-// e-mail â€” Resend
-// ---------------------------------------------------------------------------
 
 pub struct ResendEmissor {
     http: Client,
     api_key: String,
-    /// Remetente verificado â€” ex.: "Pousada Espírito do Mar <reservas@espiritodomar.com.br>"
     remetente: String,
 }
 
@@ -71,7 +56,6 @@ impl Emissor for ResendEmissor {
         _template: &str,
         payload: &serde_json::Value,
     ) -> Result<Option<String>, DomainError> {
-        // Templates e-mail sÃ£o HTML gerado na aplicaÃ§Ã£o; o sender sÃ³ despacha.
         let corpo = serde_json::json!({
             "from": self.remetente,
             "to": [destino],
@@ -94,9 +78,6 @@ impl Emissor for ResendEmissor {
     }
 }
 
-// ---------------------------------------------------------------------------
-// WhatsApp â€” Meta Cloud API (templates oficiais + texto livre na janela 24h)
-// ---------------------------------------------------------------------------
 
 pub struct MetaWaEmissor {
     http: Client,
@@ -126,8 +107,6 @@ impl Emissor for MetaWaEmissor {
         template: &str,
         payload: &serde_json::Value,
     ) -> Result<Option<String>, DomainError> {
-        // `payload.tipo = "template"` â†’ envia template aprovado (fora da
-        // janela 24h); `"texto"` â†’ texto livre (sÃ³ chega dentro da janela).
         let url = format!(
             "https://graph.facebook.com/v21.0/{}/messages",
             self.phone_id
@@ -167,17 +146,10 @@ impl Emissor for MetaWaEmissor {
     }
 }
 
-// ---------------------------------------------------------------------------
-// WhatsApp — gateway WA-AKG (self-hosted, Baileys). Sem janela de 24h nem
-// templates: tudo sai como texto livre; payload["texto"] é o conteúdo.
-// ---------------------------------------------------------------------------
-
 pub struct WaAkgEmissor {
     http: Client,
-    /// Base do gateway — ex.: https://wa-akg.exemplo.net
     url: String,
     api_key: String,
-    /// uuid da sessão conectada (path /api/messages/{sessionId}/…).
     session: String,
 }
 
@@ -234,19 +206,10 @@ impl Emissor for WaAkgEmissor {
     }
 }
 
-// ---------------------------------------------------------------------------
-// push â€” VAPID tickle (JWT ES256, sem payload criptografado)
-// ---------------------------------------------------------------------------
-
-/// Chave VAPID do servidor (par P-256). Gere uma vez:
-/// `openssl ecparam -name prime256v1 -genkey -noout -out vapid.pem`
-/// pÃºblica = ponto nÃ£o-comprimido 65B em base64url (vai pro frontend).
 pub struct VapidPushEmissor {
     http: Client,
     chave_privada_pem: String,
-    /// base64url do ponto pÃºblico â€” exposta ao PWA em /push/vapid-key.
     pub publica_b64: String,
-    /// `sub` do JWT â€” contato do operador (mailto:).
     contato: String,
 }
 
@@ -273,7 +236,6 @@ impl Emissor for VapidPushEmissor {
         _template: &str,
         _payload: &serde_json::Value,
     ) -> Result<Option<String>, DomainError> {
-        // VAPID: JWT ES256 com aud = origin do endpoint, exp â‰¤ 24h, sub = contato.
         let url = url::Url::parse(destino)
             .map_err(|_| DomainError::validacao("endpoint push invÃ¡lido"))?;
         let aud = format!("{}://{}", url.scheme(), url.host_str().unwrap_or_default());
@@ -287,7 +249,6 @@ impl Emissor for VapidPushEmissor {
         let mut header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::ES256);
         header.typ = Some("JWT".into());
         let jwt = jsonwebtoken::encode(&header, &claims, &key).map_err(|_| DomainError::Infra)?;
-        // Tickle: sem corpo â€” o SW recebe `push` e busca o conteÃºdo na API.
         let r = self
             .http
             .post(destino)
@@ -299,7 +260,6 @@ impl Emissor for VapidPushEmissor {
             .send()
             .await
             .map_err(|e| erro_http("push.send", &e))?;
-        // 201 = aceito; 404/410 = subscription morta â†’ a aplicaÃ§Ã£o remove.
         if r.status() == reqwest::StatusCode::GONE || r.status() == reqwest::StatusCode::NOT_FOUND {
             return Err(DomainError::regra("subscription expirada"));
         }
@@ -310,12 +270,6 @@ impl Emissor for VapidPushEmissor {
     }
 }
 
-// ---------------------------------------------------------------------------
-// helpers de validaÃ§Ã£o/encoding (compartilhados nos testes)
-// ---------------------------------------------------------------------------
-
-/// Hash opaco do endpoint push gravado como `destino` na fila â€” a URL
-/// completa sÃ³ vive na `push_subscription` (endpoint contÃ©m token secreto).
 pub fn endpoint_hash(endpoint: &str) -> String {
     use sha2::{Digest, Sha256};
     URL_SAFE_NO_PAD.encode(Sha256::digest(endpoint.as_bytes()))

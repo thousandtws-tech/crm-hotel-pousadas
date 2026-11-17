@@ -1,8 +1,3 @@
-//! Adaptador HTTP do serviço Inná (FastAPI) — a porta `ConciergeIa` do
-//! domain. A aplicação monta o contexto seguro da reserva; este cliente só
-//! transporta a chamada. Autenticado por chave interna compartilhada
-//! (`X-Internal-Key`), nunca pelo token do hóspede.
-
 use std::time::Duration;
 
 use async_trait::async_trait;
@@ -12,9 +7,7 @@ use reqwest::Client;
 
 pub struct MariaClient {
     http: Client,
-    /// Base do serviço — ex.: `https://maria-production.up.railway.app`.
     url: String,
-    /// Segredo compartilhado api↔maria (env `INNA_INTERNAL_KEY` nos dois).
     key: String,
 }
 

@@ -1,13 +1,3 @@
-//! Adapter Stripe — implementa `PaymentGateway` (domínio) via REST oficial.
-//!
-//! A API Stripe recebe `application/x-www-form-urlencoded` (não JSON) e
-//! autentica por Bearer. Assinatura de webhook verificada por HMAC-SHA256
-//! sobre o corpo bruto com comparação em tempo constante — rejeita replay
-//! e payload adulterado antes de qualquer processamento.
-//!
-//! Segredos: `STRIPE_SECRET_KEY` e `STRIPE_WEBHOOK_SECRET` vivem só no
-//! backend; nunca em logs nem no frontend.
-
 use async_trait::async_trait;
 use chrono::{TimeZone, Utc};
 use clarituz_domain::enums::TipoPagamento;
@@ -24,14 +14,11 @@ use uuid::Uuid;
 
 type HmacSha256 = Hmac<Sha256>;
 
-/// Tolerância da Stripe para o timestamp da assinatura (anti-replay).
 const TOLERANCIA_ASSINATURA_SECS: i64 = 300;
 
 pub struct StripeGateway {
     http: Client,
-    /// sk_test_... / sk_live_... — nunca logada.
     secret: String,
-    /// Injetável para testes (mock HTTP); produção = api.stripe.com.
     base_url: String,
 }
 
@@ -49,7 +36,6 @@ impl StripeGateway {
         }
     }
 
-    /// Construtor de teste — aponta para servidor mock local.
     #[cfg(test)]
     pub fn para_teste(secret: String, base_url: String) -> Self {
         let http = Client::builder()
@@ -63,8 +49,6 @@ impl StripeGateway {
         }
     }
 
-    /// Mapeia erro de transporte/HTTP do provedor — detalhe no log,
-    /// `Infra` genérico para o chamador (não vaza payload em resposta).
     fn erro_http(contexto: &str, e: &reqwest::Error) -> DomainError {
         error!(contexto, erro = %e, "stripe: falha de transporte");
         DomainError::Infra
@@ -135,7 +119,6 @@ struct RefundResp {
 #[async_trait]
 impl PaymentGateway for StripeGateway {
     async fn criar_checkout(&self, nova: &NovaCheckout) -> Result<SessaoCheckout, DomainError> {
-        // Sessão expira junto do hold da reserva — Stripe exige 30min–24h.
         let expires_ts = nova.expires_em.timestamp().clamp(
             Utc::now().timestamp() + 1800,
             Utc::now().timestamp() + 86400,
@@ -150,8 +133,6 @@ impl PaymentGateway for StripeGateway {
             ("success_url".into(), nova.success_url.clone()),
             ("cancel_url".into(), nova.cancel_url.clone()),
             ("expires_at".into(), expires_ts.to_string()),
-            // Sem payment_method_types: o Stripe usa os métodos ativados no
-            // dashboard (card hoje; Pix entra sozinho quando ativado).
             ("line_items[0][quantity]".into(), "1".into()),
             ("line_items[0][price_data][currency]".into(), "brl".into()),
             (
@@ -258,12 +239,6 @@ impl PaymentGateway for StripeGateway {
     }
 }
 
-// ---------------------------------------------------------------------------
-// verificação de assinatura do webhook
-// ---------------------------------------------------------------------------
-
-/// Valida `Stripe-Signature` sobre o corpo **bruto** — `t={ts},v1={hex}`.
-/// Retorna o timestamp do evento para checagem anti-replay adicional.
 pub fn verificar_assinatura(
     webhook_secret: &str,
     corpo_bruto: &[u8],
@@ -285,7 +260,6 @@ pub fn verificar_assinatura(
         ));
     };
 
-    // Anti-replay: evento antigo demais é rejeitado mesmo com assinatura válida.
     let agora = Utc::now().timestamp();
     if (agora - ts).abs() > TOLERANCIA_ASSINATURA_SECS {
         return Err(DomainError::nao_autenticado(
