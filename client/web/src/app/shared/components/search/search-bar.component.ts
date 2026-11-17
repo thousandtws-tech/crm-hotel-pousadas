@@ -62,7 +62,7 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
         <button
           id="search-gatilho-quando"
           type="button"
-          class="text-left pl-6 sm:pl-8 pr-4 py-3.5 sm:py-4 rounded-full transition-colors"
+          class="text-left pl-5 sm:pl-8 pr-3 sm:pr-4 py-3.5 sm:py-4 rounded-full transition-colors"
           [class]="painel() === 'quando' ? 'bg-white shadow-md' : 'hover:bg-[#F0F5F6]'"
           [attr.aria-expanded]="painel() === 'quando'"
           aria-haspopup="dialog"
@@ -78,7 +78,7 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
         <button
           id="search-gatilho-quem"
           type="button"
-          class="text-left pl-6 sm:pl-8 pr-4 py-3.5 sm:py-4 rounded-full transition-colors border-l border-[#DCE6EA]"
+          class="text-left pl-5 sm:pl-8 pr-3 sm:pr-4 py-3.5 sm:py-4 rounded-full transition-colors border-l border-[#DCE6EA]"
           [class]="painel() === 'quem' ? 'bg-white shadow-md' : 'hover:bg-[#F0F5F6]'"
           [attr.aria-expanded]="painel() === 'quem'"
           aria-haspopup="dialog"
@@ -112,7 +112,7 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
       <!-- Validação / prévia -->
       @if (state.validacaoVisivel(); as msg) {
         <p class="px-6 pt-2 text-xs text-[#9A3B3B]" role="status">{{ msg }}</p>
-      } @else if (state.previaPeriodos(); as n) {
+      } @else if (state.previaVisivel(); as n) {
         <p class="px-6 pt-2 text-[11px] text-[#536B73]">
           A busca vai consultar {{ n }} {{ n === 1 ? 'período' : 'períodos' }}.
         </p>

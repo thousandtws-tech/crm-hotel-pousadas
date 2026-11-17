@@ -47,6 +47,8 @@ export class SearchStateService {
   public readonly result = signal<SearchResponse | null>(null);
   public readonly loading = signal(false);
   public readonly erro = signal<string | null>(null);
+  /** Parâmetros da última busca aplicada — p/ saber se o rascunho mudou. */
+  private readonly appliedParamsJson = signal<string | null>(null);
 
   public readonly hoje = computed<CivilDate>(() => hojeHotel(new Date()));
   public readonly horizonte = computed<CivilDate>(() => addCalendarMonths(this.hoje(), HORIZONTE_MESES));
@@ -63,6 +65,21 @@ export class SearchStateService {
   public readonly previaPeriodos = computed<number | null>(() => {
     const r = gerarCandidatos(this.dateQueryRascunho(), this.hoje(), this.horizonte());
     return r.ok ? r.value.length : null;
+  });
+
+  /**
+   * Prévia visível sob a barra: some quando o rascunho é idêntico à
+   * busca já aplicada — não faz sentido "vai consultar N períodos"
+   * embaixo dos resultados desses mesmos períodos.
+   */
+  public readonly previaVisivel = computed<number | null>(() => {
+    const n = this.previaPeriodos();
+    if (n === null) return null;
+    const aplicada = this.appliedParamsJson();
+    if (aplicada !== null && this.result() !== null && JSON.stringify(this.parametrosUrl()) === aplicada) {
+      return null;
+    }
+    return n;
   });
 
   public readonly prontoParaBuscar = computed(() => this.validacaoRascunho() === null);
@@ -138,6 +155,7 @@ export class SearchStateService {
       const resp = await this.availability.buscar(query);
       if (seq !== this.reqSeq) return true; // consulta mais nova em andamento
       this.appliedQuery.set(query);
+      this.appliedParamsJson.set(JSON.stringify(this.parametrosUrl()));
       this.result.set(resp);
       return true;
     } catch (e) {

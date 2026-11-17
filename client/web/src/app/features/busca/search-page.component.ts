@@ -22,7 +22,7 @@ const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
   selector: 'app-search-page',
   imports: [SearchBarComponent, DatePipe],
   template: `
-    <section class="pt-6 pb-2">
+    <section class="pt-24 sm:pt-28 pb-2">
       <app-search-bar (buscar)="refazer()" />
     </section>
 
@@ -50,7 +50,7 @@ const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
               ? 'Nenhuma alternativa disponível'
               : r.com_disponibilidade + (r.com_disponibilidade === 1 ? ' período disponível' : ' períodos disponíveis') }}
           </h1>
-          <span class="text-xs text-[#536B73]">{{ r.periodos }} períodos consultados</span>
+          <span class="text-xs text-[#536B73]">{{ r.periodos }} {{ r.periodos === 1 ? 'período consultado' : 'períodos consultados' }}</span>
         </div>
 
         @if (r.aviso) {
