@@ -74,13 +74,6 @@ subtle = { version = "2" }
 # ---- observability ----
 tracing = { version = "0.1" }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-sentry = { version = "0.36", default-features = false, features = [
-    "backtrace",
-    "contexts",
-    "panic",
-    "rustls",
-] }
-sentry-tracing = { version = "0.36", default-features = false }
 
 # ---- misc ----
 clap = { version = "4", features = ["derive"] }

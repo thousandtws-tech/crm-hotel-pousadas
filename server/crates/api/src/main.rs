@@ -13,11 +13,10 @@ mod workers;
 
 use bootstrap::cli::{Cli, Cmd};
 use clap::Parser;
-use tracing_subscriber::{prelude::*, EnvFilter};
+use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
 async fn main() {
-    let _sentry = init_sentry();
     init_tracing();
     if let Err(e) = run().await {
         eprintln!("erro fatal: {e}");
@@ -25,30 +24,13 @@ async fn main() {
     }
 }
 
-/// Sentry — desligado sem `SENTRY_DSN` (guard no-op, custo zero).
-/// Captura panics e, via `sentry-tracing`, eventos `tracing::error!`.
-fn init_sentry() -> sentry::ClientInitGuard {
-    let dsn = std::env::var("SENTRY_DSN")
-        .ok()
-        .filter(|d| !d.is_empty())
-        .and_then(|d| d.parse().ok());
-    sentry::init(sentry::ClientOptions {
-        dsn,
-        release: sentry::release_name!(),
-        environment: std::env::var("RAILWAY_ENVIRONMENT_NAME")
-            .ok()
-            .map(Into::into),
-        ..Default::default()
-    })
-}
-
 fn init_tracing() {
     let filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new("info,tower_http=debug,sqlx=warn"));
-    tracing_subscriber::registry()
-        .with(filter)
-        .with(tracing_subscriber::fmt::layer().with_target(true).compact())
-        .with(sentry_tracing::layer())
+    tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_target(true)
+        .compact()
         .init();
 }
 

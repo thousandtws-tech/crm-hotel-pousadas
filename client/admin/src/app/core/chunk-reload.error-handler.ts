@@ -1,5 +1,4 @@
 import { ErrorHandler } from '@angular/core';
-import * as Sentry from '@sentry/angular';
 
 const RELOAD_FLAG = 'chunk-reload-at';
 const RELOAD_COOLDOWN_MS = 60_000;
@@ -22,16 +21,7 @@ export class ChunkReloadErrorHandler implements ErrorHandler {
         location.reload();
         return;
       }
-      // Cooldown bloqueou: o reload anterior não resolveu — bundle
-      // continua quebrado, é incidente real. Mensagem embrulhada foge
-      // do ignoreErrors de ruído de chunk no Sentry.init.
-      Sentry.captureException(
-        new Error(`chunk reload não resolveu o bundle: ${message}`),
-      );
-      console.error(error);
-      return;
     }
-    Sentry.captureException(error);
     console.error(error);
   }
 }
