@@ -39,3 +39,8 @@ __pycache__/
 # PostgreSQL local data
 .pgdata/
 wa-docs.json
+
+# artifacts de debug/teste — não são source
+rstatus.json
+test-results/
+client/e2e/capturas-crm/

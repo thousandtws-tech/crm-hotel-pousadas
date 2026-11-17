@@ -80,7 +80,7 @@ def exemplo(pergunta: str, resposta: str,
     if not pergunta or not resposta:
         return None
     tools = _valida_tools(ferramentas or [])
-    # tinha tool registrada mas sem resultado → exemplo inválido p/ tool
+
     if ferramentas and not tools:
         return None
 
