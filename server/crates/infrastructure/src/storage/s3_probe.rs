@@ -1,20 +1,9 @@
-//! Probe de verificação S3/MinIO — `clarituz-api s3-probe`.
-//!
-//! Lista buckets, garante o bucket de mídia e exercita put/get/delete.
-//! Roda dentro do container de produção (o Docker só shipa o binário
-//! `clarituz-api`) — é o caminho de diagnóstico do object store no
-//! Railway sem precisar de build local.
-//!
-//! Falhas parciais são reportadas e o probe segue — é diagnóstico,
-//! não verificação de deploy (essa é a `/readyz`).
-
 use super::object_store::s3_parts;
 use clarituz_domain::DomainError;
 use clarituz_shared::Settings;
 use s3::bucket::Bucket;
 use s3::BucketConfiguration;
 
-/// Executa o probe. Não depende de banco — pode rodar com o Postgres fora.
 pub async fn run(settings: &Settings) -> Result<(), DomainError> {
     let (region, creds, name) = s3_parts(settings).ok_or_else(|| {
         tracing::error!(
@@ -60,7 +49,6 @@ pub async fn run(settings: &Settings) -> Result<(), DomainError> {
         }
     }
 
-    // put → get → delete round-trip
     let key = "_probe/hello.txt";
     let payload = b"ola-minio";
     bucket
@@ -97,7 +85,6 @@ pub async fn run(settings: &Settings) -> Result<(), DomainError> {
         Err(e) => println!("pós-delete get → {e} (esperado)"),
     }
 
-    // objetos sob prefixos da aplicação (evidência no bucket)
     for prefix in ["cms/", "clientes/", "documentos/", "logo/", "_probe/"] {
         match bucket.list(prefix.to_string(), None).await {
             Ok(pages) => {

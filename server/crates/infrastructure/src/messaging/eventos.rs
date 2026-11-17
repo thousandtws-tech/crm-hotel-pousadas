@@ -27,8 +27,6 @@ impl EventBus {
         let _ = self.tx.send(ev);
     }
 
-    /// Assinantes vivos do bus — proxy para conexões SSE abertas nesta
-    /// réplica (exportado como gauge de saturação no `/metrics`).
     pub fn assinantes(&self) -> usize {
         self.tx.receiver_count()
     }

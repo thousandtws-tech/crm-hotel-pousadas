@@ -1,6 +1,3 @@
-//! Emissor/validador de JWT (HS256). O segredo vem de `JWT_SECRET` —
-//! nunca hardcoded; caminho de evolução: par de chaves Ed25519 (asymmetric).
-
 use clarituz_domain::ports::TokenIssuer;
 use clarituz_domain::{DomainError, TokenClaims};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};

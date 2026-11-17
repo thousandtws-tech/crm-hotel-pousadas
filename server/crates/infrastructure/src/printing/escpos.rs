@@ -1,9 +1,3 @@
-//! Adapter ESC/POS — converte `LinhaRecibo` em bytes do protocolo Epson
-//! ESC/POS e envia à impressora térmica via RAW TCP (padrão porta 9100).
-//!
-//! Sem dependência externa: o subconjunto usado (init, codepage,
-//! alinhamento, negrito, feed, corte) são ~10 bytes de comando.
-
 use clarituz_domain::ports::ImpressoraGateway;
 use clarituz_domain::ports::LinhaRecibo;
 use clarituz_domain::DomainError;
@@ -16,18 +10,14 @@ const ESC: u8 = 0x1B;
 const GS: u8 = 0x1D;
 const LF: u8 = 0x0A;
 
-/// Colunas do cupom de 80 mm na fonte A (58 mm ≈ 32).
 const COLUNAS: usize = 42;
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 
-/// UTF-8 → Windows-1252 — codepage 16 (`ESC t 16`) das térmicas BR.
-/// Acentos pt-BR (áçãõéê…) vivem em U+00A0..=U+00FF, mapeamento direto.
 fn cp1252(s: &str) -> Vec<u8> {
     s.chars()
         .map(|c| match c as u32 {
             0x00..=0x7F | 0xA0..=0xFF => c as u8,
-            // tipográficos comuns caem para o equivalente ASCII
             0x2018 | 0x2019 => b'\'',
             0x201C | 0x201D => b'"',
             0x2013 | 0x2014 => b'-',
@@ -36,16 +26,13 @@ fn cp1252(s: &str) -> Vec<u8> {
         .collect()
 }
 
-/// "texto .............. valor" — esquerda/direita na mesma linha de 42 col.
 fn par(texto: &str, valor: &str) -> String {
     let espacos = COLUNAS.saturating_sub(texto.len() + valor.len());
     format!("{texto}{}{valor}", " ".repeat(espacos.max(1)))
 }
 
-/// Monta o byte-stream completo do recibo.
 pub(crate) fn montar(linhas: &[LinhaRecibo]) -> Vec<u8> {
     let mut b = Vec::with_capacity(2048);
-    // init + codepage WPC1252 (acentos pt-BR)
     b.extend([ESC, b'@', ESC, b't', 16]);
 
     for l in linhas {
@@ -79,13 +66,10 @@ pub(crate) fn montar(linhas: &[LinhaRecibo]) -> Vec<u8> {
             }
         }
     }
-    // feed + corte parcial (GS V A 0) — suportado por praticamente todas
     b.extend([LF, LF, LF, GS, b'V', b'A', 0]);
     b
 }
 
-/// Impressora térmica de rede — um job = uma conexão (o protocolo é
-/// unidirecional; não há sessão persistente na porta 9100).
 pub struct TcpImpressora;
 
 #[async_trait::async_trait]
@@ -122,9 +106,6 @@ impl ImpressoraGateway for TcpImpressora {
     }
 }
 
-/// Impressão via fila local — entrega real é feita pelo agente na LAN do
-/// hotel. Impressoras `usb:*` e IPs inalcançáveis da cloud viram jobs;
-/// rede alcançável imprime direto (fallback = enfileira mesmo assim).
 pub struct SpoolImpressora {
     pool: PgPool,
 }
@@ -167,7 +148,6 @@ impl ImpressoraGateway for SpoolImpressora {
         linhas: &[LinhaRecibo],
     ) -> Result<(), DomainError> {
         let bytes = montar(linhas);
-        // USB só existe na máquina do agente — sempre vai para a fila.
         if !host.starts_with("usb:") {
             let io = async {
                 let mut s = TcpStream::connect((host, porta)).await?;
@@ -187,8 +167,6 @@ impl ImpressoraGateway for SpoolImpressora {
         self.enfileirar(host, porta, &bytes, "escpos").await
     }
 
-    /// Etiqueta → job modo 'texto': o agente entrega via driver do SO
-    /// (qualquer modelo de etiqueteira/impressora comum).
     async fn etiqueta(&self, host: &str, porta: u16, texto: &str) -> Result<(), DomainError> {
         self.enfileirar(host, porta, texto.as_bytes(), "texto")
             .await

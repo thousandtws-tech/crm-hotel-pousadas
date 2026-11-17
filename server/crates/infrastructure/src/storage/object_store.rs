@@ -1,6 +1,3 @@
-//! Adapter de armazenamento de objetos — `FsStore` (filesystem local/dev) ou
-//! `S3Store` (MinIO/S3, escolhido quando `S3_*` estiver configurado).
-
 use async_trait::async_trait;
 use clarituz_domain::ports::ObjectStore;
 use clarituz_domain::DomainError;
@@ -11,8 +8,6 @@ use s3::region::Region;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-/// Filesystem — chaves relativas vão para `root/`; chaves absolutas
-/// (caminhos legados gravados antes do store) passam direto.
 pub struct FsStore {
     root: PathBuf,
 }
@@ -59,15 +54,13 @@ impl ObjectStore for FsStore {
     }
 }
 
-/// MinIO/S3 — path-style (exigido por MinIO atrás de domínio próprio).
+
 pub struct S3Store {
     bucket: Box<Bucket>,
 }
 
 #[async_trait]
 impl ObjectStore for S3Store {
-    /// rust-s3 (sem `fail-on-err`) devolve `Ok` mesmo em 4xx — o status
-    /// HTTP precisa ser inspecionado no `ResponseData`.
     async fn get(&self, key: &str) -> Result<Option<Vec<u8>>, DomainError> {
         match self.bucket.get_object(key).await {
             Ok(r) if (200..300).contains(&r.status_code()) => Ok(Some(r.bytes().to_vec())),
@@ -122,8 +115,6 @@ impl ObjectStore for S3Store {
     }
 }
 
-/// Configuração S3 resolvida — `None` quando `S3_*` está incompleto.
-/// Compartilhada entre `build_store` e o probe `clarituz-api s3-probe`.
 pub(crate) fn s3_parts(settings: &Settings) -> Option<(Region, Credentials, String)> {
     let (Some(endpoint), Some(bucket), Some(access), Some(secret)) = (
         &settings.s3_endpoint,
@@ -141,7 +132,6 @@ pub(crate) fn s3_parts(settings: &Settings) -> Option<(Region, Credentials, Stri
     Some((region, creds, bucket.clone()))
 }
 
-/// Monta o store conforme `S3_*` configurado; sem config completo → filesystem.
 pub fn build_store(settings: &Settings) -> Result<Arc<dyn ObjectStore>, DomainError> {
     if let Some((region, creds, bucket_name)) = s3_parts(settings) {
         let endpoint = settings
