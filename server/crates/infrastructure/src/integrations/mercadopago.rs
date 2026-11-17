@@ -67,15 +67,28 @@ impl MercadoPagoGateway {
         DomainError::Infra
     }
 
-    fn erro_status(contexto: &str, status: StatusCode, _corpo: &str) -> DomainError {
+    fn erro_status(contexto: &str, status: StatusCode, corpo: &str) -> DomainError {
         warn!(contexto, status = %status, "mercadopago: resposta de erro");
+        // O MP devolve {"message": "...", "cause": [{"description": ...}]} —
+        // a causa explica a recusa (token malformado, expirado, escopo).
+        let detalhe = serde_json::from_str::<serde_json::Value>(corpo)
+            .ok()
+            .and_then(|v| {
+                v["message"]
+                    .as_str()
+                    .or_else(|| v["error"].as_str())
+                    .or_else(|| v["cause"].as_array()?.first()?["description"].as_str())
+                    .map(|s| s.chars().take(180).collect::<String>())
+            })
+            .filter(|s| !s.is_empty());
         match status {
             StatusCode::TOO_MANY_REQUESTS => {
                 DomainError::conflito("Provedor de pagamento ocupado. Tente novamente.")
             }
-            s if s.is_client_error() => {
-                DomainError::regra("Operação recusada pelo provedor de pagamento.")
-            }
+            s if s.is_client_error() => DomainError::regra(match detalhe {
+                Some(d) => format!("Operação recusada pelo provedor: {d}"),
+                None => "Operação recusada pelo provedor de pagamento.".into(),
+            }),
             _ => DomainError::Infra,
         }
     }
