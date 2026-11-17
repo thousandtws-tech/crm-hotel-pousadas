@@ -47,37 +47,40 @@ describe('IntegracoesComponent', () => {
 
     expect(el.querySelectorAll('.skel').length).toBeGreaterThan(0);
 
-    mock
-      .expectOne(`${API}/integracoes`)
-      .flush([
-        integracao({
-          provedor: 'stripe',
-          ambiente: 'producao',
-          estado: 'ativa',
-          habilitado: true,
-          padrao_site: true,
-          nome_conta: 'Pousada',
-        }),
-        integracao({ provedor: 'stripe', ambiente: 'teste', estado: 'nao_configurada' }),
-        integracao({
-          provedor: 'pagbank',
-          ambiente: 'producao',
-          estado: 'falha',
-          verificacao_status: 'falha',
-          verificacao_erro: 'token inválido',
-        }),
-        integracao({ provedor: 'pagbank', ambiente: 'teste' }),
-        integracao({ provedor: 'mercadopago', ambiente: 'producao' }),
-        integracao({ provedor: 'mercadopago', ambiente: 'teste' }),
-      ]);
+    mock.expectOne(`${API}/integracoes`).flush([
+      integracao({
+        provedor: 'stripe',
+        ambiente: 'producao',
+        estado: 'ativa',
+        habilitado: true,
+        padrao_site: true,
+        nome_conta: 'Pousada',
+      }),
+      integracao({ provedor: 'stripe', ambiente: 'teste', estado: 'nao_configurada' }),
+      integracao({
+        provedor: 'pagbank',
+        ambiente: 'producao',
+        estado: 'falha',
+        verificacao_status: 'falha',
+        verificacao_erro: 'token inválido',
+      }),
+      integracao({ provedor: 'pagbank', ambiente: 'teste' }),
+      integracao({ provedor: 'mercadopago', ambiente: 'producao' }),
+      integracao({ provedor: 'mercadopago', ambiente: 'teste' }),
+    ]);
     await fixture.whenStable();
 
-    expect(el.querySelectorAll('.card-int').length).toBe(6);
+    expect(el.querySelectorAll('.card-prov').length).toBe(3);
+    expect(el.querySelectorAll('.env-linha').length).toBe(6);
     const texto = el.textContent ?? '';
     expect(texto).toContain('Stripe');
     expect(texto).toContain('PagBank');
     expect(texto).toContain('Mercado Pago');
-    expect(texto).toContain('Padrão do site');
+    expect(texto).toContain('Padrão');
+    // Faixa do padrão: stripe/producao é o padrão do site neste cenário.
+    expect(el.querySelector('.faixa-padrao')?.textContent).toContain(
+      'Stripe · Produção é o provedor padrão',
+    );
     expect(texto).toContain('Ativa');
     expect(texto).toContain('Não configurada');
     expect(texto).toContain('token inválido');

@@ -5,17 +5,31 @@ import { IntegracoesApi } from '@core/api/integracoes.api';
 import { Notify } from '@core/services/notify.service';
 import * as M from '@core/models';
 import {
-  ORDEM_AMBIENTE,
+  CAMPOS_POR_PROVEDOR,
   ORDEM_PROVEDOR,
   estadoDe,
   rotuloAmbiente,
   rotuloProvedor,
 } from './integracoes.const';
 
+interface ProvedorGrupo {
+  provedor: M.ProvedorPagamento;
+  producao: M.IntegracaoView | null;
+  teste: M.IntegracaoView | null;
+}
+
+/** Produto de checkout implementado pelo adapter — texto factual, não marketing. */
+const DESCRITOR_PROVEDOR: Record<M.ProvedorPagamento, string> = {
+  stripe: 'Stripe Checkout',
+  pagbank: 'Checkout PagBank',
+  mercadopago: 'Checkout Pro',
+};
+
 /**
- * Integrações de pagamento — um card por par (provedor × ambiente). Credenciais
- * são cifradas e write-only; aqui só aparecem estado, conta e erros de
- * verificação. Edição acontece no detalhe.
+ * Integrações de pagamento — um card por provedor contendo os dois
+ * ambientes como linhas navegáveis. A faixa superior responde a pergunta
+ * operacional principal: quem cobra o site hoje. Credenciais são
+ * cifradas e write-only; aqui só aparecem estado, conta e cobertura.
  */
 @Component({
   selector: 'app-integracoes',
@@ -36,10 +50,10 @@ import {
       @if (carregando()) {
         <div class="grade">
           @for (s of skel; track s) {
-            <div class="card-int" aria-hidden="true">
+            <div class="card-prov" aria-hidden="true">
               <span class="skel sk-t"></span>
-              <span class="skel sk-p"></span>
-              <span class="skel sk-m"></span>
+              <span class="skel sk-l"></span>
+              <span class="skel sk-l"></span>
             </div>
           }
         </div>
@@ -50,45 +64,62 @@ import {
           <button type="button" class="btn-sec" (click)="carregar()">Tentar novamente</button>
         </div>
       } @else {
+        <div class="faixa-padrao" [class.sem]="!padraoSite()">
+          <mat-icon>{{ padraoSite() ? 'check_circle' : 'info' }}</mat-icon>
+          <div>
+            <strong>Novas cobranças do site</strong>
+            <span>{{ descricaoPadrao() }}</span>
+          </div>
+        </div>
+
         <div class="grade">
-          @for (i of ordenadas(); track i.provedor + '/' + i.ambiente) {
-            <a
-              class="card-int"
-              [routerLink]="['/integracoes', i.provedor, i.ambiente]"
-              [attr.aria-label]="
-                'Abrir ' + rotuloProvedor(i.provedor) + ' ' + rotuloAmbiente(i.ambiente)
-              "
-            >
-              <div class="card-top">
-                <span class="card-nome">{{ rotuloProvedor(i.provedor) }}</span>
-                <span class="env">{{ rotuloAmbiente(i.ambiente) }}</span>
-              </div>
+          @for (g of grupos(); track g.provedor) {
+            <section class="card-prov">
+              <header class="prov-cab">
+                <div>
+                  <h3 class="prov-nome">{{ rotuloProvedor(g.provedor) }}</h3>
+                  <p class="prov-desc">{{ descriptorDe(g.provedor) }}</p>
+                </div>
+              </header>
 
-              <div class="card-pills">
-                <span [class]="'pill ' + estadoDe(i.estado).pill">
-                  {{ estadoDe(i.estado).rotulo }}
-                </span>
-                @if (i.padrao_site) {
-                  <span class="pill pill-gold"> <mat-icon>star</mat-icon> Padrão do site </span>
+              <div class="prov-linhas">
+                @for (i of [g.producao, g.teste]; track $index) {
+                  @if (i) {
+                    <a
+                      class="env-linha"
+                      [routerLink]="['/integracoes', i.provedor, i.ambiente]"
+                      [attr.aria-label]="
+                        'Abrir ' + rotuloProvedor(i.provedor) + ' ' + rotuloAmbiente(i.ambiente)
+                      "
+                    >
+                      <span class="env" [class.env-teste]="i.ambiente === 'teste'">
+                        {{ rotuloAmbiente(i.ambiente) }}
+                      </span>
+
+                      <span class="env-meio">
+                        <span class="env-pills">
+                          <span [class]="'pill ' + estadoDe(i.estado).pill">
+                            {{ estadoDe(i.estado).rotulo }}
+                          </span>
+                          @if (i.padrao_site) {
+                            <span class="pill pill-gold"> <mat-icon>star</mat-icon> Padrão </span>
+                          }
+                        </span>
+                        <span class="env-info">
+                          @if (i.verificacao_status === 'falha' && i.verificacao_erro) {
+                            {{ i.verificacao_erro }}
+                          } @else {
+                            {{ resumoDe(i) }}
+                          }
+                        </span>
+                      </span>
+
+                      <mat-icon class="env-seta">chevron_right</mat-icon>
+                    </a>
+                  }
                 }
               </div>
-
-              <div class="card-mini">
-                @if (i.nome_conta) {
-                  <span class="mini">{{ i.nome_conta }}</span>
-                }
-                @if (i.verificacao_status === 'falha' && i.verificacao_erro) {
-                  <span class="mini erro">{{ i.verificacao_erro }}</span>
-                } @else if (i.ultima_verificacao_em && i.verificacao_status === 'ok') {
-                  <span class="mini">Verificada em {{ dataBr(i.ultima_verificacao_em) }}</span>
-                }
-              </div>
-
-              <div class="card-fim">
-                <span class="mini">{{ i.habilitado ? 'Habilitada' : 'Desabilitada' }}</span>
-                <mat-icon class="card-seta">chevron_right</mat-icon>
-              </div>
-            </a>
+            </section>
           }
         </div>
       }
@@ -129,64 +160,142 @@ import {
       max-width: 60ch;
     }
 
-    /* ---------- grade de cards (provedor × ambiente) ---------- */
+    /* ---------- faixa do padrão de cobrança ---------- */
+    .faixa-padrao {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(25, 135, 84, 0.07);
+      border: 1px solid rgba(25, 135, 84, 0.22);
+      border-radius: 10px;
+      padding: 10px 14px;
+    }
+    .faixa-padrao.sem {
+      background: rgba(26, 111, 138, 0.05);
+      border-color: rgba(26, 111, 138, 0.18);
+    }
+    .faixa-padrao mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      color: #17703f;
+      flex: none;
+    }
+    .faixa-padrao.sem mat-icon {
+      color: #1a6f8a;
+    }
+    .faixa-padrao strong {
+      display: block;
+      font-size: 0.78rem;
+      color: #054054;
+    }
+    .faixa-padrao span {
+      font-size: 0.78rem;
+      color: #5d6d7e;
+    }
+
+    /* ---------- grade de provedores ---------- */
     .grade {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+      gap: 14px;
+      align-items: start;
     }
-    .card-int {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+    .card-prov {
       background: #fff;
       border: 1px solid #e3eaef;
       border-radius: 10px;
+      overflow: hidden;
+    }
+    .prov-cab {
       padding: 14px 16px 12px;
-      color: inherit;
-      cursor: pointer;
-      transition:
-        border-color 0.15s,
-        box-shadow 0.15s;
+      border-bottom: 1px solid #f0f4f6;
     }
-    .card-int:hover {
-      border-color: #4b95ab;
-      box-shadow: 0 1px 4px rgba(5, 64, 84, 0.08);
-    }
-    .card-int:focus-visible {
-      outline: 2px solid #1a6f8a;
-      outline-offset: 2px;
-    }
-
-    .card-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-    .card-nome {
-      font-size: 0.95rem;
+    .prov-nome {
+      margin: 0;
+      font-size: 0.98rem;
       font-weight: 700;
       color: #054054;
     }
-    .env {
-      flex: none;
-      font-size: 0.62rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #536b73;
-      background: #eef4f6;
-      border-radius: 999px;
-      padding: 3px 9px;
+    .prov-desc {
+      margin: 2px 0 0;
+      font-size: 0.74rem;
+      color: #7d97a1;
     }
 
-    .card-pills {
+    .prov-linhas {
+      display: flex;
+      flex-direction: column;
+    }
+    .env-linha {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      color: inherit;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .env-linha + .env-linha {
+      border-top: 1px solid #f0f4f6;
+    }
+    .env-linha:hover {
+      background: #f7fafb;
+    }
+    .env-linha:focus-visible {
+      outline: 2px solid #1a6f8a;
+      outline-offset: -2px;
+    }
+
+    .env {
+      flex: none;
+      width: 72px;
+      text-align: center;
+      font-size: 0.64rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: #054054;
+      background: #e4eef2;
+      border-radius: 6px;
+      padding: 4px 0;
+    }
+    .env-teste {
+      color: #8a6210;
+      background: rgba(181, 129, 31, 0.12);
+    }
+
+    .env-meio {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .env-pills {
       display: flex;
       align-items: center;
       gap: 6px;
       flex-wrap: wrap;
     }
+    .env-info {
+      font-size: 0.74rem;
+      color: #7d97a1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .env-seta {
+      flex: none;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #8fa3ab;
+    }
+    .env-linha:hover .env-seta {
+      color: #1a6f8a;
+    }
+
     .pill {
       display: inline-flex;
       align-items: center;
@@ -226,37 +335,6 @@ import {
     .pill-off {
       background: #f0f4f6;
       color: #7d97a1;
-    }
-
-    .card-mini {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      min-height: 1.1rem;
-    }
-    .mini {
-      font-size: 0.76rem;
-      color: #7d97a1;
-    }
-    .mini.erro {
-      color: #b3402a;
-    }
-
-    .card-fim {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-top: 8px;
-      border-top: 1px solid #f0f4f6;
-    }
-    .card-seta {
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
-      color: #8fa3ab;
-    }
-    .card-int:hover .card-seta {
-      color: #1a6f8a;
     }
 
     /* ---------- estados ---------- */
@@ -302,23 +380,23 @@ import {
       border-radius: 4px;
       background: #eef4f6;
       height: 13px;
+      margin: 14px 16px;
     }
     .sk-t {
       width: 120px;
       height: 16px;
     }
-    .sk-p {
-      width: 90px;
-      height: 22px;
-      border-radius: 999px;
-    }
-    .sk-m {
-      width: 180px;
+    .sk-l {
+      height: 44px;
+      margin-top: 0;
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 720px) {
       .grade {
         grid-template-columns: 1fr;
+      }
+      .env {
+        width: 62px;
       }
     }
   `,
@@ -330,20 +408,45 @@ export class IntegracoesComponent implements OnInit {
   protected readonly integracoes = signal<M.IntegracaoView[]>([]);
   protected readonly carregando = signal(true);
   protected readonly falhou = signal(false);
-  protected readonly skel = [0, 1, 2, 3, 4, 5];
+  protected readonly skel = [0, 1, 2];
 
   protected readonly rotuloProvedor = rotuloProvedor;
   protected readonly rotuloAmbiente = rotuloAmbiente;
   protected readonly estadoDe = estadoDe;
 
-  /** Ordem estável: provedor (Stripe → PagBank → Mercado Pago), Produção → Teste. */
-  protected readonly ordenadas = computed(() =>
-    [...this.integracoes()].sort(
-      (a, b) =>
-        ORDEM_PROVEDOR.indexOf(a.provedor) - ORDEM_PROVEDOR.indexOf(b.provedor) ||
-        ORDEM_AMBIENTE.indexOf(a.ambiente) - ORDEM_AMBIENTE.indexOf(b.ambiente),
-    ),
+  /** Um card por provedor, ambientes na ordem Produção → Teste. */
+  protected readonly grupos = computed<ProvedorGrupo[]>(() => {
+    const porPar = new Map<string, M.IntegracaoView>(
+      this.integracoes().map((i) => [`${i.provedor}/${i.ambiente}`, i]),
+    );
+    return ORDEM_PROVEDOR.map((provedor) => ({
+      provedor,
+      producao: porPar.get(`${provedor}/producao`) ?? null,
+      teste: porPar.get(`${provedor}/teste`) ?? null,
+    }));
+  });
+
+  protected readonly padraoSite = computed(
+    () => this.integracoes().find((i) => i.padrao_site) ?? null,
   );
+
+  /** Frase da faixa: quem cobra o site — padrão, env legado ou nada. */
+  protected readonly descricaoPadrao = computed(() => {
+    const p = this.padraoSite();
+    if (p) {
+      return `${rotuloProvedor(p.provedor)} · ${rotuloAmbiente(p.ambiente)} é o provedor padrão.`;
+    }
+    const legado = this.integracoes().find(
+      (i) =>
+        i.provedor === 'stripe' &&
+        i.ambiente === 'producao' &&
+        i.estado === 'gerenciado_pelo_ambiente',
+    );
+    if (legado) {
+      return 'Stripe · Produção via variáveis de ambiente — defina um padrão para gerenciar por aqui.';
+    }
+    return 'Nenhum provedor padrão — configure uma integração e defina como padrão.';
+  });
 
   ngOnInit(): void {
     this.carregar();
@@ -365,9 +468,28 @@ export class IntegracoesComponent implements OnInit {
     });
   }
 
+  protected descriptorDe(p: M.ProvedorPagamento): string {
+    return DESCRITOR_PROVEDOR[p] ?? '';
+  }
+
+  /** Linha secundária: conta verificada, cobertura de credenciais ou dica. */
+  protected resumoDe(i: M.IntegracaoView): string {
+    if (i.nome_conta) {
+      return `Conta ${i.nome_conta}`;
+    }
+    const configuradas = Object.values(i.segredos?.campos ?? {}).filter(Boolean).length;
+    const total = CAMPOS_POR_PROVEDOR[i.provedor]?.length ?? 0;
+    if (configuradas > 0 && total > 0) {
+      return `${configuradas} de ${total} credenciais configuradas`;
+    }
+    if (i.ultima_verificacao_em && i.verificacao_status === 'ok') {
+      return `Verificada em ${this.dataBr(i.ultima_verificacao_em)}`;
+    }
+    return i.habilitado ? 'Habilitada' : 'Toque para configurar';
+  }
+
   protected dataBr(iso: string): string {
-    const d = new Date(iso);
-    return d.toLocaleDateString('pt-BR', {
+    return new Date(iso).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
