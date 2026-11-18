@@ -15,6 +15,7 @@
 
 use async_trait::async_trait;
 use chrono::Utc;
+use clarituz_domain::entities::AmbienteIntegracao;
 use clarituz_domain::ports::{
     ConsultaPagamento, NovaCheckout, PaymentGateway, SessaoCheckout, StatusPi,
 };
@@ -36,19 +37,24 @@ pub struct MercadoPagoGateway {
     http: Client,
     access_token: String,
     base_url: String,
+    ambiente: AmbienteIntegracao,
 }
 
 impl MercadoPagoGateway {
-    pub fn new(access_token: String) -> Self {
-        Self::com_base(access_token, "https://api.mercadopago.com".into())
+    pub fn new(access_token: String, ambiente: AmbienteIntegracao) -> Self {
+        Self::com_base(access_token, "https://api.mercadopago.com".into(), ambiente)
     }
 
     #[cfg(test)]
-    pub fn para_teste(access_token: String, base_url: String) -> Self {
-        Self::com_base(access_token, base_url)
+    pub fn para_teste(
+        access_token: String,
+        base_url: String,
+        ambiente: AmbienteIntegracao,
+    ) -> Self {
+        Self::com_base(access_token, base_url, ambiente)
     }
 
-    fn com_base(access_token: String, base_url: String) -> Self {
+    fn com_base(access_token: String, base_url: String, ambiente: AmbienteIntegracao) -> Self {
         let http = Client::builder()
             .connect_timeout(Duration::from_secs(10))
             .timeout(Duration::from_secs(30))
@@ -58,6 +64,7 @@ impl MercadoPagoGateway {
             http,
             access_token,
             base_url,
+            ambiente,
         }
     }
 
@@ -147,6 +154,23 @@ impl MercadoPagoGateway {
             error!(contexto, erro = %e, "mercadopago: resposta malformada");
             DomainError::Infra
         })
+    }
+
+    /// A URL certa depende do AMBIENTE da integração, não só do que a
+    /// API devolve: com credencial de teste o `init_point` abre o
+    /// checkout produtivo, onde o pagamento não é concluível — o
+    /// `sandbox_init_point` é o fluxo de teste correto.
+    fn url_checkout(&self, p: &PreferenceResp) -> Option<String> {
+        match self.ambiente {
+            AmbienteIntegracao::Teste => p
+                .sandbox_init_point
+                .clone()
+                .or_else(|| p.init_point.clone()),
+            AmbienteIntegracao::Producao => p
+                .init_point
+                .clone()
+                .or_else(|| p.sandbox_init_point.clone()),
+        }
     }
 
     fn mapear_status(status: &str) -> StatusPi {
@@ -288,7 +312,7 @@ impl PaymentGateway for MercadoPagoGateway {
                 &nova.idempotency_key,
             )
             .await?;
-        let url = p.init_point.or(p.sandbox_init_point).ok_or_else(|| {
+        let url = self.url_checkout(&p).ok_or_else(|| {
             error!("mercadopago: preferência sem init_point");
             DomainError::Infra
         })?;
@@ -552,6 +576,35 @@ mod tests {
         let ts = Utc::now().timestamp();
         let h = assinar("segredo", "190217246070", "rid-x", ts);
         assert!(verificar_assinatura("segredo", &h, "rid-x", "190217246070").is_ok());
+    }
+
+    #[test]
+    fn url_checkout_respeita_ambiente() {
+        let p = PreferenceResp {
+            id: "pref".into(),
+            init_point: Some("https://www.mercadopago.com.br/checkout/v1/x".into()),
+            sandbox_init_point: Some("https://sandbox.mercadopago.com.br/checkout/v1/x".into()),
+        };
+        let prod = MercadoPagoGateway::new("APP_USR-x".into(), AmbienteIntegracao::Producao);
+        let teste = MercadoPagoGateway::new("TEST-x".into(), AmbienteIntegracao::Teste);
+        assert!(prod.url_checkout(&p).unwrap().contains("www.mercadopago"));
+        assert!(teste
+            .url_checkout(&p)
+            .unwrap()
+            .contains("sandbox.mercadopago"));
+        // Fallbacks: ambiente sem a URL preferida usa a outra.
+        let so_prod = PreferenceResp {
+            id: "p".into(),
+            init_point: Some("https://www.mercadopago.com.br/x".into()),
+            sandbox_init_point: None,
+        };
+        assert!(teste.url_checkout(&so_prod).is_some());
+        let vazio = PreferenceResp {
+            id: "p".into(),
+            init_point: None,
+            sandbox_init_point: None,
+        };
+        assert!(prod.url_checkout(&vazio).is_none());
     }
 
     #[test]

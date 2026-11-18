@@ -84,10 +84,30 @@ impl PgGatewayResolver {
             envelope,
         )?;
 
+        // MP: credencial e ambiente divergentes quebram o checkout
+        // silenciosamente (init_point errado) — a validação no `salvar`
+        // cobre gravações novas; este warn expõe linhas já persistidas.
+        if provedor == ProvedorIntegracao::Mercadopago {
+            let divergente = matches!(
+                (
+                    ambiente,
+                    segredo.starts_with("TEST-"),
+                    segredo.starts_with("APP_USR-")
+                ),
+                (AmbienteIntegracao::Producao, true, _) | (AmbienteIntegracao::Teste, _, true)
+            );
+            if divergente {
+                warn!(
+                    ambiente = ambiente.as_str(),
+                    "mercadopago: credencial diverge do ambiente da integração"
+                );
+            }
+        }
+
         let gw: Arc<dyn PaymentGateway> = match provedor {
             ProvedorIntegracao::Stripe => Arc::new(StripeGateway::new(segredo)),
             ProvedorIntegracao::Pagbank => Arc::new(PagBankGateway::new(segredo, ambiente)),
-            ProvedorIntegracao::Mercadopago => Arc::new(MercadoPagoGateway::new(segredo)),
+            ProvedorIntegracao::Mercadopago => Arc::new(MercadoPagoGateway::new(segredo, ambiente)),
             ProvedorIntegracao::Zapi
             | ProvedorIntegracao::Spedy
             | ProvedorIntegracao::Didit

@@ -384,6 +384,40 @@ impl IntegracoesService {
             }
         }
 
+        // Mercado Pago: credenciais têm prefixo inequívoco — `TEST-` é de
+        // teste e `APP_USR-` de produção. Token de teste salvo na linha de
+        // produção cria preferências que redirecionam para um checkout onde
+        // o pagamento nunca conclui; bloquear na escrita evita o modo
+        // silencioso mais comum de "checkout quebrado em produção".
+        if provedor == ProvedorIntegracao::Mercadopago {
+            if let Some(mapa) = &input.segredos {
+                for campo in ["access_token", "public_key"] {
+                    let Some(token) = mapa.get(campo).filter(|s| !s.is_empty()) else {
+                        continue;
+                    };
+                    let eh_teste = token.starts_with("TEST-");
+                    let eh_prod = token.starts_with("APP_USR-");
+                    match (ambiente, eh_teste, eh_prod) {
+                        (AmbienteIntegracao::Producao, true, _) => {
+                            return Err(DomainError::validacao(format!(
+                                "{campo} começa com 'TEST-' — credencial de teste \
+                                 na integração de produção."
+                            ))
+                            .into());
+                        }
+                        (AmbienteIntegracao::Teste, _, true) => {
+                            return Err(DomainError::validacao(format!(
+                                "{campo} começa com 'APP_USR-' — credencial de \
+                                 produção na integração de teste."
+                            ))
+                            .into());
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+
         // Config não-secreta — whitelist por provedor.
         let config = input.config.clone();
         if let Some(c) = &config {
