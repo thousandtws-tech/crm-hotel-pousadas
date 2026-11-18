@@ -1,0 +1,26 @@
+<div class="dw">
+  <input
+    class="input-inn dw-txt"
+    type="text"
+    inputmode="numeric"
+    placeholder="dd/mm/aaaa"
+    [attr.aria-label]="rotulo()"
+    [matDatepicker]="dp"
+    [formControl]="ctrl"
+    [min]="minDate()"
+    [max]="maxDate()"
+    (input)="mascarar($event)"
+    (blur)="toque()"
+  />
+  <button
+    type="button"
+    class="dw-btn"
+    (click)="dp.open()"
+    [disabled]="desabilitado()"
+    tabindex="-1"
+    aria-label="Abrir calendário"
+  >
+    <mat-icon>calendar_month</mat-icon>
+  </button>
+  <mat-datepicker #dp />
+</div>

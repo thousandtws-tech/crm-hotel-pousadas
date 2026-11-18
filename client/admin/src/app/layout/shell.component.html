@@ -1,0 +1,228 @@
+<header class="header" [class.header-open]="aberta()">
+  <div class="header-left">
+    <button
+      class="header_toggle"
+      type="button"
+      (click)="alternar()"
+      aria-label="Alternar menu"
+      [attr.aria-expanded]="aberta()"
+    >
+      <mat-icon>{{ aberta() ? 'menu_open' : 'menu' }}</mat-icon>
+    </button>
+    <div class="pagina">
+      @if (pagina().grupo; as g) {
+        <span class="pagina-grupo">{{ g }}</span>
+      }
+      <h1 class="pagina-titulo">{{ pagina().titulo }}</h1>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <span class="hoje"> <mat-icon>event</mat-icon> {{ hoje }} </span>
+
+    <!-- ===== sino de notificações ===== -->
+    <div class="sino-wrap">
+      <button
+        type="button"
+        class="sino"
+        [class.sino-toca]="notifs.tocando()"
+        (click)="notifs.alternarPainel()"
+        aria-label="Notificações"
+        [attr.aria-expanded]="notifs.aberto()"
+      >
+        <mat-icon>notifications</mat-icon>
+        @if (notifs.naoLidas() > 0) {
+          <span class="sino-badge">{{ notifs.naoLidas() > 99 ? '99+' : notifs.naoLidas() }}</span>
+        }
+      </button>
+
+      @if (notifs.aberto()) {
+        <div
+          class="sino-fechar"
+          (click)="notifs.fecharPainel()"
+          (keydown)="notifs.fecharPainel()"
+          role="button"
+          tabindex="-1"
+          aria-label="Fechar"
+        ></div>
+        <div class="sino-painel" role="dialog" aria-label="Histórico de notificações">
+          <div class="sino-head">
+            <strong>Notificações</strong>
+            @if (notifs.naoLidas() > 0) {
+              <button type="button" class="sino-ler-todas" (click)="notifs.lerTodas()">
+                Marcar todas como lidas
+              </button>
+            }
+          </div>
+          <div class="sino-lista">
+            @if (notifs.carregando()) {
+              <p class="sino-vazio">Carregando…</p>
+            } @else {
+              @for (n of notifs.inbox(); track n.id) {
+                <div class="sino-item" [class.sino-nova]="!n.lida">
+                  <button type="button" class="sino-item-btn" (click)="abrirNotificacao(n)">
+                    <span class="sino-dot" [class.sino-dot-alerta]="n.tipo === 'alerta'"></span>
+                    <span class="sino-txt">
+                      <span>{{ n.titulo }}</span>
+                      <span>{{ n.mensagem }}</span>
+                    </span>
+                    <span class="sino-tempo">{{ notifs.tempoAtras(n.criado_em) }}</span>
+                  </button>
+                  @if (auth.isAdmin()) {
+                    <button
+                      type="button"
+                      class="sino-del"
+                      title="Remover do histórico"
+                      aria-label="Remover notificação"
+                      (click)="notifs.excluir(n)"
+                    >
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  }
+                </div>
+              } @empty {
+                <p class="sino-vazio">Nenhuma notificação ainda.</p>
+              }
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <span class="divisor" aria-hidden="true"></span>
+
+    <!-- ===== menu do usuário ===== -->
+    <div class="user-wrap">
+      <button
+        type="button"
+        class="user-btn"
+        (click)="menuUser.set(!menuUser())"
+        aria-haspopup="menu"
+        [attr.aria-expanded]="menuUser()"
+        aria-label="Menu do usuário"
+      >
+        <span class="avatar" aria-hidden="true">{{ usuario().iniciais }}</span>
+        <span class="user-txt">
+          <span class="user-nome">{{ usuario().nome }}</span>
+          <span class="user-papel">{{ usuario().papel }}</span>
+        </span>
+        <mat-icon class="user-seta" [class.user-seta-aberta]="menuUser()">expand_more</mat-icon>
+      </button>
+
+      @if (menuUser()) {
+        <div
+          class="user-fechar"
+          (click)="menuUser.set(false)"
+          (keydown)="menuUser.set(false)"
+          role="button"
+          tabindex="-1"
+          aria-label="Fechar menu"
+        ></div>
+        <div class="user-menu" role="menu">
+          <div class="user-card">
+            <span class="avatar avatar-lg" aria-hidden="true">{{ usuario().iniciais }}</span>
+            <span class="user-card-txt">
+              <strong>{{ usuario().nome }}</strong>
+              <span>{{ usuario().login }} · {{ usuario().papel }}</span>
+            </span>
+          </div>
+          @if (auth.isAdmin()) {
+            <a
+              class="user-item"
+              role="menuitem"
+              routerLink="/estabelecimento"
+              (click)="menuUser.set(false)"
+            >
+              <mat-icon>home</mat-icon> Dados da pousada
+            </a>
+            <a
+              class="user-item"
+              role="menuitem"
+              routerLink="/funcionarios"
+              (click)="menuUser.set(false)"
+            >
+              <mat-icon>group</mat-icon> Equipe e acessos
+            </a>
+          }
+          <button type="button" class="user-item user-sair" role="menuitem" (click)="auth.logout()">
+            <mat-icon>logout</mat-icon> Sair
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</header>
+
+<!-- backdrop mobile — toque fora fecha o menu -->
+<div
+  class="scrim"
+  [class.scrim-visivel]="aberta()"
+  (click)="aberta.set(false)"
+  (keydown)="aberta.set(false)"
+  role="button"
+  tabindex="-1"
+  aria-label="Fechar menu"
+></div>
+
+<aside class="l-navbar" [class.expanded]="aberta()" aria-label="Navegação principal">
+  <a class="nav_logo" routerLink="/dashboard" aria-label="Início">
+    <img src="logo.svg" alt="INNJOY" />
+  </a>
+
+  <nav class="nav">
+    @for (item of nav(); track item.rotulo) {
+      @if (item.filhos) {
+        <div class="nav_group" [class.aberto]="grupoAberto() === item.rotulo">
+          <button
+            type="button"
+            class="nav_link nav_group-btn"
+            [class.active]="grupoAtivo(item)"
+            [title]="item.rotulo"
+            [attr.aria-expanded]="grupoAberto() === item.rotulo"
+            (click)="alternarGrupo(item, $event)"
+          >
+            <mat-icon class="nav_icon">{{ item.icone }}</mat-icon>
+            <span class="nav_name">{{ item.rotulo }}</span>
+            <mat-icon class="nav_arrow">chevron_left</mat-icon>
+          </button>
+          <div class="nav_filhos">
+            <div class="nav_filhos-in">
+              @for (f of item.filhos; track f.rota) {
+                <a
+                  class="nav_link nav_sub"
+                  [routerLink]="f.rota"
+                  routerLinkActive="active"
+                  [routerLinkActiveOptions]="opcoesAtivo(item, f)"
+                  [title]="f.rotulo"
+                  (click)="clicouNav()"
+                >
+                  <span class="nav_bullet" aria-hidden="true"></span>
+                  <span class="nav_name">{{ f.rotulo }}</span>
+                </a>
+              }
+            </div>
+          </div>
+        </div>
+      } @else {
+        <a
+          class="nav_link"
+          [routerLink]="item.rota"
+          routerLinkActive="active"
+          [title]="item.rotulo"
+          (click)="clicouNav()"
+        >
+          <mat-icon class="nav_icon">{{ item.icone }}</mat-icon>
+          <span class="nav_name">{{ item.rotulo }}</span>
+        </a>
+      }
+    }
+  </nav>
+</aside>
+
+<main class="content" [class.content-open]="aberta()">
+  <router-outlet />
+</main>
+
+@if (auth.autenticado()) {
+  <app-maria />
+}

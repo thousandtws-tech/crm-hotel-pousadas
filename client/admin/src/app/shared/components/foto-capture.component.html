@@ -1,0 +1,53 @@
+<div class="overlay overlay-cam" (click.self)="cancelar()">
+  <div class="modal-inn" role="dialog" aria-modal="true" aria-labelledby="titulo-cam">
+    <div class="modal-head">
+      <h5 id="titulo-cam">{{ titulo() }}</h5>
+      <button type="button" class="close" aria-label="Fechar" (click)="cancelar()">&times;</button>
+    </div>
+    <div class="modal-body">
+      @if (estado() === 'erro') {
+        <div class="cam-erro">
+          <mat-icon>videocam_off</mat-icon>
+          <p>{{ erroMsg() }}</p>
+          <button type="button" class="btn-dark-blue" (click)="iniciar()">
+            <mat-icon>refresh</mat-icon> Tentar novamente
+          </button>
+        </div>
+      } @else {
+        <div class="frame" [class.escondido]="estado() === 'capturada'">
+          <video #video autoplay playsinline muted [class.espelha]="modo() === 'rosto'"></video>
+          @if (modo() === 'rosto') {
+            <div class="mira" aria-hidden="true"></div>
+          } @else {
+            <div class="mira-doc" aria-hidden="true"></div>
+          }
+          @if (estado() === 'iniciando') {
+            <div class="cam-loading"><mat-spinner diameter="36" /></div>
+          }
+        </div>
+        @if (modo() === 'documento' && estado() === 'ativa') {
+          <small class="muted">Posicione o documento dentro da moldura.</small>
+        }
+        @if (estado() === 'capturada' && preview()) {
+          <div class="frame"><img [src]="preview()" alt="Prévia da captura" /></div>
+        }
+      }
+    </div>
+    <div class="modal-foot cam-foot">
+      @if (estado() === 'ativa') {
+        <button type="button" class="btn-green" (click)="capturar()">
+          <mat-icon>photo_camera</mat-icon> Capturar
+        </button>
+      }
+      @if (estado() === 'capturada') {
+        <button type="button" class="btn-gray" (click)="refazer()">
+          <mat-icon>refresh</mat-icon> Refazer
+        </button>
+        <button type="button" class="btn-green" (click)="usar()">
+          <mat-icon>check</mat-icon> Usar {{ modo() === 'documento' ? 'scan' : 'foto' }}
+        </button>
+      }
+      <button type="button" class="btn-gray" (click)="cancelar()">Cancelar</button>
+    </div>
+  </div>
+</div>

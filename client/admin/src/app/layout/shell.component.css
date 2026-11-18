@@ -1,0 +1,578 @@
+:host {
+  --shell-h: calc(var(--header-height) + 1rem);
+}
+
+/* =====================================================================
+       HEADER — começa à direita da sidebar, nunca passa por baixo dela
+       ===================================================================== */
+.header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: var(--nav-width);
+  height: var(--shell-h);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.25rem;
+  align-items: center;
+  padding: 0 1.25rem 0 0.75rem;
+  background-color: var(--inn-navbar);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 2px 12px rgba(4, 30, 40, 0.18);
+  z-index: 100;
+  transition: left 0.25s ease;
+}
+.header-open {
+  left: var(--nav-width-open);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.header_toggle {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: #fff;
+  background: none;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.header_toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.pagina {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  line-height: 1.1;
+}
+.pagina-grupo {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+}
+.pagina-titulo {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1.45rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-self: end;
+  min-width: 0;
+}
+.hoje {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+.hoje mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.header .sino {
+  color: #fff;
+  width: 38px;
+  height: 38px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 10px;
+  padding: 0;
+  transition: background 0.15s;
+}
+.header .sino:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.header .sino-badge {
+  top: 3px;
+  right: 2px;
+  box-shadow: 0 0 0 2px var(--inn-navbar);
+}
+
+.divisor {
+  width: 1px;
+  height: 26px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* ----- menu do usuário ----- */
+.user-wrap {
+  position: relative;
+}
+.user-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 4px 6px 4px 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 999px;
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  transition: background 0.15s;
+}
+.user-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.avatar {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--inn-first);
+  border: 1.5px solid var(--inn-gold);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.avatar-lg {
+  width: 42px;
+  height: 42px;
+  font-size: 0.85rem;
+}
+.user-txt {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  max-width: 150px;
+}
+.user-nome {
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.user-papel {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+.user-seta {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s;
+}
+.user-seta-aberta {
+  transform: rotate(180deg);
+}
+.user-fechar {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+}
+.user-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 151;
+  width: 260px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(4, 30, 40, 0.22);
+  padding: 6px;
+  animation: user-in 0.15s ease-out;
+}
+@keyframes user-in {
+  from {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+}
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 0.6rem 0.8rem;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #e8eef1;
+}
+.user-card-txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+.user-card-txt strong {
+  font-size: 0.88rem;
+  color: #14303c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.user-card-txt span {
+  font-size: 0.72rem;
+  color: #5b6f78;
+}
+.user-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.55rem 0.6rem;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.84rem;
+  color: #24404b;
+  text-decoration: none;
+  text-align: left;
+}
+.user-item:hover {
+  background: #f1f6f8;
+}
+.user-item mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #5b6f78;
+}
+.user-sair {
+  color: #b02a37;
+}
+.user-sair mat-icon {
+  color: #b02a37;
+}
+
+/* =====================================================================
+       SIDEBAR — marca fixa no topo, só a lista rola, rodapé fixo
+       ===================================================================== */
+.scrim {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 18, 24, 0.55);
+  z-index: 105;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.scrim-visivel {
+  opacity: 1;
+}
+
+.l-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--nav-width);
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--inn-first);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  transition:
+    width 0.25s ease,
+    box-shadow 0.25s ease;
+  z-index: 110;
+  overflow: hidden;
+}
+.l-navbar.expanded {
+  width: var(--nav-width-open);
+}
+
+/* desktop com mouse: rail expande temporariamente ao passar o cursor */
+@media (min-width: 769px) and (hover: hover) {
+  .l-navbar:not(.expanded):hover {
+    width: var(--nav-width-open);
+    box-shadow: 8px 0 28px rgba(4, 20, 28, 0.35);
+  }
+  .l-navbar:not(.expanded):hover .nav_logo img {
+    width: 130px;
+  }
+}
+
+/* ----- marca: mesma altura do header, alinhada com ele ----- */
+.nav_logo {
+  flex: none;
+  height: var(--shell-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.nav_logo img {
+  width: 130px;
+  max-height: 44px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  transition: width 0.25s ease;
+}
+.l-navbar:not(.expanded) .nav_logo img {
+  width: 44px;
+}
+
+/* ----- lista: única área com rolagem; sem barra nativa (zero salto de
+       layout ao abrir um grupo) — o esmaecimento indica que há mais itens ----- */
+.nav {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding: 0.75rem 0 1rem;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 12px,
+    #000 calc(100% - 24px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 12px,
+    #000 calc(100% - 24px),
+    transparent 100%
+  );
+}
+.nav::-webkit-scrollbar {
+  display: none;
+}
+
+/* ----- links: pílulas com largura do container — na rail o texto é
+       apenas recortado, sem regras duplicadas de mostrar/esconder ----- */
+.nav_link {
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  width: calc(100% - 20px);
+  height: 40px;
+  margin: 0 10px 2px;
+  padding: 0 0 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--inn-link);
+  font: inherit;
+  font-size: 0.86rem;
+  text-align: left;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.nav_link:hover {
+  color: #fff;
+  background: var(--inn-navlink-hover);
+}
+.nav_link:focus-visible {
+  outline: 2px solid var(--inn-gold);
+  outline-offset: -2px;
+}
+.nav_link.active {
+  color: #fff;
+  background: var(--inn-navlink-hover);
+  font-weight: 600;
+}
+.nav_link.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--inn-gold);
+}
+.nav_icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+.nav_name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ----- grupo (treeview) ----- */
+.nav_group-btn {
+  grid-template-columns: 20px minmax(0, 1fr) 18px;
+  padding-right: 10px;
+}
+.nav_arrow {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  transition: transform 0.25s;
+}
+.nav_group.aberto .nav_arrow {
+  transform: rotate(-90deg);
+}
+/* grupo aberto: o destaque fica no filho ativo, não no pai */
+.nav_group.aberto > .nav_group-btn.active {
+  background: none;
+}
+.nav_group.aberto > .nav_group-btn.active::before {
+  display: none;
+}
+.nav_group.aberto > .nav_group-btn.active:hover {
+  background: var(--inn-navlink-hover);
+}
+
+.nav_filhos {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+.nav_filhos-in {
+  overflow: hidden;
+}
+.nav_group.aberto .nav_filhos {
+  grid-template-rows: 1fr;
+}
+.nav_sub {
+  grid-template-columns: 7px minmax(0, 1fr);
+  column-gap: 19px;
+  height: 34px;
+  padding-left: 20px;
+  font-size: 0.8rem;
+}
+.nav_bullet {
+  width: 7px;
+  height: 7px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+.nav_sub.active .nav_bullet {
+  background: var(--inn-gold);
+  border-color: var(--inn-gold);
+}
+
+/* rail recolhida (sem hover): filhos fechados e o pai volta a indicar a rota */
+@media (min-width: 769px) {
+  .l-navbar:not(.expanded):not(:hover) .nav_filhos {
+    grid-template-rows: 0fr;
+  }
+  .l-navbar:not(.expanded):not(:hover) .nav_group.aberto > .nav_group-btn.active {
+    background: var(--inn-navlink-hover);
+  }
+  .l-navbar:not(.expanded):not(:hover) .nav_group.aberto > .nav_group-btn.active::before {
+    display: block;
+  }
+}
+
+/* =====================================================================
+       CONTEÚDO
+       ===================================================================== */
+.content {
+  margin-top: calc(var(--header-height) + 2rem);
+  margin-left: calc(var(--nav-width) + 1rem);
+  padding: 0 1rem 2rem 0;
+  min-height: calc(100vh - var(--header-height) - 3rem);
+  transition: margin-left 0.25s ease;
+}
+.content-open {
+  margin-left: calc(var(--nav-width-open) + 1rem);
+}
+
+@media (max-width: 1180px) {
+  .hoje {
+    display: none;
+  }
+}
+@media (max-width: 980px) {
+  .user-txt,
+  .user-seta,
+  .divisor {
+    display: none;
+  }
+  .user-btn {
+    padding: 2px;
+  }
+}
+
+/* ===== mobile: sidebar off-canvas, header de ponta a ponta ===== */
+@media (max-width: 768px) {
+  .header,
+  .header-open {
+    left: 0;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    padding: 0 0.6rem;
+  }
+  .pagina {
+    display: none;
+  }
+  .header-right {
+    gap: 0.35rem;
+  }
+
+  .l-navbar {
+    left: -280px;
+    width: 264px;
+    transition: left 0.25s ease;
+  }
+  .l-navbar.expanded {
+    left: 0;
+    width: 264px;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+  }
+  .l-navbar:not(.expanded) .nav_logo img {
+    width: 130px;
+  }
+  .scrim {
+    display: block;
+    pointer-events: none;
+  }
+  .scrim-visivel {
+    pointer-events: auto;
+  }
+
+  .content,
+  .content-open {
+    margin-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .l-navbar,
+  .header,
+  .content,
+  .nav_filhos,
+  .nav_arrow,
+  .scrim {
+    transition: none;
+  }
+}
