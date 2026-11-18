@@ -62,19 +62,17 @@ fn verificacao_pendente() -> Response {
 impl FromRequestParts<AppState> for Ator {
     type Rejection = Response;
 
-    fn from_request_parts(
+    async fn from_request_parts(
         parts: &mut Parts,
         state: &AppState,
-    ) -> impl std::future::Future<Output = Result<Self, Self::Rejection>> {
-        async move {
-            let ator = extrair_ator(parts, state)?;
-            if let Some(v) = &state.services.verificacao {
-                if !v.acesso_permitido(ator.id, ator.is_admin()).await {
-                    return Err(verificacao_pendente());
-                }
+    ) -> Result<Self, Self::Rejection> {
+        let ator = extrair_ator(parts, state)?;
+        if let Some(v) = &state.services.verificacao {
+            if !v.acesso_permitido(ator.id, ator.is_admin()).await {
+                return Err(verificacao_pendente());
             }
-            Ok(ator)
         }
+        Ok(ator)
     }
 }
 
@@ -86,7 +84,7 @@ impl FromRequestParts<AppState> for AtorBasico {
         parts: &mut Parts,
         state: &AppState,
     ) -> impl std::future::Future<Output = Result<Self, Self::Rejection>> {
-        async move { extrair_ator(parts, state).map(AtorBasico) }
+        std::future::ready(extrair_ator(parts, state).map(AtorBasico))
     }
 }
 

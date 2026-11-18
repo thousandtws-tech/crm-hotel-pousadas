@@ -263,9 +263,8 @@ pub async fn webhook_spedy(
 
     // Assinatura obrigatória — sem segredo configurado ou sem headers
     // válidos o evento é recusado antes de qualquer efeito.
-    let segredo = match fiscal.webhook_secret(a).await {
-        Ok(Some(s)) => s,
-        _ => return StatusCode::UNAUTHORIZED,
+    let Ok(Some(segredo)) = fiscal.webhook_secret(a).await else {
+        return StatusCode::UNAUTHORIZED;
     };
     let valido = clarituz_infrastructure::integrations::spedy::verificar_assinatura(
         &segredo, &id, &ts, &corpo, &sig,

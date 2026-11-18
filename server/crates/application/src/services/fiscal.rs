@@ -430,7 +430,7 @@ impl FiscalService {
                 "natureza da tributação (taxationType)",
             ),
         ] {
-            if cfg[campo].as_str().map(str::is_empty).unwrap_or(true) {
+            if cfg[campo].as_str().is_none_or(str::is_empty) {
                 pendencias.push(rotulo.to_string());
             }
         }
@@ -750,33 +750,30 @@ impl FiscalService {
             ))
             .into());
         }
-        match doc.remote_id.clone() {
-            // Já aceita no provedor → POST /issue.
-            Some(remote) => {
-                let (_, cli) = self.cliente_do_doc(&doc).await?;
-                let nota = cli.reprocessar(&remote).await?;
-                self.aplicar_remoto(doc.id, &nota, Some(ator.id)).await?;
-            }
+        // Já aceita no provedor → POST /issue.
+        if let Some(remote) = doc.remote_id.clone() {
+            let (_, cli) = self.cliente_do_doc(&doc).await?;
+            let nota = cli.reprocessar(&remote).await?;
+            self.aplicar_remoto(doc.id, &nota, Some(ator.id)).await?;
+        } else {
             // Nunca transmitida → volta para a fila com o mesmo
             // integration_id (payload inalterado).
-            None => {
-                self.repo
-                    .registrar_transicao(
-                        doc.id,
-                        StatusFiscal::Enfileirada,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        Some(ator.id),
-                    )
-                    .await?;
-                self.repo
-                    .reagendar(doc.id, 0, Utc::now(), "reprocessamento manual")
-                    .await?;
-            }
+            self.repo
+                .registrar_transicao(
+                    doc.id,
+                    StatusFiscal::Enfileirada,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    Some(ator.id),
+                )
+                .await?;
+            self.repo
+                .reagendar(doc.id, 0, Utc::now(), "reprocessamento manual")
+                .await?;
         }
         self.detalhe(ator, id).await
     }
@@ -939,7 +936,7 @@ impl FiscalService {
             return Ok(()); // status desconhecido — preservado no evento cru
         };
         // Nunca regride: autorizada→processando etc. é ignorado.
-        if !superior(&status, &doc.status) {
+        if !superior(status, doc.status) {
             return Ok(());
         }
         self.repo
@@ -959,17 +956,15 @@ impl FiscalService {
 }
 
 /// Ordem de progresso para tolerar entregas fora de ordem.
-fn superior(novo: &StatusFiscal, atual: &StatusFiscal) -> bool {
-    fn ordem(s: &StatusFiscal) -> u8 {
+fn superior(novo: StatusFiscal, atual: StatusFiscal) -> bool {
+    fn ordem(s: StatusFiscal) -> u8 {
         match s {
             StatusFiscal::Rascunho => 0,
-            StatusFiscal::Enfileirada => 1,
+            StatusFiscal::Enfileirada | StatusFiscal::Falha => 1,
             StatusFiscal::Processando => 2,
-            StatusFiscal::Autorizada => 3,
-            StatusFiscal::Rejeitada => 3,
+            StatusFiscal::Autorizada | StatusFiscal::Rejeitada => 3,
             StatusFiscal::CancelamentoSolicitado => 4,
             StatusFiscal::Cancelada => 5,
-            StatusFiscal::Falha => 1,
         }
     }
     ordem(novo) > ordem(atual)

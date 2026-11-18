@@ -235,7 +235,7 @@ fn corpo_preferencia(nova: &NovaCheckout) -> serde_json::Value {
         if let Some(email) = p.email.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
             payer.insert("email".into(), email.into());
         }
-        let doc: String = p.documento.chars().filter(|c| c.is_ascii_digit()).collect();
+        let doc: String = p.documento.chars().filter(char::is_ascii_digit).collect();
         let tipo_doc = super::tipo_documento_pagador(&doc);
         if let Some(t) = tipo_doc {
             payer.insert(
@@ -244,7 +244,7 @@ fn corpo_preferencia(nova: &NovaCheckout) -> serde_json::Value {
             );
         }
         if let Some(tel) = &p.telefone {
-            let d: String = tel.chars().filter(|c| c.is_ascii_digit()).collect();
+            let d: String = tel.chars().filter(char::is_ascii_digit).collect();
             let d = d
                 .strip_prefix("55")
                 .map(str::to_owned)

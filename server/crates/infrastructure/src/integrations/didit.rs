@@ -158,9 +158,9 @@ impl ProvedorVerificacao for DiditCliente {
             .await?;
         let n = v
             .as_array()
-            .map(|a| a.len())
-            .or_else(|| v["destinations"].as_array().map(|a| a.len()))
-            .or_else(|| v["items"].as_array().map(|a| a.len()))
+            .map(std::vec::Vec::len)
+            .or_else(|| v["destinations"].as_array().map(std::vec::Vec::len))
+            .or_else(|| v["items"].as_array().map(std::vec::Vec::len))
             .unwrap_or(0);
         Ok(format!("didit-ok ({n} destinos de webhook)"))
     }

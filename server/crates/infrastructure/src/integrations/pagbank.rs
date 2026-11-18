@@ -222,7 +222,7 @@ impl PaymentGateway for PagBankGateway {
             if let Some(email) = p.email.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
                 customer.insert("email".into(), email.into());
             }
-            let doc: String = p.documento.chars().filter(|c| c.is_ascii_digit()).collect();
+            let doc: String = p.documento.chars().filter(char::is_ascii_digit).collect();
             if super::tipo_documento_pagador(&doc).is_some() {
                 customer.insert("tax_id".into(), doc.into());
             }

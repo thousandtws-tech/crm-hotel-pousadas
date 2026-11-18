@@ -264,9 +264,8 @@ pub async fn webhook_channex(
     };
     let (sigs, ts) = (header("x-hmac-signature-256"), header("x-hmac-timestamp"));
 
-    let segredo = match dist.webhook_secret(a).await {
-        Ok(Some(s)) => s,
-        _ => return StatusCode::UNAUTHORIZED,
+    let Ok(Some(segredo)) = dist.webhook_secret(a).await else {
+        return StatusCode::UNAUTHORIZED;
     };
     match clarituz_infrastructure::integrations::channex::verificar_assinatura(
         &segredo, &ts, &corpo, &sigs,

@@ -247,7 +247,7 @@ fn gerar_com_tolerancia(
             });
         }
     }
-    candidatos.sort_by_key(|c| (c.deslocamento.map(|d| d.abs()).unwrap_or(0), c.inicio));
+    candidatos.sort_by_key(|c| (c.deslocamento.map_or(0, i32::abs), c.inicio));
     Ok(candidatos)
 }
 

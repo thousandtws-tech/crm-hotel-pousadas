@@ -59,6 +59,7 @@ pub trait FiscalRepository: Send + Sync {
     /// `integration_id` determinístico.
     async fn proxima_sequencia(&self, idintegracao: i64) -> Result<i64, DomainError>;
     /// Transição durável + atualização do snapshot remoto.
+    #[allow(clippy::too_many_arguments)]
     async fn registrar_transicao(
         &self,
         id: i64,

@@ -39,6 +39,7 @@ use crate::error::AppResult;
 pub type DiditFactory = Arc<dyn Fn(String) -> Arc<dyn ProvedorVerificacao> + Send + Sync>;
 
 #[derive(Debug, Serialize)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct MinhaVerificacao {
     pub status: String,
     pub rotulo: String,
@@ -172,8 +173,7 @@ impl VerificacaoService {
             .await?;
         let exigido = integ
             .as_ref()
-            .map(|i| i.habilitado && Self::cfg_bool(i, "exigir_verificacao"))
-            .unwrap_or(false);
+            .is_some_and(|i| i.habilitado && Self::cfg_bool(i, "exigir_verificacao"));
 
         let v = match &integ {
             Some(i) => self.repo.atual(ator.id, i.id).await?,
@@ -223,7 +223,7 @@ impl VerificacaoService {
                 return Ok(true);
             }
             let v = self.repo.atual(funcionario_id, i.id).await?;
-            Ok(v.map(|v| v.status_enum().aprovada()).unwrap_or(false))
+            Ok(v.is_some_and(|v| v.status_enum().aprovada()))
         }
         .await;
         match res {
@@ -488,8 +488,12 @@ impl VerificacaoService {
         if event_id.is_empty() {
             return Err(DomainError::validacao("webhook sem event_id").into());
         }
-        let session_id = payload["session_id"].as_str().map(|s| s.to_string());
-        let webhook_type = payload["webhook_type"].as_str().map(|s| s.to_string());
+        let session_id = payload["session_id"]
+            .as_str()
+            .map(std::string::ToString::to_string);
+        let webhook_type = payload["webhook_type"]
+            .as_str()
+            .map(std::string::ToString::to_string);
 
         let novo = self
             .repo

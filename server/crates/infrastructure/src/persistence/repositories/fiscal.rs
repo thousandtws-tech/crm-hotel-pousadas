@@ -11,6 +11,7 @@ use clarituz_domain::ports::{
 };
 use clarituz_domain::DomainError;
 use sqlx::PgPool;
+use std::fmt::Write as _;
 
 const COLS: &str = "id, idintegracao, idreserva, modelo, integration_id, remote_id,
     status, status_remoto, processing_detail, tomador, payload, valor_total,
@@ -105,25 +106,26 @@ impl FiscalRepository for PgFiscalRepository {
         let mut i = 1;
         if f.idreserva.is_some() {
             i += 1;
-            where_.push_str(&format!(" AND idreserva = ${i}"));
+            let _ = write!(where_, " AND idreserva = ${i}");
         }
         if f.status.is_some() {
             i += 1;
-            where_.push_str(&format!(" AND status = ${i}"));
+            let _ = write!(where_, " AND status = ${i}");
         }
         if f.de.is_some() {
             i += 1;
-            where_.push_str(&format!(" AND competencia >= ${i}"));
+            let _ = write!(where_, " AND competencia >= ${i}");
         }
         if f.ate.is_some() {
             i += 1;
-            where_.push_str(&format!(" AND competencia <= ${i}"));
+            let _ = write!(where_, " AND competencia <= ${i}");
         }
         if f.ambiente.is_some() {
             i += 1;
-            where_.push_str(&format!(
+            let _ = write!(
+                where_,
                 " AND idintegracao IN (SELECT id FROM integracao WHERE ambiente = ${i})"
-            ));
+            );
         }
         let limite = f.por_pagina.clamp(1, 100);
         let offset = (f.pagina.max(1) - 1) * limite;

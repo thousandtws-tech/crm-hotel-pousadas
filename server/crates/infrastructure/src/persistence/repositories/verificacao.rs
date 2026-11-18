@@ -120,7 +120,7 @@ impl VerificacaoRepository for PgVerificacaoRepository {
         page: PageParams,
         integracao_id: i64,
     ) -> Result<Page<VerificacaoListItem>, DomainError> {
-        let itens = sqlx::query_as::<_, VerificacaoListItem>(&format!(
+        let itens = sqlx::query_as::<_, VerificacaoListItem>(
             "SELECT v.id, v.integracao_id, v.funcionario_id, v.session_id, v.url,
                     v.vendor_data, v.status, v.status_remoto, v.resumo,
                     v.decidido_em, v.criado_em, v.atualizado_em,
@@ -129,11 +129,11 @@ impl VerificacaoRepository for PgVerificacaoRepository {
              JOIN funcionario f ON f.id = v.funcionario_id
              WHERE v.integracao_id = $1
              ORDER BY v.criado_em DESC
-             LIMIT $2 OFFSET $3"
-        ))
+             LIMIT $2 OFFSET $3",
+        )
         .bind(integracao_id)
-        .bind(page.limit() as i64)
-        .bind(page.offset() as i64)
+        .bind(page.limit())
+        .bind(page.offset())
         .fetch_all(&self.pool)
         .await
         .map_err(|e| {
@@ -163,15 +163,15 @@ impl VerificacaoRepository for PgVerificacaoRepository {
         resumo: &serde_json::Value,
         decidido: bool,
     ) -> Result<(), DomainError> {
-        sqlx::query(&format!(
+        sqlx::query(
             "UPDATE verificacao_identidade
              SET status = $2,
                  status_remoto = COALESCE($3, status_remoto),
-                 resumo = CASE WHEN $4 = '{{}}'::jsonb THEN resumo ELSE $4 END,
+                 resumo = CASE WHEN $4 = '{}'::jsonb THEN resumo ELSE $4 END,
                  decidido_em = CASE WHEN $5 THEN COALESCE(decidido_em, now()) ELSE decidido_em END,
                  atualizado_em = now()
-             WHERE id = $1"
-        ))
+             WHERE id = $1",
+        )
         .bind(id)
         .bind(status)
         .bind(status_remoto)

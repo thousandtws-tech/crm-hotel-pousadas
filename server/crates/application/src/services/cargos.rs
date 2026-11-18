@@ -40,24 +40,21 @@ impl CargosService {
     /// Resolve o par (cargo_id, nivel) efetivo para gravação de funcionário:
     /// `cargo_id` vence; `nivel` legado cai no cargo-base correspondente.
     pub async fn resolver(&self, cargo_id: Option<i64>, nivel: i16) -> AppResult<(i64, i16)> {
-        match cargo_id {
-            Some(id) => {
-                let c = self
-                    .repo
-                    .buscar(id)
-                    .await?
-                    .ok_or_else(|| DomainError::validacao("Cargo informado não existe."))?;
-                if !c.ativo {
-                    return Err(DomainError::validacao("Cargo informado está inativo.").into());
-                }
-                Ok((c.id, c.nivel))
+        if let Some(id) = cargo_id {
+            let c = self
+                .repo
+                .buscar(id)
+                .await?
+                .ok_or_else(|| DomainError::validacao("Cargo informado não existe."))?;
+            if !c.ativo {
+                return Err(DomainError::validacao("Cargo informado está inativo.").into());
             }
-            None => {
-                let c = self.repo.buscar_por_nivel(nivel).await?.ok_or_else(|| {
-                    DomainError::validacao("Nenhum cargo ativo para o nível informado.")
-                })?;
-                Ok((c.id, c.nivel))
-            }
+            Ok((c.id, c.nivel))
+        } else {
+            let c = self.repo.buscar_por_nivel(nivel).await?.ok_or_else(|| {
+                DomainError::validacao("Nenhum cargo ativo para o nível informado.")
+            })?;
+            Ok((c.id, c.nivel))
         }
     }
 

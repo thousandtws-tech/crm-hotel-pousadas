@@ -11,7 +11,6 @@
 //!   entregas de webhook são sinal, nunca verdade (doc. oficial).
 
 use async_trait::async_trait;
-use chrono::NaiveDate;
 use hmac::{Hmac, Mac};
 use reqwest::Client;
 use sha2::Sha256;
@@ -455,12 +454,6 @@ pub fn verificar_assinatura(
         }
     }
     Ok(false)
-}
-
-// serde auxiliar — `date`/`date_from`/`date_to` no ARI usam NaiveDate ISO.
-#[allow(dead_code)]
-fn _naive(d: &NaiveDate) -> String {
-    d.format("%Y-%m-%d").to_string()
 }
 
 #[cfg(test)]

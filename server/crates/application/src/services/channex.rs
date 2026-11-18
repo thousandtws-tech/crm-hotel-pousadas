@@ -382,8 +382,7 @@ impl ChannexService {
                     .repo
                     .mapa_por_acomodacao(integ.id, idacomodacao)
                     .await?
-                    .map(|m| m.ativo)
-                    .unwrap_or(false)
+                    .is_some_and(|m| m.ativo)
                 {
                     self.repo
                         .outbox_enfileirar(&[NovoOutboxAri {
@@ -506,9 +505,8 @@ impl ChannexService {
                     )
                     .await
                 {
-                    Ok(_) => enviados += 1,
-                    Err(ErroDistribuicao::RateLimit { .. })
-                    | Err(ErroDistribuicao::Transiente(_)) => {
+                    Ok(()) => enviados += 1,
+                    Err(ErroDistribuicao::RateLimit { .. } | ErroDistribuicao::Transiente(_)) => {
                         // Transiente → reenfileira com contador; estourou
                         // o limite → pendência (não gira pra sempre).
                         let tentativas = retry_de(&item.motivo) + 1;
@@ -615,7 +613,7 @@ impl ChannexService {
                 room_type_id: mapa.room_type_id.clone(),
                 date_from: ini_run,
                 date_to: d - chrono::Duration::days(1),
-                availability: if disponivel { 1 } else { 0 },
+                availability: i32::from(disponivel),
             });
         }
         // Envia em fatias — um POST por room type já é um lote grande.
@@ -663,7 +661,9 @@ impl ChannexService {
             closed_to_departure: None,
             stop_sell: None,
         };
-        let resp = cli.enviar_restricoes(&[restricao.clone()]).await?;
+        let resp = cli
+            .enviar_restricoes(std::slice::from_ref(&restricao))
+            .await?;
         self.repo
             .envio_registrar(
                 integ.id,
@@ -767,10 +767,8 @@ impl ChannexService {
         if !nova {
             // Já vista — recupera ACK pendente se aplicada e não-acked.
             if let Some(existente) = self.repo.revisao_por_id_remoto(integ.id, &rev.id).await? {
-                if existente.aplicada && !existente.ack {
-                    if cli.ack_revisao(&rev.id).await.is_ok() {
-                        self.repo.revisao_marcar_ack(existente.id).await?;
-                    }
+                if existente.aplicada && !existente.ack && cli.ack_revisao(&rev.id).await.is_ok() {
+                    self.repo.revisao_marcar_ack(existente.id).await?;
                 }
             }
             return Ok(ResultadoRevisao::Duplicada);
@@ -927,14 +925,12 @@ impl ChannexService {
                 self.acomodacoes
                     .buscar(mapa.idacomodacao)
                     .await?
-                    .map(|a| a.valor)
-                    .unwrap_or(Decimal::ZERO)
+                    .map_or(Decimal::ZERO, |a| a.valor)
             };
             let hospedes = room
                 .occupancy
                 .as_ref()
-                .map(|o| o.adults + o.children + o.infants)
-                .unwrap_or(1)
+                .map_or(1, |o| o.adults + o.children + o.infants)
                 .max(1);
 
             let nova = clarituz_domain::ports::NovaReserva {
@@ -1314,8 +1310,7 @@ fn retry_de(motivo: &str) -> u32 {
 fn motivo_base(motivo: &str) -> &str {
     motivo
         .split_once('·')
-        .map(|(_, resto)| resto.trim())
-        .unwrap_or(motivo)
+        .map_or(motivo, |(_, resto)| resto.trim())
 }
 
 /// Tarifa da acomodação: escada `tarifa_ocupacao` na capacidade cheia;

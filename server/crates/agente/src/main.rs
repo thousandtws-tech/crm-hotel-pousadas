@@ -442,20 +442,19 @@ fn descobrir_usb() -> Vec<Descoberta> {
             ])
             .output()
             .ok()
-            .map(|o| {
+            .map_or_default(|o| {
                 String::from_utf8_lossy(&o.stdout)
                     .lines()
                     .map(|l| l.trim().to_string())
                     .filter(|l| !l.is_empty())
                     .collect()
             })
-            .unwrap_or_default()
     } else {
         std::process::Command::new("lpstat")
             .arg("-v")
             .output()
             .ok()
-            .map(|o| {
+            .map_or_default(|o| {
                 String::from_utf8_lossy(&o.stdout)
                     .lines()
                     .filter_map(|l| {
@@ -466,7 +465,6 @@ fn descobrir_usb() -> Vec<Descoberta> {
                     .filter(|n| !n.is_empty())
                     .collect()
             })
-            .unwrap_or_default()
     };
     nomes
         .into_iter()

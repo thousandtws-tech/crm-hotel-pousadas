@@ -22,12 +22,12 @@ fn campos_permitidos(provedor: ProvedorIntegracao) -> &'static [&'static str] {
         ProvedorIntegracao::Mercadopago => &["access_token", "webhook_secret", "public_key"],
         ProvedorIntegracao::Zapi => &["instance_token", "client_token", "webhook_segredo"],
         // Spedy: chave por empresa (X-Api-Key) + segredo whsec_ do webhook.
-        ProvedorIntegracao::Spedy => &["api_key", "webhook_secret"],
         // Didit: sk_test_/sk_live_ (x-api-key) + secret_shared_key do webhook.
-        ProvedorIntegracao::Didit => &["api_key", "webhook_secret"],
         // Channex: user-api-key + signing secret do webhook HMAC
         // (x-hmac-signature-256) — capturado ao criar a signing key.
-        ProvedorIntegracao::Channex => &["api_key", "webhook_secret"],
+        ProvedorIntegracao::Spedy | ProvedorIntegracao::Didit | ProvedorIntegracao::Channex => {
+            &["api_key", "webhook_secret"]
+        }
     }
 }
 
@@ -162,6 +162,7 @@ pub struct TesteConexaoOutput {
 }
 
 impl IntegracoesService {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         repo: Arc<dyn IntegracaoRepository>,
         vault: Arc<dyn CredentialVault>,

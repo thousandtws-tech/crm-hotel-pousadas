@@ -187,9 +187,8 @@ pub async fn webhook_didit(
     };
     let (sig, ts) = (header("x-signature"), header("x-timestamp"));
 
-    let segredo = match verif.webhook_secret(a).await {
-        Ok(Some(s)) => s,
-        _ => return StatusCode::UNAUTHORIZED,
+    let Ok(Some(segredo)) = verif.webhook_secret(a).await else {
+        return StatusCode::UNAUTHORIZED;
     };
     if clarituz_infrastructure::integrations::didit::verificar_assinatura(
         &segredo, &sig, &ts, &corpo,
