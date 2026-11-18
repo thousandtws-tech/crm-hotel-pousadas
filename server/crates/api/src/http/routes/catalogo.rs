@@ -102,7 +102,6 @@ pub async fn remover_tipo(
     Ok(Json(Mensagem::ok("Tipo de acomodação removido.")))
 }
 
-
 #[derive(Debug, Deserialize)]
 pub struct AcomodacoesQuery {
     #[serde(flatten)]
@@ -186,7 +185,6 @@ pub async fn remover_acomodacao(
     Ok(Json(Mensagem::ok("Acomodação removida.")))
 }
 
-
 pub async fn listar_quartos(
     State(s): State<AppState>,
     _ator: Ator,
@@ -227,7 +225,6 @@ pub async fn remover_quarto(
     s.services.acomodacoes.remover_quarto(&ator, id).await?;
     Ok(Json(Mensagem::ok("Quarto removido.")))
 }
-
 
 pub async fn listar_vagas(
     State(s): State<AppState>,
@@ -278,7 +275,6 @@ pub async fn remover_vaga(
     s.services.estacionamento.remover(&ator, id).await?;
     Ok(Json(Mensagem::ok("Vaga removida.")))
 }
-
 
 pub async fn listar_frigobares(
     State(s): State<AppState>,
@@ -387,7 +383,6 @@ pub async fn remover_frigobar(
     Ok(Json(Mensagem::ok("Frigobar removido.")))
 }
 
-
 pub async fn listar_pagamentos(
     State(s): State<AppState>,
     _ator: Ator,
@@ -438,7 +433,6 @@ pub async fn remover_pagamento(
     s.services.pagamentos.remover(&ator, id).await?;
     Ok(Json(Mensagem::ok("Forma de pagamento removida.")))
 }
-
 
 pub async fn obter_estabelecimento(
     State(s): State<AppState>,

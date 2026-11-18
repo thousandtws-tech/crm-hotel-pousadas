@@ -47,7 +47,6 @@ pub async fn status(
     ))
 }
 
-
 const MAX_FOTO: usize = 8 * 1024 * 1024;
 const MAX_VIDEO: usize = 80 * 1024 * 1024;
 
@@ -157,7 +156,6 @@ pub async fn site_salvar(
     ))
 }
 
-
 pub async fn publico_site(
     State(s): State<AppState>,
 ) -> Result<Json<Vec<clarituz_domain::entities::CmsSecao>>, AppError> {
@@ -264,7 +262,6 @@ pub async fn publico_stream(
             .text("ping"),
     )
 }
-
 
 pub async fn publico_criar_reserva(
     State(s): State<AppState>,

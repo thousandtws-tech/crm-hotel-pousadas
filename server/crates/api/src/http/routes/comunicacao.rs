@@ -13,7 +13,6 @@ use crate::http::state::AppState;
 use clarituz_application::actor::Ator;
 use clarituz_application::actor::RequestCtx;
 
-
 pub async fn pre_ficha_get(
     State(st): State<AppState>,
     Path(token): Path<uuid::Uuid>,
@@ -74,7 +73,6 @@ pub async fn avaliacao_post(
         .await?;
     Ok(StatusCode::NO_CONTENT)
 }
-
 
 pub async fn concierge_get(
     State(st): State<AppState>,
@@ -180,7 +178,6 @@ pub async fn lgpd_exportar_publico(
         st.services.lgpd.exportar_cliente(None, r.idcliente).await?,
     ))
 }
-
 
 pub async fn lgpd_listar(
     State(st): State<AppState>,
@@ -346,7 +343,7 @@ pub async fn whatsapp_inbound(
     }
 
     let Ok(payload) = serde_json::from_slice::<serde_json::Value>(&body) else {
-        return StatusCode::OK; 
+        return StatusCode::OK;
     };
     let mensagens: Vec<(String, Option<String>, String)> = payload["entry"]
         .as_array()
@@ -425,7 +422,6 @@ pub async fn webhook_resend(
     StatusCode::OK
 }
 
-
 pub async fn fila_listar(
     State(st): State<AppState>,
     ator: Ator,
@@ -434,7 +430,6 @@ pub async fn fila_listar(
     let itens = st.services.comunicacao.listar_fila(200).await?;
     Ok(Json(serde_json::json!(itens)))
 }
-
 
 pub async fn matriz_listar(
     State(st): State<AppState>,
@@ -603,7 +598,6 @@ pub async fn push_unsubscribe(
 pub async fn push_vapid_key(State(st): State<AppState>) -> Json<serde_json::Value> {
     Json(serde_json::json!({ "publica": st.vapid_public_b64 }))
 }
-
 
 pub async fn cobranca_enviar(
     State(st): State<AppState>,

@@ -20,13 +20,13 @@ use std::sync::Arc;
 use chrono::{Datelike, Days, Months, NaiveDate};
 
 use crate::dto::reservas::{
-    BuscaAcomodacaoOut, BuscaAlternativaOut, BuscaDateInput, BuscaHospedesInput,
-    BuscaPublicaInput, BuscaPublicaResponse, StayPresetInput, TOLERANCIAS_VALIDAS,
+    BuscaAcomodacaoOut, BuscaAlternativaOut, BuscaDateInput, BuscaHospedesInput, BuscaPublicaInput,
+    BuscaPublicaResponse, StayPresetInput, TOLERANCIAS_VALIDAS,
 };
 use crate::error::AppResult;
 use clarituz_domain::ports::{CmsRepository, ReservaRepository};
-use clarituz_domain::DomainError;
 use clarituz_domain::value_objects::PeriodoEstadia;
+use clarituz_domain::DomainError;
 use clarituz_shared::time;
 
 /// Horizonte de entrada: 12 meses (cartões) a partir do mês corrente.
@@ -95,9 +95,7 @@ impl BuscaReservaService {
                     .values()
                     .find(|a| a.slug == *slug)
                     .map(|a| a.id)
-                    .ok_or_else(|| {
-                        DomainError::validacao("Acomodação da busca não encontrada.")
-                    })?,
+                    .ok_or_else(|| DomainError::validacao("Acomodação da busca não encontrada."))?,
             ),
             None => None,
         };
@@ -220,12 +218,18 @@ fn gerar_com_tolerancia(
     for d in -tolerancia..=tolerancia {
         let delta = Days::new(d.unsigned_abs() as u64);
         let (inicio, fim) = if d < 0 {
-            match (entrada.checked_sub_days(delta), saida.checked_sub_days(delta)) {
+            match (
+                entrada.checked_sub_days(delta),
+                saida.checked_sub_days(delta),
+            ) {
                 (Some(i), Some(f)) => (i, f),
                 _ => continue,
             }
         } else {
-            match (entrada.checked_add_days(delta), saida.checked_add_days(delta)) {
+            match (
+                entrada.checked_add_days(delta),
+                saida.checked_add_days(delta),
+            ) {
                 (Some(i), Some(f)) => (i, f),
                 _ => continue,
             }
@@ -264,9 +268,8 @@ fn gerar_flexiveis(
     let mut meses = BTreeSet::new();
     for m in months {
         let (y, mo) = parse_mes(m)?;
-        let primeiro = NaiveDate::from_ymd_opt(y, mo, 1).ok_or_else(|| {
-            DomainError::validacao(format!("Mês inválido: {m}."))
-        })?;
+        let primeiro = NaiveDate::from_ymd_opt(y, mo, 1)
+            .ok_or_else(|| DomainError::validacao(format!("Mês inválido: {m}.")))?;
         if fim_do_mes(primeiro) < hoje {
             return Err(DomainError::validacao(
                 "Não é possível pesquisar meses já passados.",
@@ -371,7 +374,14 @@ mod tests {
 
     #[test]
     fn tolerancia_zero_um_periodo() {
-        let c = gerar_com_tolerancia(d("2026-12-10"), d("2026-12-13"), 0, d("2026-11-01"), d("2027-11-01")).unwrap();
+        let c = gerar_com_tolerancia(
+            d("2026-12-10"),
+            d("2026-12-13"),
+            0,
+            d("2026-11-01"),
+            d("2027-11-01"),
+        )
+        .unwrap();
         assert_eq!(c.len(), 1);
         assert_eq!(c[0].inicio, d("2026-12-10"));
         assert_eq!(c[0].deslocamento, Some(0));
@@ -379,7 +389,14 @@ mod tests {
 
     #[test]
     fn tolerancia_dois_cinco_periodos_mesmas_noites() {
-        let c = gerar_com_tolerancia(d("2026-12-10"), d("2026-12-13"), 2, d("2026-11-01"), d("2027-11-01")).unwrap();
+        let c = gerar_com_tolerancia(
+            d("2026-12-10"),
+            d("2026-12-13"),
+            2,
+            d("2026-11-01"),
+            d("2027-11-01"),
+        )
+        .unwrap();
         assert_eq!(c.len(), 5);
         for c in &c {
             assert_eq!((c.fim - c.inicio).num_days(), 3);
@@ -390,19 +407,47 @@ mod tests {
 
     #[test]
     fn tolerancia_catorze_max_29_e_descarta_passado() {
-        let c = gerar_com_tolerancia(d("2026-12-10"), d("2026-12-13"), 14, d("2026-11-01"), d("2027-11-01")).unwrap();
+        let c = gerar_com_tolerancia(
+            d("2026-12-10"),
+            d("2026-12-13"),
+            14,
+            d("2026-11-01"),
+            d("2027-11-01"),
+        )
+        .unwrap();
         assert_eq!(c.len(), 29);
         // com "hoje" no meio da janela, os deslocamentos negativos que
         // caem no passado são removidos — sem rejeitar a busca inteira.
-        let c2 = gerar_com_tolerancia(d("2026-12-10"), d("2026-12-13"), 14, d("2026-12-10"), d("2027-11-01")).unwrap();
+        let c2 = gerar_com_tolerancia(
+            d("2026-12-10"),
+            d("2026-12-13"),
+            14,
+            d("2026-12-10"),
+            d("2027-11-01"),
+        )
+        .unwrap();
         assert!(c2.len() < 29);
         assert!(c2.iter().all(|c| c.inicio >= d("2026-12-10")));
     }
 
     #[test]
     fn tolerancia_invalida_rejeita() {
-        assert!(gerar_com_tolerancia(d("2026-12-10"), d("2026-12-13"), 5, d("2026-11-01"), d("2027-11-01")).is_err());
-        assert!(gerar_com_tolerancia(d("2026-12-13"), d("2026-12-10"), 0, d("2026-11-01"), d("2027-11-01")).is_err());
+        assert!(gerar_com_tolerancia(
+            d("2026-12-10"),
+            d("2026-12-13"),
+            5,
+            d("2026-11-01"),
+            d("2027-11-01")
+        )
+        .is_err());
+        assert!(gerar_com_tolerancia(
+            d("2026-12-13"),
+            d("2026-12-10"),
+            0,
+            d("2026-11-01"),
+            d("2027-11-01")
+        )
+        .is_err());
     }
 
     #[test]
@@ -483,19 +528,36 @@ mod tests {
             d("2027-11-17"),
         )
         .is_err());
-        assert!(gerar_flexiveis(StayPresetInput::Week, &[], d("2026-11-17"), d("2027-11-17")).is_err());
+        assert!(
+            gerar_flexiveis(StayPresetInput::Week, &[], d("2026-11-17"), d("2027-11-17")).is_err()
+        );
     }
 
     #[test]
     fn hospedes_validacao() {
         assert!(validar_hospedes(&BuscaHospedesInput {
-            adults: 0, children: 0, infants: 0, pets: 0,
-        }).is_err());
+            adults: 0,
+            children: 0,
+            infants: 0,
+            pets: 0,
+        })
+        .is_err());
         assert!(validar_hospedes(&BuscaHospedesInput {
-            adults: 1, children: -1, infants: 0, pets: 0,
-        }).is_err());
-        assert_eq!(validar_hospedes(&BuscaHospedesInput {
-            adults: 2, children: 1, infants: 1, pets: 2,
-        }).unwrap(), 4);
+            adults: 1,
+            children: -1,
+            infants: 0,
+            pets: 0,
+        })
+        .is_err());
+        assert_eq!(
+            validar_hospedes(&BuscaHospedesInput {
+                adults: 2,
+                children: 1,
+                infants: 1,
+                pets: 2,
+            })
+            .unwrap(),
+            4
+        );
     }
 }

@@ -30,7 +30,6 @@ pub struct AtivosQuery {
     pub apenas_ativos: bool,
 }
 
-
 pub async fn listar_categorias(
     State(s): State<AppState>,
     _ator: Ator,
@@ -179,7 +178,6 @@ pub async fn listar_movimentos(
             .await?,
     ))
 }
-
 
 pub async fn listar_ficha(
     State(s): State<AppState>,
