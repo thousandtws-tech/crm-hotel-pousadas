@@ -1,6 +1,7 @@
 // Lógica e estado de integracao-didit — separada da camada de UI (integracao-didit.component.ts).
 // O componente herda os membros; templates e comportamento não mudam.
-import { OnInit, inject, signal, Directive } from '@angular/core';
+import { DestroyRef, OnInit, inject, signal, Directive } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { FormControl, FormBuilder } from '@angular/forms';
 import { IntegracoesApi } from '@core/api/integracoes.api';
@@ -17,6 +18,7 @@ import {
 @Directive()
 export abstract class IntegracaoDiditStore implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(IntegracoesApi);
   private readonly verificacao = inject(VerificacaoApi);
   private readonly notify = inject(NotifyService);
@@ -46,7 +48,7 @@ export abstract class IntegracaoDiditStore implements OnInit {
   }
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe((p) => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p) => {
       this.ambiente.set(p.get('ambiente') === 'teste' ? 'teste' : 'producao');
       this.carregar();
     });

@@ -1,7 +1,8 @@
 // Lógica e estado de integracao-zapi — separada da camada de UI (integracao-zapi.component.ts).
 // O componente herda os membros; templates e comportamento não mudam.
 import { HttpErrorResponse } from '@angular/common/http';
-import { OnInit, computed, inject, signal, Directive } from '@angular/core';
+import { DestroyRef, OnInit, computed, inject, signal, Directive } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { IntegracoesApi } from '@core/api/integracoes.api';
@@ -29,6 +30,7 @@ import {
 @Directive()
 export abstract class IntegracaoZapiStore implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(IntegracoesApi);
   private readonly notify = inject(NotifyService);
   private readonly confirm = inject(ConfirmService);
@@ -83,7 +85,7 @@ export abstract class IntegracaoZapiStore implements OnInit {
     for (const c of this.campos) {
       this.controles[c.nome] = this.fb.nonNullable.control('');
     }
-    this.route.paramMap.subscribe((p) => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p) => {
       // Z-API só existe em produção — qualquer outro ambiente é rota inválida.
       if (p.get('ambiente') !== 'producao') {
         this.carregando.set(false);

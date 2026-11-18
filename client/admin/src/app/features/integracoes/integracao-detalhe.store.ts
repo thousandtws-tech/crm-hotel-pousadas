@@ -1,7 +1,8 @@
 // Lógica e estado de integracao-detalhe — separada da camada de UI (integracao-detalhe.component.ts).
 // O componente herda os membros; templates e comportamento não mudam.
 import { HttpErrorResponse } from '@angular/common/http';
-import { OnInit, computed, inject, signal, Directive } from '@angular/core';
+import { DestroyRef, OnInit, computed, inject, signal, Directive } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { IntegracoesApi } from '@core/api/integracoes.api';
@@ -27,6 +28,7 @@ const AMBIENTES: M.AmbienteIntegracao[] = ['producao', 'teste'];
 @Directive()
 export abstract class IntegracaoDetalheStore implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(IntegracoesApi);
   private readonly notify = inject(NotifyService);
   private readonly fb = inject(FormBuilder);
@@ -60,7 +62,7 @@ export abstract class IntegracaoDetalheStore implements OnInit {
   protected readonly estadoDe = estadoDe;
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe((p) => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p) => {
       const provedor = p.get('provedor') as M.ProvedorPagamento;
       const ambiente = p.get('ambiente') as M.AmbienteIntegracao;
       if (!PROVEDORES.includes(provedor) || !AMBIENTES.includes(ambiente)) {

@@ -6,7 +6,13 @@ import {
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { PreloadAllModules, provideRouter, withPreloading } from '@angular/router';
+import {
+  PreloadAllModules,
+  provideRouter,
+  withComponentInputBinding,
+  withInMemoryScrolling,
+  withPreloading,
+} from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideServiceWorker } from '@angular/service-worker';
 import { MatPaginatorIntl } from '@angular/material/paginator';
@@ -22,7 +28,12 @@ registerLocaleData(localePt);
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes, withPreloading(PreloadAllModules)),
+    provideRouter(
+      routes,
+      withPreloading(PreloadAllModules),
+      withComponentInputBinding(),
+      withInMemoryScrolling({ scrollPositionRestoration: 'enabled' }),
+    ),
     provideAnimationsAsync(),
     provideHttpClient(withInterceptors([authInterceptor])),
     { provide: LOCALE_ID, useValue: 'pt-BR' },

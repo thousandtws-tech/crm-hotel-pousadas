@@ -1,6 +1,7 @@
 // Lógica e estado de integracao-channex — separada da camada de UI (integracao-channex.component.ts).
 // O componente herda os membros; templates e comportamento não mudam.
-import { OnInit, inject, signal, Directive } from '@angular/core';
+import { DestroyRef, OnInit, inject, signal, Directive } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { IntegracoesApi } from '@core/api/integracoes.api';
@@ -17,6 +18,7 @@ import { estadoDe, rotuloAmbiente } from './integracoes.const';
 @Directive()
 export abstract class IntegracaoChannexStore implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(IntegracoesApi);
   private readonly notify = inject(NotifyService);
   private readonly fb = inject(FormBuilder);
@@ -39,7 +41,7 @@ export abstract class IntegracaoChannexStore implements OnInit {
   protected readonly estadoDe = estadoDe;
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe((p) => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p) => {
       this.ambiente.set((p.get('ambiente') as M.AmbienteIntegracao) ?? 'producao');
       this.carregar();
     });

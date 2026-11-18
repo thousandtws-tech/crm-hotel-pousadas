@@ -1,7 +1,8 @@
 // Lógica e estado de integracao-spedy — separada da camada de UI (integracao-spedy.component.ts).
 // O componente herda os membros; templates e comportamento não mudam.
 import { HttpErrorResponse } from '@angular/common/http';
-import { OnInit, inject, signal, Directive } from '@angular/core';
+import { DestroyRef, OnInit, inject, signal, Directive } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { IntegracoesApi } from '@core/api/integracoes.api';
@@ -45,6 +46,7 @@ export abstract class IntegracaoSpedyStore implements OnInit {
   private readonly api = inject(IntegracoesApi);
   private readonly notify = inject(NotifyService);
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(FormBuilder);
 
   protected readonly i = signal<M.IntegracaoView | null>(null);
@@ -83,7 +85,7 @@ export abstract class IntegracaoSpedyStore implements OnInit {
   private readonly controles: Record<string, FormControl<string>> = {};
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe((p) => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p) => {
       const a = p.get('ambiente') === 'teste' ? 'teste' : 'producao';
       this.ambiente.set(a);
       for (const c of this.campos) this.controle(c.nome);
