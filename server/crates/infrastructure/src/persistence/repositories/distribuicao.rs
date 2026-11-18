@@ -447,6 +447,23 @@ impl DistribuicaoRepository for PgDistribuicaoRepository {
         Ok(())
     }
 
+    async fn pendencia_resolver_por_revisao(
+        &self,
+        idintegracao: i64,
+        revision_id: &str,
+    ) -> Result<u64, DomainError> {
+        let r = sqlx::query(
+            "UPDATE distribuicao_pendencia SET resolvida = true, resolvido_em = now()
+             WHERE idintegracao = $1 AND revision_id = $2 AND resolvida = false",
+        )
+        .bind(idintegracao)
+        .bind(revision_id)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(r.rows_affected())
+    }
+
     // -- resumo ----------------------------------------------------------------
 
     async fn resumo(&self, idintegracao: i64) -> Result<ResumoDistribuicao, DomainError> {

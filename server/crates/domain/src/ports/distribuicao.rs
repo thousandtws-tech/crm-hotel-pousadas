@@ -384,6 +384,13 @@ pub trait DistribuicaoRepository: Send + Sync {
         abertas: bool,
     ) -> Result<Vec<PendenciaDistribuicao>, DomainError>;
     async fn pendencia_resolver(&self, id: i64) -> Result<(), DomainError>;
+    /// Fecha as pendências abertas de uma revisão — usado quando o
+    /// reprocessamento aplica com sucesso (não exige ação manual extra).
+    async fn pendencia_resolver_por_revisao(
+        &self,
+        idintegracao: i64,
+        revision_id: &str,
+    ) -> Result<u64, DomainError>;
 
     // -- resumo -------------------------------------------------------------
     async fn resumo(&self, idintegracao: i64) -> Result<ResumoDistribuicao, DomainError>;

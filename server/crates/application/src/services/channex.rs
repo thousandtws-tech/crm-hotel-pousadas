@@ -1187,6 +1187,11 @@ impl ChannexService {
             .map_err(|e| DomainError::regra(format!("payload ilegível: {e}")))?;
         self.aplicar_revisao(&integ, &rev).await?;
         self.repo.revisao_marcar(local.id, true, None).await?;
+        // Aplicou → as pendências que a falta de mapeamento gerou perdem
+        // a razão de existir; fechar aqui evita o clique extra.
+        self.repo
+            .pendencia_resolver_por_revisao(integ.id, revision_id)
+            .await?;
         if !local.ack && cli.ack_revisao(revision_id).await.is_ok() {
             self.repo.revisao_marcar_ack(local.id).await?;
         }
