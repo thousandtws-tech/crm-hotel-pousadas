@@ -2,7 +2,7 @@
 import { Component } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { DateInputComponent } from '@shared/components/date-input.component';
+import { DateInputComponent } from '@shared/components/date-input/date-input.component';
 import { RouterLink } from '@angular/router';
 import { InsumosStore } from './insumos.store';
 

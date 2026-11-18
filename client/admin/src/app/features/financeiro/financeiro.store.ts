@@ -17,7 +17,7 @@ import { ReservaResumo } from '@core/models/reservas.models';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
 import { TourGuiado } from '@core/services/tour.service';
-import { EChartOption } from '@shared/components/echart.component';
+import { EChartOption } from '@shared/components/echart/echart.component';
 
 type Preset = 'mes' | 'mesAnt' | 'd30' | 'ano' | 'custom';
 

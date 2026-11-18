@@ -10,7 +10,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { MatTabsModule } from '@angular/material/tabs';
 import { num } from '@core/utils/num';
-import { EChartComponent } from '@shared/components/echart.component';
+import { EChartComponent } from '@shared/components/echart/echart.component';
 import { FinNavComponent } from './fin-nav.component';
 import { FinanceiroStore } from './financeiro.store';
 

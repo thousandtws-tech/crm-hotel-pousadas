@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { num } from '@core/utils/num';
-import { EChartComponent } from '@shared/components/echart.component';
+import { EChartComponent } from '@shared/components/echart/echart.component';
 import { FinNavComponent } from './fin-nav.component';
 import { FinFluxoCaixaStore } from './fluxo-caixa.store';
 

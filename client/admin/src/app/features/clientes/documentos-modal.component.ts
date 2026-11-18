@@ -5,8 +5,8 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Cliente } from '@core/models/clientes.models';
-import { DateInputComponent } from '@shared/components/date-input.component';
-import { FotoCaptureComponent } from '@shared/components/foto-capture.component';
+import { DateInputComponent } from '@shared/components/date-input/date-input.component';
+import { FotoCaptureComponent } from '@shared/components/foto-capture/foto-capture.component';
 import { imprimirFnrh } from '@shared/utils/fnrh-print';
 import { DocumentosModalStore } from './documentos-modal.store';
 

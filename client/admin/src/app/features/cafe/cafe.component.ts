@@ -1,7 +1,7 @@
 // UI de cafe — template, estilos e bindings. A lógica vive em cafe.store.ts.
 import { Component } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { DateInputComponent } from '@shared/components/date-input.component';
+import { DateInputComponent } from '@shared/components/date-input/date-input.component';
 import { CafeStore } from './cafe.store';
 
 @Component({

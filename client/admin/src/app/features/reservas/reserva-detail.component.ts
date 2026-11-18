@@ -6,7 +6,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { num } from '@core/utils/num';
-import { DateInputComponent } from '@shared/components/date-input.component';
+import { DateInputComponent } from '@shared/components/date-input/date-input.component';
 import { imprimirFnrh } from '@shared/utils/fnrh-print';
 import { ReservaFiscalComponent } from './reserva-fiscal.component';
 import { ReservaDetailStore } from './reserva-detail.store';

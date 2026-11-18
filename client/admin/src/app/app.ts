@@ -1,8 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { SwUpdate } from '@angular/service-worker';
-import { ConfirmDialogComponent } from '@shared/components/confirm-dialog.component';
-import { ToastContainerComponent } from '@shared/components/toast-container.component';
+import { ConfirmDialogComponent } from '@shared/components/confirm-dialog/confirm-dialog.component';
+import { ToastContainerComponent } from '@shared/components/toast-container/toast-container.component';
 
 @Component({
   imports: [RouterOutlet, ToastContainerComponent, ConfirmDialogComponent],

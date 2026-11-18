@@ -7,8 +7,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { Cliente } from '@core/models/clientes.models';
-import { DateInputComponent } from '@shared/components/date-input.component';
-import { FotoCaptureComponent } from '@shared/components/foto-capture.component';
+import { DateInputComponent } from '@shared/components/date-input/date-input.component';
+import { FotoCaptureComponent } from '@shared/components/foto-capture/foto-capture.component';
 import { DocumentosModalComponent } from './documentos-modal.component';
 import { ClientesStore } from './clientes.store';
 

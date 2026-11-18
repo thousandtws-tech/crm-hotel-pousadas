@@ -3,7 +3,7 @@ import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { EChartComponent } from '@shared/components/echart.component';
+import { EChartComponent } from '@shared/components/echart/echart.component';
 import { DashboardStore } from './dashboard.store';
 
 @Component({

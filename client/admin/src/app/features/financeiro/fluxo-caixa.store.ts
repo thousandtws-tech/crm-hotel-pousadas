@@ -6,7 +6,7 @@ import { FinanceiroApi } from '@core/api/financeiro.api';
 import { num } from '@core/utils/num';
 import { FluxoCaixa } from '@core/models/financeiro.models';
 import { Notify } from '@core/services/notify.service';
-import { EChartOption } from '@shared/components/echart.component';
+import { EChartOption } from '@shared/components/echart/echart.component';
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmt = (v: string | number | null | undefined) => BRL.format(num(v));

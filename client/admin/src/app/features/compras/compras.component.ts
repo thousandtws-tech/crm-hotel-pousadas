@@ -3,7 +3,7 @@ import { DatePipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { DateInputComponent } from '@shared/components/date-input.component';
+import { DateInputComponent } from '@shared/components/date-input/date-input.component';
 import { Fornecedor } from '@core/models/compras.models';
 import { ComprasStore } from './compras.store';
 

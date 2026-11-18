@@ -8,7 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import * as M from '@core/models';
 import { Cargo } from '@core/models/funcionarios.models';
-import { DateInputComponent } from '@shared/components/date-input.component';
+import { DateInputComponent } from '@shared/components/date-input/date-input.component';
 import { FuncionariosStore } from './funcionarios.store';
 
 @Component({

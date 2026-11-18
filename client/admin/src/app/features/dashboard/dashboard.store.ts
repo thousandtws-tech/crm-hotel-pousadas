@@ -7,7 +7,7 @@ import { DashboardResponse, PontoSerie, ResumoFinanceiro } from '@core/models/re
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
 import { TourGuiado } from '@core/services/tour.service';
-import { EChartOption } from '@shared/components/echart.component';
+import { EChartOption } from '@shared/components/echart/echart.component';
 
 type Preset = 'd7' | 'd30' | 'mes' | 'mesAnt';
 
