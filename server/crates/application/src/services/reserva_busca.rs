@@ -459,7 +459,7 @@ mod tests {
             d("2027-11-17"),
         )
         .unwrap();
-        assert!(!c.is_empty());
+        assert_ne!(c.len(), 0);
         for c in &c {
             assert_eq!(c.inicio.weekday(), Weekday::Fri);
             assert_eq!((c.fim - c.inicio).num_days(), 2);

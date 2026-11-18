@@ -383,7 +383,7 @@ impl PaymentGateway for MercadoPagoGateway {
         Ok(format!(
             "mp-{}{}",
             u.id,
-            u.nickname.map(|n| format!(" ({n})")).unwrap_or_default()
+            u.nickname.map_or_default(|n| format!(" ({n})"))
         ))
     }
 }

@@ -95,23 +95,20 @@ async fn erro_status(ctx: &str, r: reqwest::Response) -> ErroDistribuicao {
 
 /// Envelope JSON:API — `data[]` de recursos `type` + `attributes`.
 fn recursos(v: &serde_json::Value, tipo: &str) -> Vec<serde_json::Value> {
-    v["data"]
-        .as_array()
-        .map(|a| {
-            a.iter()
-                .filter(|r| r["type"].as_str() == Some(tipo) || tipo.is_empty())
-                .map(|r| {
-                    let mut attrs = r["attributes"].clone();
-                    // `id` sempre presente no nível do recurso — garante
-                    // quando o attribute omitir.
-                    if attrs["id"].is_null() {
-                        attrs["id"] = r["id"].clone();
-                    }
-                    attrs
-                })
-                .collect()
-        })
-        .unwrap_or_default()
+    v["data"].as_array().map_or_default(|a| {
+        a.iter()
+            .filter(|r| r["type"].as_str() == Some(tipo) || tipo.is_empty())
+            .map(|r| {
+                let mut attrs = r["attributes"].clone();
+                // `id` sempre presente no nível do recurso — garante
+                // quando o attribute omitir.
+                if attrs["id"].is_null() {
+                    attrs["id"] = r["id"].clone();
+                }
+                attrs
+            })
+            .collect()
+    })
 }
 
 pub struct ChannexCliente {

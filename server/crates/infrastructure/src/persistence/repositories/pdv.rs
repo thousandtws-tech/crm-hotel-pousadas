@@ -594,9 +594,7 @@ impl PdvRepository for PgPdvRepository {
             .bind(idfuncionario)
             .bind(format!(
                 "Estorno comanda Nº{idcomanda}{}",
-                motivo
-                    .map(|m| format!(" — {}", m.trim()))
-                    .unwrap_or_default()
+                motivo.map_or_default(|m| format!(" — {}", m.trim()))
             ))
             .execute(&mut *tx)
             .await

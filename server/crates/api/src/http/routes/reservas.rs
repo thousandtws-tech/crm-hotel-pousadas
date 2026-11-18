@@ -134,7 +134,7 @@ pub async fn checkin(
     Path(id): Path<i64>,
     body: Option<Json<CheckinRequest>>,
 ) -> Result<Json<Reserva>, AppError> {
-    let req = body.map(|b| b.0).unwrap_or_default();
+    let req = body.map_or_default(|b| b.0);
     Ok(Json(
         s.services
             .reservas
