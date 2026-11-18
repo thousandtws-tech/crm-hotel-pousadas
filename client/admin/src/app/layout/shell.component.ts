@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { AuthStore } from '@core/services/auth.store';
 import { Realtime } from '@core/services/realtime.service';
 import { Notificacoes } from '@core/services/notificacoes.service';
-import { MariaWidgetComponent } from '@features/maria/maria-widget.component';
+import { MariaWidgetComponent } from '@features/maria/maria-widget/maria-widget.component';
 import { Notificacao } from '@core/models/notificacoes.models';
 import { filter } from 'rxjs';
 
