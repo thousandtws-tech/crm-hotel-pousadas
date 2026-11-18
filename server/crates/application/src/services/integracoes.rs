@@ -200,6 +200,7 @@ impl IntegracoesService {
             ProvedorIntegracao::Zapi,
             ProvedorIntegracao::Spedy,
             ProvedorIntegracao::Didit,
+            ProvedorIntegracao::Channex,
         ] {
             let padrao = self.repo.padrao(escopo_padrao(provedor)).await?;
             for ambiente in provedor.ambientes() {
