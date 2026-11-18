@@ -49,7 +49,7 @@ impl PaymentGateway for FakeGateway {
     async fn consultar_pagamento(&self, ref_id: &str) -> Result<ConsultaPagamento, DomainError> {
         Ok(ConsultaPagamento {
             status: self.pi_status,
-            referencia: Some(ref_id.to_string()),
+            referencia: None,
             id_provedor: Some(ref_id.to_string()),
             metodo: Some("card".into()),
         })
@@ -122,6 +122,7 @@ fn evento_session(
             "data": {"object": {
                 "id": session_id,
                 "payment_intent": pi_id,
+                "payment_status": "paid",
                 "payment_method_types": ["card"],
             }}
         }),
