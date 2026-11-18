@@ -216,6 +216,16 @@ async fn padrao_site_e_unico_e_resolver_retorna_gateway(pool: PgPool) {
             )
             .await
             .unwrap();
+        // Habilitar exige teste de conexão bem-sucedido — simula um
+        // `testar` aprovado (o gateway real não existe no e2e).
+        sqlx::query(
+            "UPDATE integracao SET verificacao_status = 'ok'
+             WHERE provedor = $1 AND ambiente = 'producao'",
+        )
+        .bind(p.as_str())
+        .execute(&pool)
+        .await
+        .unwrap();
         svc.habilitacao(
             &c.ator,
             p,
@@ -285,6 +295,13 @@ async fn desativada_nao_resolve_mas_historico_sim(pool: PgPool) {
             webhook_url: None,
         },
     )
+    .await
+    .unwrap();
+    sqlx::query(
+        "UPDATE integracao SET verificacao_status = 'ok'
+         WHERE provedor = 'pagbank' AND ambiente = 'producao'",
+    )
+    .execute(&pool)
     .await
     .unwrap();
     svc.habilitacao(
