@@ -12,7 +12,10 @@ const VAZIO =
   '<tr><td colspan="4" style="text-align:center;color:#777">Sem acompanhantes</td></tr>';
 
 const preencher = (doc: string, tokens: Record<string, string>): string =>
-  Object.entries(tokens).reduce((acc, [k, v]) => acc.replaceAll(`{{${k}}}`, v), doc);
+  Object.entries(tokens).reduce(
+    (acc, [k, v]) => acc.replaceAll(new RegExp(`\\{\\{\\s*${k}\\s*\\}\\}`, 'g'), v),
+    doc,
+  );
 
 /** Renderiza o documento HTML completo da ficha. */
 export function fnrhHtml(v: FnrhView): string {

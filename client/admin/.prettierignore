@@ -1,0 +1,4 @@
+# Templates com placeholders {{TOKEN}} — prettier reescreve como
+# interpolação Angular e quebra o replaceAll em runtime.
+src/app/shared/utils/fnrh-print.template.html
+src/app/shared/utils/fnrh-acompanhante.html
