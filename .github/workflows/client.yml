@@ -2,9 +2,9 @@ name: client
 
 on:
   push:
-    paths: ["client/admin/**", "client/web/**", ".github/workflows/client.yml"]
+    paths: ["client/admin/**", "client/web/**", "client/e2e/**", ".github/workflows/client.yml"]
   pull_request:
-    paths: ["client/admin/**", "client/web/**", ".github/workflows/client.yml"]
+    paths: ["client/admin/**", "client/web/**", "client/e2e/**", ".github/workflows/client.yml"]
 
 env:
   NODE_VERSION: "22"
