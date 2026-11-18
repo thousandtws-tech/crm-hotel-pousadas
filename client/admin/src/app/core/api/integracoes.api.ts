@@ -119,7 +119,7 @@ export class IntegracoesApi extends ApiHttp {
   }
 
   distDesmapear(ambiente: M.AmbienteIntegracao, id: number) {
-    return this.delete<null>(`/distribuicao/${ambiente}/mapeamentos/${id}`);
+    return this.del<null>(`/distribuicao/${ambiente}/mapeamentos/${id}`);
   }
 
   distSincronizar(ambiente: M.AmbienteIntegracao, inicio: string, fim: string) {

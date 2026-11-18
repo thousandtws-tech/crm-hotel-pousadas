@@ -36,6 +36,7 @@ const DESCRITOR_PROVEDOR: Record<M.ProvedorIntegracao, string> = {
   zapi: 'WhatsApp Business',
   spedy: 'NFS-e de hospedagem',
   didit: 'Verificação de identidade (KYC)',
+  channex: 'Channel manager (OTAs)',
 };
 
 /**
