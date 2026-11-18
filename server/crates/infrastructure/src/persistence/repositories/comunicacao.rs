@@ -294,6 +294,23 @@ impl FilaEnvioRepository for PgFilaEnvio {
         .map_err(map_db_err)
     }
 
+    async fn falhas(
+        &self,
+        desde: DateTime<Utc>,
+        limite: i64,
+    ) -> Result<Vec<ItemFila>, DomainError> {
+        sqlx::query_as::<_, ItemFila>(
+            "SELECT * FROM fila_envio
+             WHERE status IN ('falhou','desconhecido') AND agendado_para >= $1
+             ORDER BY id LIMIT $2",
+        )
+        .bind(desde)
+        .bind(limite)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
     async fn email_suprimido(&self, email: &str) -> Result<bool, DomainError> {
         sqlx::query_scalar::<_, bool>(
             "SELECT EXISTS(SELECT 1 FROM email_supressao WHERE email = lower(trim($1)))",
@@ -701,9 +718,11 @@ impl FidelidadeRepository for PgFidelidadeRepository {
                  'estadias', COUNT(*) FILTER (WHERE r.status IN ('i','f')),
                  'diarias',  COALESCE(SUM(r.saidaprevista - r.entradaprevista)
                               FILTER (WHERE r.status IN ('i','f')),0),
-                 'ltv_centavos', COALESCE(SUM(r.valor_total * 100)::bigint
+                 'ltv_centavos', COALESCE(SUM(r.valordiaria
+                              * (r.saidaprevista - r.entradaprevista) * 100)::bigint
                               FILTER (WHERE r.status IN ('i','f')),0),
-                 'ticket_medio_centavos', COALESCE(AVG(r.valor_total * 100)::bigint
+                 'ticket_medio_centavos', COALESCE(AVG(r.valordiaria
+                              * (r.saidaprevista - r.entradaprevista) * 100)::bigint
                               FILTER (WHERE r.status IN ('i','f')),0),
                  'ultima_estadia', MAX(r.saidaprevista)
                               FILTER (WHERE r.status IN ('i','f'))
@@ -826,7 +845,8 @@ impl AutomacaoRepository for PgAutomacaoRepository {
                     COALESCE(c.whatsapp_optin, false) AS whatsapp_optin,
                     a.nome AS acomodacao_nome, r.quantidade_hospedes,
                     r.entradaprevista, r.saidaprevista, r.status,
-                    r.valor_total, r.token_publico, r.expira_em,
+                    (r.valordiaria * (r.saidaprevista - r.entradaprevista)) AS valor_total,
+                    r.token_publico, r.expira_em,
                     COALESCE(SUM(p.valor_centavos)
                              FILTER (WHERE p.status = 'pago'), 0)::bigint AS pago_centavos,
                     COALESCE(SUM(p.valor_centavos)

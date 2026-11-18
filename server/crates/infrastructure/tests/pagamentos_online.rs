@@ -89,6 +89,7 @@ fn service(pool: &PgPool) -> PagamentosOnlineService {
         "https://site.teste/ok".into(),
         "https://site.teste/cancel".into(),
         None, // public_api_url — sem notification_url por sessão no teste
+        None, // comunicacao — sem outbox de WhatsApp no teste
     )
 }
 

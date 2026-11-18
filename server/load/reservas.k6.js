@@ -76,7 +76,20 @@ export function browse() {
   sleep(0.3 + Math.random() * 0.7);
 }
 
+let slugReserva = null;
+
 export function reserva() {
+
+  // slug da 1ª acomodação pública — cache por VU (endpoint exige acomodação)
+  if (!slugReserva) {
+    const r = http.get(`${BASE_URL}/api/v1/publico/acomodacoes`, JSON_HEADERS);
+    const itens = r.json();
+    slugReserva = Array.isArray(itens) && itens.length ? itens[0].slug : null;
+    if (!slugReserva) {
+      errosApp.add(1);
+      return;
+    }
+  }
 
   const dia = 1 + Math.floor(Math.random() * 350);
   const checkIn = new Date(Date.now() + dia * 864e5).toISOString().slice(0, 10);
@@ -85,12 +98,14 @@ export function reserva() {
   const res = http.post(
     `${BASE_URL}/api/v1/publico/reservas`,
     JSON.stringify({
+      slug: slugReserva,
       nome: `Load Test ${__VU}`,
       email: `loadtest+${__VU}-${__ITER}@example.invalid`,
       telefone: `1190000${String(__VU).padStart(4, '0')}`,
       check_in: checkIn,
       check_out: checkOut,
       hospedes: 2,
+      aceito_termos: true, // obrigatório — CDC (sem ele valida 422)
       observacoes: 'gerado por k6 — pode excluir',
     }),
     { ...JSON_HEADERS, tags: { endpoint: 'reserva' } },

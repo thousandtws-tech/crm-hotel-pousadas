@@ -68,6 +68,12 @@ pub trait FilaEnvioRepository: Send + Sync {
     /// Reenvios manuais recentes da reserva — rate limit do reenvio.
     async fn reenvios_recentes(&self, idreserva: i64, janela_seg: i64) -> Result<i64, DomainError>;
 
+    /// Itens em falha terminal ('falhou' | 'desconhecido') aguardando
+    /// ação humana — varredura do monitor de alertas. `desde` filtra
+    /// por `agendado_para`, proxy do instante da última tentativa
+    /// (`marcar_falha` empurra a agenda a cada retry).
+    async fn falhas(&self, desde: DateTime<Utc>, limite: i64) -> Result<Vec<ItemFila>, DomainError>;
+
     async fn email_suprimido(&self, email: &str) -> Result<bool, DomainError>;
     async fn suprimir_email(&self, email: &str, motivo: &str) -> Result<(), DomainError>;
 

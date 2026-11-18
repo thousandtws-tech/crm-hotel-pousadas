@@ -3,8 +3,10 @@
 //! Cada worker é idempotente e seguro para rodar em todas as réplicas:
 //! varreduras periódicas de conciliação de pagamentos, drenagem da fila
 //! de envio, lembretes/pesquisas, escalada de SLA de atendimento,
-//! governança D-1, retenção LGPD, alerta de PMOC e métricas de saturação.
+//! governança D-1, retenção LGPD, alerta de PMOC, métricas de saturação
+//! e o monitor de falhas operacionais (alerta no sino da equipe).
 
+mod alertas;
 mod atendimento;
 mod comunicacao;
 mod distribuicao;
@@ -20,6 +22,7 @@ pub fn spawn_all(state: &AppState, stripe_ativo: bool) {
     if stripe_ativo {
         pagamentos::spawn(state);
     }
+    alertas::spawn(state);
     comunicacao::spawn_fila(state);
     comunicacao::spawn_lembretes(state);
     comunicacao::spawn_zapi_eventos(state);

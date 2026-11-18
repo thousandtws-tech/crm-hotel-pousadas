@@ -318,6 +318,23 @@ impl FiscalRepository for PgFiscalRepository {
         Ok(())
     }
 
+    async fn falhas(
+        &self,
+        desde: chrono::DateTime<chrono::Utc>,
+        limite: i64,
+    ) -> Result<Vec<FiscalDocumento>, DomainError> {
+        sqlx::query_as::<_, FiscalDocumento>(&format!(
+            "SELECT {COLS} FROM fiscal_documento
+             WHERE status IN ('rejeitada','falha') AND atualizado_em >= $1
+             ORDER BY id LIMIT $2"
+        ))
+        .bind(desde)
+        .bind(limite)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
     async fn registrar_evento(
         &self,
         idintegracao: Option<i64>,

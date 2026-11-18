@@ -212,7 +212,9 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         Some(comunicacao_svc.clone()),
     ));
     // Fiscal (Spedy) — antes das integrações: o teste de conexão do
-    // card delega à consulta da empresa remota.
+    // card delega à consulta da empresa remota. O repo é compartilhado
+    // com o monitor de falhas (varredura independe do vault).
+    let fiscal_repo = Arc::new(PgFiscalRepository::new(pool.clone()));
     let fiscal_svc = vault.as_ref().map(|v| {
         let factory: clarituz_application::services::fiscal::SpedyFactory =
             Arc::new(|api_key, amb| {
@@ -220,8 +222,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
                     as Arc<dyn clarituz_domain::ports::ProvedorFiscal>
             });
         Arc::new(FiscalService::new(
-            Arc::new(PgFiscalRepository::new(pool.clone()))
-                as Arc<dyn clarituz_domain::ports::FiscalRepository>,
+            fiscal_repo.clone() as Arc<dyn clarituz_domain::ports::FiscalRepository>,
             integracoes_repo.clone() as Arc<dyn clarituz_domain::ports::IntegracaoRepository>,
             v.clone(),
             reserva_repo.clone(),
@@ -306,6 +307,14 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         lgpd_repo.clone(),
         publisher.clone(),
         logs.clone(),
+    ));
+
+    // Monitor de falhas operacionais — só lê tabelas, funciona sem cofre.
+    let alertas_svc = Arc::new(AlertaFalhaService::new(
+        fila_envio_repo.clone(),
+        fiscal_repo.clone(),
+        Arc::new(PgAlertaOperacionalRepository::new(pool.clone())),
+        publisher.clone(),
     ));
 
     let contratos_svc = Arc::new(ContratoService::new(Arc::new(PgContratoRepository::new(
@@ -407,6 +416,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         escalas: Arc::new(EscalasService::new(Arc::new(PgEscalaRepository::new(
             pool.clone(),
         )))),
+        alertas: alertas_svc,
         zapi: zapi_svc,
         fiscal: fiscal_svc,
         verificacao: verificacao_svc,

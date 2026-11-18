@@ -78,6 +78,13 @@ pub trait FiscalRepository: Send + Sync {
     /// Justificativa do cancelamento — trilha separada do status.
     async fn registrar_motivo_cancelamento(&self, id: i64, motivo: &str)
         -> Result<(), DomainError>;
+    /// Documentos em estado de falha ('rejeitada' | 'falha') com
+    /// atualização recente — varredura do monitor de alertas.
+    async fn falhas(
+        &self,
+        desde: chrono::DateTime<chrono::Utc>,
+        limite: i64,
+    ) -> Result<Vec<FiscalDocumento>, DomainError>;
     /// Reagenda com backoff (o erro já vai em `ultimo_erro`).
     async fn reagendar(
         &self,

@@ -1,5 +1,6 @@
 //! Adapters PostgreSQL dos ports do domínio.
 
+pub mod alertas;
 mod audit;
 pub mod busca;
 pub mod cafe;
@@ -25,6 +26,7 @@ pub mod reserva;
 pub mod suporte;
 pub mod tesouraria;
 
+pub use alertas::PgAlertaOperacionalRepository;
 pub use busca::PgBuscaRepository;
 pub use cafe::PgCafeRepository;
 pub use caixa::PgCaixaRepository;

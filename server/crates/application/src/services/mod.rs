@@ -2,6 +2,7 @@
 //! uso: valida entrada, aplica regras, orquestra ports e produz auditoria.
 
 pub mod acomodacoes;
+pub mod alertas;
 pub mod atendimento;
 pub mod auditoria;
 pub mod auth;
@@ -44,6 +45,7 @@ pub mod tesouraria;
 pub mod verificacao;
 
 pub use acomodacoes::AcomodacaoService;
+pub use alertas::AlertaFalhaService;
 pub use atendimento::AtendimentoService;
 pub use auditoria::AuditoriaService;
 pub use auth::AuthService;
@@ -131,6 +133,9 @@ pub struct Services {
     pub governanca: Arc<GovernancaService>,
     pub escalas: Arc<EscalasService>,
     pub preditivo: Arc<PreditivoService>,
+    /// Monitor de falhas operacionais — alerta no sino a cada
+    /// falha terminal da outbox de envio e do fiscal.
+    pub alertas: Arc<AlertaFalhaService>,
     /// Webhook/provedor Z-API — `None` sem o cofre (master key ausente).
     pub zapi: Option<Arc<ZApiService>>,
     /// Fiscal Spedy — `None` sem o cofre (api_key fica cifrada no vault).

@@ -197,6 +197,8 @@ async fn reserva_publica_site(pool: PgPool) {
         late_checkout: None,
         aceito_termos: true,
         aceito_marketing: false,
+        aceito_whatsapp: false,
+        telefone_ddi: None,
         codigo_corporativo: None,
     };
 

@@ -4,6 +4,7 @@
 //! implementações executam a transação completa (entidade + efeitos
 //! colaterais atômicos como `log`, `consumo`, movimentos de estoque).
 
+pub mod alertas;
 pub mod auth;
 pub mod cafe;
 pub mod caixa;
@@ -29,6 +30,7 @@ pub mod storage;
 pub mod suporte;
 pub mod tesouraria;
 
+pub use alertas::*;
 pub use auth::*;
 pub use cafe::*;
 pub use caixa::*;
