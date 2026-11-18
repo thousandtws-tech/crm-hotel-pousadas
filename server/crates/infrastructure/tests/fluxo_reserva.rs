@@ -120,7 +120,7 @@ async fn overbooking_bloqueado(pool: PgPool) {
     assert_eq!(err.code(), "CONFLITO");
 
     // janela começando no dia seguinte à saída é permitida (o constraint
-    // cobre o dia do check-out: range [entrada, saida+1))
+    // cobre as noites: range [entrada, saida) — checkout não ocupa noite)
     let ok = c
         .services
         .reservas
