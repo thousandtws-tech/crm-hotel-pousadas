@@ -52,8 +52,10 @@ export class SiteContentService {
   public readonly faq = signal<FaqItem[]>([]);
 
   constructor() {
+    // carregar() fora do guard: no SSR o conteúdo do CMS entra no HTML
+    // renderizado (SEO real), com TransferState deduplicando o refetch.
+    void this.carregar();
     if (isPlatformBrowser(this.platformId)) {
-      void this.carregar();
       this.conectarStream();
       document.addEventListener('visibilitychange', this.onVisibilityChange);
       this.destroyRef.onDestroy(() => this.desligar());
@@ -71,7 +73,6 @@ export class SiteContentService {
   }
 
   public async carregar(): Promise<void> {
-    if (!isPlatformBrowser(this.platformId)) return;
     try {
       const secoes = await firstValueFrom(this.http.get<CmsSecaoApi[]>(`${API}/publico/cms/site`));
       let novoHero: HeroContent | null = null;

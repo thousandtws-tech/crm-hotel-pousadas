@@ -255,8 +255,11 @@ export class AccommodationService {
   );
 
   constructor() {
+    // No SSR: o fetch roda no servidor e o HTML já chega com os quartos —
+    // TransferState evita o refetch na hidratação. Socket e listeners,
+    // só no browser.
+    void this.carregar();
     if (isPlatformBrowser(this.platformId)) {
-      void this.carregar();
       this.conectarStream();
       document.addEventListener('visibilitychange', this.onVisibilityChange);
       this.destroyRef.onDestroy(() => this.desligar());

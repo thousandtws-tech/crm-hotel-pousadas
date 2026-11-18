@@ -73,8 +73,17 @@ src/app/
 └── shared/             UI genérica sem regra de negócio
 ```
 
-O site é **CSR estático** (nginx) — não há SSR/hidratação; não reintroduzir
-`@angular/ssr` sem infra de servidor. PWA ativo via `@angular/service-worker`.
+O site é **SSR** (`@angular/ssr`, `outputMode: "server"`): Node/Express em
+`src/server.ts` serve os estáticos e renderiza cada rota — HTML completo pro
+SEO (inauguração 01/dez). Hidratação via `provideClientHydration` +
+`withEventReplay`; `RenderMode.Server` em todas as rotas
+(`app.routes.server.ts`). Regras de plataforma: dados que devem entrar no
+HTML do SSR rodam fora de `isPlatformBrowser` (o `carregar()` dos services
+de conteúdo); socket realtime, listeners de `document`/`window`, gsap e
+localStorage só dentro do guard ou em `afterNextRender`. `allowedHosts`
+em `angular.json` autoriza os domínios (SSRF guard do app engine) —
+domínios novos entram lá ou via `NG_ALLOWED_HOSTS`. PWA ativo via
+`@angular/service-worker`.
 
 Realtime público (Phoenix `site:deltas`): `SiteContentService` e
 `AccommodationService` recarregam após deltas; ambos têm teardown via

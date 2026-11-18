@@ -14,8 +14,12 @@ COPY client/web/ .
 RUN npm run build
 
 # ---------- runtime ----------
-FROM nginx:alpine
-# entrypoint do nginx:alpine aplica envsubst nos *.template e gera conf.d/*.conf
-COPY client/web/default.conf.template /etc/nginx/templates/default.conf.template
-COPY --from=builder /app/dist/web/browser /usr/share/nginx/html
-ENV PORT=80
+# SSR (Angular outputMode=server): Node serve os estáticos de dist/browser
+# com cache longo e renderiza o HTML por rota via server.mjs — o bundle é
+# self-contained (express incluído), sem node_modules no runtime.
+FROM node:22-alpine
+WORKDIR /app
+COPY --from=builder /app/dist/web ./dist/web
+ENV PORT=8080
+EXPOSE 8080
+CMD ["node", "dist/web/server/server.mjs"]
