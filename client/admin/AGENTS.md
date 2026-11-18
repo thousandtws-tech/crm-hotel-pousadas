@@ -73,19 +73,23 @@ src/app/
 │   ├── interceptors/   authInterceptor (Bearer + single-flight refresh em 401)
 │   └── config/
 ├── features/<dominio>/ páginas e componentes do domínio
-│   │                   Convenção UI×lógica: cada `x.component.ts` carrega
-│   │                   apenas decorador (template/estilos/imports) e declara
-│   │                   `class XComponent extends XStore` (mais input/output/
-│   │                   model/viewChild — detectados na classe decorada).
-│   │                   O `x.store.ts` irmão tem `@Directive() export abstract
-│   │                   class XStore` com todo o estado/lógica; membros são
-│   │                   herdados, então bindings do template não mudam.
+│   │                   Uma pasta por componente: `features/<dominio>/<x>/`
+│   │                   contém `x.component.ts` (decorador + `class XComponent
+│   │                   extends XStore`, mais input/output/model/viewChild —
+│   │                   detectados na classe decorada), `x.component.html`,
+│   │                   `x.component.css` e `x.store.ts` (`@Directive() export
+│   │                   abstract class XStore` com todo o estado/lógica;
+│   │                   membros são herdados, bindings não mudam). CSS acima
+│   │                   do budget pode ser dividido em `x.extra.css`
+│   │                   (`styleUrls` em array).
 ├── layout/             shell autenticado com navegação
 └── shared/             UI genérica sem regra de negócio
 ```
 
-Script de split mecânico (mesma convenção em arquivos novos):
-`node scripts/split-components.cjs <caminho.component.ts> [--apply]`.
+Scripts de refatoração mecânica (mesma convenção em arquivos novos):
+`node scripts/split-components.cjs <caminho.component.ts> [--apply]`,
+`node scripts/extract-views.cjs <caminho.component.ts>` (inline → .html/.css),
+`node scripts/organize-folders.cjs` (agrupa em pasta por componente).
 
 Fronteiras verificadas por `npm run deps:check` (dependency-cruiser): sem ciclos,
 features isoladas entre si, `core`/`shared` não dependem de features, `models`
