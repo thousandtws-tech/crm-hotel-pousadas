@@ -57,6 +57,8 @@ site, por exemplo.
   (versão em PDF em `Manual/manual_sistema.pdf`)
 - `Manual/checklist_sistema.html` — resumo executivo: o que já funciona e o que
   ainda está no caminho
+- `docs/dr-backup.md` — runbook de disaster recovery do Postgres (backup,
+  restore testado, RPO/RTO e resposta a incidente)
 
 ## Organização do trabalho
 
