@@ -32,7 +32,7 @@ impl PreditivoRepository for PgPreditivoRepository {
              SELECT d AS data,
                  (SELECT count(*) FROM reserva r
                    WHERE r.status IN ('p','i')
-                     AND r.entradaprevista <= d AND r.saidaprevista >= d) AS ocupados,
+                     AND r.periodo && daterange(d, d + 1)) AS ocupados,
                  (SELECT count(*) FROM acomodacao a WHERE a.ativo) AS total_quartos,
                  (SELECT count(*) FROM reserva r
                    WHERE r.status = 'p' AND r.entradaprevista = d) AS checkins,
@@ -61,8 +61,7 @@ impl PreditivoRepository for PgPreditivoRepository {
                       least(r.saidaprevista, CURRENT_DATE + 27),
                       '1 day') n ON true
              WHERE r.status IN ('p','i')
-               AND r.saidaprevista >= CURRENT_DATE
-               AND r.entradaprevista <= CURRENT_DATE + 27
+               AND r.periodo && daterange(CURRENT_DATE, CURRENT_DATE + 28)
              GROUP BY 1 ORDER BY 1",
         )
         .fetch_all(&self.pool)
@@ -199,7 +198,7 @@ impl PreditivoRepository for PgPreditivoRepository {
                      AND r.entradaprevista < d AND r.saidaprevista > d) AS stayovers,
                  (SELECT coalesce(sum(r.quantidade_hospedes), 0) FROM reserva r
                    WHERE r.status IN ('p','i')
-                     AND r.entradaprevista <= d AND r.saidaprevista >= d) AS hospedes,
+                     AND r.periodo && daterange(d, d + 1)) AS hospedes,
                  (SELECT count(*) FROM escala_turno t
                    JOIN funcionario f ON f.id = t.idfuncionario
                    WHERE t.data = d AND f.setor = 'governanca') AS gov_escalados,
@@ -309,6 +308,8 @@ impl PreditivoRepository for PgPreditivoRepository {
                  FROM reserva r
                  JOIN LATERAL generate_series(r.entradaprevista, r.saidaprevista, '1 day') n ON true
                  WHERE r.status IN ('i','f')
+                   AND r.saidaprevista >=
+                       (date_trunc('month', CURRENT_DATE) - interval '11 months')::date
                    AND n >= date_trunc('month', CURRENT_DATE) - interval '11 months'
                  GROUP BY 1
              ), reservas AS (
