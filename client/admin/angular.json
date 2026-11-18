@@ -20,18 +20,17 @@
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "serviceWorker": "ngsw-config.json",
+            "loader": {
+              ".html": "text"
+            },
             "assets": [
               {
                 "glob": "**/*",
                 "input": "public"
               }
             ],
-            "styles": [
-              "src/styles.css"
-            ],
-            "polyfills": [
-              "@angular/localize/init"
-            ],
+            "styles": ["src/styles.css"],
+            "polyfills": ["@angular/localize/init"],
             "allowedCommonJsDependencies": [
               "exceljs",
               "jspdf",

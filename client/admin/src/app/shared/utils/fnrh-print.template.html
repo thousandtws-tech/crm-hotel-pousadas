@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>{{ TITULO_ABA }}</title>
+    <style>
+      {{CSS}}
+    </style>
+  </head>
+  <body>
+    <h1>FICHA NACIONAL DE REGISTRO DE HÓSPEDES — FNRH</h1>
+    <p class="sub">Ficha nº {{ FICHA }} · Reserva nº {{ RESERVA }} · Emitida em {{ EMITIDA_EM }}</p>
+
+    <fieldset>
+      <legend>Hóspede responsável</legend>
+      <div class="grid">
+        <div class="f g3">
+          <label>Nome completo</label><span>{{ HOSPEDE_NOME }}</span>
+        </div>
+        <div class="f">
+          <label>Data de nascimento</label><span>{{ NASCIMENTO }}</span>
+        </div>
+        <div class="f">
+          <label>CPF</label><span>{{ CPF }}</span>
+        </div>
+        <div class="f">
+          <label>Nacionalidade</label><span>{{ NACIONALIDADE }}</span>
+        </div>
+        <div class="f">
+          <label>Naturalidade</label><span>{{ NATURALIDADE }}</span>
+        </div>
+        <div class="f">
+          <label>Profissão</label><span>{{ PROFISSAO }}</span>
+        </div>
+        <div class="f g2">
+          <label>E-mail</label><span>{{ EMAIL }}</span>
+        </div>
+        <div class="f g2">
+          <label>Telefone</label><span>{{ TELEFONE }}</span>
+        </div>
+        <div class="f g3">
+          <label>Endereço</label><span>{{ ENDERECO }}</span>
+        </div>
+        <div class="f">
+          <label>Bairro</label><span>{{ BAIRRO }}</span>
+        </div>
+        <div class="f g2">
+          <label>Cidade</label><span>{{ CIDADE }}</span>
+        </div>
+        <div class="f">
+          <label>UF</label><span>{{ UF }}</span>
+        </div>
+        <div class="f">
+          <label>CEP</label><span>{{ CEP }}</span>
+        </div>
+        <div class="f">
+          <label>País</label><span>{{ PAIS }}</span>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Estadia</legend>
+      <div class="grid">
+        <div class="f g2">
+          <label>Acomodação</label><span>{{ ACOMODACAO }}</span>
+        </div>
+        <div class="f">
+          <label>Entrada prevista</label><span>{{ ENTRADA_PREVISTA }}</span>
+        </div>
+        <div class="f">
+          <label>Saída prevista</label><span>{{ SAIDA_PREVISTA }}</span>
+        </div>
+        <div class="f">
+          <label>Check-in</label><span>{{ CHECKIN }}</span>
+        </div>
+        <div class="f">
+          <label>Hóspedes</label><span>{{ HOSPEDES }}</span>
+        </div>
+        <div class="f">
+          <label>Motivo da viagem</label><span>{{ MOTIVO }}</span>
+        </div>
+        <div class="f">
+          <label>Placa do veículo</label><span>{{ PLACA }}</span>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Acompanhantes</legend>
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Nascimento</th>
+            <th>Parentesco</th>
+            <th>Documento</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{
+            ACOMPANHANTES
+          }}
+        </tbody>
+      </table>
+    </fieldset>
+
+    <div class="assinaturas">
+      <div class="assinatura"><div class="linha">Assinatura do hóspede</div></div>
+      <div class="assinatura">
+        <div class="linha">{{ EMITIDA_POR }} — Recepção</div>
+      </div>
+    </div>
+
+    <div class="rodape">
+      <span>Documento gerado eletronicamente — registro nº {{ FICHA }}</span>
+      <span>Reserva {{ RESERVA }} · {{ HOSPEDE_NOME }}</span>
+    </div>
+  </body>
+</html>

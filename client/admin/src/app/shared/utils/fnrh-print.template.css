@@ -1,0 +1,103 @@
+@page {
+  size: A4;
+  margin: 18mm 14mm;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: #111;
+  font-size: 11px;
+  margin: 0;
+}
+h1 {
+  font-size: 15px;
+  text-align: center;
+  margin: 0 0 2px;
+  letter-spacing: 0.04em;
+}
+.sub {
+  text-align: center;
+  font-size: 10px;
+  color: #444;
+  margin-bottom: 12px;
+}
+fieldset {
+  border: 1px solid #999;
+  border-radius: 3px;
+  padding: 8px 10px 10px;
+  margin: 0 0 10px;
+}
+legend {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0 6px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px 12px;
+}
+.g2 {
+  grid-column: span 2;
+}
+.g3 {
+  grid-column: span 3;
+}
+.g4 {
+  grid-column: span 4;
+}
+.f label {
+  display: block;
+  font-size: 8.5px;
+  text-transform: uppercase;
+  color: #555;
+  letter-spacing: 0.03em;
+}
+.f span {
+  display: block;
+  border-bottom: 1px solid #bbb;
+  min-height: 15px;
+  padding: 1px 2px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+th,
+td {
+  border: 1px solid #999;
+  padding: 3px 6px;
+  text-align: left;
+}
+th {
+  background: #eee;
+  text-transform: uppercase;
+  font-size: 8.5px;
+  letter-spacing: 0.03em;
+}
+.assinaturas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-top: 48px;
+}
+.assinatura {
+  text-align: center;
+}
+.assinatura .linha {
+  border-top: 1px solid #333;
+  padding-top: 4px;
+  font-size: 9.5px;
+}
+.rodape {
+  margin-top: 14px;
+  font-size: 8.5px;
+  color: #555;
+  display: flex;
+  justify-content: space-between;
+}
