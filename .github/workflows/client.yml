@@ -26,6 +26,8 @@ jobs:
       - run: npm run deps:check
       - run: npm run build
       - run: npm test
+      # Gate de cobertura — thresholds em angular.json (ver docs/cobertura.md)
+      - run: npm run test:coverage
 
   web:
     runs-on: ubuntu-latest
@@ -43,6 +45,8 @@ jobs:
       - run: npm run deps:check
       - run: npm run build
       - run: npm test
+      # Gate de cobertura — thresholds em angular.json (ver docs/cobertura.md)
+      - run: npm run test:coverage
 
   e2e:
     runs-on: ubuntu-latest

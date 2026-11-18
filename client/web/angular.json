@@ -73,7 +73,16 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "coverageReporters": ["text", "text-summary", "lcov"],
+            "coverageThresholds": {
+              "statements": 51,
+              "branches": 47,
+              "functions": 41,
+              "lines": 52
+            }
+          }
         }
       }
     }

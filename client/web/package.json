@@ -7,6 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:coverage": "ng test --coverage",
     "deps:check": "depcruise src --config .dependency-cruiser.js"
   },
   "private": true,
@@ -32,6 +33,7 @@
     "@angular/compiler-cli": "^22.2.5",
     "@tailwindcss/postcss": "^4.1.12",
     "@types/node": "^26.6.4",
+    "@vitest/coverage-v8": "^4.1.12",
     "dependency-cruiser": "^18.7.2",
     "jsdom": "^28.0.0",
     "postcss": "^8.5.3",
