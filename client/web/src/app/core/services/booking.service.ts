@@ -98,11 +98,13 @@ export class BookingService {
           nome: submission.guestName,
           email: submission.guestEmail,
           telefone: submission.guestPhone,
+          telefone_ddi: submission.guestPhoneDdi || null,
           observacoes: submission.specialRequests || null,
           early_checkin: submission.earlyCheckin === true,
           late_checkout: submission.lateCheckout === true,
           aceito_termos: submission.aceitoTermos === true,
           aceito_marketing: submission.aceitoMarketing === true,
+          aceito_whatsapp: submission.aceitoWhatsapp === true,
           codigo_corporativo: submission.codigoCorporativo || null
         })
       );

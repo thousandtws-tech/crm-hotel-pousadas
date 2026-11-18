@@ -14,11 +14,13 @@ export interface BookingSubmission {
   guestName: string;
   guestEmail: string;
   guestPhone: string;
+  guestPhoneDdi?: string;
   specialRequests?: string;
   earlyCheckin?: boolean;
   lateCheckout?: boolean;
   aceitoTermos?: boolean;
   aceitoMarketing?: boolean;
+  aceitoWhatsapp?: boolean;
   codigoCorporativo?: string;
   totalNights?: number;
   estimatedTotal?: number;

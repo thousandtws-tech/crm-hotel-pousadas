@@ -195,6 +195,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         contratos: Arc::new(PgContratoRepository::new(pool.clone())),
         hold_minutos: settings.hold_minutos,
         dist: distribuicao_svc.clone(),
+        comunicacao: Some(comunicacao_svc.clone()),
     }));
     let pagamentos_online_svc = Arc::new(PagamentosOnlineService::new(
         pag_online_repo.clone(),
@@ -208,6 +209,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         settings.stripe_success_url.clone(),
         settings.stripe_cancel_url.clone(),
         settings.public_api_url.clone(),
+        Some(comunicacao_svc.clone()),
     ));
     // Fiscal (Spedy) — antes das integrações: o teste de conexão do
     // card delega à consulta da empresa remota.

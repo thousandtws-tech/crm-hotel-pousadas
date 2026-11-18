@@ -23,6 +23,11 @@ pub struct ItemFila {
     #[sqlx(default)]
     pub idintegracao: Option<i64>,
     pub status: StatusEnvio,
+    /// Chave idempotente da intenção (reserva+canal+tipo+transição+versão).
+    #[sqlx(default)]
+    pub dedup_key: Option<String>,
+    #[sqlx(default)]
+    pub template_versao: i32,
     pub criado_em: DateTime<Utc>,
     pub enviado_em: Option<DateTime<Utc>>,
 

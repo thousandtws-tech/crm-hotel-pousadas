@@ -19,6 +19,12 @@ pub enum StatusEnvio {
     Enviado,
     Falhou,
     Cancelado,
+    /// Intenção obsoleta por transição posterior (ex.: aviso de pendência
+    /// substituído pela confirmação) — auditável, nunca reenviado.
+    Suprimido,
+    /// Sem resposta do provedor — pode ter saído ou não. Não reenvia
+    /// automaticamente; exige reconciliação ou reenvio manual auditado.
+    Desconhecido,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]

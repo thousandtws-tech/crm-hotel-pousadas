@@ -57,6 +57,13 @@ pub struct ReservaPublicaInput {
     pub aceito_termos: bool,
     #[serde(default)]
     pub aceito_marketing: bool,
+    /// Consentimento transacional de WhatsApp (status da reserva) —
+    /// independente do marketing; clientes antigos/padrao → false.
+    #[serde(default)]
+    pub aceito_whatsapp: bool,
+    /// Landsnummer (DDI) från väljaren på webbplatsen — t.ex. "55".
+    /// Tas bort från telefonnumret om det redan ingår.
+    pub telefone_ddi: Option<String>,
     pub codigo_corporativo: Option<String>,
 }
 

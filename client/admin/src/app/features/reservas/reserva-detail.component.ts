@@ -10,6 +10,8 @@ import { ImpressorasApi } from '@core/api/impressoras.api';
 import { PagamentosApi } from '@core/api/pagamentos.api';
 import { RelatoriosApi } from '@core/api/relatorios.api';
 import { ReservasApi } from '@core/api/reservas.api';
+import { ComunicacaoApi } from '@core/api/comunicacao.api';
+import { ItemFila } from '@core/models/comunicacao.models';
 import { STATUS_RESERVA } from '@core/models/reservas.models';
 import { num } from '@core/utils/num';
 import { TIPOS_DOCUMENTO, TipoDocumento } from '@core/models/clientes.models';
@@ -503,6 +505,65 @@ interface AdicionalLinha {
             </div>
           </div>
         }
+
+        <!-- ===== Comunicações (fila de envio e-mail/WhatsApp) ===== -->
+        <div class="inner-card">
+          <div class="inner-card-header">
+            <h4>Comunicações com o hóspede</h4>
+          </div>
+          <div class="inner-card-body">
+            @if (comunicacoes().length === 0) {
+              <p class="muted">Nenhuma mensagem registrada para esta reserva.</p>
+            } @else {
+              <div class="tbl-wrap">
+                <table class="tbl">
+                  <thead>
+                    <tr>
+                      <th>Canal</th>
+                      <th>Mensagem</th>
+                      <th>Destino</th>
+                      <th>Status</th>
+                      <th>Enviado</th>
+                      <th>Entregue</th>
+                      <th>Lido</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (c of comunicacoes(); track c.id) {
+                      <tr>
+                        <td>{{ rotuloCanal(c.canal) }}</td>
+                        <td>{{ rotuloTemplate(c.template) }}</td>
+                        <td>{{ c.destino }}</td>
+                        <td>
+                          <span class="ret-badge">{{ rotuloStatus(c.status) }}</span>
+                          @if (c.ultimo_erro) {
+                            <div class="muted" style="font-size:0.7rem">{{ c.ultimo_erro }}</div>
+                          }
+                        </td>
+                        <td>{{ c.enviado_em ? (c.enviado_em | date: 'dd/MM HH:mm') : '—' }}</td>
+                        <td>{{ c.entregue_em ? (c.entregue_em | date: 'dd/MM HH:mm') : '—' }}</td>
+                        <td>{{ c.lido_em ? (c.lido_em | date: 'dd/MM HH:mm') : '—' }}</td>
+                        <td>
+                          @if (c.status === 'falhou' || c.status === 'desconhecido') {
+                            <button
+                              class="btn-dark-blue btn-sm"
+                              type="button"
+                              [disabled]="enviando()"
+                              (click)="reenviarComunicacao(c.id)"
+                            >
+                              Reenviar
+                            </button>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        </div>
 
         <!-- ===== Notas fiscais (NFS-e via Spedy) ===== -->
         <app-reserva-fiscal [idreserva]="res.id" />
@@ -1080,6 +1141,7 @@ export class ReservaDetailComponent implements OnInit {
   private readonly pagamentosApi = inject(PagamentosApi);
   private readonly relatoriosApi = inject(RelatoriosApi);
   private readonly reservasApi = inject(ReservasApi);
+  private readonly comunicacaoApi = inject(ComunicacaoApi);
   private readonly notify = inject(Notify);
   private readonly route = inject(ActivatedRoute);
   protected readonly auth = inject(AuthStore);
@@ -1108,6 +1170,7 @@ export class ReservaDetailComponent implements OnInit {
   // registro de hóspedes
   protected readonly acompanhantes = signal<Acompanhante[]>([]);
   protected readonly fichas = signal<Fnrh[]>([]);
+  protected readonly comunicacoes = signal<ItemFila[]>([]);
   protected readonly retencaoAnos = signal(5);
   protected sneIni = '';
   protected sneFim = '';
@@ -1227,6 +1290,10 @@ export class ReservaDetailComponent implements OnInit {
       next: (f) => this.fichas.set(f),
       error: () => undefined,
     });
+    this.comunicacaoApi.comunicacoesReserva(res.id).subscribe({
+      next: (c) => this.comunicacoes.set(c),
+      error: () => undefined,
+    });
     this.estabelecimentoApi.obterEstabelecimento().subscribe({
       next: (e) => this.retencaoAnos.set(e.retencao_dados_anos ?? 5),
       error: () => undefined,
@@ -1257,6 +1324,55 @@ export class ReservaDetailComponent implements OnInit {
       },
       error: (e) => this.notify.erro(e),
     });
+  }
+
+  protected reenviarComunicacao(iditem: number): void {
+    const id = this.id();
+    if (id <= 0) return;
+    this.enviando.set(true);
+    this.comunicacaoApi.reenviarComunicacao(id, iditem).subscribe({
+      next: () => {
+        this.enviando.set(false);
+        this.notify.ok('Mensagem reenfileirada para envio.');
+        this.carregarExtras(this.r()!);
+      },
+      error: (e) => {
+        this.enviando.set(false);
+        this.notify.erro(e);
+      },
+    });
+  }
+
+  protected rotuloCanal(canal: ItemFila['canal']): string {
+    return { email: 'E-mail', whatsapp: 'WhatsApp', push: 'Push', inbox: 'Interna' }[canal];
+  }
+
+  protected rotuloStatus(status: ItemFila['status']): string {
+    return {
+      pendente: 'Na fila',
+      enviando: 'Enviando',
+      enviado: 'Enviado',
+      falhou: 'Falhou',
+      cancelado: 'Cancelado',
+      suprimido: 'Suprimido',
+      desconhecido: 'Resultado incerto',
+    }[status];
+  }
+
+  protected rotuloTemplate(template: string): string {
+    const mapa: Record<string, string> = {
+      reserva_confirmada: 'Reserva confirmada',
+      reserva_pagamento: 'Pagamento confirmado',
+      reserva_cancelada: 'Reserva cancelada',
+      reserva_expirada: 'Reserva expirada',
+      lembrete_checkin: 'Lembrete de check-in',
+      fnrh_link: 'Pré-check-in (FNRH)',
+      checkout_link: 'Check-out online',
+      pesquisa_satisfacao: 'Pesquisa de satisfação',
+      pesquisa_lembrete: 'Lembrete de pesquisa',
+      cobranca: 'Cobrança',
+    };
+    return mapa[template] ?? template;
   }
 
   // -- modais --------------------------------------------------------------------

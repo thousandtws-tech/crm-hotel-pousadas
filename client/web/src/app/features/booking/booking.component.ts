@@ -15,7 +15,6 @@ import { MotionService } from '../../core/services/motion.service';
   selector: 'app-booking',
   imports: [RouterLink, FormsModule, IconComponent],
   template: `
-    <!-- Header Hero -->
     <header class="booking-page-header relative pt-28 pb-12 sm:pt-32 sm:pb-14 lg:pt-36 lg:pb-16 bg-[#032B38] text-white overflow-hidden">
       <div class="absolute inset-0 z-0">
         <img
@@ -201,16 +200,31 @@ import { MotionService } from '../../core/services/motion.service';
                   </div>
 
                   <div>
-                    <label for="book-phone" class="type-eyebrow block mb-1 text-[10px]">Telefone com DDD</label>
-                    <input
-                      id="book-phone"
-                      type="tel"
-                      [ngModel]="guestPhone()"
-                      (ngModelChange)="guestPhone.set($event)"
-                      name="guestPhone"
-                      required
-                      class="w-full bg-[#F7F5F0] border border-[#DCE6EA] p-3 text-sm text-[#054054] focus:outline-none focus:border-[#054054]"
-                    />
+                    <label for="book-phone" class="type-eyebrow block mb-1 text-[10px]">Telefone (celular/WhatsApp)</label>
+                    <div class="flex gap-2">
+                      <select
+                        id="book-phone-ddi"
+                        name="guestPhoneDdi"
+                        [ngModel]="guestPhoneDdi()"
+                        (ngModelChange)="guestPhoneDdi.set($event)"
+                        aria-label="Código do país (DDI)"
+                        class="bg-[#F7F5F0] border border-[#DCE6EA] p-3 text-sm text-[#054054] focus:outline-none focus:border-[#054054] w-28 flex-shrink-0"
+                      >
+                        @for (d of ddiOptions; track d.code) {
+                          <option [value]="d.code">{{ d.label }}</option>
+                        }
+                      </select>
+                      <input
+                        id="book-phone"
+                        type="tel"
+                        [ngModel]="guestPhone()"
+                        (ngModelChange)="guestPhone.set($event)"
+                        name="guestPhone"
+                        placeholder="DDD + número, ex.: 85 99999-1234"
+                        required
+                        class="w-full bg-[#F7F5F0] border border-[#DCE6EA] p-3 text-sm text-[#054054] focus:outline-none focus:border-[#054054]"
+                      />
+                    </div>
                   </div>
 
                   <div class="flex flex-col gap-2">
@@ -264,6 +278,14 @@ import { MotionService } from '../../core/services/motion.service';
                         e os <a routerLink="/termos-de-reserva" target="_blank" class="underline text-[#054054]">Termos de Reserva</a>,
                         incluindo a política de cancelamento. Autorizo o tratamento dos meus dados
                         para a execução da hospedagem (LGPD 13.709/18).
+                      </span>
+                    </label>
+                    <label class="flex items-start gap-2 cursor-pointer text-xs text-[#536B73] mt-2">
+                      <input type="checkbox" [ngModel]="aceiteWhatsapp()" (ngModelChange)="aceiteWhatsapp.set($event)" name="aceiteWhatsapp" class="accent-[#054054] mt-0.5" />
+                      <span>
+                        Autorizo receber pelo WhatsApp avisos sobre esta reserva
+                        (confirmação, status do pagamento e cancelamento) — mensagens
+                        transacionais apenas, sem publicidade.
                       </span>
                     </label>
                     <label class="flex items-start gap-2 cursor-pointer text-xs text-[#536B73] mt-2">
@@ -461,11 +483,32 @@ export class BookingComponent implements OnInit {
   public readonly guestName = signal<string>('');
   public readonly guestEmail = signal<string>('');
   public readonly guestPhone = signal<string>('');
+  public readonly guestPhoneDdi = signal<string>('55');
+  /** DDI: países de origem mais comuns dos hóspedes — Brasil primeiro. */
+  public readonly ddiOptions = [
+    { code: '55', label: '+55 BR' },
+    { code: '1', label: '+1 US/CA' },
+    { code: '351', label: '+351 PT' },
+    { code: '34', label: '+34 ES' },
+    { code: '44', label: '+44 UK' },
+    { code: '49', label: '+49 DE' },
+    { code: '33', label: '+33 FR' },
+    { code: '39', label: '+39 IT' },
+    { code: '46', label: '+46 SE' },
+    { code: '47', label: '+47 NO' },
+    { code: '54', label: '+54 AR' },
+    { code: '598', label: '+598 UY' },
+    { code: '595', label: '+595 PY' },
+    { code: '56', label: '+56 CL' },
+    { code: '57', label: '+57 CO' },
+    { code: '52', label: '+52 MX' },
+  ];
   public readonly specialRequests = signal<string>('');
   public readonly earlyCheckin = signal<boolean>(false);
   public readonly lateCheckout = signal<boolean>(false);
   public readonly aceiteTermos = signal<boolean>(false);
   public readonly aceiteMarketing = signal<boolean>(false);
+  public readonly aceiteWhatsapp = signal<boolean>(true);
   public readonly isLoading = signal<boolean>(false);
   public readonly isSuccess = signal<boolean>(false);
   public readonly serverMessage = signal<string>('');
@@ -587,6 +630,7 @@ export class BookingComponent implements OnInit {
       guestName: this.guestName(),
       guestEmail: this.guestEmail(),
       guestPhone: this.guestPhone(),
+      guestPhoneDdi: this.guestPhoneDdi(),
       specialRequests: this.specialRequests(),
       codigoCorporativo: this.descontoCorporativo() !== null
         ? this.codigoCorporativo().trim().toUpperCase()
@@ -595,6 +639,7 @@ export class BookingComponent implements OnInit {
       lateCheckout: this.lateCheckout(),
       aceitoTermos: this.aceiteTermos(),
       aceitoMarketing: this.aceiteMarketing(),
+      aceitoWhatsapp: this.aceiteWhatsapp(),
       totalNights: this.calculatedNights(),
       estimatedTotal: acc.price ? acc.price * this.calculatedNights() : undefined
     });

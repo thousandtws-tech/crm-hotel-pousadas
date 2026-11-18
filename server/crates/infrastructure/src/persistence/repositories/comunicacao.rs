@@ -185,6 +185,115 @@ impl FilaEnvioRepository for PgFilaEnvio {
             .map_err(map_db_err)
     }
 
+    /// `ON CONFLICT DO NOTHING` no índice único parcial de `dedup_key` —
+    /// a dedup mora no banco, não em memória: refresh, double-click,
+    /// eventos repetidos e workers concorrentes não duplicam a intenção.
+    async fn enfileirar_dedup(
+        &self,
+        n: &NovoEnvio,
+        dedup_key: &str,
+        template_versao: i32,
+    ) -> Result<Option<i64>, DomainError> {
+        sqlx::query_scalar::<_, i64>(
+            "INSERT INTO fila_envio
+                (canal, destino, template, payload, idreserva, idcliente,
+                 idfuncionario, agendado_para, dedup_key, template_versao)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+             ON CONFLICT (dedup_key) WHERE dedup_key IS NOT NULL
+             DO NOTHING
+             RETURNING id",
+        )
+        .bind(n.canal)
+        .bind(&n.destino)
+        .bind(&n.template)
+        .bind(&n.payload)
+        .bind(n.idreserva)
+        .bind(n.idcliente)
+        .bind(n.idfuncionario)
+        .bind(n.agendado_para)
+        .bind(dedup_key)
+        .bind(template_versao)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn por_reserva(&self, idreserva: i64) -> Result<Vec<ItemFila>, DomainError> {
+        sqlx::query_as::<_, ItemFila>("SELECT * FROM fila_envio WHERE idreserva = $1 ORDER BY id")
+            .bind(idreserva)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(map_db_err)
+    }
+
+    async fn buscar(&self, id: i64) -> Result<Option<ItemFila>, DomainError> {
+        sqlx::query_as::<_, ItemFila>("SELECT * FROM fila_envio WHERE id = $1")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(map_db_err)
+    }
+
+    async fn suprimir_pendentes(
+        &self,
+        idreserva: i64,
+        templates: &[&str],
+        motivo: &str,
+    ) -> Result<u64, DomainError> {
+        let r = sqlx::query(
+            "UPDATE fila_envio SET status='suprimido', ultimo_erro=$3
+             WHERE idreserva=$1 AND template = ANY($2) AND status='pendente'",
+        )
+        .bind(idreserva)
+        .bind(templates)
+        .bind(motivo)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(r.rows_affected())
+    }
+
+    async fn marcar_suprimido(&self, id: i64, motivo: &str) -> Result<(), DomainError> {
+        // Só suprime o que ainda não saiu — enviado/entregue fica intocado.
+        sqlx::query(
+            "UPDATE fila_envio SET status='suprimido', ultimo_erro=$2
+             WHERE id=$1 AND status IN ('pendente','enviando')",
+        )
+        .bind(id)
+        .bind(motivo)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    async fn marcar_desconhecido(&self, id: i64, erro: &str) -> Result<(), DomainError> {
+        sqlx::query(
+            "UPDATE fila_envio SET status='desconhecido', ultimo_erro=$2,
+                tentativas = tentativas + 1
+             WHERE id=$1 AND status IN ('pendente','enviando')",
+        )
+        .bind(id)
+        .bind(erro)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    async fn reenvios_recentes(&self, idreserva: i64, janela_seg: i64) -> Result<i64, DomainError> {
+        sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(*) FROM fila_envio
+             WHERE idreserva = $1 AND dedup_key ~ ':re[0-9]+$'
+               AND criado_em > now() - make_interval(secs => $2)",
+        )
+        .bind(idreserva)
+        .bind(janela_seg.max(1) as i32)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
     async fn email_suprimido(&self, email: &str) -> Result<bool, DomainError> {
         sqlx::query_scalar::<_, bool>(
             "SELECT EXISTS(SELECT 1 FROM email_supressao WHERE email = lower(trim($1)))",
@@ -625,7 +734,8 @@ const AUTO_COLS: &str = "r.id AS idreserva, r.idcliente, c.nome AS cliente_nome,
      c.email AS cliente_email, c.telefone AS cliente_telefone,
      r.entradaprevista, r.saidaprevista,
      a.nome AS acomodacao_nome, r.token_publico,
-     coalesce((SELECT fnrh_assinatura FROM estabelecimento ORDER BY id LIMIT 1), false) AS fnrh_assinatura";
+     coalesce((SELECT fnrh_assinatura FROM estabelecimento ORDER BY id LIMIT 1), false) AS fnrh_assinatura,
+     coalesce(c.whatsapp_optin, false) AS whatsapp_optin";
 
 const AUTO_FROM: &str = "FROM reserva r
      JOIN cliente c ON c.id = r.idcliente
@@ -703,6 +813,35 @@ impl AutomacaoRepository for PgAutomacaoRepository {
             .fetch_optional(&self.pool)
             .await
             .map_err(map_db_err)
+    }
+
+    async fn reserva_pos_reserva(
+        &self,
+        idreserva: i64,
+    ) -> Result<Option<ReservaPosReserva>, DomainError> {
+        sqlx::query_as::<_, ReservaPosReserva>(
+            "SELECT r.id AS idreserva, r.idcliente,
+                    c.nome AS cliente_nome, c.email AS cliente_email,
+                    c.telefone AS cliente_telefone,
+                    COALESCE(c.whatsapp_optin, false) AS whatsapp_optin,
+                    a.nome AS acomodacao_nome, r.quantidade_hospedes,
+                    r.entradaprevista, r.saidaprevista, r.status,
+                    r.valor_total, r.token_publico, r.expira_em,
+                    COALESCE(SUM(p.valor_centavos)
+                             FILTER (WHERE p.status = 'pago'), 0)::bigint AS pago_centavos,
+                    COALESCE(SUM(p.valor_centavos)
+                             FILTER (WHERE p.status = 'pendente'), 0)::bigint AS pendente_centavos
+             FROM reserva r
+             JOIN cliente c ON c.id = r.idcliente
+             LEFT JOIN acomodacao a ON a.id = r.idacomodacao
+             LEFT JOIN pagamento p ON p.idreserva = r.id
+             WHERE r.id = $1
+             GROUP BY r.id, c.id, a.nome",
+        )
+        .bind(idreserva)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)
     }
 
     async fn reserva_publica_por_token(

@@ -28,7 +28,7 @@ use clarituz_domain::ports::{
     NovoAdicional, NovoClienteSite, NovoItemConsumido, ReservaRepository,
 };
 use clarituz_domain::queries::{ComprovanteResumo, MapaQuarto, ReservaDetalhe, ReservaResumo};
-use clarituz_domain::value_objects::PeriodoEstadia;
+use clarituz_domain::value_objects::{telefone as tel_vo, PeriodoEstadia};
 use clarituz_domain::DomainError;
 use clarituz_shared::{ids, money, time, Page, PageParams};
 use rust_decimal::Decimal;
@@ -62,6 +62,9 @@ pub struct ReservaDeps {
     pub hold_minutos: i64,
     /// Distribuição (Channex) — notifica mudança de estoque pós-commit.
     pub dist: Option<Arc<crate::services::channex::ChannexService>>,
+    /// Comunicação transacional pós-reserva — enfileira avisos
+    /// (registrada/confirmada/cancelada) após o commit da transição.
+    pub comunicacao: Option<Arc<crate::services::comunicacao::ComunicacaoService>>,
 }
 
 pub struct ReservaService {
@@ -81,6 +84,7 @@ pub struct ReservaService {
     contratos: Arc<dyn ContratoRepository>,
     hold_minutos: i64,
     dist: Option<Arc<crate::services::channex::ChannexService>>,
+    comunicacao: Option<Arc<crate::services::comunicacao::ComunicacaoService>>,
 }
 
 impl ReservaService {
@@ -102,6 +106,7 @@ impl ReservaService {
             contratos: d.contratos,
             hold_minutos: d.hold_minutos,
             dist: d.dist,
+            comunicacao: d.comunicacao,
         }
     }
 
@@ -767,8 +772,16 @@ impl ReservaService {
                 cpf,
                 cpf_busca: cpf_limpo,
                 email: email.clone(),
-                telefone: telefone.clone(),
+                // Telefone gravado normalizado (dígitos + DDI) — WhatsApp
+                // transacional depende do formato internacional.
+                telefone: tel_vo::normalizar_whatsapp_ddi(&telefone, input.telefone_ddi.as_deref())
+                    .unwrap_or(telefone.clone()),
             })
+            .await?;
+        // Consentimento transacional de WhatsApp — independente do
+        // marketing; a última escolha do hóspede prevalece.
+        self.clientes
+            .site_consent_whatsapp(idcliente, input.aceito_whatsapp)
             .await?;
 
         let obs = match input
@@ -878,6 +891,14 @@ impl ReservaService {
                         "origem": "site",
                     })),
                 );
+                // Pós-commit: a intenção de comunicação sai pela outbox —
+                // falha aqui nunca desfaz a reserva persistida.
+                if let Some(c) = &self.comunicacao {
+                    if let Err(e) = c.sinalizar_reserva_criada(reserva.id).await {
+                        tracing::warn!(idreserva = reserva.id, erro = %e,
+                            "pós-reserva: sinalização de criação falhou");
+                    }
+                }
                 Ok(ReservaPublicaOutput {
                     ok: true,
                     status: "reserva_criada",
@@ -1170,6 +1191,14 @@ impl ReservaService {
             .de_ator(ator.id, &ator.nome)
             .dados(serde_json::json!({"idreserva": id})),
         );
+        // Pós-commit: suprime pendências e enfileira o aviso de
+        // cancelamento — falha não desfaz o cancelamento.
+        if let Some(c) = &self.comunicacao {
+            if let Err(e) = c.sinalizar_reserva_cancelada(id).await {
+                tracing::warn!(idreserva = id, erro = %e,
+                    "pós-reserva: sinalização de cancelamento falhou");
+            }
+        }
         Ok(CancelamentoResponse {
             reserva: out.reserva,
             reembolso: out.reembolso,

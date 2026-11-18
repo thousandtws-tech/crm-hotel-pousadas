@@ -281,6 +281,14 @@ pub fn build(state: AppState) -> Router {
             "/reservas/{id}/fnrh",
             get(routes::reservas::fnrh_reserva).post(routes::reservas::emitir_fnrh),
         )
+        .route(
+            "/reservas/{id}/comunicacoes",
+            get(routes::reservas::comunicacoes_reserva),
+        )
+        .route(
+            "/reservas/{id}/comunicacoes/{item}/reenviar",
+            post(routes::reservas::reenviar_comunicacao),
+        )
         .route("/fnrh/exportar", get(routes::reservas::exportar_fnrh))
         .route(
             "/fechamento/pendencias",

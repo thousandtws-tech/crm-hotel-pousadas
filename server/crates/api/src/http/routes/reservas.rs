@@ -15,7 +15,9 @@ use clarituz_application::dto::{
     FnrhEmitRequest, GrupoInput, ItemConsumidoRequest, NoShowRequest, ReservaFiltroQuery,
     ReservaInput,
 };
-use clarituz_domain::entities::{Acompanhante, AdicionalConsumo, Fnrh, ItemConsumido, Reserva};
+use clarituz_domain::entities::{
+    Acompanhante, AdicionalConsumo, Fnrh, ItemConsumido, ItemFila, Reserva,
+};
 use clarituz_domain::enums::StatusReserva;
 use clarituz_domain::ports::FiltroReserva;
 use clarituz_domain::queries::{ComprovanteResumo, ReservaDetalhe, ReservaResumo};
@@ -348,6 +350,36 @@ pub async fn emitir_fnrh(
 }
 
 /// Pendências do fechamento do dia — no-shows, check-outs e contas abertas.
+/// Kommunikationshistorik för reservan — alla fila_envio-poster
+/// (e-post/WhatsApp, status, försök, fel) i kronologisk ordning.
+pub async fn comunicacoes_reserva(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<Json<Vec<ItemFila>>, AppError> {
+    Ok(Json(
+        s.services
+            .comunicacao
+            .comunicacoes_reserva(&ator, id)
+            .await?,
+    ))
+}
+
+/// Manuellt återskick av en kommunikationspost — granskad och
+/// hastighetsbegränsad i tjänstelagret; originalet bevaras.
+pub async fn reenviar_comunicacao(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path((id, item)): Path<(i64, i64)>,
+) -> Result<(StatusCode, Json<ItemFila>), AppError> {
+    let ny = s
+        .services
+        .comunicacao
+        .reenviar_comunicacao(&ator, id, item)
+        .await?;
+    Ok((StatusCode::CREATED, Json(ny)))
+}
+
 pub async fn pendencias_fechamento(
     State(s): State<AppState>,
     _ator: Ator,

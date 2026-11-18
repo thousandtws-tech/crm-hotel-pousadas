@@ -23,6 +23,14 @@ export class ComunicacaoApi extends ApiHttp {
     return this.get<M.ItemFila[]>('/comunicacao/fila');
   }
 
+  comunicacoesReserva(idreserva: number) {
+    return this.get<M.ItemFila[]>(`/reservas/${idreserva}/comunicacoes`);
+  }
+
+  reenviarComunicacao(idreserva: number, iditem: number) {
+    return this.post<void>(`/reservas/${idreserva}/comunicacoes/${iditem}/reenviar`, {});
+  }
+
   matrizNotificacao() {
     return this.get<M.RegraMatriz[]>('/comunicacao/matriz');
   }

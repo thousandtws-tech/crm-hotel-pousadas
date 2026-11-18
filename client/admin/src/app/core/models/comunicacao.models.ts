@@ -39,7 +39,14 @@ export interface Atendimento {
 
 // -- mapa por andar + bloqueio ---------------------------------------------------
 export type CanalEnvio = 'email' | 'whatsapp' | 'push' | 'inbox';
-export type StatusEnvio = 'pendente' | 'enviando' | 'enviado' | 'falhou' | 'cancelado';
+export type StatusEnvio =
+  | 'pendente'
+  | 'enviando'
+  | 'enviado'
+  | 'falhou'
+  | 'cancelado'
+  | 'suprimido'
+  | 'desconhecido';
 export type StatusAvaliacao = 'pendente' | 'respondida' | 'expirada';
 
 export interface ItemFila {
@@ -52,6 +59,10 @@ export interface ItemFila {
   tentativas: number;
   ultimo_erro: string | null;
   status: StatusEnvio;
+  dedup_key?: string | null;
+  template_versao?: number;
+  entregue_em?: string | null;
+  lido_em?: string | null;
   agendado_para: string;
   criado_em: string;
   enviado_em: string | null;

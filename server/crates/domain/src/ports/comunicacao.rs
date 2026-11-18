@@ -39,6 +39,35 @@ pub trait FilaEnvioRepository: Send + Sync {
     async fn cancelar(&self, id: i64) -> Result<(), DomainError>;
     async fn listar(&self, limite: i64) -> Result<Vec<ItemFila>, DomainError>;
 
+    // -- pós-reserva: dedup, supressão, resultado ambíguo e histórico ---------
+
+    /// Enfileira com chave idempotente — `None` quando a intenção já
+    /// existe (refresh, double-click, evento repetido ou worker concorrente).
+    async fn enfileirar_dedup(
+        &self,
+        novo: &NovoEnvio,
+        dedup_key: &str,
+        template_versao: i32,
+    ) -> Result<Option<i64>, DomainError>;
+    /// Itens da reserva (mais antigo → mais novo) — seção "Comunicações".
+    async fn por_reserva(&self, idreserva: i64) -> Result<Vec<ItemFila>, DomainError>;
+    async fn buscar(&self, id: i64) -> Result<Option<ItemFila>, DomainError>;
+    /// Suprime itens ainda pendentes de um conjunto de templates —
+    /// transição posterior tornou a intenção obsoleta (ex.: confirmação
+    /// após pendência). Devolve quantos foram suprimidos.
+    async fn suprimir_pendentes(
+        &self,
+        idreserva: i64,
+        templates: &[&str],
+        motivo: &str,
+    ) -> Result<u64, DomainError>;
+    /// Marca item individual como suprimido (verificação pré-envio).
+    async fn marcar_suprimido(&self, id: i64, motivo: &str) -> Result<(), DomainError>;
+    /// Sem resposta do provedor — resultado ambíguo, não reenvia cego.
+    async fn marcar_desconhecido(&self, id: i64, erro: &str) -> Result<(), DomainError>;
+    /// Reenvios manuais recentes da reserva — rate limit do reenvio.
+    async fn reenvios_recentes(&self, idreserva: i64, janela_seg: i64) -> Result<i64, DomainError>;
+
     async fn email_suprimido(&self, email: &str) -> Result<bool, DomainError>;
     async fn suprimir_email(&self, email: &str, motivo: &str) -> Result<(), DomainError>;
 
@@ -201,6 +230,12 @@ pub trait AutomacaoRepository: Send + Sync {
         canal: CanalEnvio,
     ) -> Result<bool, DomainError>;
     async fn reserva_por_id(&self, idreserva: i64) -> Result<Option<ReservaAuto>, DomainError>;
+    /// Snapshot completo para mensagens transacionais pós-reserva —
+    /// inclui consentimento WhatsApp e situação de pagamento agregada.
+    async fn reserva_pos_reserva(
+        &self,
+        idreserva: i64,
+    ) -> Result<Option<ReservaPosReserva>, DomainError>;
     async fn reserva_publica_por_token(
         &self,
         token: uuid::Uuid,
@@ -226,6 +261,35 @@ pub struct ReservaAuto {
     pub token_publico: Option<uuid::Uuid>,
     #[sqlx(default)]
     pub fnrh_assinatura: bool,
+    /// Consentimento transacional de WhatsApp — templates automáticos
+    /// (FNRH, checkout, pesquisa) só vão ao WhatsApp com opt-in.
+    #[sqlx(default)]
+    pub whatsapp_optin: bool,
+}
+
+/// Snapshot da reserva para os templates pós-reserva — dados do hóspede,
+/// estadia, status, consentimento WhatsApp e pagamento agregado.
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct ReservaPosReserva {
+    pub idreserva: i64,
+    pub idcliente: i64,
+    pub cliente_nome: String,
+    pub cliente_email: Option<String>,
+    pub cliente_telefone: Option<String>,
+    #[sqlx(default)]
+    pub whatsapp_optin: bool,
+    pub acomodacao_nome: Option<String>,
+    pub quantidade_hospedes: i32,
+    pub entradaprevista: chrono::NaiveDate,
+    pub saidaprevista: chrono::NaiveDate,
+    pub status: crate::enums::StatusReserva,
+    pub valor_total: rust_decimal::Decimal,
+    #[sqlx(default)]
+    pub pago_centavos: i64,
+    #[sqlx(default)]
+    pub pendente_centavos: i64,
+    pub token_publico: Option<uuid::Uuid>,
+    pub expira_em: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize)]

@@ -20,6 +20,8 @@ const SUBMISSION: BookingSubmission = {
   lateCheckout: false,
   aceitoTermos: true,
   aceitoMarketing: false,
+  aceitoWhatsapp: true,
+  guestPhoneDdi: '55',
   codigoCorporativo: 'CORP10',
 } as BookingSubmission;
 
@@ -56,11 +58,13 @@ describe('BookingService', () => {
       nome: 'Maria Silva',
       email: 'maria@example.com',
       telefone: '(22) 99999-0000',
+      telefone_ddi: '55',
       observacoes: 'Berço',
       early_checkin: true,
       late_checkout: false,
       aceito_termos: true,
       aceito_marketing: false,
+      aceito_whatsapp: true,
       codigo_corporativo: 'CORP10',
     });
     req.flush({ idreserva: 42, token_publico: 'tok-1', mensagem: 'Recebido!' });

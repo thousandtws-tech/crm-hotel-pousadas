@@ -4,15 +4,17 @@
 //! credenciais configuradas o item falha e volta pra fila com backoff,
 //! sem derrubar nada.
 
+use std::fmt::Write;
 use std::sync::Arc;
 
 use crate::actor::Ator;
 use chrono::{Duration, Utc};
 use clarituz_domain::entities::*;
-use clarituz_domain::enums::{CanalEnvio, StatusAvaliacao};
+use clarituz_domain::enums::{CanalEnvio, StatusAvaliacao, StatusEnvio, StatusReserva};
 use clarituz_domain::error::DomainError;
 use clarituz_domain::events::{Aviso, TipoAviso};
 use clarituz_domain::ports::*;
+use clarituz_domain::value_objects::telefone;
 
 use crate::dto::RespostaAvaliacaoInput;
 use crate::error::AppResult;
@@ -20,6 +22,31 @@ use crate::error::AppResult;
 const MAX_LOTE: i64 = 50;
 const LEMBRETE_DIAS: i64 = 3;
 const EXPIRAR_AVALIACAO_DIAS: i64 = 14;
+
+// -- pós-reserva: comunicação transacional ------------------------------------
+
+/// Mensagem de reserva registrada aguardando pagamento/análise.
+pub const TPL_RESERVA_AGUARDANDO: &str = "reserva_aguardando";
+/// Confirmação efetiva da reserva (uma única vez por transição real).
+pub const TPL_RESERVA_CONFIRMADA: &str = "reserva_confirmada";
+/// Aviso de cancelamento (manual ou hold expirado).
+pub const TPL_RESERVA_CANCELADA: &str = "reserva_cancelada";
+/// Versão dos templates pós-reserva — bump ao mudar texto/campos.
+const VERSAO_POS_RESERVA: i32 = 1;
+/// Prefixo dos templates transacionais de reserva — marca quais itens
+/// passam por verificação de estado pré-envio e tratamento de ambiguidade.
+const TPL_POS_RESERVA_PREFIX: &str = "reserva_";
+/// Janela mínima entre reenvios manuais da mesma reserva.
+const REENVIO_JANELA_SEG: i64 = 120;
+
+/// Resultado do processamento de um item da fila — distingue envio
+/// aceito de supressão por verificação pré-envio.
+enum OutcomeEnvio {
+    /// Provedor aceitou — `provider_msg_id` quando devolvido.
+    Enviado(Option<String>),
+    /// Intenção obsoleta ou destino inválido — item vira 'suprimido'.
+    Suprimido(String),
+}
 
 pub struct ComunicacaoService {
     fila: Arc<dyn FilaEnvioRepository>,
@@ -141,24 +168,53 @@ impl ComunicacaoService {
         for item in itens {
             processados += 1;
             match self.enviar_item(&item).await {
-                Ok(provider_id) => {
+                Ok(OutcomeEnvio::Enviado(provider_id)) => {
                     self.fila.marcar_enviado(item.id, provider_id).await?;
                 }
+                Ok(OutcomeEnvio::Suprimido(motivo)) => {
+                    self.fila.marcar_suprimido(item.id, &motivo).await?;
+                    tracing::info!(id = item.id, motivo = %motivo, "fila_envio: suprimido");
+                }
                 Err(e) => {
-                    let backoff = 60i64 * (1 << item.tentativas.min(5));
-                    self.fila
-                        .marcar_falha(item.id, &e.to_string(), backoff)
-                        .await?;
-                    tracing::warn!(id = item.id, erro = %e, "fila_envio: falha");
+                    // Sem resposta do provedor em template transacional de
+                    // reserva: o envio pode ter chegado — resultado ambíguo
+                    // vira 'desconhecido' (nunca retry cego; reconciliação
+                    // ou reenvio manual auditado).
+                    if e == DomainError::Infra
+                        && item.canal == CanalEnvio::Whatsapp
+                        && item.template.starts_with(TPL_POS_RESERVA_PREFIX)
+                    {
+                        self.fila
+                            .marcar_desconhecido(item.id, &e.to_string())
+                            .await?;
+                        tracing::warn!(id = item.id, "fila_envio: resultado ambíguo");
+                    } else {
+                        let backoff = 60i64 * (1 << item.tentativas.min(5));
+                        self.fila
+                            .marcar_falha(item.id, &e.to_string(), backoff)
+                            .await?;
+                        tracing::warn!(id = item.id, erro = %e, "fila_envio: falha");
+                    }
                 }
             }
         }
         Ok(processados)
     }
 
-    async fn enviar_item(&self, item: &ItemFila) -> Result<Option<String>, DomainError> {
+    async fn enviar_item(&self, item: &ItemFila) -> Result<OutcomeEnvio, DomainError> {
         if item.canal == CanalEnvio::Email && self.fila.email_suprimido(&item.destino).await? {
-            return Err(DomainError::regra("destino suprimido (bounce/complaint)"));
+            return Ok(OutcomeEnvio::Suprimido(
+                "destino suprimido (bounce/complaint)".into(),
+            ));
+        }
+        // Templates pós-reserva: o estado pode ter transitado entre o
+        // enfileiramento e o envio — pendência vira 'suprimido' quando a
+        // confirmação (ou cancelamento) já ocorreu; opt-in e telefone do
+        // hóspede são re-checados na hora do disparo.
+        if item.template.starts_with(TPL_POS_RESERVA_PREFIX) {
+            if let Some(motivo) = self.motivo_supressao(item).await? {
+                return Ok(OutcomeEnvio::Suprimido(motivo));
+            }
         }
         // LGPD: opt-out suprime templates não-transacionais (pesquisa,
         // campanhas) — o operacional da estadia continua.
@@ -166,7 +222,7 @@ impl ComunicacaoService {
         if let Some(idc) = item.idcliente {
             if crate::services::lgpd::TEMPLATES_SUPRIMIVEIS.contains(&item.template.as_str()) {
                 if self.lgpd.cliente_opt_out(idc).await? {
-                    return Err(DomainError::regra("suprimido: opt-out LGPD"));
+                    return Ok(OutcomeEnvio::Suprimido("opt-out LGPD".into()));
                 }
                 // Todo e-mail suprimível carrega o link de descadastro
                 // assinado (art. 8º — revogação tão fácil quanto o consent).
@@ -191,7 +247,8 @@ impl ComunicacaoService {
                 return r
                     .emissor
                     .enviar(&item.destino, &item.template, &payload)
-                    .await;
+                    .await
+                    .map(OutcomeEnvio::Enviado);
             }
         }
         let emissor = self
@@ -202,6 +259,48 @@ impl ComunicacaoService {
         emissor
             .enviar(&item.destino, &item.template, &payload)
             .await
+            .map(OutcomeEnvio::Enviado)
+    }
+
+    /// Verificação pré-envio dos templates pós-reserva — devolve o motivo
+    /// quando a intenção virou obsoleta/inválida (`Some` = suprimir).
+    async fn motivo_supressao(&self, item: &ItemFila) -> Result<Option<String>, DomainError> {
+        let Some(idr) = item.idreserva else {
+            return Ok(Some("sem reserva associada".into()));
+        };
+        let Some(snap) = self.automacao.reserva_pos_reserva(idr).await? else {
+            return Ok(Some("reserva não encontrada".into()));
+        };
+        if item.canal == CanalEnvio::Whatsapp {
+            if !snap.whatsapp_optin {
+                return Ok(Some("hóspede não autorizou WhatsApp transacional".into()));
+            }
+            if telefone::normalizar_whatsapp(&item.destino).is_none() {
+                return Ok(Some("telefone do hóspede inválido".into()));
+            }
+        }
+        let obsoleto = match item.template.as_str() {
+            // Aguardando pagamento/análise só vale enquanto a reserva segue
+            // pendente e sem pagamento liquidado.
+            TPL_RESERVA_AGUARDANDO => {
+                snap.status != StatusReserva::Pendente || snap.pago_centavos > 0
+            }
+            TPL_RESERVA_CONFIRMADA => snap.status == StatusReserva::Cancelada,
+            TPL_RESERVA_CANCELADA => snap.status != StatusReserva::Cancelada,
+            _ => false,
+        };
+        Ok(obsoleto.then(|| {
+            let lbl = match snap.status {
+                StatusReserva::Pendente => "pendente",
+                StatusReserva::Iniciada => "em estadia",
+                StatusReserva::Cancelada => "cancelada",
+                StatusReserva::Finalizada => "finalizada",
+            };
+            format!(
+                "estado mudou após enfileirar (status {lbl}, pago ¢{})",
+                snap.pago_centavos
+            )
+        }))
     }
 
     /// Marcos de entrega/leitura — chamados pelo webhook Z-API.
@@ -406,21 +505,396 @@ impl ComunicacaoService {
                 })
                 .await;
         }
-        if let Some(fone) = &r.cliente_telefone {
-            let _ = self
-                .fila
-                .enfileirar(NovoEnvio {
-                    canal: CanalEnvio::Whatsapp,
-                    destino: fone.clone(),
-                    template: template.into(),
-                    payload: corpo,
-                    idreserva: Some(r.idreserva),
-                    idcliente: Some(r.idcliente),
-                    idfuncionario: None,
-                    agendado_para: agora,
-                })
-                .await;
+        // WhatsApp só com consentimento transacional gravado — e-mail
+        // continua sendo o canal default quando o hóspede não optou.
+        if r.whatsapp_optin {
+            if let Some(fone) = &r.cliente_telefone {
+                let _ = self
+                    .fila
+                    .enfileirar(NovoEnvio {
+                        canal: CanalEnvio::Whatsapp,
+                        destino: fone.clone(),
+                        template: template.into(),
+                        payload: corpo.clone(),
+                        idreserva: Some(r.idreserva),
+                        idcliente: Some(r.idcliente),
+                        idfuncionario: None,
+                        agendado_para: agora,
+                    })
+                    .await;
+            }
         }
+    }
+
+    // ------------------------------------------------------------------
+    // comunicação transacional pós-reserva
+    // ------------------------------------------------------------------
+
+    /// Reserva persistida pelo site — chamado pós-commit pelo serviço de
+    /// reservas. Enfileira o aviso de pendência (pagamento/análise) de
+    /// acordo com o estado atual; rollback da reserva nunca chega aqui.
+    pub async fn sinalizar_reserva_criada(&self, idreserva: i64) -> AppResult<()> {
+        let Some(snap) = self.automacao.reserva_pos_reserva(idreserva).await? else {
+            return Ok(());
+        };
+        match snap.status {
+            StatusReserva::Pendente => {
+                self.enfileirar_pos_reserva(&snap, TPL_RESERVA_AGUARDANDO)
+                    .await
+            }
+            // Criada já efetiva (ex.: pagamento no local confirmado na
+            // recepção) — vai direto a confirmação.
+            StatusReserva::Iniciada | StatusReserva::Finalizada => {
+                self.enfileirar_pos_reserva(&snap, TPL_RESERVA_CONFIRMADA)
+                    .await
+            }
+            StatusReserva::Cancelada => Ok(()),
+        }
+    }
+
+    /// Transição real para confirmada — chamada só quando a evidência é
+    /// backend-validada (pagamento liquidado, confirmação manual). A
+    /// `dedup_key` garante exatamente uma confirmação por reserva/canal;
+    /// chamadas repetidas (webhook duplicado, conciliação) são no-ops.
+    pub async fn sinalizar_reserva_confirmada(&self, idreserva: i64) -> AppResult<()> {
+        let Some(snap) = self.automacao.reserva_pos_reserva(idreserva).await? else {
+            return Ok(());
+        };
+        if snap.status == StatusReserva::Cancelada {
+            return Ok(());
+        }
+        // Pendência ainda na fila ficou obsoleta — suprime antes de
+        // enfileirar a confirmação (ordem: suprimir → enfileirar).
+        let _ = self
+            .fila
+            .suprimir_pendentes(idreserva, &[TPL_RESERVA_AGUARDANDO], "reserva confirmada")
+            .await?;
+        self.enfileirar_pos_reserva(&snap, TPL_RESERVA_CONFIRMADA)
+            .await
+    }
+
+    /// Cancelamento manual ou hold expirado — suprime pendências e
+    /// enfileira o aviso uma única vez.
+    pub async fn sinalizar_reserva_cancelada(&self, idreserva: i64) -> AppResult<()> {
+        let Some(snap) = self.automacao.reserva_pos_reserva(idreserva).await? else {
+            return Ok(());
+        };
+        if snap.status != StatusReserva::Cancelada {
+            return Ok(());
+        }
+        let _ = self
+            .fila
+            .suprimir_pendentes(
+                idreserva,
+                &[TPL_RESERVA_AGUARDANDO, TPL_RESERVA_CONFIRMADA],
+                "reserva cancelada",
+            )
+            .await?;
+        self.enfileirar_pos_reserva(&snap, TPL_RESERVA_CANCELADA)
+            .await
+    }
+
+    /// Enfileira o template pós-reserva para os canais do hóspede —
+    /// e-mail sempre que houver endereço; WhatsApp somente com o
+    /// consentimento transacional gravado (re-checado no envio).
+    async fn enfileirar_pos_reserva(&self, r: &ReservaPosReserva, template: &str) -> AppResult<()> {
+        let corpo = self.corpo_pos_reserva(r, template);
+        let agora = Utc::now();
+        if let Some(email) = &r.cliente_email {
+            self.fila
+                .enfileirar_dedup(
+                    &NovoEnvio {
+                        canal: CanalEnvio::Email,
+                        destino: email.clone(),
+                        template: template.into(),
+                        payload: corpo.clone(),
+                        idreserva: Some(r.idreserva),
+                        idcliente: Some(r.idcliente),
+                        idfuncionario: None,
+                        agendado_para: agora,
+                    },
+                    &dedup_pos_reserva(r.idreserva, template, CanalEnvio::Email),
+                    VERSAO_POS_RESERVA,
+                )
+                .await?;
+        }
+        if r.whatsapp_optin {
+            if let Some(fone) = &r.cliente_telefone {
+                // Normaliza já na intenção (DDI) — inválido entra como veio
+                // e a verificação pré-envio suprime com motivo auditável.
+                let destino = telefone::normalizar_whatsapp(fone).unwrap_or_else(|| fone.clone());
+                self.fila
+                    .enfileirar_dedup(
+                        &NovoEnvio {
+                            canal: CanalEnvio::Whatsapp,
+                            destino,
+                            template: template.into(),
+                            payload: corpo,
+                            idreserva: Some(r.idreserva),
+                            idcliente: Some(r.idcliente),
+                            idfuncionario: None,
+                            agendado_para: agora,
+                        },
+                        &dedup_pos_reserva(r.idreserva, template, CanalEnvio::Whatsapp),
+                        VERSAO_POS_RESERVA,
+                    )
+                    .await?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Histórico de comunicações da reserva — seção "Comunicações" do
+    /// detalhe (qualquer ator autenticado; o item já é registro do CRM).
+    pub async fn comunicacoes_reserva(
+        &self,
+        _ator: &Ator,
+        idreserva: i64,
+    ) -> AppResult<Vec<ItemFila>> {
+        Ok(self.fila.por_reserva(idreserva).await?)
+    }
+
+    /// Reenvio manual — admin, limitado e auditado. O item original é
+    /// preservado; o reenvio cria um NOVO item (`dedup :re{id}`) com
+    /// ciclo de vida próprio — nunca sobrescreve a tentativa anterior.
+    /// Item 'desconhecido' exige justamente esta decisão do operador
+    /// após reconciliar com o provedor.
+    pub async fn reenviar_comunicacao(
+        &self,
+        ator: &Ator,
+        idreserva: i64,
+        item_id: i64,
+    ) -> AppResult<ItemFila> {
+        ator.exigir_admin()?;
+        let Some(item) = self.fila.buscar(item_id).await? else {
+            return Err(DomainError::nao_encontrado("Comunicação não encontrada.").into());
+        };
+        if item.idreserva != Some(idreserva) {
+            return Err(DomainError::validacao("Item não pertence à reserva.").into());
+        }
+        if matches!(item.status, StatusEnvio::Pendente | StatusEnvio::Enviando) {
+            return Err(DomainError::regra("Comunicação ainda em processamento.").into());
+        }
+        if self
+            .fila
+            .reenvios_recentes(idreserva, REENVIO_JANELA_SEG)
+            .await?
+            >= 1
+        {
+            return Err(DomainError::regra(
+                "Reenvio manual recente — aguarde antes de tentar novamente.",
+            )
+            .into());
+        }
+        let base = item.dedup_key.clone().unwrap_or_else(|| {
+            format!(
+                "pos:{}:{}:{}:v{}",
+                idreserva,
+                item.template,
+                canal_rotulo(item.canal),
+                item.template_versao
+            )
+        });
+        let Some(novo_id) = self
+            .fila
+            .enfileirar_dedup(
+                &NovoEnvio {
+                    canal: item.canal,
+                    destino: item.destino.clone(),
+                    template: item.template.clone(),
+                    payload: item.payload.clone(),
+                    idreserva: Some(idreserva),
+                    idcliente: item.idcliente,
+                    idfuncionario: Some(ator.id),
+                    agendado_para: Utc::now(),
+                },
+                &format!("{base}:re{item_id}"),
+                item.template_versao,
+            )
+            .await?
+        else {
+            return Err(DomainError::conflito("Esta comunicação já foi reenviada.").into());
+        };
+        self.eventos.avisar(
+            Aviso::novo(
+                TipoAviso::Info,
+                "Reenvio manual de comunicação",
+                format!(
+                    "{} reenviou a comunicação #{item_id} como nova intenção #{novo_id} (reserva Nº{idreserva}).",
+                    ator.nome
+                ),
+            )
+            .de_ator(ator.id, &ator.nome)
+            .dados(serde_json::json!({
+                "idreserva": idreserva,
+                "item_origem": item_id,
+                "item_novo": novo_id,
+                "status_origem": serde_json::to_value(item.status).ok(),
+            })),
+        );
+        tracing::info!(
+            ator = ator.id,
+            item = item_id,
+            novo = novo_id,
+            idreserva,
+            "reenvio manual de comunicação"
+        );
+        Ok(self.fila.buscar(novo_id).await?.unwrap_or(item))
+    }
+
+    /// Payload do template pós-reserva — mesmo formato dos demais
+    /// envios (`assunto`+`html` p/ e-mail, `texto` p/ WhatsApp).
+    fn corpo_pos_reserva(&self, r: &ReservaPosReserva, template: &str) -> serde_json::Value {
+        let (assunto, texto) = match template {
+            TPL_RESERVA_CONFIRMADA => (
+                format!("Reserva confirmada — {}", self.pousada),
+                self.texto_confirmada(r),
+            ),
+            TPL_RESERVA_CANCELADA => (
+                format!("Reserva cancelada — {}", self.pousada),
+                self.texto_cancelada(r),
+            ),
+            _ => (
+                format!("Recebemos sua reserva — {}", self.pousada),
+                self.texto_aguardando(r),
+            ),
+        };
+        serde_json::json!({
+            "assunto": assunto,
+            "html": self.html_pos_reserva(&texto),
+            "tipo": "texto",
+            "texto": texto,
+        })
+    }
+
+    /// "Sua reserva foi registrada" — pagamento pendente (link + prazo)
+    /// ou aguardando análise da recepção, conforme o estado.
+    fn texto_aguardando(&self, r: &ReservaPosReserva) -> String {
+        let mut s = format!(
+            "Olá, {}! Recebemos sua reserva na {}.\n\n\
+             Reserva Nº #{}\n\
+             Check-in: {}\n\
+             Check-out: {} ({})\n\
+             Acomodação: {}\n\
+             Hóspedes: {}\n\
+             Total: {}",
+            primeiro_nome(&r.cliente_nome),
+            self.pousada,
+            r.idreserva,
+            r.entradaprevista.format("%d/%m/%Y"),
+            r.saidaprevista.format("%d/%m/%Y"),
+            rotulo_diarias(r.entradaprevista, r.saidaprevista),
+            r.acomodacao_nome.as_deref().unwrap_or("acomodação"),
+            r.quantidade_hospedes,
+            brl_decimal(r.valor_total),
+        );
+        if r.pendente_centavos > 0 {
+            let _ = write!(
+                s,
+                "\n\nPagamento pendente: {}",
+                brl_centavos(r.pendente_centavos)
+            );
+            if let Some(exp) = r.expira_em {
+                let _ = write!(
+                    s,
+                    "\nSua acomodação fica garantida até {}.",
+                    exp.format("%d/%m/%Y às %H:%M (UTC)")
+                );
+            }
+        } else {
+            s += "\n\nNossa recepção vai analisar e confirmar em seguida.";
+        }
+        if let Some(link) = self.link_portal(r) {
+            let _ = write!(s, "\n\nAcompanhe sua reserva: {link}");
+        }
+        s += "\nQualquer dúvida, responda esta mensagem.";
+        s
+    }
+
+    /// "Reserva confirmada" — dados completos da estadia + valores.
+    fn texto_confirmada(&self, r: &ReservaPosReserva) -> String {
+        let mut s = format!(
+            "Olá, {}! Sua reserva na {} está CONFIRMADA.\n\n\
+             Reserva Nº #{}\n\
+             Check-in: {}\n\
+             Check-out: {} ({})\n\
+             Acomodação: {}\n\
+             Hóspedes: {}\n\
+             Total: {}",
+            primeiro_nome(&r.cliente_nome),
+            self.pousada,
+            r.idreserva,
+            r.entradaprevista.format("%d/%m/%Y"),
+            r.saidaprevista.format("%d/%m/%Y"),
+            rotulo_diarias(r.entradaprevista, r.saidaprevista),
+            r.acomodacao_nome.as_deref().unwrap_or("acomodação"),
+            r.quantidade_hospedes,
+            brl_decimal(r.valor_total),
+        );
+        if r.pago_centavos > 0 {
+            let restante = (r.valor_total * rust_decimal::Decimal::from(100))
+                .round()
+                .to_string()
+                .parse::<i64>()
+                .unwrap_or(0)
+                .saturating_sub(r.pago_centavos);
+            let _ = write!(s, "\nPago: {}", brl_centavos(r.pago_centavos));
+            if restante > 0 {
+                let _ = write!(s, " | Restante: {}", brl_centavos(restante));
+            }
+        }
+        if let Some(link) = self.link_portal(r) {
+            let _ = write!(s, "\n\nDetalhes da estadia: {link}");
+        }
+        s += "\nQualquer dúvida, responda esta mensagem.";
+        s
+    }
+
+    /// "Reserva cancelada" — motivo genérico (manual ou hold expirado).
+    fn texto_cancelada(&self, r: &ReservaPosReserva) -> String {
+        let mut s = format!(
+            "Olá, {}. Sua reserva Nº #{} na {} ({} a {}) foi cancelada.",
+            primeiro_nome(&r.cliente_nome),
+            r.idreserva,
+            self.pousada,
+            r.entradaprevista.format("%d/%m/%Y"),
+            r.saidaprevista.format("%d/%m/%Y"),
+        );
+        if r.expira_em.is_some() && r.pago_centavos == 0 {
+            let _ = write!(
+                s,
+                "\n\nSe expirou o prazo de pagamento, você pode reservar novamente em {}/reservar",
+                self.site_base
+            );
+        }
+        if let Some(link) = self.link_portal(r) {
+            let _ = write!(s, "\nDetalhes: {link}");
+        }
+        s += "\nQualquer dúvida, responda esta mensagem.";
+        s
+    }
+
+    /// Link seguro do portal do hóspede — token UUID não-enumerável
+    /// (adivinhar o Nº da reserva não revela nada).
+    fn link_portal(&self, r: &ReservaPosReserva) -> Option<String> {
+        r.token_publico
+            .map(|t| format!("{}/portal/{}", self.site_base, t))
+    }
+
+    /// Envelope HTML simples — quebras de linha viram <br> (mesmo
+    /// padrão dos demais e-mails transacionais do módulo).
+    fn html_pos_reserva(&self, texto: &str) -> String {
+        let corpo = texto
+            .replace('&', "&amp;")
+            .replace('<', "&lt;")
+            .replace('>', "&gt;")
+            .replace('\n', "<br>");
+        format!(
+            "<div style='font-family:sans-serif;max-width:560px;margin:0 auto'>\
+             <h2 style='color:#054054'>{}</h2><p style='font-size:15px;line-height:1.55'>{corpo}</p>\
+             <p><small>{}</small></p></div>",
+            self.pousada, self.pousada
+        )
     }
 
     // ------------------------------------------------------------------
@@ -627,6 +1101,67 @@ impl ComunicacaoService {
 
 fn primeiro_nome(nome: &str) -> &str {
     nome.split_whitespace().next().unwrap_or(nome)
+}
+
+/// Chave idempotente da intenção pós-reserva — uma por transição,
+/// canal e versão de template. Reenvios manuais sufixam `:re{id}`.
+fn dedup_pos_reserva(idreserva: i64, template: &str, canal: CanalEnvio) -> String {
+    format!(
+        "pos:{}:{}:{}:v{}",
+        idreserva,
+        template,
+        canal_rotulo(canal),
+        VERSAO_POS_RESERVA
+    )
+}
+
+fn canal_rotulo(canal: CanalEnvio) -> &'static str {
+    match canal {
+        CanalEnvio::Email => "email",
+        CanalEnvio::Whatsapp => "whatsapp",
+        CanalEnvio::Push => "push",
+        CanalEnvio::Inbox => "inbox",
+    }
+}
+
+/// "3 diárias" / "1 diária" — rótulo das noites entre entrada e saída.
+fn rotulo_diarias(entrada: chrono::NaiveDate, saida: chrono::NaiveDate) -> String {
+    let n = (saida - entrada).num_days().max(1);
+    if n == 1 {
+        "1 diária".into()
+    } else {
+        format!("{n} diárias")
+    }
+}
+
+/// Centavos → "R$ 1.234,56" (formato brasileiro, sem símbolo de milhar faltando).
+fn brl_centavos(centavos: i64) -> String {
+    let neg = centavos < 0;
+    let v = centavos.unsigned_abs();
+    let inteiro = v / 100;
+    let cent = v % 100;
+    let milhar = {
+        let s = inteiro.to_string();
+        let mut out = String::with_capacity(s.len() + 4);
+        for (i, c) in s.chars().enumerate() {
+            if i > 0 && (s.len() - i).is_multiple_of(3) {
+                out.push('.');
+            }
+            out.push(c);
+        }
+        out
+    };
+    format!("{}R$ {milhar},{cent:02}", if neg { "-" } else { "" })
+}
+
+/// Decimal → "R$ 1.234,56" (arredonda para centavos).
+fn brl_decimal(v: rust_decimal::Decimal) -> String {
+    let centavos = (v * rust_decimal::Decimal::from(100))
+        .round()
+        .to_string()
+        .parse::<i64>()
+        .unwrap_or(0);
+    brl_centavos(centavos)
 }
 
 // ===========================================================================

@@ -252,6 +252,10 @@ impl PreReservaService {
                     codigo_corporativo: None,
                     aceito_termos: true,
                     aceito_marketing: false,
+                    // Hóspede já está conversando no WhatsApp — canal
+                    // transacional implícito do próprio fluxo.
+                    aceito_whatsapp: true,
+                    telefone_ddi: None,
                 },
                 Some(&format!("whatsapp:{tel}")),
             )

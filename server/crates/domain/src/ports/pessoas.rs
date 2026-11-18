@@ -230,6 +230,9 @@ pub trait ClienteRepository: Send + Sync {
     /// atualiza o contato; senão, cria cadastro mínimo. Devolve o id —
     /// não escreve auditoria (o `NovoLog` da reserva cobre a ação).
     async fn site_upsert(&self, dados: &NovoClienteSite) -> Result<i64, DomainError>;
+    /// Consentimento transacional de WhatsApp (checkbox da reserva do
+    /// site) — independente do consentimento de marketing (LGPD).
+    async fn site_consent_whatsapp(&self, idcliente: i64, optin: bool) -> Result<(), DomainError>;
     /// Remove o cliente e seus documentos (cascade) — falha (409) se houver
     /// reservas, fichas FNRH ou vínculo como acompanhante. Devolve as chaves
     /// (foto + scans) para a camada de API apagar no object store.

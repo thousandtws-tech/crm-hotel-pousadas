@@ -253,13 +253,16 @@ pub trait PagamentoRepository: Send + Sync {
 
     /// Confirma o pagamento (webhook `completed`): status=pago + pi + método +
     /// auditoria ('pago') num commit. Idempotente — se já `pago`, é no-op.
+    /// Idempotente — devolve `true` somente quando a transição para
+    /// 'pago' realmente aconteceu nesta chamada (o chamador usa isso
+    /// para disparar efeitos únicos, como a confirmação ao hóspede).
     async fn confirmar_pago(
         &self,
         idpagamento: i64,
         pi_id: &str,
         metodo: Option<&str>,
         auditoria: NovaAuditoriaPagamento,
-    ) -> Result<(), DomainError>;
+    ) -> Result<bool, DomainError>;
 
     /// Transição genérica de status com auditoria (expirado/falhou/cancelado).
     async fn marcar_status(

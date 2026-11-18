@@ -744,6 +744,16 @@ impl ClienteRepository for PgClienteRepository {
         .map_err(map_db_err)
     }
 
+    async fn site_consent_whatsapp(&self, idcliente: i64, optin: bool) -> Result<(), DomainError> {
+        sqlx::query("UPDATE cliente SET whatsapp_optin=$2, atualizado_em=now() WHERE id=$1")
+            .bind(idcliente)
+            .bind(optin)
+            .execute(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+        Ok(())
+    }
+
     async fn remover(&self, id: i64, log: NovoLog) -> Result<Vec<String>, DomainError> {
         let mut tx = self.pool.begin().await.map_err(map_db_err)?;
         // chaves no object store (scans dos documentos + foto) — apagadas pela API

@@ -210,7 +210,7 @@ impl PagamentoRepository for PgPagamentoRepository {
         pi_id: &str,
         metodo: Option<&str>,
         auditoria: NovaAuditoriaPagamento,
-    ) -> Result<(), DomainError> {
+    ) -> Result<bool, DomainError> {
         let mut tx = self.pool.begin().await.map_err(map_db_err)?;
         // Idempotente: se já liquidado, não duplica nem regrava auditoria.
         let afetadas = sqlx::query(
@@ -228,7 +228,7 @@ impl PagamentoRepository for PgPagamentoRepository {
             auditar(&mut tx, &auditoria).await?;
         }
         tx.commit().await.map_err(map_db_err)?;
-        Ok(())
+        Ok(afetadas.is_some())
     }
 
     async fn marcar_status(

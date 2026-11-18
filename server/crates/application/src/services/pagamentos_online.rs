@@ -51,6 +51,9 @@ pub struct PagamentosOnlineService {
     cancel_url: String,
     /// URL pública da API — origem das `notification_url` por sessão.
     public_api_url: Option<String>,
+    /// Comunicação transacional pós-reserva — confirmação/cancelamento
+    /// sinalizados somente na transição real de estado.
+    comunicacao: Option<Arc<crate::services::comunicacao::ComunicacaoService>>,
 }
 
 /// Gateway + identidade a gravar no pagamento.
@@ -75,6 +78,7 @@ impl PagamentosOnlineService {
         success_url: String,
         cancel_url: String,
         public_api_url: Option<String>,
+        comunicacao: Option<Arc<crate::services::comunicacao::ComunicacaoService>>,
     ) -> Self {
         Self {
             pagamentos,
@@ -88,6 +92,29 @@ impl PagamentosOnlineService {
             success_url,
             cancel_url,
             public_api_url,
+            comunicacao,
+        }
+    }
+
+    /// Dispara a comunicação de confirmação — chamado só quando
+    /// `confirmar_pago` reportou transição real (dedup no outbox torna
+    /// chamadas repetidas inofensivas). Falha de envio nunca desfaz o
+    /// pagamento já liquidado.
+    async fn sinalizar_confirmacao(&self, idreserva: i64) {
+        if let Some(c) = &self.comunicacao {
+            if let Err(e) = c.sinalizar_reserva_confirmada(idreserva).await {
+                warn!(idreserva, erro = %e, "pós-reserva: confirmação falhou");
+            }
+        }
+    }
+
+    /// Cancelamento da reserva (hold expirado) — suprime pendências e
+    /// registra o aviso de cancelamento.
+    async fn sinalizar_cancelamento(&self, idreserva: i64) {
+        if let Some(c) = &self.comunicacao {
+            if let Err(e) = c.sinalizar_reserva_cancelada(idreserva).await {
+                warn!(idreserva, erro = %e, "pós-reserva: cancelamento falhou");
+            }
         }
     }
 
@@ -427,7 +454,8 @@ impl PagamentosOnlineService {
         if p.status.liquidado() {
             return Ok(());
         }
-        self.pagamentos
+        if self
+            .pagamentos
             .confirmar_pago(
                 p.id,
                 pi_id,
@@ -440,7 +468,10 @@ impl PagamentosOnlineService {
                     dados: Some(json!({"pi": pi_id})),
                 },
             )
-            .await?;
+            .await?
+        {
+            self.sinalizar_confirmacao(p.idreserva).await;
+        }
         info!(idpagamento = p.id, "pagamento confirmado (pi.succeeded)");
         Ok(())
     }
@@ -580,7 +611,8 @@ impl PagamentosOnlineService {
             .buscar(p.idreserva)
             .await?
             .is_some_and(|r| r.status == clarituz_domain::enums::StatusReserva::Cancelada);
-        self.pagamentos
+        if self
+            .pagamentos
             .confirmar_pago(
                 p.id,
                 ref_id,
@@ -600,7 +632,10 @@ impl PagamentosOnlineService {
                     })),
                 },
             )
-            .await?;
+            .await?
+        {
+            self.sinalizar_confirmacao(p.idreserva).await;
+        }
         metrics::counter!("clarituz_pagamentos_confirmados_total").increment(1);
         info!(
             idpagamento = p.id,
@@ -651,7 +686,8 @@ impl PagamentosOnlineService {
         if p.status.liquidado() {
             return Ok(()); // duplicado/fora de ordem — idempotente
         }
-        self.pagamentos
+        if self
+            .pagamentos
             .confirmar_pago(
                 p.id,
                 pi_id,
@@ -664,7 +700,10 @@ impl PagamentosOnlineService {
                     dados: Some(json!({"session_id": session_id, "pi": pi_id})),
                 },
             )
-            .await?;
+            .await?
+        {
+            self.sinalizar_confirmacao(p.idreserva).await;
+        }
         metrics::counter!("clarituz_pagamentos_confirmados_total").increment(1);
         info!(
             idpagamento = p.id,
@@ -782,6 +821,7 @@ impl PagamentosOnlineService {
         for (idreserva, idpagamento) in self.pagamentos.holds_expirados(50).await? {
             self.pagamentos.expirar_hold(idreserva, idpagamento).await?;
             info!(idreserva, "hold expirado — reserva cancelada");
+            self.sinalizar_cancelamento(idreserva).await;
             self.eventos.avisar(
                 Aviso::novo(
                     TipoAviso::Info,
@@ -851,7 +891,8 @@ impl PagamentosOnlineService {
                     let pi = consulta.id_provedor.clone().unwrap_or(ref_id.clone());
                     match consulta.status {
                         StatusPi::Pago => {
-                            self.pagamentos
+                            if self
+                                .pagamentos
                                 .confirmar_pago(
                                     p.id,
                                     &pi,
@@ -864,7 +905,10 @@ impl PagamentosOnlineService {
                                         dados: Some(json!({"ref": ref_id, "pi": pi})),
                                     },
                                 )
-                                .await?;
+                                .await?
+                            {
+                                self.sinalizar_confirmacao(p.idreserva).await;
+                            }
                             info!(idpagamento = p.id, "pagamento confirmado via conciliação");
                         }
                         StatusPi::Cancelado => {
