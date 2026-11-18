@@ -163,6 +163,26 @@ pub async fn cache_curto(req: Request, next: Next) -> Response {
     res
 }
 
+/// `Cache-Control` público nos GETs de conteúdo editorial — catálogo do
+/// site e seções do CMS, que qualquer visitante lê igual. Diferente do
+/// `cache_curto` (private/autenticado), aqui CDN e proxies compartilhados
+/// podem responder — `stale-while-revalidate` mantém o HTML instantâneo
+/// enquanto o backend revalida em background. Só GET 2xx sem header próprio.
+pub async fn cache_publico(req: Request, next: Next) -> Response {
+    let cacheavel = req.method() == Method::GET;
+    let mut res = next.run(req).await;
+    if cacheavel && res.status().is_success() && !res.headers().contains_key(header::CACHE_CONTROL)
+    {
+        res.headers_mut().insert(
+            header::CACHE_CONTROL,
+            "public, max-age=30, stale-while-revalidate=120"
+                .parse()
+                .expect("header estático"),
+        );
+    }
+    res
+}
+
 // ---------------------------------------------------------------------------
 // alerta de erros 5xx → webhook externo (ALERT_WEBHOOK_URL)
 // ---------------------------------------------------------------------------

@@ -36,6 +36,31 @@ pub async fn resumo_financeiro(
     Ok(Json(s.services.financeiro.resumo(q.inicio, q.fim).await?))
 }
 
+/// Painel consolidado da Home — as 5 leituras do período em uma única
+/// chamada, resolvidas em paralelo no servidor (tokio::join). O browser
+/// faz 1 request em vez de 5, e o custo total é o da query mais lenta.
+pub async fn painel_financeiro(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Query(q): Query<PeriodoQuery>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let fin = &s.services.financeiro;
+    let (resumo, recebido, reservas, pagamento, acomodacao) = tokio::join!(
+        fin.resumo(q.inicio, q.fim),
+        fin.serie_recebido(q.inicio, q.fim),
+        fin.serie_reservas(q.inicio, q.fim),
+        fin.recebido_por_pagamento(q.inicio, q.fim),
+        fin.lucro_por_acomodacao(q.inicio, q.fim),
+    );
+    Ok(Json(serde_json::json!({
+        "resumo": resumo?,
+        "serie_recebido": recebido?,
+        "serie_reservas": reservas?,
+        "serie_por_pagamento": pagamento?,
+        "serie_por_acomodacao": acomodacao?,
+    })))
+}
+
 pub async fn serie_recebido(
     State(s): State<AppState>,
     _ator: Ator,

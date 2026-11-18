@@ -5,6 +5,7 @@ import { Socket, Channel } from 'phoenix';
 import { firstValueFrom } from 'rxjs';
 import { Accommodation, Amenity } from '../models/accommodation.model';
 import { environment } from '../../../environments/environment';
+import { API_URL } from '../config/api-url';
 
 // -----------------------------------------------------------------------------
 // Formas do payload público da API (`GET /publico/acomodacoes`) — snake_case.
@@ -42,16 +43,13 @@ interface AcomodacaoPublica {
   midias: MidiaApi[];
 }
 
-const API = environment.apiUrl;
-const API_ORIGIN = API.replace(/\/api\/v\d+\/?$/, '');
-
-function absolutize(url: string): string {
-  return url.startsWith('http') ? url : `${API_ORIGIN}${url}`;
+function absolutize(url: string, origem: string): string {
+  return url.startsWith('http') ? url : `${origem}${url}`;
 }
 
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
-function mapItem(a: AcomodacaoPublica): Accommodation {
+function mapItem(a: AcomodacaoPublica, origem: string): Accommodation {
   const fotos = a.midias.filter((m) => m.tipo === 'foto').sort((x, y) => x.ordem - y.ordem);
   const capa = fotos.find((m) => m.capa) ?? fotos[0];
   const valor = Number(a.valor);
@@ -72,9 +70,9 @@ function mapItem(a: AcomodacaoPublica): Accommodation {
     size: a.metragem ? Number(a.metragem) : null,
     view: a.vista ?? '',
     floor: a.andar ?? '',
-    coverImage: capa ? absolutize(capa.url) : '',
-    images: fotos.map((m) => absolutize(m.url)),
-    videos: a.midias.filter((m) => m.tipo === 'video').map((m) => absolutize(m.url)),
+    coverImage: capa ? absolutize(capa.url, origem) : '',
+    images: fotos.map((m) => absolutize(m.url, origem)),
+    videos: a.midias.filter((m) => m.tipo === 'video').map((m) => absolutize(m.url, origem)),
     amenities: a.comodidades.map((c, i) => ({
       id: String(i + 1), name: c.name, icon: c.icon, highlight: c.highlight,
     })),
@@ -236,6 +234,10 @@ export class AccommodationService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
   private readonly http = inject(HttpClient);
+  private readonly api = inject(API_URL);
+  // Origem das mídias — relativa à URL pública (browser) mesmo quando o
+  // fetch server-side sai pela rede interna.
+  private readonly apiOrigem = environment.apiUrl.replace(/\/api\/v\d+\/?$/, '');
   // Começa vazio: o FALLBACK só entra se a API estiver realmente indisponível —
   // uma resposta bem-sucedida (mesmo vazia) é o estado autoritativo do CMS.
   private readonly accommodationsState = signal<Accommodation[]>([]);
@@ -279,8 +281,8 @@ export class AccommodationService {
   /** Refetch completo do catálogo público. Sempre reflete o estado publicado no CMS. */
   private async carregar(): Promise<void> {
     try {
-      const dados = await firstValueFrom(this.http.get<AcomodacaoPublica[]>(`${API}/publico/acomodacoes`));
-      this.accommodationsState.set(dados.map(mapItem));
+      const dados = await firstValueFrom(this.http.get<AcomodacaoPublica[]>(`${this.api}/publico/acomodacoes`));
+      this.accommodationsState.set(dados.map((a) => mapItem(a, this.apiOrigem)));
     } catch {
       // API indisponível → mantém o estado atual; se nada foi carregado ainda,
       // usa o FALLBACK de contingência para não deixar a página vazia.

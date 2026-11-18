@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { API_URL } from '../config/api-url';
 import { HOTEL_CONFIG } from '../config/hotel-config';
 import { BookingFilter, BookingSubmission } from '../models/booking-request.model';
 
@@ -29,6 +29,7 @@ export interface BookingResult {
 })
 export class BookingService {
   private readonly http = inject(HttpClient);
+  private readonly api = inject(API_URL);
   // Pre-fill with reasonable future dates
   private readonly defaultCheckIn = this.formatDate(new Date(Date.now() + 86400000 * 7));
   private readonly defaultCheckOut = this.formatDate(new Date(Date.now() + 86400000 * 10));
@@ -79,7 +80,7 @@ export class BookingService {
     try {
       return await firstValueFrom(
         this.http.get<ContratoResponse>(
-          `${environment.apiUrl}/publico/contrato/${encodeURIComponent(codigo)}`
+          `${this.api}/publico/contrato/${encodeURIComponent(codigo)}`
         )
       );
     } catch {
@@ -90,7 +91,7 @@ export class BookingService {
   public async submitBookingRequest(submission: BookingSubmission): Promise<BookingResult> {
     try {
       const data = await firstValueFrom(
-        this.http.post<ReservaCriadaResponse>(`${environment.apiUrl}/publico/reservas`, {
+        this.http.post<ReservaCriadaResponse>(`${this.api}/publico/reservas`, {
           slug: submission.accommodationSlug,
           check_in: submission.checkIn,
           check_out: submission.checkOut,

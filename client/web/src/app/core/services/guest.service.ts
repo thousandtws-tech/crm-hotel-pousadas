@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { API_URL } from '../config/api-url';
 
 export interface PreFichaInfo {
   cliente_nome: string;
@@ -51,7 +51,8 @@ export interface RespostaConcierge {
 @Injectable({ providedIn: 'root' })
 export class GuestService {
   private readonly http = inject(HttpClient);
-  private readonly base = `${environment.apiUrl}/publico`;
+  private readonly api = inject(API_URL);
+  private readonly base = `${this.api}/publico`;
 
   preFicha(token: string): Observable<PreFichaInfo> {
     return this.http.get<PreFichaInfo>(`${this.base}/fnrh/${token}`);

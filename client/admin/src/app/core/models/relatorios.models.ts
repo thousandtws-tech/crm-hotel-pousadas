@@ -53,6 +53,15 @@ export interface PontoSerie {
   quantidade: number;
 }
 
+/** Painel consolidado da Home — 1 request, dados resolvidos em paralelo. */
+export interface PainelFinanceiro {
+  resumo: ResumoFinanceiro;
+  serie_recebido: PontoSerie[];
+  serie_reservas: PontoSerie[];
+  serie_por_pagamento: PontoSerie[];
+  serie_por_acomodacao: PontoSerie[];
+}
+
 export interface ItemMaisVendido {
   nome: string;
   quantidade: number;

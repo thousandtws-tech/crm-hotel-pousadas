@@ -15,6 +15,11 @@ export class RelatoriosApi extends ApiHttp {
     return this.get<M.ResumoFinanceiro>('/financeiro/resumo', { inicio, fim });
   }
 
+  /** Home — resumo + 4 séries do período em uma única chamada. */
+  painelFinanceiro(inicio?: string | null, fim?: string | null) {
+    return this.get<M.PainelFinanceiro>('/financeiro/painel', { inicio, fim });
+  }
+
   serieRecebido(inicio?: string | null, fim?: string | null) {
     return this.get<M.PontoSerie[]>('/financeiro/series/recebido', { inicio, fim });
   }

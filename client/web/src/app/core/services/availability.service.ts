@@ -1,10 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { API_URL } from '../config/api-url';
 import { SearchQuery, SearchResponse } from '../models/search.models';
-
-const API = environment.apiUrl;
 
 /**
  * Adapter do endpoint público `POST /publico/disponibilidade/busca`.
@@ -14,10 +12,11 @@ const API = environment.apiUrl;
 @Injectable({ providedIn: 'root' })
 export class AvailabilityService {
   private readonly http = inject(HttpClient);
+  private readonly api = inject(API_URL);
 
   public buscar(query: SearchQuery): Promise<SearchResponse> {
     return firstValueFrom(
-      this.http.post<SearchResponse>(`${API}/publico/disponibilidade/busca`, query),
+      this.http.post<SearchResponse>(`${this.api}/publico/disponibilidade/busca`, query),
     );
   }
 }

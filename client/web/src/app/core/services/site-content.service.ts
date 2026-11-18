@@ -4,6 +4,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { Socket, Channel } from 'phoenix';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { API_URL } from '../config/api-url';
 
 export interface HeroContent {
   titulo: string;
@@ -27,8 +28,6 @@ interface CmsSecaoApi {
   visivel: boolean;
 }
 
-const API = environment.apiUrl;
-
 function str(dados: Record<string, unknown>, key: string): string {
   const v = dados[key];
   return typeof v === 'string' ? v : '';
@@ -39,6 +38,7 @@ export class SiteContentService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
   private readonly http = inject(HttpClient);
+  private readonly api = inject(API_URL);
   private socket: Socket | null = null;
   private canal: Channel | null = null;
   private refetchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -74,7 +74,7 @@ export class SiteContentService {
 
   public async carregar(): Promise<void> {
     try {
-      const secoes = await firstValueFrom(this.http.get<CmsSecaoApi[]>(`${API}/publico/cms/site`));
+      const secoes = await firstValueFrom(this.http.get<CmsSecaoApi[]>(`${this.api}/publico/cms/site`));
       let novoHero: HeroContent | null = null;
       let novoSeo: SeoContent | null = null;
       let novoFaq: FaqItem[] = [];

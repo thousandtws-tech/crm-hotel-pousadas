@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { environment } from '../../../environments/environment';
+import { API_URL } from '../config/api-url';
 import { NewsletterService } from './newsletter.service';
 
 const API = environment.apiUrl;

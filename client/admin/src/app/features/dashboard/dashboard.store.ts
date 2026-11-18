@@ -158,45 +158,20 @@ export abstract class DashboardStore implements OnInit {
     this.carregandoFin.set(true);
     const i = isoLocal(this.ini());
     const f = isoLocal(this.fim());
-    let pendentes = 4;
-    const ok = () => {
-      if (--pendentes === 0) this.carregandoFin.set(false);
-    };
-    const erro = (e: unknown) => {
-      this.notify.erro(e);
-      ok();
-    };
-    this.relatoriosApi.resumoFinanceiro(i, f).subscribe({
-      next: (r) => {
-        this.resumo.set(r);
-        ok();
+    // 1 request consolidada — o backend resolve as 5 leituras em paralelo.
+    this.relatoriosApi.painelFinanceiro(i, f).subscribe({
+      next: (p) => {
+        this.resumo.set(p.resumo);
+        this.serieRecebido.set(p.serie_recebido);
+        this.serieReservas.set(p.serie_reservas);
+        this.seriePagamento.set(p.serie_por_pagamento);
+        this.serieAcomodacao.set(p.serie_por_acomodacao);
+        this.carregandoFin.set(false);
       },
-      error: erro,
-    });
-    this.relatoriosApi.serieRecebido(i, f).subscribe({
-      next: (s) => {
-        this.serieRecebido.set(s);
-        ok();
+      error: (e) => {
+        this.notify.erro(e);
+        this.carregandoFin.set(false);
       },
-      error: erro,
-    });
-    this.relatoriosApi.serieReservas(i, f).subscribe({
-      next: (s) => {
-        this.serieReservas.set(s);
-        ok();
-      },
-      error: erro,
-    });
-    this.relatoriosApi.seriePorPagamento(i, f).subscribe({
-      next: (s) => {
-        this.seriePagamento.set(s);
-        ok();
-      },
-      error: erro,
-    });
-    this.relatoriosApi.seriePorAcomodacao(i, f).subscribe({
-      next: (s) => this.serieAcomodacao.set(s),
-      error: erro,
     });
   }
 

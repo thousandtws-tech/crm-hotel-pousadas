@@ -821,6 +821,11 @@ pub fn build(state: AppState) -> Router {
             get(routes::relatorios::resumo_financeiro),
         )
         .route(
+            "/financeiro/painel",
+            get(routes::relatorios::painel_financeiro)
+                .route_layer(from_fn(middleware::cache_curto)),
+        )
+        .route(
             "/financeiro/series/recebido",
             get(routes::relatorios::serie_recebido),
         )
@@ -1095,7 +1100,10 @@ pub fn build(state: AppState) -> Router {
             get(routes::notificacoes::stream),
         )
         .route("/api/v1/publico/stream", get(routes::cms::publico_stream))
-        .route("/api/v1/publico/cms/site", get(routes::cms::publico_site))
+        .route(
+            "/api/v1/publico/cms/site",
+            get(routes::cms::publico_site).route_layer(from_fn(middleware::cache_publico)),
+        )
         .route(
             "/api/v1/publico/newsletter",
             post(routes::cms::publico_newsletter),
@@ -1106,11 +1114,11 @@ pub fn build(state: AppState) -> Router {
         )
         .route(
             "/api/v1/publico/acomodacoes",
-            get(routes::cms::publico_listar),
+            get(routes::cms::publico_listar).route_layer(from_fn(middleware::cache_publico)),
         )
         .route(
             "/api/v1/publico/acomodacoes/{slug}",
-            get(routes::cms::publico_detalhe),
+            get(routes::cms::publico_detalhe).route_layer(from_fn(middleware::cache_publico)),
         )
         .route(
             "/api/v1/publico/reservas",

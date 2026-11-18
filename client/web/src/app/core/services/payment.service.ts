@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { API_URL } from '../config/api-url';
 
 export type TipoPagamento = 'integral' | 'sinal' | 'saldo';
 export type StatusPagamento =
@@ -31,7 +31,8 @@ export interface StatusReserva {
 @Injectable({ providedIn: 'root' })
 export class PaymentService {
   private readonly http = inject(HttpClient);
-  private readonly api = `${environment.apiUrl}/publico/pagamentos`;
+  private readonly apiUrl = inject(API_URL);
+  private readonly api = `${this.apiUrl}/publico/pagamentos`;
 
   /**
    * Cria a sessão Stripe para a reserva identificada pelo token opaco.

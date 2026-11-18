@@ -54,6 +54,22 @@ async function mockAdminApi(page: Page): Promise<void> {
     if (url.includes('/auth/login')) return route.fallback();
     let body: unknown;
     if (url.includes('/dashboard')) body = DASH;
+    else if (url.includes('/financeiro/painel'))
+      body = {
+        resumo: { recebido: '6120.00', previsto: '2380.00', vendas: '0', contas_abertas: '0' },
+        serie_recebido: SERIE_DIAS,
+        serie_reservas: SERIE_DIAS,
+        serie_por_pagamento: [
+          { rotulo: 'Cartão', valor: '3800' },
+          { rotulo: 'Pix', valor: '1900' },
+          { rotulo: 'Dinheiro', valor: '420' },
+        ],
+        serie_por_acomodacao: [
+          { rotulo: 'Suíte 01', valor: '2400' },
+          { rotulo: 'Chalé 02', valor: '1610' },
+          { rotulo: 'Quarto 03', valor: '980' },
+        ],
+      };
     else if (url.includes('/financeiro/resumo')) body = { recebido: '6120.00', previsto: '2380.00', vendas: '0', contas_abertas: '0' };
     else if (url.includes('/series/por-pagamento'))
       body = [
