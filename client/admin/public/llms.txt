@@ -1,0 +1,8 @@
+# CRM — Pousada Espírito do Mar
+
+> Backoffice autenticado de gestão da pousada (reservas, recepção, PDV,
+> financeiro e integrações). Não contém conteúdo público para indexação.
+
+## Links
+
+- [Site público da pousada](https://pousadaespiritodomar.com.br/)
