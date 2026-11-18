@@ -29,6 +29,7 @@ async function mockAdminApi(page: Page): Promise<void> {
     if (url.includes('/auth/login')) return route.fallback();
     let body: unknown;
     if (url.includes('/funcionarios')) body = FUNCIONARIOS;
+    else if (url.includes('/cargos')) body = [];
     else if (url.includes('/dashboard'))
       body = { cards: { total_acomodacoes: 1, acomodacoes_disponiveis: 1, acomodacoes_ocupadas: 0, hospedes_atuais: 0, checkins_hoje: 0, checkouts_hoje: 0, checkins_pendentes_hoje: 0, checkouts_pendentes_hoje: 0 }, checkins_pendentes: [], checkouts_pendentes: [], ultimas_reservas: [], acomodacoes_disponiveis: [], acomodacoes_ocupadas: [] };
     else if (url.includes('/series/') || url.includes('/eventos')) body = [];
