@@ -304,7 +304,15 @@ impl IntegracoesService {
                 criado_por: Some(ator.id),
             })
             .await?;
-        if atual.versao != input.versao {
+        // `versao: 0` = o cliente ainda não conhece a linha (view de uma
+        // integração nunca persistida expõe 0). `garantir` acabou de criá-la
+        // com versao 1 — "criada, nunca atualizada" — então 0 casa com 1.
+        let versao_esperada = if input.versao == 0 && atual.versao == 1 {
+            1
+        } else {
+            input.versao
+        };
+        if atual.versao != versao_esperada {
             return Err(DomainError::conflito(
                 "A configuração foi alterada. Recarregue antes de salvar.",
             )
@@ -374,7 +382,7 @@ impl IntegracoesService {
             .repo
             .salvar(
                 atual.id,
-                input.versao,
+                versao_esperada,
                 &AtualizacaoIntegracao {
                     segredos: None,
                     nome_conta: input.nome_conta.clone(),

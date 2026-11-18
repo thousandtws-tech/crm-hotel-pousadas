@@ -67,7 +67,7 @@ test('funcionários — página minimalista', async ({ page }) => {
   await expect(page.locator('.fn-nivel', { hasText: 'Recepção' })).toHaveCount(2);
   await expect(page.locator('.st-chip')).toHaveCount(4);
   await expect(page.locator('.st-chip.off')).toHaveCount(1); // Ana inativa
-  await expect(page.locator('.acao-btn')).toHaveCount(8);
+  await expect(page.locator('.acao-btn')).toHaveCount(12); // editar + identidade + excluir por linha
   await expect(page.locator('.fn-voce')).toHaveCount(1); // selo "você" no próprio usuário
 
   // status do próprio usuário desabilitado
