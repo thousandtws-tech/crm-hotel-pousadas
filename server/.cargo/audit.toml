@@ -1,0 +1,17 @@
+[advisories]
+# rsa e libsqlite3-sys entram no Cargo.lock apenas via features OPCIONAIS
+# do sqlx (mysql/sqlite) que ficam desabilitadas — usamos só `postgres`.
+# Não são compiladas nem linkadas no binário.
+# RUSTSEC-2023-0071 (rsa): sem versão corrigida publicada.
+# RUSTSEC-2026-0459 (libsqlite3-sys): fix exige 0.39+, fora do range do sqlx 0.8.
+#
+# quick-xml 0.38.4: DoS em parsing de XML não-confiável (tag com N atributos
+# duplicados / NsReader). Todos os consumidores (rust-s3, aws-creds, nosso
+# Reader em estoque.rs) parseiam XML de endpoints AWS/S3 sobre TLS e não
+# usam NsReader. Preso em 0.38.x por aws-creds 0.39 — sem bump disponível.
+ignore = [
+    "RUSTSEC-2023-0071",   # rsa — não compilada (sqlx mysql off), sem fix
+    "RUSTSEC-2026-0459",   # libsqlite3-sys — não compilada (sqlx sqlite off)
+    "RUSTSEC-2026-0194",   # quick-xml — DoS attrs; input só de S3/TLS
+    "RUSTSEC-2026-0195",   # quick-xml — DoS NsReader; não usamos NsReader
+]
