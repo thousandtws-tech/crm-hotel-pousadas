@@ -108,7 +108,7 @@ impl PreditivoRepository for PgPreditivoRepository {
                  a.nome AS acomodacao,
                  r.entradaprevista AS entrada,
                  (r.entradaprevista - CURRENT_DATE)::bigint AS dias_ate_checkin,
-                 greatest(0, (CURRENT_DATE - r.criado_em::date)) AS lead_time_dias,
+                 greatest(0, (CURRENT_DATE - r.criado_em::date))::bigint AS lead_time_dias,
                  (SELECT count(*) FROM reserva x
                    WHERE x.idcliente = r.idcliente AND x.status = 'f') AS estadias_anteriores,
                  (SELECT count(*) FROM reserva x
