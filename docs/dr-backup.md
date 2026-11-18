@@ -11,7 +11,7 @@ vive nesse banco: se ele se perde, o sistema inteiro se perde junto.
 > de forma *staged* (o volume antigo é preservado desmontado).
 
 Último drill executado: **2026-11-18** — procedimento da seção
-[Restore testado](#restore-testado--passo-a-passo) validado ponta a ponta
+[Restore testado](#4-restore-testado--passo-a-passo) validado ponta a ponta
 contra o schema real (51 migrations). Resultados na seção
 [Evidência do último drill](#evidência-do-último-drill).
 
@@ -54,7 +54,7 @@ Guardar cópia desses segredos em gerenciador de senhas offline (Bitwarden,
 
 ## 2. Camadas de backup disponíveis
 
-```
+```text
 L1  Volume backup (Railway, dashboard)          → mesmo serviço, staged
 L2  PITR / pgBackRest (Railway, requer Pro)     → serviço Postgres NOVO
 L3  Dump lógico pg_dump -Fc                     → qualquer lugar
@@ -337,7 +337,7 @@ from reserva limit 1;
 
 ### Evidência do último drill
 
-```
+```text
 2026-11-18 · PostgreSQL 17.11 (Windows, instância temporária initdb)
 origem:  schema via `clarituz-api migrate` (51/51) + dados de teste
          (5 clientes, 3 reservas, 2 fila_envio, 1 integracao+segredo,
@@ -386,7 +386,7 @@ Cadências:
 
 ### Linha do tempo do restore em incidente
 
-```
+```text
 T+0    incidente detectado (alerta Grafana / operação / deploy ruim)
 T+10   congelar escrita: escalar api/realtime/maria para 0 réplicas
        (dashboard → service → replicas 0) — ninguém grava enquanto restaura
