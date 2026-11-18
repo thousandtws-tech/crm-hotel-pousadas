@@ -155,17 +155,22 @@ pub fn build(state: AppState) -> Router {
         )
         .route(
             "/tipos-acomodacao/{id}/tarifas-ocupacao",
-            get(routes::catalogo::tarifas_ocupacao).put(routes::catalogo::salvar_tarifas_ocupacao),
+            get(routes::catalogo::tarifas_ocupacao)
+                .put(routes::catalogo::salvar_tarifas_ocupacao)
+                .route_layer(from_fn(middleware::cache_curto)),
         )
         .route(
             "/acomodacoes",
-            get(routes::catalogo::listar_acomodacoes).post(routes::catalogo::criar_acomodacao),
+            get(routes::catalogo::listar_acomodacoes)
+                .post(routes::catalogo::criar_acomodacao)
+                .route_layer(from_fn(middleware::cache_curto)),
         )
         .route(
             "/acomodacoes/{id}",
             get(routes::catalogo::buscar_acomodacao)
                 .put(routes::catalogo::atualizar_acomodacao)
-                .delete(routes::catalogo::remover_acomodacao),
+                .delete(routes::catalogo::remover_acomodacao)
+                .route_layer(from_fn(middleware::cache_curto)),
         )
         .route(
             "/acomodacoes/{id}/status",
@@ -173,11 +178,13 @@ pub fn build(state: AppState) -> Router {
         )
         .route(
             "/acomodacoes/{id}/tarifas",
-            get(routes::catalogo::tarifas_acomodacao),
+            get(routes::catalogo::tarifas_acomodacao).route_layer(from_fn(middleware::cache_curto)),
         )
         .route(
             "/acomodacoes/{id}/quartos",
-            get(routes::catalogo::listar_quartos).post(routes::catalogo::criar_quarto),
+            get(routes::catalogo::listar_quartos)
+                .post(routes::catalogo::criar_quarto)
+                .route_layer(from_fn(middleware::cache_curto)),
         )
         .route("/quartos/{id}", delete(routes::catalogo::remover_quarto))
         .route(
@@ -210,7 +217,9 @@ pub fn build(state: AppState) -> Router {
         .route("/grupos/{id}", delete(routes::reservas::remover_grupo))
         .route(
             "/operadoras",
-            get(routes::operadoras::listar).post(routes::operadoras::criar),
+            get(routes::operadoras::listar)
+                .post(routes::operadoras::criar)
+                .route_layer(from_fn(middleware::cache_curto)),
         )
         .route("/operadoras/{id}", put(routes::operadoras::atualizar))
         .route(
@@ -597,7 +606,9 @@ pub fn build(state: AppState) -> Router {
         // estoque
         .route(
             "/estoque/categorias",
-            get(routes::estoque::listar_categorias).post(routes::estoque::criar_categoria),
+            get(routes::estoque::listar_categorias)
+                .post(routes::estoque::criar_categoria)
+                .route_layer(from_fn(middleware::cache_curto)),
         )
         .route(
             "/estoque/categorias/{id}",
@@ -747,11 +758,14 @@ pub fn build(state: AppState) -> Router {
         .route(
             "/estabelecimento",
             get(routes::catalogo::obter_estabelecimento)
-                .put(routes::catalogo::salvar_estabelecimento),
+                .put(routes::catalogo::salvar_estabelecimento)
+                .route_layer(from_fn(middleware::cache_curto)),
         )
         .route(
             "/estabelecimento/endereco",
-            get(routes::catalogo::obter_endereco).put(routes::catalogo::salvar_endereco),
+            get(routes::catalogo::obter_endereco)
+                .put(routes::catalogo::salvar_endereco)
+                .route_layer(from_fn(middleware::cache_curto)),
         )
         .route(
             "/estabelecimento/logo",
@@ -1040,7 +1054,10 @@ pub fn build(state: AppState) -> Router {
         // CMS de quartos (admin) — conteúdo editorial, mídia e publicação
         .route("/cms/site", get(routes::cms::site_secoes))
         .route("/cms/site/{secao}", put(routes::cms::site_salvar))
-        .route("/cms/acomodacoes", get(routes::cms::listar))
+        .route(
+            "/cms/acomodacoes",
+            get(routes::cms::listar).route_layer(from_fn(middleware::cache_curto)),
+        )
         .route("/cms/acomodacoes/{id}", put(routes::cms::salvar))
         .route("/cms/acomodacoes/{id}/status", patch(routes::cms::status))
         .route(

@@ -138,6 +138,33 @@ pub async fn security_headers(req: Request, next: Next) -> Response {
     res
 }
 
+/// `Cache-Control` curto nos GETs de catálogo — dados que mudam por
+/// ação administrativa esporádica (acomodações, tarifas, cadastro do
+/// estabelecimento), não a cada segundo.
+///
+/// `private`: a resposta é autenticada, então só o browser do usuário
+/// pode cachear — nunca CDN/proxy compartilhado. `stale-while-revalidate`
+/// deixa o browser responder do cache enquanto revalida em background,
+/// tornando a navegação entre telas instantânea sem travar a UI.
+/// Aplicado por rota via `route_layer`; só atua em GET 2xx sem header
+/// próprio (GETs de mídia continuam com o Cache-Control deles).
+pub async fn cache_curto(req: Request, next: Next) -> Response {
+    let cacheavel = req.method() == Method::GET;
+    let mut res = next.run(req).await;
+    if cacheavel
+        && res.status().is_success()
+        && !res.headers().contains_key(header::CACHE_CONTROL)
+    {
+        res.headers_mut().insert(
+            header::CACHE_CONTROL,
+            "private, max-age=60, stale-while-revalidate=120"
+                .parse()
+                .expect("header estático"),
+        );
+    }
+    res
+}
+
 // ---------------------------------------------------------------------------
 // alerta de erros 5xx → webhook externo (ALERT_WEBHOOK_URL)
 // ---------------------------------------------------------------------------
