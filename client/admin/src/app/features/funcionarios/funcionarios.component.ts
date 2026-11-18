@@ -1,28 +1,16 @@
-import { Component, computed, inject, signal, OnInit, effect } from '@angular/core';
+// UI de funcionarios — template, estilos e bindings. A lógica vive em funcionarios.store.ts.
+import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { ReactiveFormsModule } from '@angular/forms';
+import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { FuncionariosApi } from '@core/api/funcionarios.api';
-import { CargosApi } from '@core/api/cargos.api';
-import { VerificacaoApi } from '@core/api/verificacao.api';
 import * as M from '@core/models';
-import {
-  Cargo,
-  Funcionario,
-  FuncionarioInput,
-  FuncionarioUpdate,
-} from '@core/models/funcionarios.models';
-import { Confirm } from '@core/services/confirm.service';
-import { Notify } from '@core/services/notify.service';
-import { Realtime } from '@core/services/realtime.service';
-import { AuthStore } from '@core/services/auth.store';
-import { TourGuiado } from '@core/services/tour.service';
+import { Cargo } from '@core/models/funcionarios.models';
 import { DateInputComponent } from '@shared/components/date-input.component';
+import { FuncionariosStore } from './funcionarios.store';
 
-// Gestão da equipe: contas de acesso ao sistema (Recepção / Gerente / Administrador).
 @Component({
   selector: 'app-funcionarios',
   host: { '(document:keydown.escape)': 'onEsc()' },
@@ -42,16 +30,21 @@ import { DateInputComponent } from '@shared/components/date-input.component';
         <div>
           <p class="eyebrow">Configurações</p>
           <h2 class="fn-titulo">Funcionários</h2>
-          <p class="fn-sub">Equipe com acesso ao sistema — cada pessoa entra com login e senha próprios</p>
+          <p class="fn-sub">
+            Equipe com acesso ao sistema — cada pessoa entra com login e senha próprios
+          </p>
         </div>
         <div class="fn-acoes">
-          <a class="btn-tour" routerLink="/auditoria">
-            <mat-icon>history</mat-icon> Auditoria
-          </a>
+          <a class="btn-tour" routerLink="/auditoria"> <mat-icon>history</mat-icon> Auditoria </a>
           <button class="btn-tour" type="button" (click)="abrirCargos()" id="tour-cargos">
             <mat-icon>work</mat-icon> Cargos
           </button>
-          <button class="btn-tour" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
+          <button
+            class="btn-tour"
+            type="button"
+            (click)="iniciarTour()"
+            aria-label="Ver tutorial da tela"
+          >
             <mat-icon>school</mat-icon> Tutorial
           </button>
           <button id="tour-novo" class="btn-dark-blue" type="button" (click)="abrirNovo()">
@@ -66,21 +59,30 @@ import { DateInputComponent } from '@shared/components/date-input.component';
           <span class="fn-banner-ic"><mat-icon>badge</mat-icon></span>
           <div>
             <strong>Três níveis de acesso</strong>
-            <p><b>Recepção</b> opera o dia a dia · <b>Gerente</b> acompanha relatórios · <b>Administrador</b> tem acesso total ao sistema.</p>
+            <p>
+              <b>Recepção</b> opera o dia a dia · <b>Gerente</b> acompanha relatórios ·
+              <b>Administrador</b> tem acesso total ao sistema.
+            </p>
           </div>
         </div>
         <div class="fn-banner">
           <span class="fn-banner-ic"><mat-icon>key</mat-icon></span>
           <div>
             <strong>Conta individual e rastreável</strong>
-            <p>Cada ação no sistema fica registrada com o nome de quem fez — por isso cada pessoa tem seu próprio login. Nunca compartilhe senhas.</p>
+            <p>
+              Cada ação no sistema fica registrada com o nome de quem fez — por isso cada pessoa tem
+              seu próprio login. Nunca compartilhe senhas.
+            </p>
           </div>
         </div>
         <div class="fn-banner">
           <span class="fn-banner-ic"><mat-icon>shield</mat-icon></span>
           <div>
             <strong>Você está protegido</strong>
-            <p>O sistema não deixa você desativar nem excluir a sua própria conta — evita bloquear o acesso por engano.</p>
+            <p>
+              O sistema não deixa você desativar nem excluir a sua própria conta — evita bloquear o
+              acesso por engano.
+            </p>
           </div>
         </div>
       </div>
@@ -126,7 +128,12 @@ import { DateInputComponent } from '@shared/components/date-input.component';
               (blur)="buscaFoco.set(false)"
             />
             @if (termo()) {
-              <button type="button" class="fn-limpar" aria-label="Limpar busca" (click)="termo.set(''); pagina.set(0)">
+              <button
+                type="button"
+                class="fn-limpar"
+                aria-label="Limpar busca"
+                (click)="termo.set(''); pagina.set(0)"
+              >
                 <mat-icon>close</mat-icon>
               </button>
             }
@@ -151,7 +158,9 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                 @for (s of skel; track s) {
                   <tr class="skel-row">
                     <td>
-                      <span class="skel-cell"><span class="skel sk-av"></span><span class="skel sk-txt-l"></span></span>
+                      <span class="skel-cell"
+                        ><span class="skel sk-av"></span><span class="skel sk-txt-l"></span
+                      ></span>
                     </td>
                     <td><span class="skel sk-txt"></span></td>
                     <td><span class="skel sk-chip"></span></td>
@@ -165,7 +174,9 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                   <tr>
                     <td>
                       <div class="fn-cell">
-                        <span class="fn-avatar" [class.eu]="f.id === auth.user()?.id">{{ iniciais(f.nome) }}</span>
+                        <span class="fn-avatar" [class.eu]="f.id === auth.user()?.id">{{
+                          iniciais(f.nome)
+                        }}</span>
                         <div class="fn-cell-txt">
                           <strong>
                             {{ f.nome }}
@@ -190,38 +201,63 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                         class="st-chip"
                         [class.off]="!f.ativo"
                         [disabled]="f.id === auth.user()?.id"
-                        [title]="f.id === auth.user()?.id ? 'Você não pode desativar a si mesmo' : (f.ativo ? 'Clique para desativar' : 'Clique para ativar')"
+                        [title]="
+                          f.id === auth.user()?.id
+                            ? 'Você não pode desativar a si mesmo'
+                            : f.ativo
+                              ? 'Clique para desativar'
+                              : 'Clique para ativar'
+                        "
                         (click)="status(f, !f.ativo)"
-                      >{{ f.ativo ? 'Ativo' : 'Inativo' }}</button>
+                      >
+                        {{ f.ativo ? 'Ativo' : 'Inativo' }}
+                      </button>
                     </td>
                     <td class="tc">
-                      <span class="v-pill" [class]="verificacaoDe(f.id).cls"
-                        [title]="verificacaoDe(f.id).titulo">
+                      <span
+                        class="v-pill"
+                        [class]="verificacaoDe(f.id).cls"
+                        [title]="verificacaoDe(f.id).titulo"
+                      >
                         <mat-icon class="v-pill-ic">{{ verificacaoDe(f.id).icone }}</mat-icon>
                         {{ verificacaoDe(f.id).rotulo }}
                       </span>
                       <button
-                        type="button" class="acao-btn v-link"
+                        type="button"
+                        class="acao-btn v-link"
                         [disabled]="gerandoLink() === f.id"
                         [title]="'Gerar link de verificação Didit para ' + f.nome"
                         [attr.aria-label]="'Gerar link de verificação para ' + f.nome"
                         (click)="verificar(f)"
-                      ><mat-icon>{{ gerandoLink() === f.id ? 'hourglass_top' : 'link' }}</mat-icon></button>
+                      >
+                        <mat-icon>{{ gerandoLink() === f.id ? 'hourglass_top' : 'link' }}</mat-icon>
+                      </button>
                     </td>
                     <td class="tc">
                       <div class="fn-acoes-linha">
                         <button
-                          type="button" class="acao-btn" title="Editar"
+                          type="button"
+                          class="acao-btn"
+                          title="Editar"
                           aria-label="Editar funcionário"
                           (click)="abrirEdicao(f)"
-                        ><mat-icon>edit</mat-icon></button>
+                        >
+                          <mat-icon>edit</mat-icon>
+                        </button>
                         <button
-                          type="button" class="acao-btn perigo"
+                          type="button"
+                          class="acao-btn perigo"
                           [disabled]="f.id === auth.user()?.id"
                           (click)="excluir(f)"
                           aria-label="Excluir funcionário"
-                          [title]="f.id === auth.user()?.id ? 'Você não pode excluir a si mesmo' : 'Excluir'"
-                        ><mat-icon>delete</mat-icon></button>
+                          [title]="
+                            f.id === auth.user()?.id
+                              ? 'Você não pode excluir a si mesmo'
+                              : 'Excluir'
+                          "
+                        >
+                          <mat-icon>delete</mat-icon>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -229,7 +265,11 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                   <tr>
                     <td colspan="6" class="fn-vazio">
                       <mat-icon>badge</mat-icon>
-                      {{ termo() ? 'Nenhum funcionário encontrado para a busca.' : 'Nenhum funcionário cadastrado — clique em Novo funcionário.' }}
+                      {{
+                        termo()
+                          ? 'Nenhum funcionário encontrado para a busca.'
+                          : 'Nenhum funcionário cadastrado — clique em Novo funcionário.'
+                      }}
                     </td>
                   </tr>
                 }
@@ -250,12 +290,17 @@ import { DateInputComponent } from '@shared/components/date-input.component';
     <!-- ================= Modal: link de verificação ================= -->
     @if (linkVerificacao(); as lv) {
       <div class="vl-backdrop" (click)="linkVerificacao.set(null)" role="presentation">
-        <div class="vl-modal" (click)="$event.stopPropagation()" role="dialog"
-          aria-modal="true" [attr.aria-label]="'Link de verificação de ' + lv.nome">
+        <div
+          class="vl-modal"
+          (click)="$event.stopPropagation()"
+          role="dialog"
+          aria-modal="true"
+          [attr.aria-label]="'Link de verificação de ' + lv.nome"
+        >
           <h3 class="vl-t"><mat-icon>verified_user</mat-icon> Verificação de identidade</h3>
           <p class="vl-sub">
-            Envie este link para <strong>{{ lv.nome }}</strong> — a pessoa abre no celular,
-            faz o KYC (documento + selfie) e o status aparece aqui sozinho.
+            Envie este link para <strong>{{ lv.nome }}</strong> — a pessoa abre no celular, faz o
+            KYC (documento + selfie) e o status aparece aqui sozinho.
           </p>
           <div class="vl-linha">
             <input class="vl-url" [value]="lv.url" readonly aria-label="URL de verificação" />
@@ -263,7 +308,9 @@ import { DateInputComponent } from '@shared/components/date-input.component';
               <mat-icon>content_copy</mat-icon> Copiar
             </button>
           </div>
-          <button type="button" class="vl-fechar" (click)="linkVerificacao.set(null)">Fechar</button>
+          <button type="button" class="vl-fechar" (click)="linkVerificacao.set(null)">
+            Fechar
+          </button>
         </div>
       </div>
     }
@@ -274,10 +321,23 @@ import { DateInputComponent } from '@shared/components/date-input.component';
         <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="titulo-drawer">
           <header class="drawer-head">
             <div class="drawer-head-txt">
-              <h5 id="titulo-drawer">{{ editando() ? 'Editar funcionário' : 'Novo funcionário' }}</h5>
-              <p>{{ editando() ? 'Atualize os dados de ' + editando()!.nome : 'Cadastre um membro da equipe e sua conta de acesso' }}</p>
+              <h5 id="titulo-drawer">
+                {{ editando() ? 'Editar funcionário' : 'Novo funcionário' }}
+              </h5>
+              <p>
+                {{
+                  editando()
+                    ? 'Atualize os dados de ' + editando()!.nome
+                    : 'Cadastre um membro da equipe e sua conta de acesso'
+                }}
+              </p>
             </div>
-            <button type="button" class="drawer-fechar" (click)="fecharDrawer()" aria-label="Fechar painel">
+            <button
+              type="button"
+              class="drawer-fechar"
+              (click)="fecharDrawer()"
+              aria-label="Fechar painel"
+            >
               <mat-icon>close</mat-icon>
             </button>
           </header>
@@ -289,10 +349,15 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                 <div class="dsec-tit"><mat-icon>badge</mat-icon> Dados pessoais</div>
                 <div class="dgrid">
                   <div class="campo full">
-                    <label class="lbl" for="fu-nome">Nome completo <small class="req">*</small></label>
+                    <label class="lbl" for="fu-nome"
+                      >Nome completo <small class="req">*</small></label
+                    >
                     <input
-                      id="fu-nome" class="input-inn" type="text"
-                      formControlName="nome" placeholder="Ex.: Maria Silva Souza"
+                      id="fu-nome"
+                      class="input-inn"
+                      type="text"
+                      formControlName="nome"
+                      placeholder="Ex.: Maria Silva Souza"
                       [class.inval]="invalido('nome')"
                     />
                     @if (invalido('nome')) {
@@ -300,7 +365,9 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                     }
                   </div>
                   <div class="campo">
-                    <label class="lbl" for="fu-nasc">Data de nascimento <small class="req">*</small></label>
+                    <label class="lbl" for="fu-nasc"
+                      >Data de nascimento <small class="req">*</small></label
+                    >
                     <app-date formControlName="data_nascimento" />
                     @if (invalido('data_nascimento')) {
                       <small class="erro-campo">Informe a data de nascimento.</small>
@@ -309,8 +376,11 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                   <div class="campo">
                     <label class="lbl" for="fu-cpf">CPF <small class="req">*</small></label>
                     <input
-                      id="fu-cpf" class="input-inn" type="text"
-                      formControlName="cpf" placeholder="000.000.000-00"
+                      id="fu-cpf"
+                      class="input-inn"
+                      type="text"
+                      formControlName="cpf"
+                      placeholder="000.000.000-00"
                       [class.inval]="invalido('cpf')"
                     />
                     @if (invalido('cpf')) {
@@ -352,8 +422,11 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                   <div class="campo">
                     <label class="lbl" for="fu-login">Login <small class="req">*</small></label>
                     <input
-                      id="fu-login" class="input-inn" type="text"
-                      formControlName="login" placeholder="Ex.: maria.s"
+                      id="fu-login"
+                      class="input-inn"
+                      type="text"
+                      formControlName="login"
+                      placeholder="Ex.: maria.s"
                       [class.inval]="invalido('login')"
                     />
                     @if (invalido('login')) {
@@ -363,11 +436,17 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                   <div class="campo">
                     <span class="lbl">
                       Senha
-                      @if (!editando()) { <small class="req">*</small> }
+                      @if (!editando()) {
+                        <small class="req">*</small>
+                      }
                     </span>
                     @if (editando()) {
                       <label class="senha-toggle" [class.on]="trocaSenha()">
-                        <input type="checkbox" [checked]="trocaSenha()" (change)="alternarSenha()" />
+                        <input
+                          type="checkbox"
+                          [checked]="trocaSenha()"
+                          (change)="alternarSenha()"
+                        />
                         <mat-icon>{{ trocaSenha() ? 'lock_reset' : 'lock' }}</mat-icon>
                         <span>{{ trocaSenha() ? 'Redefinindo senha' : 'Alterar senha' }}</span>
                       </label>
@@ -375,17 +454,23 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                     @if (!editando() || trocaSenha()) {
                       <div class="senha-wrap">
                         <input
-                          id="fu-senha" class="input-inn" [type]="verSenha() ? 'text' : 'password'"
+                          id="fu-senha"
+                          class="input-inn"
+                          [type]="verSenha() ? 'text' : 'password'"
                           formControlName="senha"
                           [placeholder]="editando() ? 'Nova senha (mín. 8)' : 'Mínimo 8 caracteres'"
                           autocomplete="new-password"
                           [class.inval]="invalido('senha')"
                         />
-                        <button type="button" class="senha-eye"
+                        <button
+                          type="button"
+                          class="senha-eye"
                           [attr.aria-label]="verSenha() ? 'Ocultar senha' : 'Mostrar senha'"
                           [title]="verSenha() ? 'Ocultar senha' : 'Mostrar senha'"
                           (click)="verSenha.set(!verSenha())"
-                        ><mat-icon>{{ verSenha() ? 'visibility_off' : 'visibility' }}</mat-icon></button>
+                        >
+                          <mat-icon>{{ verSenha() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                        </button>
                       </div>
                     } @else {
                       <small class="senha-hint">A senha atual será mantida.</small>
@@ -402,7 +487,9 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                 <ul class="dicas">
                   <li>Login curto e sem acentos — ex.: <b>maria.s</b></li>
                   <li>Senha com pelo menos 8 caracteres, misturando letras e números</li>
-                  <li><b>Recepção</b> é a função certa para quem só opera check-in, reservas e consumo</li>
+                  <li>
+                    <b>Recepção</b> é a função certa para quem só opera check-in, reservas e consumo
+                  </li>
                 </ul>
               </section>
             </div>
@@ -412,7 +499,8 @@ import { DateInputComponent } from '@shared/components/date-input.component';
               <div class="drawer-foot-acoes">
                 <button class="btn-gray" type="button" (click)="fecharDrawer()">Cancelar</button>
                 <button class="btn-dark-blue" type="submit">
-                  <mat-icon>save</mat-icon> {{ editando() ? 'Salvar alterações' : 'Cadastrar funcionário' }}
+                  <mat-icon>save</mat-icon>
+                  {{ editando() ? 'Salvar alterações' : 'Cadastrar funcionário' }}
                 </button>
               </div>
             </footer>
@@ -430,7 +518,12 @@ import { DateInputComponent } from '@shared/components/date-input.component';
               <h5 id="titulo-cargos">Cargos</h5>
               <p>Títulos da equipe — cada cargo define o nível de acesso do funcionário</p>
             </div>
-            <button type="button" class="drawer-fechar" (click)="fecharCargos()" aria-label="Fechar painel">
+            <button
+              type="button"
+              class="drawer-fechar"
+              (click)="fecharCargos()"
+              aria-label="Fechar painel"
+            >
               <mat-icon>close</mat-icon>
             </button>
           </header>
@@ -447,8 +540,11 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                   <div class="campo full">
                     <label class="lbl" for="cg-nome">Nome <small class="req">*</small></label>
                     <input
-                      id="cg-nome" class="input-inn" type="text"
-                      formControlName="nome" placeholder="Ex.: Camareira, Cozinheira, Manutenção"
+                      id="cg-nome"
+                      class="input-inn"
+                      type="text"
+                      formControlName="nome"
+                      placeholder="Ex.: Camareira, Cozinheira, Manutenção"
                       [class.inval]="invalidoCargo('nome')"
                     />
                     @if (invalidoCargo('nome')) {
@@ -458,13 +554,17 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                   <div class="campo full">
                     <label class="lbl" for="cg-desc">Descrição</label>
                     <input
-                      id="cg-desc" class="input-inn" type="text"
+                      id="cg-desc"
+                      class="input-inn"
+                      type="text"
                       formControlName="descricao"
                       placeholder="Ex.: cuida da limpeza e arrumação dos quartos"
                     />
                   </div>
                   <div class="campo full">
-                    <label class="lbl" for="cg-nivel">Nível de acesso <small class="req">*</small></label>
+                    <label class="lbl" for="cg-nivel"
+                      >Nível de acesso <small class="req">*</small></label
+                    >
                     <mat-form-field
                       appearance="outline"
                       subscriptSizing="dynamic"
@@ -478,15 +578,21 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                       </mat-select>
                     </mat-form-field>
                     @if (editandoCargo()?.sistema) {
-                      <small class="senha-hint">O nível de um cargo-base não pode ser alterado.</small>
+                      <small class="senha-hint"
+                        >O nível de um cargo-base não pode ser alterado.</small
+                      >
                     } @else {
-                      <small class="senha-hint">Funcionários com este cargo entram no sistema com esse nível.</small>
+                      <small class="senha-hint"
+                        >Funcionários com este cargo entram no sistema com esse nível.</small
+                      >
                     }
                   </div>
                 </div>
                 <div class="cg-acoes">
                   @if (editandoCargo()) {
-                    <button class="btn-gray" type="button" (click)="cancelarCargo()">Cancelar edição</button>
+                    <button class="btn-gray" type="button" (click)="cancelarCargo()">
+                      Cancelar edição
+                    </button>
                   }
                   <button class="btn-dark-blue" type="submit">
                     <mat-icon>save</mat-icon> {{ editandoCargo() ? 'Salvar cargo' : 'Criar cargo' }}
@@ -509,28 +615,46 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                         }
                       </strong>
                       <small>
-                        {{ nivelNome(c.nivel) }}{{ c.descricao ? ' · ' + c.descricao : '' }}
-                        · {{ c.total_funcionarios }} {{ c.total_funcionarios === 1 ? 'pessoa' : 'pessoas' }}
+                        {{ nivelNome(c.nivel) }}{{ c.descricao ? ' · ' + c.descricao : '' }} ·
+                        {{ c.total_funcionarios }}
+                        {{ c.total_funcionarios === 1 ? 'pessoa' : 'pessoas' }}
                       </small>
                     </div>
                     <div class="cg-item-acoes">
                       <button
-                        type="button" class="st-chip" [class.off]="!c.ativo"
+                        type="button"
+                        class="st-chip"
+                        [class.off]="!c.ativo"
                         [title]="c.ativo ? 'Clique para desativar' : 'Clique para ativar'"
                         (click)="statusCargo(c, !c.ativo)"
-                      >{{ c.ativo ? 'Ativo' : 'Inativo' }}</button>
+                      >
+                        {{ c.ativo ? 'Ativo' : 'Inativo' }}
+                      </button>
                       <button
-                        type="button" class="acao-btn"
-                        aria-label="Editar cargo" title="Editar"
+                        type="button"
+                        class="acao-btn"
+                        aria-label="Editar cargo"
+                        title="Editar"
                         (click)="editarCargo(c)"
-                      ><mat-icon>edit</mat-icon></button>
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
                       <button
-                        type="button" class="acao-btn perigo"
+                        type="button"
+                        class="acao-btn perigo"
                         [disabled]="c.sistema || c.total_funcionarios > 0"
                         aria-label="Excluir cargo"
-                        [title]="c.sistema ? 'Cargo-base do sistema não pode ser excluído' : (c.total_funcionarios > 0 ? 'Há funcionários com este cargo' : 'Excluir')"
+                        [title]="
+                          c.sistema
+                            ? 'Cargo-base do sistema não pode ser excluído'
+                            : c.total_funcionarios > 0
+                              ? 'Há funcionários com este cargo'
+                              : 'Excluir'
+                        "
                         (click)="excluirCargo(c)"
-                      ><mat-icon>delete</mat-icon></button>
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
                     </div>
                   </li>
                 }
@@ -544,893 +668,953 @@ import { DateInputComponent } from '@shared/components/date-input.component';
   styles: `
     /* ---------- cabeçalho ---------- */
     .fn-head {
-      display: flex; justify-content: space-between; align-items: flex-end;
-      gap: 16px; flex-wrap: wrap;
-      padding-bottom: 14px; margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding-bottom: 14px;
+      margin-bottom: 16px;
       border-bottom: 1px solid #e3eaef;
     }
-    .fn-titulo { margin: 0; font-size: 1.5rem; font-weight: 800; color: #054054; letter-spacing: -0.02em; }
-    .fn-sub { margin: 2px 0 0; font-size: 0.82rem; color: #7d97a1; }
-    .fn-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
-    .fn-acoes button, .fn-acoes a { display: inline-flex; align-items: center; gap: 6px; }
-    .btn-tour {
-      display: inline-flex; align-items: center; gap: 6px;
-      border: 1px solid #dce6ea; background: #fff;
-      color: #536b73; border-radius: 6px;
-      padding: 0 14px; min-height: 34px; cursor: pointer;
-      font-size: 0.85rem; font-weight: 600; font-family: inherit;
-      text-decoration: none;
-      transition: border-color .15s ease, color .15s ease;
+    .fn-titulo {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #054054;
+      letter-spacing: -0.02em;
     }
-    .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { border-color: #054054; color: #054054; }
+    .fn-sub {
+      margin: 2px 0 0;
+      font-size: 0.82rem;
+      color: #7d97a1;
+    }
+    .fn-acoes {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .fn-acoes button,
+    .fn-acoes a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-tour {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #dce6ea;
+      background: #fff;
+      color: #536b73;
+      border-radius: 6px;
+      padding: 0 14px;
+      min-height: 34px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: inherit;
+      text-decoration: none;
+      transition:
+        border-color 0.15s ease,
+        color 0.15s ease;
+    }
+    .btn-tour mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+    }
+    .btn-tour:hover {
+      border-color: #054054;
+      color: #054054;
+    }
 
     /* ---------- banners ---------- */
     .fn-banners {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
       margin-bottom: 16px;
     }
-    @media (max-width: 960px) { .fn-banners { grid-template-columns: 1fr; } }
+    @media (max-width: 960px) {
+      .fn-banners {
+        grid-template-columns: 1fr;
+      }
+    }
     .fn-banner {
-      display: flex; gap: 12px; align-items: flex-start;
-      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      background: #fff;
+      border: 1px solid #e3eaef;
+      border-radius: 10px;
       padding: 14px 16px;
     }
     .fn-banner-ic {
-      width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
-      display: inline-flex; align-items: center; justify-content: center;
-      background: #eef4f6; color: #054054;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eef4f6;
+      color: #054054;
     }
-    .fn-banner-ic mat-icon { font-size: 19px; width: 19px; height: 19px; }
-    .fn-banner strong { display: block; font-size: 0.88rem; color: #054054; margin-bottom: 3px; }
-    .fn-banner p { margin: 0; font-size: 0.78rem; color: #7d97a1; line-height: 1.45; }
+    .fn-banner-ic mat-icon {
+      font-size: 19px;
+      width: 19px;
+      height: 19px;
+    }
+    .fn-banner strong {
+      display: block;
+      font-size: 0.88rem;
+      color: #054054;
+      margin-bottom: 3px;
+    }
+    .fn-banner p {
+      margin: 0;
+      font-size: 0.78rem;
+      color: #7d97a1;
+      line-height: 1.45;
+    }
 
     /* ---------- resumo ---------- */
     .fn-resumo {
-      display: flex; align-items: center;
-      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
-      margin-bottom: 16px; overflow-x: auto;
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border: 1px solid #e3eaef;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow-x: auto;
     }
     .fn-est {
-      display: flex; flex-direction: column; gap: 3px;
-      padding: 12px 26px; min-width: 140px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 12px 26px;
+      min-width: 140px;
       border-left: 1px solid #eef2f5;
     }
-    .fn-est:first-child { border-left: none; }
+    .fn-est:first-child {
+      border-left: none;
+    }
     .fn-est-num {
-      font-size: 1.5rem; font-weight: 800; color: #054054;
-      line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #054054;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
     }
     .fn-est-lbl {
-      display: inline-flex; align-items: center; gap: 5px;
-      font-size: 0.68rem; font-weight: 600; color: #7d97a1;
-      text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #7d97a1;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      white-space: nowrap;
     }
-    .fn-est-lbl mat-icon { font-size: 14px; width: 14px; height: 14px; color: #8fa3ab; }
+    .fn-est-lbl mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      color: #8fa3ab;
+    }
 
     /* ---------- toolbar ---------- */
-    .fn-card { padding-top: 14px; }
+    .fn-card {
+      padding-top: 14px;
+    }
     .fn-toolbar {
-      display: flex; align-items: center; gap: 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
       padding: 4px 2px 14px;
     }
     .fn-busca {
-      display: flex; align-items: center; gap: 8px;
-      flex: 1; max-width: 420px;
-      background: #fff; border: 1px solid #d7e0e6; border-radius: 8px;
-      padding: 0 10px; height: 40px;
-      transition: border-color .15s, box-shadow .15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      max-width: 420px;
+      background: #fff;
+      border: 1px solid #d7e0e6;
+      border-radius: 8px;
+      padding: 0 10px;
+      height: 40px;
+      transition:
+        border-color 0.15s,
+        box-shadow 0.15s;
     }
-    .fn-busca.foco { border-color: #054054; box-shadow: 0 0 0 3px rgba(5, 64, 84, 0.1); }
-    .fn-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
+    .fn-busca.foco {
+      border-color: #054054;
+      box-shadow: 0 0 0 3px rgba(5, 64, 84, 0.1);
+    }
+    .fn-busca-icone {
+      color: #7d97a1;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
     .fn-busca-input {
-      flex: 1; border: none; outline: none; background: transparent;
-      font-size: 0.9rem; color: #33424c; font-family: inherit; height: 100%;
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 0.9rem;
+      color: #33424c;
+      font-family: inherit;
+      height: 100%;
     }
-    .fn-busca-input::placeholder { color: #8fa3ab; }
-    .fn-busca-input::-webkit-search-cancel-button { display: none; }
+    .fn-busca-input::placeholder {
+      color: #8fa3ab;
+    }
+    .fn-busca-input::-webkit-search-cancel-button {
+      display: none;
+    }
     .fn-limpar {
-      border: none; background: #eef2f5; border-radius: 50%;
-      width: 22px; height: 22px; cursor: pointer; color: #5d6d7e;
-      display: inline-flex; align-items: center; justify-content: center; padding: 0;
+      border: none;
+      background: #eef2f5;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      cursor: pointer;
+      color: #5d6d7e;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
     }
-    .fn-limpar mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .fn-limpar:hover { background: #d7e0e6; }
-    .fn-contagem { font-size: 0.78rem; color: #8a99a4; margin-left: auto; white-space: nowrap; }
+    .fn-limpar mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+    .fn-limpar:hover {
+      background: #d7e0e6;
+    }
+    .fn-contagem {
+      font-size: 0.78rem;
+      color: #8a99a4;
+      margin-left: auto;
+      white-space: nowrap;
+    }
 
     /* ---------- tabela ---------- */
-    .fn-tabela-wrap { overflow-x: auto; min-height: 42vh; }
-    .fn-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    .fn-tabela-wrap {
+      overflow-x: auto;
+      min-height: 42vh;
+    }
+    .fn-tabela {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
     .fn-tabela thead th {
-      background: #f4f8fa; color: #40525d;
-      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; padding: 14px 16px; text-align: left;
-      border-bottom: 2px solid #e3eaef; white-space: nowrap;
+      background: #f4f8fa;
+      color: #40525d;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 2px solid #e3eaef;
+      white-space: nowrap;
     }
     .fn-tabela tbody td {
-      padding: 12px 16px; border-bottom: 1px solid #eef2f5;
-      vertical-align: middle; color: #33424c;
+      padding: 12px 16px;
+      border-bottom: 1px solid #eef2f5;
+      vertical-align: middle;
+      color: #33424c;
     }
-    .fn-tabela tbody tr:hover { background: #f7fafb; }
-    .fn-tabela .tc { text-align: center; }
-    .fn-cell { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .fn-tabela tbody tr:hover {
+      background: #f7fafb;
+    }
+    .fn-tabela .tc {
+      text-align: center;
+    }
+    .fn-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
     .fn-avatar {
-      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
-      background: linear-gradient(135deg, #1a6f8a, #4b95ab); color: #fff;
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 0.82rem; font-weight: 700; letter-spacing: 0.02em;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #1a6f8a, #4b95ab);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
     }
-    .fn-avatar.eu { background: linear-gradient(135deg, #054054, #1a6f8a); color: #fff; }
-    .fn-cell-txt { display: flex; flex-direction: column; min-width: 0; }
+    .fn-avatar.eu {
+      background: linear-gradient(135deg, #054054, #1a6f8a);
+      color: #fff;
+    }
+    .fn-cell-txt {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
     .fn-cell-txt strong {
-      font-size: 0.93rem; color: #054054; font-weight: 700;
-      display: flex; align-items: center; gap: 7px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px;
+      font-size: 0.93rem;
+      color: #054054;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 260px;
     }
     .fn-voce {
-      background: #eef4f6; color: #054054;
-      font-size: 0.65rem; font-weight: 700; padding: 1px 8px; border-radius: 999px;
+      background: #eef4f6;
+      color: #054054;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 1px 8px;
+      border-radius: 999px;
     }
     .fn-cell-txt small {
-      font-size: 0.74rem; color: #8a99a4;
-      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 0.74rem;
+      color: #8a99a4;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
     }
-    .fn-cell-txt small mat-icon { font-size: 12px; width: 12px; height: 12px; }
-    .td-cpf { font-variant-numeric: tabular-nums; white-space: nowrap; color: #5d6d7e; }
+    .fn-cell-txt small mat-icon {
+      font-size: 12px;
+      width: 12px;
+      height: 12px;
+    }
+    .td-cpf {
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      color: #5d6d7e;
+    }
     .fn-nivel {
-      display: inline-flex; align-items: center; gap: 5px;
-      border-radius: 999px; padding: 4px 12px;
-      font-size: 0.78rem; font-weight: 700; white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      white-space: nowrap;
     }
-    .fn-nivel mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .fn-nivel.n1, .fn-nivel.n2, .fn-nivel.n3 { background: #eef4f6; color: #054054; }
+    .fn-nivel mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+    .fn-nivel.n1,
+    .fn-nivel.n2,
+    .fn-nivel.n3 {
+      background: #eef4f6;
+      color: #054054;
+    }
     .st-chip {
-      display: inline-flex; align-items: center; justify-content: center;
-      border: none; border-radius: 999px; padding: 4px 14px;
-      background: #eef4f6; color: #054054;
-      font-size: 0.75rem; font-weight: 600; font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 999px;
+      padding: 4px 14px;
+      background: #eef4f6;
+      color: #054054;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: inherit;
     }
-    .st-chip { cursor: pointer; }
-    .st-chip.off { background: #f4f8fa; color: #8fa3ab; }
-    .st-chip:disabled { opacity: 0.55; cursor: not-allowed; }
-    .fn-acoes-linha { display: inline-flex; gap: 4px; }
+    .st-chip {
+      cursor: pointer;
+    }
+    .st-chip.off {
+      background: #f4f8fa;
+      color: #8fa3ab;
+    }
+    .st-chip:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .fn-acoes-linha {
+      display: inline-flex;
+      gap: 4px;
+    }
     .acao-btn {
-      display: inline-flex; align-items: center; justify-content: center;
-      border: none; background: none; border-radius: 6px; width: 30px; height: 30px;
-      cursor: pointer; color: #536b73; transition: background .14s, color .14s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: none;
+      border-radius: 6px;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      color: #536b73;
+      transition:
+        background 0.14s,
+        color 0.14s;
     }
-    .acao-btn mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .acao-btn:hover:not(:disabled) { background: #eef4f6; color: #054054; }
-    .acao-btn.perigo:hover:not(:disabled) { background: #fbeaea; color: #b3343a; }
-    .acao-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .acao-btn.v-link { color: #4B95AB; }
+    .acao-btn mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+    }
+    .acao-btn:hover:not(:disabled) {
+      background: #eef4f6;
+      color: #054054;
+    }
+    .acao-btn.perigo:hover:not(:disabled) {
+      background: #fbeaea;
+      color: #b3343a;
+    }
+    .acao-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .acao-btn.v-link {
+      color: #4b95ab;
+    }
 
-    .v-pill { display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 10px; border-radius: 999px;
-      font-size: 11px; font-weight: 700; vertical-align: middle; }
-    .v-pill-ic { font-size: 14px; width: 14px; height: 14px; line-height: 14px; }
-    .v-ok { background: #e6f4ea; color: #1e7d32; }
-    .v-warn { background: #fff7e0; color: #8a5a00; }
-    .v-erro { background: #fdecea; color: #b3261e; }
-    .v-off { background: #eef2f4; color: #8aa0ac; }
+    .v-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      vertical-align: middle;
+    }
+    .v-pill-ic {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      line-height: 14px;
+    }
+    .v-ok {
+      background: #e6f4ea;
+      color: #1e7d32;
+    }
+    .v-warn {
+      background: #fff7e0;
+      color: #8a5a00;
+    }
+    .v-erro {
+      background: #fdecea;
+      color: #b3261e;
+    }
+    .v-off {
+      background: #eef2f4;
+      color: #8aa0ac;
+    }
 
-    .vl-backdrop { position: fixed; inset: 0; background: rgba(11,36,55,.5);
-      display: grid; place-items: center; z-index: 60; padding: 16px; }
-    .vl-modal { background: #fff; border-radius: 16px; padding: 24px;
-      width: min(520px, 100%); box-shadow: 0 24px 64px rgba(0,0,0,.3); }
-    .vl-t { display: flex; align-items: center; gap: 8px; font-size: 17px;
-      font-weight: 700; color: #0b2437; margin: 0 0 8px; }
-    .vl-t mat-icon { color: #054054; }
-    .vl-sub { font-size: 13px; color: #5a6b76; line-height: 1.55; margin: 0 0 16px; }
-    .vl-linha { display: flex; gap: 8px; flex-wrap: wrap; }
-    .vl-url { flex: 1; min-width: 220px; padding: 10px 12px; border: 1px solid #d5e0e6;
-      border-radius: 10px; font-size: 13px; background: #f7fafb; color: #39464f; }
-    .vl-fechar { margin-top: 16px; border: 0; background: none; color: #4B95AB;
-      font-size: 13px; font-weight: 600; cursor: pointer; }
+    .vl-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 36, 55, 0.5);
+      display: grid;
+      place-items: center;
+      z-index: 60;
+      padding: 16px;
+    }
+    .vl-modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      width: min(520px, 100%);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+    }
+    .vl-t {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 17px;
+      font-weight: 700;
+      color: #0b2437;
+      margin: 0 0 8px;
+    }
+    .vl-t mat-icon {
+      color: #054054;
+    }
+    .vl-sub {
+      font-size: 13px;
+      color: #5a6b76;
+      line-height: 1.55;
+      margin: 0 0 16px;
+    }
+    .vl-linha {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .vl-url {
+      flex: 1;
+      min-width: 220px;
+      padding: 10px 12px;
+      border: 1px solid #d5e0e6;
+      border-radius: 10px;
+      font-size: 13px;
+      background: #f7fafb;
+      color: #39464f;
+    }
+    .vl-fechar {
+      margin-top: 16px;
+      border: 0;
+      background: none;
+      color: #4b95ab;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
     .fn-vazio {
-      text-align: center; color: #8a99a4; padding: 40px !important; font-size: 0.86rem;
+      text-align: center;
+      color: #8a99a4;
+      padding: 40px !important;
+      font-size: 0.86rem;
     }
-    .fn-vazio mat-icon { display: block; margin: 0 auto 8px; font-size: 32px; width: 32px; height: 32px; color: #c3d2d9; }
+    .fn-vazio mat-icon {
+      display: block;
+      margin: 0 auto 8px;
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      color: #c3d2d9;
+    }
 
     /* ---------- skeleton ---------- */
-    .skel-row td { padding: 14px 16px; }
+    .skel-row td {
+      padding: 14px 16px;
+    }
     .skel {
-      display: block; border-radius: 6px;
+      display: block;
+      border-radius: 6px;
       background: linear-gradient(90deg, #eef2f5 25%, #f7fafb 50%, #eef2f5 75%);
       background-size: 200% 100%;
       animation: shimmer 1.3s infinite;
     }
-    @keyframes shimmer { to { background-position: -200% 0; } }
-    .skel-cell { display: flex; align-items: center; gap: 12px; }
-    .sk-av { width: 40px; height: 40px; border-radius: 50%; }
-    .sk-txt-l { width: 170px; height: 15px; }
-    .sk-txt { width: 110px; height: 14px; }
-    .sk-chip { width: 80px; height: 24px; border-radius: 999px; margin: 0 auto; }
-    .sk-acoes { width: 68px; height: 28px; margin: 0 auto; }
+    @keyframes shimmer {
+      to {
+        background-position: -200% 0;
+      }
+    }
+    .skel-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .sk-av {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+    .sk-txt-l {
+      width: 170px;
+      height: 15px;
+    }
+    .sk-txt {
+      width: 110px;
+      height: 14px;
+    }
+    .sk-chip {
+      width: 80px;
+      height: 24px;
+      border-radius: 999px;
+      margin: 0 auto;
+    }
+    .sk-acoes {
+      width: 68px;
+      height: 28px;
+      margin: 0 auto;
+    }
 
     /* ---------- drawer ---------- */
     .drawer-backdrop {
-      position: fixed; inset: 0; z-index: 320;
+      position: fixed;
+      inset: 0;
+      z-index: 320;
       background: rgba(5, 32, 43, 0.45);
       animation: fadeIn 0.18s ease-out;
     }
-    @keyframes fadeIn { from { opacity: 0; } }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+    }
     .drawer {
-      position: fixed; top: 0; right: 0; bottom: 0;
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
       width: min(540px, 100vw);
       background: #f7fafb;
       box-shadow: -12px 0 40px rgba(3, 32, 43, 0.28);
-      display: flex; flex-direction: column;
+      display: flex;
+      flex-direction: column;
       animation: drawerIn 0.22s cubic-bezier(0.2, 0.8, 0.3, 1);
       z-index: 321;
     }
     @keyframes drawerIn {
-      from { transform: translateX(64px); opacity: 0.4; }
-      to { transform: none; opacity: 1; }
+      from {
+        transform: translateX(64px);
+        opacity: 0.4;
+      }
+      to {
+        transform: none;
+        opacity: 1;
+      }
     }
     .drawer-head {
-      display: flex; align-items: flex-start; justify-content: space-between;
-      gap: 12px; padding: 18px 22px;
-      background: #fff; border-bottom: 1px solid #e3eaef; flex-shrink: 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 22px;
+      background: #fff;
+      border-bottom: 1px solid #e3eaef;
+      flex-shrink: 0;
     }
-    .drawer-head-txt h5 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #054054; }
-    .drawer-head-txt p { margin: 3px 0 0; font-size: 0.8rem; color: #7d97a1; }
+    .drawer-head-txt h5 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #054054;
+    }
+    .drawer-head-txt p {
+      margin: 3px 0 0;
+      font-size: 0.8rem;
+      color: #7d97a1;
+    }
     .drawer-fechar {
-      border: none; background: #eef2f5; border-radius: 8px;
-      width: 34px; height: 34px; cursor: pointer; color: #5d6d7e;
-      display: inline-flex; align-items: center; justify-content: center;
-      flex-shrink: 0; transition: background 0.15s;
+      border: none;
+      background: #eef2f5;
+      border-radius: 8px;
+      width: 34px;
+      height: 34px;
+      cursor: pointer;
+      color: #5d6d7e;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
     }
-    .drawer-fechar:hover { background: #d7e0e6; color: #054054; }
-    .drawer-fechar mat-icon { font-size: 18px; width: 18px; height: 18px; }
-    .drawer-form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-    .drawer-body { flex: 1; overflow-y: auto; padding: 18px 22px; }
+    .drawer-fechar:hover {
+      background: #d7e0e6;
+      color: #054054;
+    }
+    .drawer-fechar mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+    .drawer-form {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 22px;
+    }
     .dsec {
-      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
-      padding: 16px; margin-bottom: 14px;
+      background: #fff;
+      border: 1px solid #e3eaef;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
     }
     .dsec-tit {
-      display: flex; align-items: center; gap: 7px;
-      font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #054054; margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #054054;
+      margin-bottom: 12px;
     }
-    .dsec-tit mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
-    .dgrid .full { grid-column: 1 / -1; }
-    .campo { display: flex; flex-direction: column; gap: 4px; }
-    .campo .lbl { font-size: 0.8rem; font-weight: 600; color: #40525d; }
-    .campo .req, .drawer-req .req { color: #dc3545; }
-    .erro-campo { color: #dc3545; font-size: 0.74rem; font-weight: 500; }
-    .input-inn.inval { border-color: #dc3545; box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.12); }
+    .dsec-tit mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+    }
+    .dgrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 14px;
+    }
+    .dgrid .full {
+      grid-column: 1 / -1;
+    }
+    .campo {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .campo .lbl {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #40525d;
+    }
+    .campo .req,
+    .drawer-req .req {
+      color: #dc3545;
+    }
+    .erro-campo {
+      color: #dc3545;
+      font-size: 0.74rem;
+      font-weight: 500;
+    }
+    .input-inn.inval {
+      border-color: #dc3545;
+      box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.12);
+    }
     .senha-toggle {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 0.78rem; color: #40525d; font-weight: 600;
-      padding: 7px 10px; border: 1px solid #d7e0e6; border-radius: 8px;
-      background: #f7fafc; width: fit-content; cursor: pointer;
-      transition: border-color .15s, color .15s, background .15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: #40525d;
+      font-weight: 600;
+      padding: 7px 10px;
+      border: 1px solid #d7e0e6;
+      border-radius: 8px;
+      background: #f7fafc;
+      width: fit-content;
+      cursor: pointer;
+      transition:
+        border-color 0.15s,
+        color 0.15s,
+        background 0.15s;
     }
-    .senha-toggle:hover { border-color: #4B95AB; color: #054054; }
-    .senha-toggle.on { border-color: #054054; background: #eef6f8; color: #054054; }
-    .senha-toggle input { accent-color: #054054; margin: 0; }
-    .senha-toggle mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .senha-wrap { position: relative; }
-    .senha-wrap .input-inn { width: 100%; padding-right: 38px; }
+    .senha-toggle:hover {
+      border-color: #4b95ab;
+      color: #054054;
+    }
+    .senha-toggle.on {
+      border-color: #054054;
+      background: #eef6f8;
+      color: #054054;
+    }
+    .senha-toggle input {
+      accent-color: #054054;
+      margin: 0;
+    }
+    .senha-toggle mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+    .senha-wrap {
+      position: relative;
+    }
+    .senha-wrap .input-inn {
+      width: 100%;
+      padding-right: 38px;
+    }
     .senha-eye {
-      position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
-      background: none; border: none; color: #8aa0ac; cursor: pointer;
-      padding: 5px; display: inline-flex; border-radius: 6px;
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #8aa0ac;
+      cursor: pointer;
+      padding: 5px;
+      display: inline-flex;
+      border-radius: 6px;
     }
-    .senha-eye:hover { color: #054054; background: #eef4f6; }
-    .senha-eye mat-icon { font-size: 18px; width: 18px; height: 18px; }
-    .senha-hint { font-size: 0.74rem; color: #8a99a4; }
-    .dica-sec { background: #f4f8fa; }
-    .dicas { margin: 0; padding-left: 18px; font-size: 0.8rem; color: #536b73; line-height: 1.7; }
+    .senha-eye:hover {
+      color: #054054;
+      background: #eef4f6;
+    }
+    .senha-eye mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+    .senha-hint {
+      font-size: 0.74rem;
+      color: #8a99a4;
+    }
+    .dica-sec {
+      background: #f4f8fa;
+    }
+    .dicas {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 0.8rem;
+      color: #536b73;
+      line-height: 1.7;
+    }
     .link-gerir {
       align-self: flex-start;
-      display: inline-flex; align-items: center; gap: 4px;
-      border: none; background: none; padding: 0; margin-top: 2px;
-      font-size: 0.76rem; font-weight: 600; color: #4B95AB;
-      font-family: inherit; cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: none;
+      background: none;
+      padding: 0;
+      margin-top: 2px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: #4b95ab;
+      font-family: inherit;
+      cursor: pointer;
     }
-    .link-gerir:hover { color: #054054; text-decoration: underline; }
-    .link-gerir mat-icon { font-size: 15px; width: 15px; height: 15px; }
+    .link-gerir:hover {
+      color: #054054;
+      text-decoration: underline;
+    }
+    .link-gerir mat-icon {
+      font-size: 15px;
+      width: 15px;
+      height: 15px;
+    }
 
     /* ---------- cargos ---------- */
-    .cg-acoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
-    .cg-acoes .btn-dark-blue, .cg-acoes .btn-gray {
-      display: inline-flex; align-items: center; gap: 6px; padding: 0.45rem 0.9rem;
+    .cg-acoes {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
     }
-    .cg-acoes mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .cg-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+    .cg-acoes .btn-dark-blue,
+    .cg-acoes .btn-gray {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.45rem 0.9rem;
+    }
+    .cg-acoes mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+    .cg-lista {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+    }
     .cg-item {
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      padding: 10px 4px; border-bottom: 1px solid #eef2f5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 4px;
+      border-bottom: 1px solid #eef2f5;
     }
-    .cg-item:last-child { border-bottom: none; }
-    .cg-item.inativo .cg-info { opacity: 0.55; }
-    .cg-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .cg-item:last-child {
+      border-bottom: none;
+    }
+    .cg-item.inativo .cg-info {
+      opacity: 0.55;
+    }
+    .cg-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
     .cg-info strong {
-      font-size: 0.88rem; color: #054054; font-weight: 700;
-      display: flex; align-items: center; gap: 7px;
+      font-size: 0.88rem;
+      color: #054054;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 7px;
     }
     .cg-sys {
-      background: #eef4f6; color: #054054;
-      font-size: 0.62rem; font-weight: 700; padding: 1px 7px; border-radius: 999px;
-      text-transform: uppercase; letter-spacing: 0.04em;
+      background: #eef4f6;
+      color: #054054;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
     .cg-info small {
-      font-size: 0.74rem; color: #8a99a4;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      font-size: 0.74rem;
+      color: #8a99a4;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    .cg-item-acoes { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
+    .cg-item-acoes {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
     .drawer-foot {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 12px; padding: 13px 22px;
-      background: #fff; border-top: 1px solid #e3eaef; flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 13px 22px;
+      background: #fff;
+      border-top: 1px solid #e3eaef;
+      flex-shrink: 0;
     }
-    .drawer-req { font-size: 0.76rem; color: #8a99a4; }
-    .drawer-foot-acoes { display: flex; gap: 8px; }
+    .drawer-req {
+      font-size: 0.76rem;
+      color: #8a99a4;
+    }
+    .drawer-foot-acoes {
+      display: flex;
+      gap: 8px;
+    }
     .drawer-foot-acoes .btn-dark-blue,
     .drawer-foot-acoes .btn-gray {
-      display: inline-flex; align-items: center; gap: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       padding: 0.5rem 1rem;
     }
-    .drawer-foot-acoes mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .drawer-foot-acoes mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
     @media (max-width: 640px) {
-      .fn-head { flex-direction: column; align-items: stretch; }
-      .fn-acoes { justify-content: stretch; }
-      .fn-acoes button, .fn-acoes a { flex: 1; justify-content: center; }
-      .dgrid { grid-template-columns: 1fr; }
+      .fn-head {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .fn-acoes {
+        justify-content: stretch;
+      }
+      .fn-acoes button,
+      .fn-acoes a {
+        flex: 1;
+        justify-content: center;
+      }
+      .dgrid {
+        grid-template-columns: 1fr;
+      }
     }
   `,
 })
-export class FuncionariosComponent implements OnInit {
-  private readonly funcionariosApi = inject(FuncionariosApi);
-  private readonly cargosApi = inject(CargosApi);
-  private readonly verificacaoApi = inject(VerificacaoApi);
-  private readonly notify = inject(Notify);
-  private readonly confirm = inject(Confirm);
-  private readonly rt = inject(Realtime);
-  private readonly fb = inject(FormBuilder);
-  private readonly tour = inject(TourGuiado);
-  protected readonly auth = inject(AuthStore);
-
-  /** Última verificação de identidade por funcionário (produção). */
-  protected readonly verificacoes = signal(new Map<number, M.VerificacaoIdentidade>());
-  /** Link gerado para envio manual — exibido num modal com copiar. */
-  protected readonly linkVerificacao = signal<{ url: string; nome: string } | null>(null);
-  protected readonly gerandoLink = signal(0);
-
-  protected readonly items = signal<Funcionario[]>([]);
-  protected readonly total = signal(0);
-  protected readonly carregando = signal(true);
-  protected readonly pagina = signal(0);
-  protected readonly editando = signal<Funcionario | null>(null);
-  protected readonly trocaSenha = signal(false);
-  protected readonly verSenha = signal(false);
-  protected readonly drawerAberto = signal(false);
-  protected readonly tentou = signal(false);
-  protected readonly termo = signal('');
-  protected readonly buscaFoco = signal(false);
-  protected readonly skel = [0, 1, 2, 3, 4];
-
-  /** Cargos disponíveis — alimenta o select do formulário e a tela de gestão. */
-  protected readonly cargos = signal<Cargo[]>([]);
-  protected readonly cargosAberto = signal(false);
-  protected readonly editandoCargo = signal<Cargo | null>(null);
-  protected readonly tentouCargo = signal(false);
-
-  /** Formulário único — criar e editar usam o mesmo drawer. */
-  protected readonly form = this.fb.nonNullable.group({
-    nome: ['', Validators.required],
-    data_nascimento: ['', Validators.required],
-    cpf: ['', Validators.required],
-    cargo_id: [0, [Validators.required, Validators.min(1)]],
-    login: ['', Validators.required],
-    senha: ['', [Validators.required, Validators.minLength(8)]],
-  });
-
-  /** Formulário do cargo no drawer de gestão. */
-  protected readonly cargoForm = this.fb.nonNullable.group({
-    nome: ['', Validators.required],
-    descricao: [''],
-    nivel: [3, Validators.required],
-  });
-
-  private readonly cargosPorId = computed(() => {
-    const mapa = new Map<number, Cargo>();
-    for (const c of this.cargos()) mapa.set(c.id, c);
-    return mapa;
-  });
-
-  protected readonly ativos = computed(() => this.items().filter((f) => f.ativo).length);
-  protected readonly porNivel = (n: number) =>
-    this.items().filter((f) => f.nivel === n && f.ativo).length;
-
-  protected readonly filtrados = computed(() => {
-    const t = this.termo().trim().toLowerCase();
-    if (!t) return this.items();
-    return this.items().filter(
-      (f) =>
-        f.nome.toLowerCase().includes(t) ||
-        f.login.toLowerCase().includes(t) ||
-        (f.cpf ?? '').includes(t),
-    );
-  });
-
-  protected readonly pageSize = signal(10);
-  protected readonly paginados = computed(() => {
-    const ini = this.pagina() * this.pageSize();
-    return this.filtrados().slice(ini, ini + this.pageSize());
-  });
-
-  constructor() {
-    let ultimo = -1;
-    effect(() => {
-      const v = this.rt.mudanca('funcionario');
-      if (ultimo < 0) {
-        ultimo = v;
-        return;
-      }
-      if (v !== ultimo) {
-        ultimo = v;
-        this.carregar();
-      }
-    });
-    let ultimoCargo = -1;
-    effect(() => {
-      const v = this.rt.mudanca('cargo');
-      if (ultimoCargo < 0) {
-        ultimoCargo = v;
-        return;
-      }
-      if (v !== ultimoCargo) {
-        ultimoCargo = v;
-        this.carregarCargos();
-      }
-    });
-  }
-
-  ngOnInit(): void {
-    this.carregar();
-    this.carregarCargos();
-  }
-
-  onEsc(): void {
-    if (this.cargosAberto()) this.fecharCargos();
-    else if (this.drawerAberto()) this.fecharDrawer();
-  }
-
-  carregar(): void {
-    this.funcionariosApi.listarFuncionarios(1, 500).subscribe({
-      next: (p) => {
-        this.items.set(p.items);
-        this.total.set(p.total);
-        this.carregando.set(false);
-      },
-      error: (e) => {
-        this.carregando.set(false);
-        this.notify.erro(e);
-      },
-    });
-    // Badges de identidade — falha silenciosa quando a Didit não está
-    // configurada (a coluna mostra "—" para todo mundo).
-    this.verificacaoApi.listar('producao').subscribe({
-      next: (p) => {
-        const mapa = new Map<number, M.VerificacaoIdentidade>();
-        for (const v of p.items) {
-          if (!mapa.has(v.verificacao.funcionario_id)) {
-            mapa.set(v.verificacao.funcionario_id, v.verificacao);
-          }
-        }
-        this.verificacoes.set(mapa);
-      },
-      error: () => this.verificacoes.set(new Map()),
-    });
-  }
-
-  carregarCargos(): void {
-    this.cargosApi.listar().subscribe({
-      next: (cs) => this.cargos.set(cs),
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  /** Título do cargo do funcionário; cai no nível quando não veio da lista. */
-  cargoNome(f: Funcionario): string {
-    return this.cargosPorId().get(f.cargo_id)?.nome ?? this.nivelNome(f.nivel);
-  }
-
-  /** Rótulo + selo + classe do badge de identidade. */
-  verificacaoDe(id: number): { rotulo: string; cls: string; icone: string; titulo: string } {
-    const v = this.verificacoes().get(id);
-    if (!v) {
-      return {
-        rotulo: '—', cls: 'v-off', icone: 'person_outline',
-        titulo: 'Sem verificação de identidade — gere um link pelo ícone ao lado',
-      };
-    }
-    const quando = v.decidido_em
-      ? ` em ${new Date(v.decidido_em).toLocaleDateString('pt-BR')}`
-      : '';
-    switch (v.status) {
-      case 'aprovada':
-        return {
-          rotulo: 'Verificado', cls: 'v-ok', icone: 'verified',
-          titulo: `Identidade verificada via Didit${quando}`,
-        };
-      case 'recusada':
-        return {
-          rotulo: 'Recusada', cls: 'v-erro', icone: 'cancel',
-          titulo: `Verificação recusada${quando} — gere um novo link`,
-        };
-      case 'em_revisao':
-        return {
-          rotulo: 'Em revisão', cls: 'v-warn', icone: 'pending_actions',
-          titulo: 'Verificação em revisão manual pela Didit',
-        };
-      case 'expirada':
-      case 'abandonada':
-      case 'kyc_expirada':
-        return {
-          rotulo: 'Expirada', cls: 'v-off', icone: 'schedule',
-          titulo: 'Verificação expirada — gere um novo link',
-        };
-      default:
-        return {
-          rotulo: 'Pendente', cls: 'v-warn', icone: 'hourglass_empty',
-          titulo: 'Aguardando o funcionário concluir a verificação',
-        };
-    }
-  }
-
-  /** Gera (ou recupera a viva) a sessão Didit e mostra o link para envio. */
-  verificar(f: Funcionario): void {
-    this.gerandoLink.set(f.id);
-    this.verificacaoApi.sessaoFuncionario(f.id).subscribe({
-      next: (s) => {
-        this.gerandoLink.set(0);
-        this.linkVerificacao.set({ url: s.url, nome: f.nome });
-        this.carregar();
-      },
-      error: (e) => {
-        this.gerandoLink.set(0);
-        this.notify.erro(e?.error?.message ?? 'Não foi possível gerar o link — Didit configurada?');
-      },
-    });
-  }
-
-  copiarLink(): void {
-    const l = this.linkVerificacao();
-    if (l) navigator.clipboard.writeText(l.url).then(() => this.notify.ok('Link copiado.'));
-  }
-
-  mudouPagina(e: PageEvent): void {
-    this.pagina.set(e.pageIndex);
-    this.pageSize.set(e.pageSize);
-  }
-
-  nivelNome(n: number): string {
-    return n === 1 ? 'Administrador' : n === 2 ? 'Gerente' : 'Recepção';
-  }
-  nivelIcone(n: number): string {
-    return n === 1 ? 'admin_panel_settings' : n === 2 ? 'manage_accounts' : 'room_service';
-  }
-
-  iniciais(nome: string | null | undefined): string {
-    if (!nome) return '?';
-    const p = nome.trim().split(/\s+/);
-    return ((p[0]?.[0] ?? '') + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
-  }
-
-  valorDe(e: Event): string {
-    return (e.target as HTMLInputElement).value;
-  }
-
-  invalido(campo: string): boolean {
-    const c = this.form.get(campo);
-    return !!c && c.invalid && (c.touched || this.tentou());
-  }
-
-  status(f: Funcionario, ativo: boolean): void {
-    this.funcionariosApi.statusFuncionario(f.id, ativo).subscribe({
-      next: () => this.carregar(),
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  async excluir(f: Funcionario): Promise<void> {
-    const ok = await this.confirm.perguntar(
-      `Excluir o funcionário ${f.nome}? A conta de acesso será apagada.`,
-      { titulo: 'Excluir funcionário', confirmar: 'Excluir' },
-    );
-    if (!ok) return;
-    this.funcionariosApi.excluirFuncionario(f.id).subscribe({
-      next: () => {
-        this.notify.ok('Funcionário excluído.');
-        this.carregar();
-      },
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  abrirNovo(): void {
-    this.editando.set(null);
-    this.trocaSenha.set(false);
-    this.verSenha.set(false);
-    this.tentou.set(false);
-    this.form.controls.senha.enable();
-    this.form.controls.senha.setValidators([Validators.required, Validators.minLength(8)]);
-    this.form.controls.senha.updateValueAndValidity();
-    this.form.reset({
-      nome: '',
-      data_nascimento: '',
-      cpf: '',
-      cargo_id: this.cargos().find((c) => c.sistema && c.nivel === 3)?.id
-        ?? this.cargos().find((c) => c.ativo)?.id ?? 0,
-      login: '',
-      senha: '',
-    });
-    this.drawerAberto.set(true);
-    setTimeout(() => document.getElementById('fu-nome')?.focus(), 250);
-  }
-
-  abrirEdicao(f: Funcionario): void {
-    this.editando.set(f);
-    this.trocaSenha.set(false);
-    this.verSenha.set(false);
-    this.tentou.set(false);
-    this.form.controls.senha.disable();
-    this.form.controls.senha.setValidators([Validators.minLength(8)]);
-    this.form.controls.senha.updateValueAndValidity();
-    this.form.reset({
-      nome: f.nome,
-      data_nascimento: f.data_nascimento ?? '',
-      cpf: f.cpf ?? '',
-      cargo_id: f.cargo_id,
-      login: f.login,
-      senha: '',
-    });
-    this.drawerAberto.set(true);
-  }
-
-  fecharDrawer(): void {
-    this.drawerAberto.set(false);
-    this.editando.set(null);
-  }
-
-  /** Habilita/desabilita o campo de senha na edição (checkbox "Alterar senha"). */
-  alternarSenha(): void {
-    const on = !this.trocaSenha();
-    this.trocaSenha.set(on);
-    const ctrl = this.form.controls.senha;
-    if (on) {
-      ctrl.enable();
-      ctrl.setValidators([Validators.required, Validators.minLength(8)]);
-    } else {
-      ctrl.disable();
-      ctrl.setValue('');
-      ctrl.setValidators([Validators.minLength(8)]);
-    }
-    ctrl.updateValueAndValidity();
-  }
-
-  salvar(): void {
-    this.tentou.set(true);
-    if (this.form.invalid) {
-      setTimeout(
-        () => document.querySelector('.drawer .inval')?.scrollIntoView({ block: 'center' }),
-        60,
-      );
-      return;
-    }
-    const v = this.form.getRawValue();
-    const f = this.editando();
-
-    if (!f) {
-      const input: FuncionarioInput = {
-        nome: v.nome,
-        login: v.login,
-        senha: v.senha,
-        cpf: v.cpf || null,
-        data_nascimento: v.data_nascimento || null,
-        cargo_id: v.cargo_id,
-      };
-      this.funcionariosApi.criarFuncionario(input).subscribe({
-        next: () => {
-          this.notify.ok('Funcionário cadastrado.');
-          this.fecharDrawer();
-          this.carregar();
-        },
-        error: (e) => this.notify.erro(e),
-      });
-    } else {
-      const input: FuncionarioUpdate = {
-        nome: v.nome,
-        login: v.login,
-        cpf: v.cpf || null,
-        data_nascimento: v.data_nascimento || null,
-        cargo_id: v.cargo_id,
-        version: f.version,
-      };
-      if (v.senha) input.senha = v.senha;
-      this.funcionariosApi.atualizarFuncionario(f.id, input).subscribe({
-        next: () => {
-          this.notify.ok('Funcionário salvo.');
-          this.fecharDrawer();
-          this.carregar();
-        },
-        error: (e) => this.notify.erro(e),
-      });
-    }
-  }
-
-  // ---------- gestão de cargos ----------
-
-  abrirCargos(): void {
-    this.cancelarCargo();
-    this.cargosAberto.set(true);
-  }
-
-  fecharCargos(): void {
-    this.cargosAberto.set(false);
-    this.cancelarCargo();
-  }
-
-  invalidoCargo(campo: string): boolean {
-    const c = this.cargoForm.get(campo);
-    return !!c && c.invalid && (c.touched || this.tentouCargo());
-  }
-
-  editarCargo(c: Cargo): void {
-    this.editandoCargo.set(c);
-    this.tentouCargo.set(false);
-    this.cargoForm.reset({ nome: c.nome, descricao: c.descricao ?? '', nivel: c.nivel });
-    // Cargo-base: nível travado (o backend recusa mudança).
-    if (c.sistema) this.cargoForm.controls.nivel.disable();
-    else this.cargoForm.controls.nivel.enable();
-    setTimeout(() => document.getElementById('cg-nome')?.focus(), 150);
-  }
-
-  cancelarCargo(): void {
-    this.editandoCargo.set(null);
-    this.tentouCargo.set(false);
-    this.cargoForm.controls.nivel.enable();
-    this.cargoForm.reset({ nome: '', descricao: '', nivel: 3 });
-  }
-
-  salvarCargo(): void {
-    this.tentouCargo.set(true);
-    if (this.cargoForm.invalid) return;
-    const v = this.cargoForm.getRawValue();
-    const editando = this.editandoCargo();
-    const descricao = v.descricao.trim() || null;
-
-    if (!editando) {
-      this.cargosApi
-        .criar({ nome: v.nome.trim(), descricao, nivel: v.nivel })
-        .subscribe({
-          next: () => {
-            this.notify.ok('Cargo criado.');
-            this.cancelarCargo();
-            this.carregarCargos();
-          },
-          error: (e) => this.notify.erro(e),
-        });
-      return;
-    }
-
-    // Cargo-base: o select fica desabilitado — não envia `nivel` (o backend
-    // recusa mudança). Demais campos seguem o formulário.
-    this.cargosApi
-      .atualizar(editando.id, {
-        nome: v.nome.trim(),
-        descricao,
-        ...(editando.sistema ? {} : { nivel: v.nivel }),
-      })
-      .subscribe({
-        next: () => {
-          this.notify.ok('Cargo salvo.');
-          this.cancelarCargo();
-          this.carregarCargos();
-        },
-        error: (e) => this.notify.erro(e),
-      });
-  }
-
-  statusCargo(c: Cargo, ativo: boolean): void {
-    this.cargosApi.atualizar(c.id, { ativo }).subscribe({
-      next: () => this.carregarCargos(),
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  async excluirCargo(c: Cargo): Promise<void> {
-    const ok = await this.confirm.perguntar(
-      `Excluir o cargo ${c.nome}? Funcionários com este cargo impedem a exclusão.`,
-      { titulo: 'Excluir cargo', confirmar: 'Excluir' },
-    );
-    if (!ok) return;
-    this.cargosApi.excluir(c.id).subscribe({
-      next: () => {
-        this.notify.ok('Cargo excluído.');
-        this.carregarCargos();
-      },
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  /** Tour guiado da tela (driver.js) — abre o drawer no meio do caminho. */
-  iniciarTour(): void {
-    this.tour.iniciar([
-      {
-        popover: {
-          title: 'Bem-vindo à tela de Funcionários!',
-          description:
-            'Aqui você cadastra a <b>equipe</b> que acessa o sistema e ' +
-            'define o que cada um pode fazer. Avance com <b>Próximo</b>.',
-        },
-      },
-      {
-        element: '.fn-resumo',
-        popover: {
-          title: 'Sua equipe em números',
-          description:
-            'Total de funcionários, quantos estão <b>ativos</b> e a ' +
-            'distribuição por função: Recepção, Gerentes e Administradores.',
-          side: 'bottom',
-        },
-      },
-      {
-        element: '.fn-busca',
-        popover: {
-          title: 'Busca instantânea',
-          description:
-            'Digite <b>nome, login ou CPF</b> — a lista filtra sozinha, ' +
-            'sem apertar botão.',
-          side: 'bottom',
-        },
-      },
-      {
-        element: '#tour-tabela',
-        popover: {
-          title: 'Lista da equipe',
-          description:
-            'O selo de <b>função</b> indica o nível de acesso. O selo ' +
-            '<b>Status</b> ativa/desativa a conta. Você não pode mexer na ' +
-            'sua própria conta — segurança.',
-          side: 'top',
-        },
-      },
-      {
-        element: '#tour-novo',
-        popover: {
-          title: 'Novo funcionário',
-          description:
-            'Abre o painel lateral de cadastro. Vou abrir agora para você ver…',
-          side: 'bottom',
-        },
-      },
-      {
-        element: '.drawer',
-        popover: {
-          title: 'Cadastro em 2 etapas',
-          description:
-            '<b>Dados pessoais</b> (nome, nascimento, CPF) e <b>Função & ' +
-            'acesso</b> (cargo, login e senha). Na edição, a senha só muda se ' +
-            'você marcar "Alterar senha atual".',
-          side: 'left',
-        },
-      },
-      {
-        popover: {
-          title: 'Pronto!',
-          description:
-            'Equipe configurada. Cada ação fica registrada em ' +
-            '<b>Auditoria</b> com o nome de quem fez — transparência total.',
-        },
-      },
-    ]);
-    setTimeout(() => this.abrirNovo(), 600);
-  }
-}
+export class FuncionariosComponent extends FuncionariosStore {}

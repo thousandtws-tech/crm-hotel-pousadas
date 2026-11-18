@@ -1,9 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+// UI de login — template, estilos e bindings. A lógica vive em login.store.ts.
+import { Component } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AuthStore } from '@core/services/auth.store';
+import { LoginStore } from './login.store';
 
 @Component({
   selector: 'app-login',
@@ -16,7 +16,9 @@ import { AuthStore } from '@core/services/auth.store';
           <div class="li-copy">
             <h2>A gestão completa<br />da sua pousada, <b>em um só lugar.</b></h2>
             <span class="li-rule"></span>
-            <p>Reservas, recepção, financeiro e operação — em tempo real, do check-in ao checkout.</p>
+            <p>
+              Reservas, recepção, financeiro e operação — em tempo real, do check-in ao checkout.
+            </p>
             <ul class="li-feats">
               <li><mat-icon>event_available</mat-icon> Reservas e recepção</li>
               <li><mat-icon>account_balance_wallet</mat-icon> Financeiro integrado</li>
@@ -57,11 +59,7 @@ import { AuthStore } from '@core/services/auth.store';
                 autocomplete="current-password"
               />
             </label>
-            <button
-              class="btn-entrar"
-              type="submit"
-              [disabled]="form.invalid || carregando()"
-            >
+            <button class="btn-entrar" type="submit" [disabled]="form.invalid || carregando()">
               @if (carregando()) {
                 <mat-spinner diameter="18" />
               } @else {
@@ -98,7 +96,7 @@ import { AuthStore } from '@core/services/auth.store';
       background:
         linear-gradient(180deg, rgba(3, 43, 56, 0.45) 0%, rgba(3, 43, 56, 0.82) 78%),
         url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2400&q=90')
-        center / cover no-repeat #032b38;
+          center / cover no-repeat #032b38;
     }
     .login-image-content {
       position: relative;
@@ -123,10 +121,13 @@ import { AuthStore } from '@core/services/auth.store';
       margin: 0;
       letter-spacing: 0.01em;
     }
-    .li-copy h2 b { font-weight: 700; }
+    .li-copy h2 b {
+      font-weight: 700;
+    }
     .li-rule {
       display: block;
-      width: 44px; height: 2px;
+      width: 44px;
+      height: 2px;
       background: #c9a45c;
       margin: 1.4rem 0 1.1rem;
     }
@@ -138,15 +139,28 @@ import { AuthStore } from '@core/services/auth.store';
       line-height: 1.6;
     }
     .li-feats {
-      display: flex; gap: 1.4rem; flex-wrap: wrap;
-      list-style: none; padding: 0; margin: 1.6rem 0 0;
+      display: flex;
+      gap: 1.4rem;
+      flex-wrap: wrap;
+      list-style: none;
+      padding: 0;
+      margin: 1.6rem 0 0;
     }
     .li-feats li {
-      display: inline-flex; align-items: center; gap: 0.45rem;
-      font-size: 0.78rem; font-weight: 600; letter-spacing: 0.03em;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
       color: rgba(255, 255, 255, 0.75);
     }
-    .li-feats mat-icon { font-size: 17px; width: 17px; height: 17px; color: #c9a45c; }
+    .li-feats mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+      color: #c9a45c;
+    }
 
     /* -------- painel do formulário -------- */
     .login-form-panel {
@@ -167,7 +181,12 @@ import { AuthStore } from '@core/services/auth.store';
       border: 1px solid #e8eef1;
       box-shadow: 0 12px 40px -12px rgba(3, 43, 56, 0.18);
     }
-    .login-logo { display: block; height: 64px; width: auto; margin: 0 auto 1.1rem; }
+    .login-logo {
+      display: block;
+      height: 64px;
+      width: auto;
+      margin: 0 auto 1.1rem;
+    }
     .login-eyebrow {
       text-align: center;
       margin: 0 0 0.3rem;
@@ -194,9 +213,12 @@ import { AuthStore } from '@core/services/auth.store';
     }
     .form-ico {
       position: absolute;
-      top: 50%; left: 13px;
+      top: 50%;
+      left: 13px;
       transform: translateY(-50%);
-      font-size: 18px; width: 18px; height: 18px;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
       color: #8fa3ab;
       pointer-events: none;
       transition: color 0.15s;
@@ -211,19 +233,28 @@ import { AuthStore } from '@core/services/auth.store';
       font-size: 0.92rem;
       color: #33424c;
       background: #fbfdfe;
-      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+      transition:
+        border-color 0.15s,
+        box-shadow 0.15s,
+        background 0.15s;
     }
-    .login-input::placeholder { color: #9fb3bc; }
+    .login-input::placeholder {
+      color: #9fb3bc;
+    }
     .login-input:focus {
       outline: none;
       border-color: #054054;
       background: #fff;
       box-shadow: 0 0 0 3px rgba(5, 64, 84, 0.1);
     }
-    .form-group:focus-within .form-ico { color: #054054; }
+    .form-group:focus-within .form-ico {
+      color: #054054;
+    }
 
     .alert-err {
-      display: flex; align-items: center; gap: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
       background: #fdf0ef;
       border: 1px solid #f3d3cf;
       color: #a94442;
@@ -250,16 +281,29 @@ import { AuthStore } from '@core/services/auth.store';
       justify-content: center;
       gap: 7px;
       cursor: pointer;
-      transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+      transition:
+        background 0.15s,
+        transform 0.15s,
+        box-shadow 0.15s;
     }
-    .btn-entrar .btn-ico { font-size: 18px; width: 18px; height: 18px; transition: transform 0.15s; }
+    .btn-entrar .btn-ico {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      transition: transform 0.15s;
+    }
     .btn-entrar:hover:not(:disabled) {
       background: #042f3d;
       box-shadow: 0 8px 20px -8px rgba(5, 64, 84, 0.55);
       transform: translateY(-1px);
     }
-    .btn-entrar:hover:not(:disabled) .btn-ico { transform: translateX(3px); }
-    .btn-entrar:disabled { opacity: 0.55; cursor: default; }
+    .btn-entrar:hover:not(:disabled) .btn-ico {
+      transform: translateX(3px);
+    }
+    .btn-entrar:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
 
     .login-foot {
       display: flex;
@@ -275,46 +319,30 @@ import { AuthStore } from '@core/services/auth.store';
       text-decoration: none;
       transition: color 0.15s;
     }
-    .login-foot a:hover { color: #054054; text-decoration: underline; }
+    .login-foot a:hover {
+      color: #054054;
+      text-decoration: underline;
+    }
 
     @media (min-width: 861px) {
-      .login-image { display: block; }
+      .login-image {
+        display: block;
+      }
     }
     @media (max-width: 860px) {
       .login-form-panel {
         background:
           linear-gradient(180deg, rgba(3, 43, 56, 0.55) 0%, rgba(3, 43, 56, 0.9) 70%),
           url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=85')
-          center / cover no-repeat #032b38;
+            center / cover no-repeat #032b38;
       }
-      .login-foot { color: rgba(255, 255, 255, 0.6); }
-      .login-foot a:hover { color: #fff; }
+      .login-foot {
+        color: rgba(255, 255, 255, 0.6);
+      }
+      .login-foot a:hover {
+        color: #fff;
+      }
     }
   `,
 })
-export class LoginComponent {
-  private readonly auth = inject(AuthStore);
-  private readonly router = inject(Router);
-  private readonly fb = inject(FormBuilder);
-
-  protected readonly carregando = signal(false);
-  protected readonly erro = signal<string | null>(null);
-  protected readonly form = this.fb.nonNullable.group({
-    login: ['', Validators.required],
-    senha: ['', Validators.required],
-  });
-
-  entrar(): void {
-    if (this.form.invalid) return;
-    this.carregando.set(true);
-    this.erro.set(null);
-    const { login, senha } = this.form.getRawValue();
-    this.auth.login(login, senha).subscribe({
-      next: () => void this.router.navigateByUrl('/dashboard'),
-      error: (e: { error?: { erro?: { mensagem?: string } } }) => {
-        this.carregando.set(false);
-        this.erro.set(e.error?.erro?.mensagem ?? 'Usuário ou senha inválidos.');
-      },
-    });
-  }
-}
+export class LoginComponent extends LoginStore {}

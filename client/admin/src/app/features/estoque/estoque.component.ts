@@ -1,23 +1,15 @@
-import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+// UI de estoque — template, estilos e bindings. A lógica vive em estoque.store.ts.
+import { Component } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { EstoqueApi } from '@core/api/estoque.api';
-import { ImpressorasApi } from '@core/api/impressoras.api';
 import { num } from '@core/utils/num';
 import { Impressora } from '@core/models/estabelecimento.models';
-import { CategoriaEstoque, ItemEstoque, ItemEstoqueInput, MovimentacaoInput, MovimentoView } from '@core/models/estoque.models';
-import { Notify } from '@core/services/notify.service';
-import { Confirm } from '@core/services/confirm.service';
-import { Realtime } from '@core/services/realtime.service';
-import { TourGuiado } from '@core/services/tour.service';
-
-// -- página ---------------------------------------------------------------------------
+import { EstoqueStore } from './estoque.store';
 
 @Component({
   selector: 'app-estoque',
@@ -50,7 +42,12 @@ import { TourGuiado } from '@core/services/tour.service';
           </div>
         </div>
         <div class="est-head-acoes">
-          <button class="btn-tour" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
+          <button
+            class="btn-tour"
+            type="button"
+            (click)="iniciarTour()"
+            aria-label="Ver tutorial da tela"
+          >
             <mat-icon>school</mat-icon> Tutorial
           </button>
           <a class="btn-gray" routerLink="/insumos" aria-label="Insumos, fichas técnicas e NF-e">
@@ -71,8 +68,8 @@ import { TourGuiado } from '@core/services/tour.service';
           <div class="est-info-txt">
             <strong>Entradas e saídas</strong>
             <p>
-              Na aba <b>Entrada</b> você soma produtos ao estoque; na aba
-              <b>Saída</b> você retira e informa o motivo.
+              Na aba <b>Entrada</b> você soma produtos ao estoque; na aba <b>Saída</b> você retira e
+              informa o motivo.
             </p>
           </div>
         </div>
@@ -81,8 +78,8 @@ import { TourGuiado } from '@core/services/tour.service';
           <div class="est-info-txt">
             <strong>Movimentações registradas</strong>
             <p>
-              Toda entrada e saída fica gravada com data, quantidade e o
-              funcionário responsável — nada se perde.
+              Toda entrada e saída fica gravada com data, quantidade e o funcionário responsável —
+              nada se perde.
             </p>
           </div>
         </div>
@@ -91,8 +88,8 @@ import { TourGuiado } from '@core/services/tour.service';
           <div class="est-info-txt">
             <strong>Impressora por categoria</strong>
             <p>
-              Em <b>Categorias</b> você escolhe para qual impressora sai o ticket
-              de produção de cada grupo.
+              Em <b>Categorias</b> você escolhe para qual impressora sai o ticket de produção de
+              cada grupo.
             </p>
           </div>
         </div>
@@ -118,7 +115,9 @@ import { TourGuiado } from '@core/services/tour.service';
                 class="est-limpar"
                 aria-label="Limpar busca"
                 (click)="busca.setValue('')"
-              ><mat-icon>close</mat-icon></button>
+              >
+                <mat-icon>close</mat-icon>
+              </button>
             }
           </div>
           <button
@@ -155,7 +154,10 @@ import { TourGuiado } from '@core/services/tour.service';
                     @if (carregando()) {
                       @for (s of skel; track s) {
                         <tr class="skel-row">
-                          <td><span class="skel skel-icone"></span><span class="skel skel-nome"></span></td>
+                          <td>
+                            <span class="skel skel-icone"></span
+                            ><span class="skel skel-nome"></span>
+                          </td>
                           <td><span class="skel skel-txt"></span></td>
                           <td><span class="skel skel-txt"></span></td>
                           <td><span class="skel skel-txt"></span></td>
@@ -188,7 +190,9 @@ import { TourGuiado } from '@core/services/tour.service';
                           </td>
                           <td class="tr">
                             @if (i.valor_unitario !== null) {
-                              <span class="est-valor">R$ {{ num(i.valor_unitario) | number: '1.2-2' }}</span>
+                              <span class="est-valor"
+                                >R$ {{ num(i.valor_unitario) | number: '1.2-2' }}</span
+                              >
                             } @else {
                               <span class="muted">—</span>
                             }
@@ -239,9 +243,11 @@ import { TourGuiado } from '@core/services/tour.service';
                           <td colspan="6" class="est-vazio">
                             <mat-icon>inventory_2</mat-icon>
                             <p>
-                              {{ termo() || apenasAtivos()
-                                ? 'Nenhum item encontrado para esses filtros.'
-                                : 'Nenhum item cadastrado ainda.' }}
+                              {{
+                                termo() || apenasAtivos()
+                                  ? 'Nenhum item encontrado para esses filtros.'
+                                  : 'Nenhum item cadastrado ainda.'
+                              }}
                             </p>
                             @if (!termo() && !apenasAtivos()) {
                               <button class="btn-dark-blue" type="button" (click)="abrirItem()">
@@ -262,8 +268,8 @@ import { TourGuiado } from '@core/services/tour.service';
               <form (submit)="$event.preventDefault(); salvarEntrada()">
                 <p class="aba-dica">
                   <mat-icon>add_circle</mat-icon>
-                  Digite quanto vai <b>entrar</b> de cada item — a coluna
-                  “Futuro” mostra como o estoque vai ficar.
+                  Digite quanto vai <b>entrar</b> de cada item — a coluna “Futuro” mostra como o
+                  estoque vai ficar.
                 </p>
                 <div class="est-tabela-wrap">
                   <table class="est-tabela">
@@ -279,9 +285,15 @@ import { TourGuiado } from '@core/services/tour.service';
                     <tbody>
                       @for (i of filtradosAtivos(); track i.id) {
                         <tr class="est-row" [class.marcada]="(entradaAdd()[i.id] ?? 0) > 0">
-                          <td><strong class="est-item-nome">{{ i.nome }}</strong></td>
-                          <td><span class="est-tipo">{{ categoriaNome(i.idcategoria) }}</span></td>
-                          <td class="tr"><span class="est-qtd">{{ i.quantidade }}</span></td>
+                          <td>
+                            <strong class="est-item-nome">{{ i.nome }}</strong>
+                          </td>
+                          <td>
+                            <span class="est-tipo">{{ categoriaNome(i.idcategoria) }}</span>
+                          </td>
+                          <td class="tr">
+                            <span class="est-qtd">{{ i.quantidade }}</span>
+                          </td>
                           <td class="tr">
                             <input
                               class="input-inn num"
@@ -342,8 +354,7 @@ import { TourGuiado } from '@core/services/tour.service';
               <form (submit)="$event.preventDefault(); salvarSaida()">
                 <p class="aba-dica">
                   <mat-icon>remove_circle</mat-icon>
-                  Digite quanto vai <b>sair</b> de cada item e o motivo
-                  (consumo, perda, limpeza…).
+                  Digite quanto vai <b>sair</b> de cada item e o motivo (consumo, perda, limpeza…).
                 </p>
                 <div class="est-tabela-wrap">
                   <table class="est-tabela">
@@ -360,9 +371,15 @@ import { TourGuiado } from '@core/services/tour.service';
                     <tbody>
                       @for (i of filtradosComSaldo(); track i.id) {
                         <tr class="est-row" [class.marcada]="(saidaAdd()[i.id] ?? 0) > 0">
-                          <td><strong class="est-item-nome">{{ i.nome }}</strong></td>
-                          <td><span class="est-tipo">{{ categoriaNome(i.idcategoria) }}</span></td>
-                          <td class="tr"><span class="est-qtd">{{ i.quantidade }}</span></td>
+                          <td>
+                            <strong class="est-item-nome">{{ i.nome }}</strong>
+                          </td>
+                          <td>
+                            <span class="est-tipo">{{ categoriaNome(i.idcategoria) }}</span>
+                          </td>
+                          <td class="tr">
+                            <span class="est-qtd">{{ i.quantidade }}</span>
+                          </td>
                           <td class="tr">
                             <input
                               class="input-inn num"
@@ -447,16 +464,17 @@ import { TourGuiado } from '@core/services/tour.service';
                     @for (m of movimentos(); track m.id) {
                       <tr class="est-row">
                         <td class="est-quando">{{ m.criado_em | date: 'dd/MM/yy HH:mm' }}</td>
-                        <td><strong class="est-item-nome">{{ m.item_nome }}</strong></td>
+                        <td>
+                          <strong class="est-item-nome">{{ m.item_nome }}</strong>
+                        </td>
                         <td class="tc">
-                          <span
-                            class="st-chip"
-                            [class.off]="m.tipo === 'saida'"
-                          >
+                          <span class="st-chip" [class.off]="m.tipo === 'saida'">
                             {{ m.tipo === 'entrada' ? '↙ Entrada' : '↗ Saída' }}
                           </span>
                         </td>
-                        <td class="tr"><span class="est-qtd">{{ m.quantidade }}</span></td>
+                        <td class="tr">
+                          <span class="est-qtd">{{ m.quantidade }}</span>
+                        </td>
                         <td>{{ m.funcionario ?? '—' }}</td>
                         <td class="est-motivo">{{ m.motivo || '—' }}</td>
                       </tr>
@@ -484,14 +502,28 @@ import { TourGuiado } from '@core/services/tour.service';
           <header class="drawer-head">
             <div class="drawer-head-txt">
               <h5 id="titulo-drawer">{{ editandoItem() ? 'Editar item' : 'Novo item' }}</h5>
-              <p>{{ editandoItem() ? 'Atualize os dados do item' : 'Cadastre um produto do estoque' }}</p>
+              <p>
+                {{
+                  editandoItem() ? 'Atualize os dados do item' : 'Cadastre um produto do estoque'
+                }}
+              </p>
             </div>
-            <button type="button" class="drawer-fechar" (click)="fecharDrawer()" aria-label="Fechar painel">
+            <button
+              type="button"
+              class="drawer-fechar"
+              (click)="fecharDrawer()"
+              aria-label="Fechar painel"
+            >
               <mat-icon>close</mat-icon>
             </button>
           </header>
 
-          <form [formGroup]="formItem" (ngSubmit)="salvarItem()" autocomplete="off" class="drawer-form">
+          <form
+            [formGroup]="formItem"
+            (ngSubmit)="salvarItem()"
+            autocomplete="off"
+            class="drawer-form"
+          >
             <div class="drawer-body">
               <section class="dsec">
                 <div class="dsec-tit"><mat-icon>inventory_2</mat-icon> Dados do item</div>
@@ -499,8 +531,11 @@ import { TourGuiado } from '@core/services/tour.service';
                   <div class="campo full">
                     <label class="lbl" for="it-nome">Nome <small class="req">*</small></label>
                     <input
-                      id="it-nome" class="input-inn" type="text"
-                      formControlName="nome" placeholder="Ex.: Água mineral 500ml"
+                      id="it-nome"
+                      class="input-inn"
+                      type="text"
+                      formControlName="nome"
+                      placeholder="Ex.: Água mineral 500ml"
                       [class.inval]="invalido('nome')"
                     />
                     @if (invalido('nome')) {
@@ -533,8 +568,12 @@ import { TourGuiado } from '@core/services/tour.service';
                     <div class="input-group-inn">
                       <span class="addon">R$</span>
                       <input
-                        id="it-valor" class="input-inn" type="number"
-                        step="0.01" min="0" formControlName="valor_unitario"
+                        id="it-valor"
+                        class="input-inn"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        formControlName="valor_unitario"
                         placeholder="Ex.: 3,50"
                       />
                     </div>
@@ -543,8 +582,12 @@ import { TourGuiado } from '@core/services/tour.service';
                     <div class="campo">
                       <label class="lbl" for="it-qtd">Quantidade inicial</label>
                       <input
-                        id="it-qtd" class="input-inn" type="number" min="0"
-                        formControlName="quantidade_inicial" placeholder="Ex.: 50"
+                        id="it-qtd"
+                        class="input-inn"
+                        type="number"
+                        min="0"
+                        formControlName="quantidade_inicial"
+                        placeholder="Ex.: 50"
                       />
                     </div>
                   }
@@ -565,8 +608,12 @@ import { TourGuiado } from '@core/services/tour.service';
                   <div class="campo">
                     <label class="lbl" for="it-min">Estoque mínimo</label>
                     <input
-                      id="it-min" class="input-inn" type="number" min="0"
-                      formControlName="estoque_minimo" placeholder="0 = sem alerta"
+                      id="it-min"
+                      class="input-inn"
+                      type="number"
+                      min="0"
+                      formControlName="estoque_minimo"
+                      placeholder="0 = sem alerta"
                     />
                   </div>
                   <div class="campo full">
@@ -578,8 +625,8 @@ import { TourGuiado } from '@core/services/tour.service';
                 </div>
                 @if (editandoItem()) {
                   <p class="dsec-dica" style="margin-top: 10px">
-                    Para alterar a quantidade, use as abas <b>Entrada</b> e <b>Saída</b> —
-                    assim a movimentação fica registrada.
+                    Para alterar a quantidade, use as abas <b>Entrada</b> e <b>Saída</b> — assim a
+                    movimentação fica registrada.
                   </p>
                 }
               </section>
@@ -590,7 +637,8 @@ import { TourGuiado } from '@core/services/tour.service';
               <div class="drawer-foot-acoes">
                 <button class="btn-gray" type="button" (click)="fecharDrawer()">Cancelar</button>
                 <button class="btn-dark-blue" type="submit">
-                  <mat-icon>save</mat-icon> {{ editandoItem() ? 'Salvar alterações' : 'Cadastrar item' }}
+                  <mat-icon>save</mat-icon>
+                  {{ editandoItem() ? 'Salvar alterações' : 'Cadastrar item' }}
                 </button>
               </div>
             </footer>
@@ -602,26 +650,48 @@ import { TourGuiado } from '@core/services/tour.service';
     <!-- ============ Modal Categorias ============ -->
     @if (modal() === 'categorias') {
       <div class="overlay" (click.self)="fecharModal()">
-        <div class="modal-inn modal-md" role="dialog" aria-modal="true" aria-labelledby="titulo-cat">
+        <div
+          class="modal-inn modal-md"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="titulo-cat"
+        >
           <div class="modal-head">
             <h5 id="titulo-cat">Categorias do estoque</h5>
-            <button type="button" class="close" (click)="fecharModal()" aria-label="Fechar">&times;</button>
+            <button type="button" class="close" (click)="fecharModal()" aria-label="Fechar">
+              &times;
+            </button>
           </div>
           <div class="modal-body">
             <p class="modal-dica">
               As categorias agrupam os itens e definem para qual
               <b>impressora</b> sai o ticket de produção.
             </p>
-            <form class="input-group-inn" style="margin-bottom: 12px" (submit)="$event.preventDefault(); criarCategoriaModal()">
+            <form
+              class="input-group-inn"
+              style="margin-bottom: 12px"
+              (submit)="$event.preventDefault(); criarCategoriaModal()"
+            >
               <input
-                class="input-inn" type="text" [formControl]="novaCategoria"
-                placeholder="Nova categoria" aria-label="Nome da categoria"
+                class="input-inn"
+                type="text"
+                [formControl]="novaCategoria"
+                placeholder="Nova categoria"
+                aria-label="Nome da categoria"
               />
-              <button class="btn-dark-blue" type="submit" [disabled]="novaCategoria.invalid">Adicionar</button>
+              <button class="btn-dark-blue" type="submit" [disabled]="novaCategoria.invalid">
+                Adicionar
+              </button>
             </form>
             <table class="plain bordered">
               <thead>
-                <tr><th>#</th><th>Nome</th><th>Impressora (setor)</th><th class="tc">Status</th><th class="tc">Ações</th></tr>
+                <tr>
+                  <th>#</th>
+                  <th>Nome</th>
+                  <th>Impressora (setor)</th>
+                  <th class="tc">Status</th>
+                  <th class="tc">Ações</th>
+                </tr>
               </thead>
               <tbody>
                 @for (c of categorias(); track c.id) {
@@ -644,7 +714,8 @@ import { TourGuiado } from '@core/services/tour.service';
                     </td>
                     <td class="tc">
                       <button
-                        type="button" class="st-chip"
+                        type="button"
+                        class="st-chip"
                         [class.off]="!c.ativo"
                         [title]="c.ativo ? 'Clique para desativar' : 'Clique para ativar'"
                         (click)="statusCategoria(c, !c.ativo)"
@@ -654,15 +725,20 @@ import { TourGuiado } from '@core/services/tour.service';
                     </td>
                     <td class="tc">
                       <button
-                        type="button" class="acao-btn perigo" title="Excluir"
-                        aria-label="Excluir categoria" (click)="excluirCategoria(c)"
+                        type="button"
+                        class="acao-btn perigo"
+                        title="Excluir"
+                        aria-label="Excluir categoria"
+                        (click)="excluirCategoria(c)"
                       >
                         <mat-icon>delete</mat-icon>
                       </button>
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="5" class="muted tc">Nenhuma categoria.</td></tr>
+                  <tr>
+                    <td colspan="5" class="muted tc">Nenhuma categoria.</td>
+                  </tr>
                 }
               </tbody>
             </table>
@@ -674,858 +750,870 @@ import { TourGuiado } from '@core/services/tour.service';
   styles: `
     /* ---------- cabeçalho da página ---------- */
     .est-head {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 16px; flex-wrap: wrap; margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
     }
-    .est-titulo-grupo { display: flex; flex-direction: column; gap: 4px; }
+    .est-titulo-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
     .eyebrow {
-      margin: 0; font-size: 0.68rem; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.09em; color: #8fa3ab;
+      margin: 0;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: #8fa3ab;
     }
-    .est-titulo-linha { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .est-titulo-linha {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
     .est-titulo {
-      margin: 0; font-size: 1.35rem; font-weight: 700;
-      color: #054054; letter-spacing: -0.01em;
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #054054;
+      letter-spacing: -0.01em;
     }
     .est-contador {
-      font-size: 0.78rem; font-weight: 600; color: #054054;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #054054;
       background: #eef4f6;
-      border-radius: 999px; padding: 3px 10px; white-space: nowrap;
+      border-radius: 999px;
+      padding: 3px 10px;
+      white-space: nowrap;
     }
     .est-alerta {
-      font-size: 0.78rem; font-weight: 600; color: #92670b;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #92670b;
       background: #fdf3e2;
-      border-radius: 999px; padding: 3px 10px; white-space: nowrap;
+      border-radius: 999px;
+      padding: 3px 10px;
+      white-space: nowrap;
     }
-    .est-head-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
-    .est-head-acoes button { display: inline-flex; align-items: center; gap: 6px; }
+    .est-head-acoes {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .est-head-acoes button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
     .btn-tour {
-      display: inline-flex; align-items: center; gap: 6px;
-      border: 1px solid #d7e0e6; background: #fff;
-      color: #5d6d7e; border-radius: 4px;
-      padding: 0 14px; min-height: 34px; cursor: pointer;
-      font-size: 0.85rem; font-weight: 600;
-      transition: border-color .15s ease, color .15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #d7e0e6;
+      background: #fff;
+      color: #5d6d7e;
+      border-radius: 4px;
+      padding: 0 14px;
+      min-height: 34px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition:
+        border-color 0.15s ease,
+        color 0.15s ease;
     }
-    .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { border-color: #054054; color: #054054; }
+    .btn-tour mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+    }
+    .btn-tour:hover {
+      border-color: #054054;
+      color: #054054;
+    }
 
     /* ---------- banners de informação ---------- */
     .est-info {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 14px; margin-bottom: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 16px;
     }
     .est-info-card {
-      display: flex; align-items: flex-start; gap: 12px;
-      background: #fff; border: 1px solid #e3eaef; border-radius: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: #fff;
+      border: 1px solid #e3eaef;
+      border-radius: 12px;
       padding: 15px 16px;
-      transition: box-shadow 0.15s ease, transform 0.15s ease;
+      transition:
+        box-shadow 0.15s ease,
+        transform 0.15s ease;
     }
     .est-info-card:hover {
       box-shadow: 0 6px 18px rgba(5, 64, 84, 0.08);
       transform: translateY(-1px);
     }
     .est-info-icone {
-      width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
-      display: inline-flex; align-items: center; justify-content: center;
-      background: #eef4f6; color: #054054;
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eef4f6;
+      color: #054054;
     }
-    .est-info-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .est-info-txt { min-width: 0; }
+    .est-info-icone mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+    .est-info-txt {
+      min-width: 0;
+    }
     .est-info-txt strong {
-      display: block; font-size: 0.9rem; font-weight: 700;
-      color: #054054; margin-bottom: 3px;
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #054054;
+      margin-bottom: 3px;
     }
     .est-info-txt p {
-      margin: 0; font-size: 0.8rem; line-height: 1.5; color: #7d97a1;
+      margin: 0;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      color: #7d97a1;
     }
-    .est-info-txt b { color: #40525d; }
-    @media (max-width: 960px) { .est-info { grid-template-columns: 1fr; } }
+    .est-info-txt b {
+      color: #40525d;
+    }
+    @media (max-width: 960px) {
+      .est-info {
+        grid-template-columns: 1fr;
+      }
+    }
 
     /* ---------- toolbar ---------- */
-    .est-card { padding-top: 14px; }
+    .est-card {
+      padding-top: 14px;
+    }
     .est-toolbar {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 28px; flex-wrap: wrap; margin-bottom: 14px; padding: 4px 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 28px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+      padding: 4px 2px;
     }
     .est-busca {
-      display: flex; align-items: center; gap: 8px;
-      flex: 1; min-width: 240px; max-width: 460px;
-      background: #fff; border: 1px solid #d7e0e6; border-radius: 8px;
-      padding: 0 10px; height: 40px;
-      transition: border-color 0.15s, box-shadow 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 240px;
+      max-width: 460px;
+      background: #fff;
+      border: 1px solid #d7e0e6;
+      border-radius: 8px;
+      padding: 0 10px;
+      height: 40px;
+      transition:
+        border-color 0.15s,
+        box-shadow 0.15s;
     }
     .est-busca.foco {
       border-color: #054054;
       box-shadow: 0 0 0 3px rgba(5, 64, 84, 0.1);
     }
-    .est-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
-    .est-busca-input {
-      flex: 1; border: none; outline: none; background: transparent;
-      font-size: 0.9rem; color: #33424c; font-family: inherit; height: 100%;
+    .est-busca-icone {
+      color: #7d97a1;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
     }
-    .est-busca-input::placeholder { color: #8fa3ab; }
-    .est-busca-input::-webkit-search-cancel-button { display: none; }
+    .est-busca-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 0.9rem;
+      color: #33424c;
+      font-family: inherit;
+      height: 100%;
+    }
+    .est-busca-input::placeholder {
+      color: #8fa3ab;
+    }
+    .est-busca-input::-webkit-search-cancel-button {
+      display: none;
+    }
     .est-limpar {
-      border: none; background: #eef2f5; border-radius: 50%;
-      width: 22px; height: 22px; cursor: pointer; color: #5d6d7e;
-      display: inline-flex; align-items: center; justify-content: center;
+      border: none;
+      background: #eef2f5;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      cursor: pointer;
+      color: #5d6d7e;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       padding: 0;
     }
-    .est-limpar mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .est-limpar:hover { background: #d7e0e6; }
+    .est-limpar mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+    .est-limpar:hover {
+      background: #d7e0e6;
+    }
 
     .est-toggle {
-      display: inline-flex; align-items: center; gap: 14px;
-      border: 1px solid #d7e0e6; background: #fff; border-radius: 999px;
-      padding: 8px 20px 8px 12px; font-size: 0.84rem; font-weight: 600;
-      color: #5d6d7e; cursor: pointer; font-family: inherit;
-      transition: border-color 0.15s, background 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      border: 1px solid #d7e0e6;
+      background: #fff;
+      border-radius: 999px;
+      padding: 8px 20px 8px 12px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #5d6d7e;
+      cursor: pointer;
+      font-family: inherit;
+      transition:
+        border-color 0.15s,
+        background 0.15s;
     }
     .est-trilho {
-      width: 34px; height: 19px; border-radius: 999px;
-      background: #c3d2d9; position: relative; transition: background 0.18s;
+      width: 34px;
+      height: 19px;
+      border-radius: 999px;
+      background: #c3d2d9;
+      position: relative;
+      transition: background 0.18s;
       flex-shrink: 0;
     }
     .est-bolinha {
-      position: absolute; top: 2px; left: 2px;
-      width: 14px; height: 14px; border-radius: 50%;
-      background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
       transition: transform 0.18s;
     }
-    .est-toggle.on { border-color: #054054; color: #054054; }
-    .est-toggle.on .est-trilho { background: #054054; }
-    .est-toggle.on .est-bolinha { transform: translateX(16px); }
+    .est-toggle.on {
+      border-color: #054054;
+      color: #054054;
+    }
+    .est-toggle.on .est-trilho {
+      background: #054054;
+    }
+    .est-toggle.on .est-bolinha {
+      transform: translateX(16px);
+    }
 
     /* ---------- tabelas ---------- */
-    .est-tabela-wrap { overflow-x: auto; border-radius: 8px; margin-top: 12px; }
-    .est-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    .est-tabela-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      margin-top: 12px;
+    }
+    .est-tabela {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
     .est-tabela thead th {
-      position: sticky; top: 0; z-index: 1;
-      background: #f4f8fa; color: #40525d;
-      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.04em; text-align: left;
-      padding: 14px 14px; border-bottom: 1px solid #d7e0e6;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f4f8fa;
+      color: #40525d;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      text-align: left;
+      padding: 14px 14px;
+      border-bottom: 1px solid #d7e0e6;
       white-space: nowrap;
     }
     .est-tabela tbody td {
-      padding: 14px; border-bottom: 1px solid #eef2f5;
-      color: #2c3a44; vertical-align: middle; white-space: nowrap;
+      padding: 14px;
+      border-bottom: 1px solid #eef2f5;
+      color: #2c3a44;
+      vertical-align: middle;
+      white-space: nowrap;
     }
-    .est-row { transition: background 0.12s; }
-    .est-row:hover { background: #f4f8fa; }
-    .est-row.marcada { background: rgba(5, 64, 84, 0.05); }
-    .est-row:last-child td { border-bottom: none; }
-    .tc { text-align: center; }
-    .tr { text-align: right; }
-    .est-th-nome { min-width: 220px; }
+    .est-row {
+      transition: background 0.12s;
+    }
+    .est-row:hover {
+      background: #f4f8fa;
+    }
+    .est-row.marcada {
+      background: rgba(5, 64, 84, 0.05);
+    }
+    .est-row:last-child td {
+      border-bottom: none;
+    }
+    .tc {
+      text-align: center;
+    }
+    .tr {
+      text-align: right;
+    }
+    .est-th-nome {
+      min-width: 220px;
+    }
 
-    .est-cell { display: flex; align-items: center; gap: 12px; min-width: 200px; }
-    .est-item-icone {
-      width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
-      background: #eef4f6; color: #054054;
-      display: inline-flex; align-items: center; justify-content: center;
+    .est-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 200px;
     }
-    .est-item-icone mat-icon { font-size: 22px; width: 22px; height: 22px; }
-    .est-cell-txt { display: flex; flex-direction: column; line-height: 1.3; }
-    .est-cell-txt strong { color: #054054; font-weight: 600; font-size: 0.95rem; }
-    .est-cell-txt small { color: #7d97a1; font-size: 0.8rem; }
-    .est-item-nome { color: #054054; font-weight: 600; font-size: 0.92rem; }
-    .est-tipo {
-      font-size: 0.78rem; font-weight: 600; color: #5d6d7e;
+    .est-item-icone {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      flex-shrink: 0;
       background: #eef4f6;
-      border-radius: 999px; padding: 3px 10px; white-space: nowrap;
+      color: #054054;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .est-item-icone mat-icon {
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+    }
+    .est-cell-txt {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.3;
+    }
+    .est-cell-txt strong {
+      color: #054054;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .est-cell-txt small {
+      color: #7d97a1;
+      font-size: 0.8rem;
+    }
+    .est-item-nome {
+      color: #054054;
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+    .est-tipo {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #5d6d7e;
+      background: #eef4f6;
+      border-radius: 999px;
+      padding: 3px 10px;
+      white-space: nowrap;
     }
     .est-qtd {
-      font-variant-numeric: tabular-nums; font-weight: 700;
-      color: #054054; font-size: 0.95rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: #054054;
+      font-size: 0.95rem;
     }
-    .est-qtd.zero { color: #92670b; }
+    .est-qtd.zero {
+      color: #92670b;
+    }
     .est-tag-zero {
-      display: inline-block; margin-left: 6px;
-      font-size: 0.7rem; font-weight: 600; color: #92670b;
+      display: inline-block;
+      margin-left: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #92670b;
       background: #fdf3e2;
-      border-radius: 999px; padding: 2px 8px;
+      border-radius: 999px;
+      padding: 2px 8px;
     }
-    .est-valor { font-variant-numeric: tabular-nums; font-weight: 600; color: #054054; }
+    .est-valor {
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      color: #054054;
+    }
     .est-futuro {
-      display: inline-block; min-width: 34px;
-      font-variant-numeric: tabular-nums; font-weight: 700; color: #8fa3ab;
+      display: inline-block;
+      min-width: 34px;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: #8fa3ab;
     }
-    .est-futuro.sobe { color: #054054; }
-    .est-futuro.desce { color: #92670b; }
-    .est-quando { color: #7d97a1; font-variant-numeric: tabular-nums; }
+    .est-futuro.sobe {
+      color: #054054;
+    }
+    .est-futuro.desce {
+      color: #92670b;
+    }
+    .est-quando {
+      color: #7d97a1;
+      font-variant-numeric: tabular-nums;
+    }
     .est-motivo {
-      max-width: 260px; overflow: hidden; text-overflow: ellipsis;
-      color: #5d6d7e; font-size: 0.86rem;
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #5d6d7e;
+      font-size: 0.86rem;
     }
 
-    .num { width: 96px; text-align: right; }
-    .motivo { min-width: 200px; }
+    .num {
+      width: 96px;
+      text-align: right;
+    }
+    .motivo {
+      min-width: 200px;
+    }
 
     /* ---------- barra de ação das abas Entrada/Saída ---------- */
     .mov-resumo {
-      display: flex; flex-direction: column; align-items: center;
-      gap: 10px; margin-top: 16px; padding: 16px 14px;
-      background: #f4f8fa; border: 1px solid #e3eaef; border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+      padding: 16px 14px;
+      background: #f4f8fa;
+      border: 1px solid #e3eaef;
+      border-radius: 12px;
     }
     .mov-resumo-txt {
-      display: flex; align-items: center; gap: 7px;
-      font-size: 0.85rem; color: #5d6d7e;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.85rem;
+      color: #5d6d7e;
     }
-    .mov-resumo-txt mat-icon { font-size: 18px; width: 18px; height: 18px; color: #054054; }
-    .mov-resumo-txt b { color: #054054; }
+    .mov-resumo-txt mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #054054;
+    }
+    .mov-resumo-txt b {
+      color: #054054;
+    }
     .mov-btn {
-      display: inline-flex; align-items: center; justify-content: center;
-      gap: 7px; min-width: 240px; padding: 0.68rem 1.5rem;
-      font-size: 0.95rem; font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-width: 240px;
+      padding: 0.68rem 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 700;
     }
-    .mov-btn mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    .mov-btn mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
 
     .aba-dica {
-      display: flex; align-items: center; gap: 8px;
-      margin: 14px 0 0; padding: 10px 14px;
-      background: #f4f8fa; border: 1px dashed #c3d4dc; border-radius: 10px;
-      font-size: 0.84rem; color: #40525d;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 14px 0 0;
+      padding: 10px 14px;
+      background: #f4f8fa;
+      border: 1px dashed #c3d4dc;
+      border-radius: 10px;
+      font-size: 0.84rem;
+      color: #40525d;
     }
-    .aba-dica mat-icon { font-size: 18px; width: 18px; height: 18px; color: #054054; }
+    .aba-dica mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #054054;
+    }
 
-    .est-tabela .acao-btn { margin: 0 2px; }
+    .est-tabela .acao-btn {
+      margin: 0 2px;
+    }
     .acao-btn {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 32px; height: 32px;
-      border: 1px solid #d7e0e6; border-radius: 7px;
-      background: #fff; color: #5d6d7e; cursor: pointer;
-      transition: border-color .15s, color .15s, background .15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border: 1px solid #d7e0e6;
+      border-radius: 7px;
+      background: #fff;
+      color: #5d6d7e;
+      cursor: pointer;
+      transition:
+        border-color 0.15s,
+        color 0.15s,
+        background 0.15s;
     }
-    .acao-btn mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .acao-btn:hover { border-color: #054054; color: #054054; }
-    .acao-btn.perigo:hover { border-color: #b3261e; color: #b3261e; background: #fdf3f2; }
+    .acao-btn mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+    }
+    .acao-btn:hover {
+      border-color: #054054;
+      color: #054054;
+    }
+    .acao-btn.perigo:hover {
+      border-color: #b3261e;
+      color: #b3261e;
+      background: #fdf3f2;
+    }
     .st-chip {
-      display: inline-flex; align-items: center;
-      border: 1px solid #d7e0e6; border-radius: 999px;
-      background: #eef4f6; color: #054054;
-      padding: 6px 14px; font-size: 0.8rem; font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #d7e0e6;
+      border-radius: 999px;
+      background: #eef4f6;
+      color: #054054;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
       font-family: inherit;
-      transition: border-color .15s, background .15s;
+      transition:
+        border-color 0.15s,
+        background 0.15s;
     }
-    button.st-chip { cursor: pointer; }
-    button.st-chip:hover { border-color: #054054; }
-    .st-chip.off { background: #f4f6f8; color: #7d97a1; }
+    button.st-chip {
+      cursor: pointer;
+    }
+    button.st-chip:hover {
+      border-color: #054054;
+    }
+    .st-chip.off {
+      background: #f4f6f8;
+      color: #7d97a1;
+    }
 
     /* ---------- estado vazio ---------- */
     .est-vazio {
-      text-align: center; padding: 40px 16px !important; color: #7d97a1;
+      text-align: center;
+      padding: 40px 16px !important;
+      color: #7d97a1;
     }
     .est-vazio mat-icon {
-      font-size: 40px; width: 40px; height: 40px;
-      color: #c3d2d9; margin-bottom: 8px;
+      font-size: 40px;
+      width: 40px;
+      height: 40px;
+      color: #c3d2d9;
+      margin-bottom: 8px;
     }
-    .est-vazio p { margin: 0 0 14px; font-size: 0.9rem; }
+    .est-vazio p {
+      margin: 0 0 14px;
+      font-size: 0.9rem;
+    }
 
     /* ---------- skeleton ---------- */
-    .skel-row td { border-bottom: 1px solid #eef2f5; }
+    .skel-row td {
+      border-bottom: 1px solid #eef2f5;
+    }
     .skel {
-      display: inline-block; border-radius: 6px;
+      display: inline-block;
+      border-radius: 6px;
       background: linear-gradient(90deg, #eef2f5 25%, #e3eaef 50%, #eef2f5 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
     }
-    @keyframes shimmer { to { background-position: -200% 0; } }
-    .skel-icone { width: 42px; height: 42px; border-radius: 10px; }
-    .skel-nome { width: 150px; height: 14px; margin-left: 10px; vertical-align: middle; }
-    .skel-txt { width: 90px; height: 13px; }
-    .skel-chip { width: 62px; height: 24px; border-radius: 999px; }
-    .skel-acoes { width: 80px; height: 26px; }
+    @keyframes shimmer {
+      to {
+        background-position: -200% 0;
+      }
+    }
+    .skel-icone {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+    }
+    .skel-nome {
+      width: 150px;
+      height: 14px;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    .skel-txt {
+      width: 90px;
+      height: 13px;
+    }
+    .skel-chip {
+      width: 62px;
+      height: 24px;
+      border-radius: 999px;
+    }
+    .skel-acoes {
+      width: 80px;
+      height: 26px;
+    }
 
     /* ---------- modal categorias ---------- */
-    .modal-md { max-width: 640px; }
+    .modal-md {
+      max-width: 640px;
+    }
     .modal-dica {
-      margin: 0 0 12px; font-size: 0.8rem; line-height: 1.5; color: #7d97a1;
+      margin: 0 0 12px;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      color: #7d97a1;
     }
     .modal-foot {
-      display: flex; justify-content: flex-end;
-      padding: 10px 14px; border-top: 1px solid #d7e0e6;
+      display: flex;
+      justify-content: flex-end;
+      padding: 10px 14px;
+      border-top: 1px solid #d7e0e6;
     }
 
     /* ---------- drawer lateral ---------- */
-    .overlay { z-index: 310; }
+    .overlay {
+      z-index: 310;
+    }
     .drawer-backdrop {
-      position: fixed; inset: 0; z-index: 320;
+      position: fixed;
+      inset: 0;
+      z-index: 320;
       background: rgba(5, 32, 43, 0.45);
       animation: fadeIn 0.18s ease-out;
     }
-    @keyframes fadeIn { from { opacity: 0; } }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+    }
     .drawer {
-      position: fixed; top: 0; right: 0; bottom: 0; z-index: 321;
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 321;
       width: min(480px, 100vw);
       background: #f7fafb;
       box-shadow: -12px 0 40px rgba(3, 32, 43, 0.28);
-      display: flex; flex-direction: column;
+      display: flex;
+      flex-direction: column;
       animation: drawerIn 0.22s cubic-bezier(0.2, 0.8, 0.3, 1);
     }
     @keyframes drawerIn {
-      from { transform: translateX(64px); opacity: 0.4; }
-      to { transform: none; opacity: 1; }
+      from {
+        transform: translateX(64px);
+        opacity: 0.4;
+      }
+      to {
+        transform: none;
+        opacity: 1;
+      }
     }
     .drawer-head {
-      display: flex; align-items: flex-start; justify-content: space-between;
-      gap: 12px; padding: 18px 22px;
-      background: #fff; border-bottom: 1px solid #e3eaef;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 22px;
+      background: #fff;
+      border-bottom: 1px solid #e3eaef;
       flex-shrink: 0;
     }
-    .drawer-head-txt h5 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #054054; }
-    .drawer-head-txt p { margin: 3px 0 0; font-size: 0.8rem; color: #7d97a1; }
-    .drawer-fechar {
-      border: none; background: #eef2f5; border-radius: 8px;
-      width: 34px; height: 34px; cursor: pointer; color: #5d6d7e;
-      display: inline-flex; align-items: center; justify-content: center;
-      flex-shrink: 0; transition: background 0.15s;
+    .drawer-head-txt h5 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #054054;
     }
-    .drawer-fechar:hover { background: #d7e0e6; color: #054054; }
-    .drawer-fechar mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    .drawer-head-txt p {
+      margin: 3px 0 0;
+      font-size: 0.8rem;
+      color: #7d97a1;
+    }
+    .drawer-fechar {
+      border: none;
+      background: #eef2f5;
+      border-radius: 8px;
+      width: 34px;
+      height: 34px;
+      cursor: pointer;
+      color: #5d6d7e;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .drawer-fechar:hover {
+      background: #d7e0e6;
+      color: #054054;
+    }
+    .drawer-fechar mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
 
-    .drawer-form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-    .drawer-body { flex: 1; overflow-y: auto; padding: 18px 22px; }
+    .drawer-form {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 22px;
+    }
     .dsec {
-      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
-      padding: 16px; margin-bottom: 14px;
+      background: #fff;
+      border: 1px solid #e3eaef;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
     }
     .dsec-tit {
-      display: flex; align-items: center; gap: 7px;
-      font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #40525d; margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #40525d;
+      margin-bottom: 12px;
     }
-    .dsec-tit mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .dsec-dica { margin: 0; font-size: 0.76rem; color: #8a99a4; line-height: 1.5; }
-    .dsec-dica b { color: #40525d; }
-    .dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
-    .dgrid .full { grid-column: 1 / -1; }
-    .campo { display: flex; flex-direction: column; gap: 4px; }
-    .campo .lbl { font-size: 0.8rem; font-weight: 600; color: #40525d; }
-    .campo .req, .drawer-req .req { color: #dc3545; }
-    .erro-campo { color: #dc3545; font-size: 0.74rem; font-weight: 500; }
-    .input-inn.inval { border-color: #dc3545; box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.12); }
+    .dsec-tit mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+    }
+    .dsec-dica {
+      margin: 0;
+      font-size: 0.76rem;
+      color: #8a99a4;
+      line-height: 1.5;
+    }
+    .dsec-dica b {
+      color: #40525d;
+    }
+    .dgrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 14px;
+    }
+    .dgrid .full {
+      grid-column: 1 / -1;
+    }
+    .campo {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .campo .lbl {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #40525d;
+    }
+    .campo .req,
+    .drawer-req .req {
+      color: #dc3545;
+    }
+    .erro-campo {
+      color: #dc3545;
+      font-size: 0.74rem;
+      font-weight: 500;
+    }
+    .input-inn.inval {
+      border-color: #dc3545;
+      box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.12);
+    }
 
-    .input-group-inn { display: flex; align-items: stretch; }
+    .input-group-inn {
+      display: flex;
+      align-items: stretch;
+    }
     .input-group-inn .addon {
-      display: inline-flex; align-items: center;
-      padding: 0 10px; font-size: 0.8rem;
-      background: #5d6d7e; color: #fff;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 0.8rem;
+      background: #5d6d7e;
+      color: #fff;
       border: 1px solid #5d6d7e;
       border-radius: 4px 0 0 4px;
     }
-    .input-group-inn .input-inn { border-radius: 0 4px 4px 0; flex: 1; }
+    .input-group-inn .input-inn {
+      border-radius: 0 4px 4px 0;
+      flex: 1;
+    }
 
     /* (mat-form-field/mat-select estilizados globalmente em styles.css) */
 
     .drawer-foot {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 12px; padding: 13px 22px;
-      background: #fff; border-top: 1px solid #e3eaef;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 13px 22px;
+      background: #fff;
+      border-top: 1px solid #e3eaef;
       flex-shrink: 0;
     }
-    .drawer-req { font-size: 0.76rem; color: #8a99a4; }
-    .drawer-foot-acoes { display: flex; gap: 8px; }
+    .drawer-req {
+      font-size: 0.76rem;
+      color: #8a99a4;
+    }
+    .drawer-foot-acoes {
+      display: flex;
+      gap: 8px;
+    }
     .drawer-foot-acoes .btn-dark-blue,
     .drawer-foot-acoes .btn-gray {
-      display: inline-flex; align-items: center; gap: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       padding: 0.5rem 1rem;
     }
-    .drawer-foot-acoes mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .drawer-foot-acoes mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
 
     @media (max-width: 640px) {
-      .est-head { flex-direction: column; align-items: stretch; }
-      .est-head-acoes { justify-content: stretch; }
-      .est-head-acoes button { flex: 1; justify-content: center; }
-      .est-busca { max-width: none; }
+      .est-head {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .est-head-acoes {
+        justify-content: stretch;
+      }
+      .est-head-acoes button {
+        flex: 1;
+        justify-content: center;
+      }
+      .est-busca {
+        max-width: none;
+      }
     }
   `,
 })
-export class EstoqueComponent implements OnInit {
-  private readonly rt = inject(Realtime);
-
-  constructor() {
-    let ultimo = -1;
-    effect(() => {
-      const v = this.rt.mudanca('estoque', 'movimento_estoque', 'categoria_estoque');
-      if (ultimo < 0) {
-        ultimo = v;
-        return;
-      }
-      if (v !== ultimo) {
-        ultimo = v;
-        this.carregar();
-      }
-    });
-    this.busca.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe((v) => this.termo.set(v.trim().toLowerCase()));
-  }
-  private readonly estoqueApi = inject(EstoqueApi);
-  private readonly impressorasApi = inject(ImpressorasApi);
-  private readonly notify = inject(Notify);
-  private readonly tour = inject(TourGuiado);
-  private readonly confirm = inject(Confirm);
-  private readonly fb = inject(FormBuilder);
-
-  protected readonly modal = signal<'categorias' | null>(null);
-  protected readonly drawerAberto = signal(false);
-  protected readonly editandoItem = signal<ItemEstoque | null>(null);
-  /** Marca a 1ª tentativa de salvar — exibe os erros inline daí em diante. */
-  protected readonly tentouSalvar = signal(false);
-  protected readonly novaCategoria = new FormControl('', [Validators.required]);
-  protected readonly formItem = this.fb.nonNullable.group({
-    nome: ['', Validators.required],
-    idcategoria: [null as number | null],
-    valor_unitario: [null as number | null],
-    quantidade_inicial: [0],
-    unidade: ['un'],
-    estoque_minimo: [0],
-    eh_insumo: [false],
-  });
-
-  protected readonly itens = signal<ItemEstoque[]>([]);
-  protected readonly categorias = signal<CategoriaEstoque[]>([]);
-  protected readonly impressoras = signal<Impressora[]>([]);
-  protected readonly movimentos = signal<MovimentoView[]>([]);
-  protected readonly entradaAdd = signal<Record<number, number>>({});
-  protected readonly saidaAdd = signal<Record<number, number>>({});
-  protected readonly saidaMotivo = signal<Record<number, string>>({});
-  protected readonly carregando = signal(true);
-  protected readonly busca = new FormControl('', { nonNullable: true });
-  /** Termo da busca já normalizado — alimenta o filtro instantâneo. */
-  protected readonly termo = signal('');
-  protected readonly buscaFoco = signal(false);
-  protected readonly apenasAtivos = signal(false);
-  /** Linhas fantasma exibidas enquanto a lista carrega. */
-  protected readonly skel = [1, 2, 3, 4, 5];
-  protected readonly UNIDADES = ['un', 'kg', 'g', 'L', 'ml', 'cx', 'pct', 'lata', 'fardo'];
-  protected readonly num = num;
-
-  /** Itens ativos sem saldo — selo dourado de alerta no cabeçalho. */
-  protected readonly semEstoque = computed(
-    () => this.itens().filter((i) => i.ativo && i.quantidade === 0).length,
-  );
-
-  /** Busca instantânea por nome do item ou da categoria. */
-  private correspondeTermo(i: ItemEstoque): boolean {
-    const q = this.termo();
-    if (!q) return true;
-    return (
-      i.nome.toLowerCase().includes(q) ||
-      this.categoriaNome(i.idcategoria).toLowerCase().includes(q)
-    );
-  }
-
-  /** Aba Itens — aplica também o toggle "Somente ativos". */
-  protected readonly filtrados = computed(() =>
-    this.itens().filter((i) => (!this.apenasAtivos() || i.ativo) && this.correspondeTermo(i)),
-  );
-  /** Aba Entrada — só itens ativos que combinam com a busca. */
-  protected readonly filtradosAtivos = computed(() =>
-    this.itens().filter((i) => i.ativo && this.correspondeTermo(i)),
-  );
-  /** Aba Saída — só itens ativos com saldo que combinam com a busca. */
-  protected readonly filtradosComSaldo = computed(() =>
-    this.itens().filter((i) => i.ativo && i.quantidade > 0 && this.correspondeTermo(i)),
-  );
-
-  /** Resumo da entrada pendente: quantos itens e quantas unidades serão lançados. */
-  protected readonly entradasPendentes = computed(() => {
-    const qs = Object.values(this.entradaAdd()).filter((q) => q > 0);
-    return { itens: qs.length, total: qs.reduce((a, b) => a + b, 0) };
-  });
-
-  /** Resumo da saída pendente. */
-  protected readonly saidasPendentes = computed(() => {
-    const qs = Object.values(this.saidaAdd()).filter((q) => q > 0);
-    return { itens: qs.length, total: qs.reduce((a, b) => a + b, 0) };
-  });
-
-  ngOnInit(): void {
-    this.carregar();
-  }
-
-  carregar(): void {
-    this.estoqueApi.listarItens(1, 200).subscribe({
-      next: (p) => {
-        this.itens.set(p.items);
-        this.carregando.set(false);
-      },
-      error: (e) => {
-        this.carregando.set(false);
-        this.notify.erro(e);
-      },
-    });
-    this.estoqueApi.listarCategorias().subscribe({
-      next: (c) => this.categorias.set(c),
-      error: () => undefined,
-    });
-    this.impressorasApi.listarImpressoras().subscribe({
-      next: (p) => this.impressoras.set(p),
-      error: () => undefined,
-    });
-    this.estoqueApi.listarMovimentos(1, 50).subscribe({
-      next: (p) => this.movimentos.set(p.items),
-      error: () => undefined,
-    });
-  }
-
-  categoriaNome(id: number | null): string {
-    return this.categorias().find((c) => c.id === id)?.nome ?? 'Sem categoria';
-  }
-
-  setEntrada(id: number, e: Event): void {
-    const v = Number((e.target as HTMLInputElement).value);
-    this.entradaAdd.update((m) => ({ ...m, [id]: v > 0 ? v : 0 }));
-  }
-
-  setSaida(id: number, e: Event): void {
-    const v = Number((e.target as HTMLInputElement).value);
-    this.saidaAdd.update((m) => ({ ...m, [id]: v > 0 ? v : 0 }));
-  }
-
-  setMotivo(id: number, e: Event): void {
-    const v = (e.target as HTMLInputElement).value;
-    this.saidaMotivo.update((m) => ({ ...m, [id]: v }));
-  }
-
-  salvarEntrada(): void {
-    const movs: MovimentacaoInput[] = Object.entries(this.entradaAdd())
-      .filter(([, q]) => q > 0)
-      .map(([id, q]) => ({
-        iditem: Number(id),
-        tipo: 'entrada' as const,
-        quantidade: q,
-        motivo: 'Entrada de estoque',
-      }));
-    if (!movs.length) {
-      this.notify.erroMsg('Informe a quantidade a adicionar em ao menos um item.');
-      return;
-    }
-    this.enviarMovimentos(movs, 'Entrada registrada.');
-  }
-
-  salvarSaida(): void {
-    const motivos = this.saidaMotivo();
-    const movs: MovimentacaoInput[] = Object.entries(this.saidaAdd())
-      .filter(([, q]) => q > 0)
-      .map(([id, q]) => ({
-        iditem: Number(id),
-        tipo: 'saida' as const,
-        quantidade: q,
-        motivo: motivos[Number(id)] || undefined,
-      }));
-    if (!movs.length) {
-      this.notify.erroMsg('Informe a quantidade a retirar em ao menos um item.');
-      return;
-    }
-    this.enviarMovimentos(movs, 'Saída registrada.');
-  }
-
-  private enviarMovimentos(movs: MovimentacaoInput[], msg: string): void {
-    this.estoqueApi.movimentar(movs).subscribe({
-      next: () => {
-        this.notify.ok(msg);
-        this.entradaAdd.set({});
-        this.saidaAdd.set({});
-        this.saidaMotivo.set({});
-        this.carregar();
-      },
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  onEsc(): void {
-    if (this.tour.ativo()) return;
-    if (this.drawerAberto()) this.fecharDrawer();
-    else if (this.modal()) this.fecharModal();
-  }
-
-  fecharDrawer(): void {
-    this.drawerAberto.set(false);
-    this.editandoItem.set(null);
-    document.body.style.overflow = '';
-  }
-
-  fecharModal(): void {
-    this.modal.set(null);
-  }
-
-  invalido(ctrl: string): boolean {
-    const c = this.formItem.get(ctrl);
-    return !!c && c.invalid && (c.touched || this.tentouSalvar());
-  }
-
-  abrirItem(item?: ItemEstoque): void {
-    this.editandoItem.set(item ?? null);
-    this.tentouSalvar.set(false);
-    if (item) {
-      this.formItem.patchValue({
-        nome: item.nome,
-        idcategoria: item.idcategoria,
-        valor_unitario: item.valor_unitario !== null ? Number(item.valor_unitario) : null,
-        quantidade_inicial: 0,
-        unidade: item.unidade || 'un',
-        estoque_minimo: item.estoque_minimo || 0,
-        eh_insumo: item.eh_insumo,
-      });
-    } else {
-      this.formItem.reset({
-        nome: '',
-        idcategoria: null,
-        valor_unitario: null,
-        quantidade_inicial: 0,
-        unidade: 'un',
-        estoque_minimo: 0,
-        eh_insumo: false,
-      });
-    }
-    this.drawerAberto.set(true);
-    document.body.style.overflow = 'hidden';
-    setTimeout(() => document.getElementById('it-nome')?.focus(), 260);
-  }
-
-  salvarItem(): void {
-    if (this.formItem.invalid) {
-      this.tentouSalvar.set(true);
-      this.notify.aviso('Revise os campos destacados.');
-      setTimeout(
-        () => document.querySelector('.drawer .inval')?.scrollIntoView({ block: 'center' }),
-        60,
-      );
-      return;
-    }
-    const v = this.formItem.getRawValue();
-    const input: ItemEstoqueInput = {
-      nome: v.nome,
-      idcategoria: v.idcategoria,
-      valor_unitario: v.valor_unitario,
-      quantidade_inicial: v.quantidade_inicial || undefined,
-      unidade: v.unidade || 'un',
-      estoque_minimo: v.estoque_minimo || 0,
-      eh_insumo: v.eh_insumo,
-      version: this.editandoItem()?.version,
-    };
-    const item = this.editandoItem();
-    const op = item ? this.estoqueApi.atualizarItem(item.id, input) : this.estoqueApi.criarItem(input);
-    op.subscribe({
-      next: () => {
-        this.notify.ok(item ? 'Item atualizado.' : 'Item cadastrado.');
-        this.fecharDrawer();
-        this.carregar();
-      },
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  abrirCategorias(): void {
-    this.modal.set('categorias');
-  }
-
-  criarCategoriaModal(): void {
-    const nome = this.novaCategoria.value?.trim();
-    if (!nome) return;
-    this.estoqueApi.criarCategoria(nome).subscribe({
-      next: () => {
-        this.novaCategoria.reset();
-        this.carregar();
-      },
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  /** Roteamento KOT — envia tickets de produção da categoria à impressora. */
-  rotearCategoria(c: CategoriaEstoque, impressoraId: number | null): void {
-    this.estoqueApi.rotaCategoria(c.id, impressoraId).subscribe({
-      next: () => {
-        this.carregar();
-        this.notify.ok(impressoraId ? 'Categoria roteada.' : 'Roteamento removido.');
-      },
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  statusItem(i: ItemEstoque, ativo: boolean): void {
-    this.estoqueApi.statusItem(i.id, ativo).subscribe({
-      next: () => this.carregar(),
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  imprimirEtiqueta(i: ItemEstoque): void {
-    this.impressorasApi.etiquetaItem(i.id).subscribe({
-      next: () => this.notify.ok(`Etiqueta de "${i.nome}" enviada.`),
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  async excluirItem(i: ItemEstoque): Promise<void> {
-    const ok = await this.confirm.perguntar(
-      `Excluir o item ${i.nome}? Todo o histórico de movimentações será apagado.`,
-      { titulo: 'Excluir item', confirmar: 'Excluir' },
-    );
-    if (!ok) return;
-    this.estoqueApi.excluirItem(i.id).subscribe({
-      next: (r) => {
-        this.notify.ok(r.mensagem);
-        this.carregar();
-      },
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  statusCategoria(c: CategoriaEstoque, ativo: boolean): void {
-    this.estoqueApi.statusCategoria(c.id, ativo).subscribe({
-      next: () => this.carregar(),
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  async excluirCategoria(c: CategoriaEstoque): Promise<void> {
-    const ok = await this.confirm.perguntar(
-      `Excluir a categoria ${c.nome}?`,
-      { titulo: 'Excluir categoria', confirmar: 'Excluir' },
-    );
-    if (!ok) return;
-    this.estoqueApi.excluirCategoria(c.id).subscribe({
-      next: () => {
-        this.notify.ok('Categoria excluída.');
-        this.carregar();
-      },
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  /** Tour guiado da tela (driver.js) — abre até o drawer de cadastro. */
-  iniciarTour(): void {
-    this.tour.iniciar(
-      [
-        {
-          popover: {
-            title: 'Bem-vindo à tela de Estoque!',
-            description:
-              'Este tour rápido mostra cada parte da tela. Avance com <b>Próximo</b> ' +
-              'e feche a qualquer momento no ✕ ou pela tecla Esc.',
-          },
-        },
-        {
-          element: '#tour-busca',
-          popover: {
-            title: 'Busca rápida',
-            description:
-              'Filtre por <b>nome do item</b> ou <b>categoria</b> — vale para a ' +
-              'lista e também para as abas de Entrada e Saída.',
-            side: 'bottom',
-          },
-        },
-        {
-          element: '#tour-ativos',
-          popover: {
-            title: 'Somente ativos',
-            description:
-              'Ligado, a aba Itens mostra apenas itens ativos. Desligado, ' +
-              'aparecem todos.',
-            side: 'bottom',
-          },
-        },
-        {
-          element: '#tour-categorias',
-          popover: {
-            title: 'Categorias e impressoras',
-            description:
-              'Aqui você cria as <b>categorias</b> e escolhe para qual ' +
-              '<b>impressora</b> sai o ticket de produção de cada uma.',
-            side: 'bottom',
-          },
-        },
-        {
-          element: '#tour-novo',
-          popover: {
-            title: 'Novo item',
-            description:
-              'Clique aqui para cadastrar um produto. Um painel abre à direita ' +
-              '— vou abrir para você ver!',
-            side: 'bottom',
-            onNextClick: () => {
-              this.abrirItem();
-              setTimeout(() => this.tour.avancar(), 420);
-            },
-          },
-        },
-        {
-          element: '.drawer',
-          popover: {
-            title: 'Painel de cadastro',
-            description:
-              'Informe o <b>nome</b>, a categoria, o valor unitário e a ' +
-              'quantidade inicial. Conclua em <b>Cadastrar item</b> no rodapé.',
-            side: 'left',
-            onNextClick: () => {
-              this.fecharDrawer();
-              setTimeout(() => this.tour.avancar(), 120);
-            },
-            onPrevClick: () => {
-              this.fecharDrawer();
-              this.tour.voltar();
-            },
-          },
-        },
-        {
-          element: '#tour-abas',
-          popover: {
-            title: 'Abas de trabalho',
-            description:
-              '<b>Itens</b> lista tudo · <b>Entrada</b> soma ao estoque · ' +
-              '<b>Saída</b> retira com motivo · <b>Movimentações</b> mostra o histórico.',
-            side: 'bottom',
-          },
-        },
-        {
-          element: '#tour-tabela',
-          popover: {
-            title: 'Lista de itens',
-            description:
-              'Cada linha mostra nome, categoria, quantidade (o selo ' +
-              '<b>sem estoque</b> avisa quando zera), preço e status.',
-            side: 'top',
-          },
-        },
-        {
-          element: 'tr.est-row .st-chip',
-          skipMissingElement: true,
-          popover: {
-            title: 'Ativar / desativar',
-            description:
-              'Clique no selo para mudar o status entre <b>Ativo</b> e ' +
-              '<b>Inativo</b>. Itens inativos somem das Entradas e Saídas.',
-            side: 'top',
-          },
-        },
-        {
-          element: 'tr.est-row .est-acoes',
-          skipMissingElement: true,
-          popover: {
-            title: 'Ações do item',
-            description:
-              '<b>Etiqueta</b> imprime a etiqueta · <b>lápis</b> edita os dados · ' +
-              '<b>lixeira</b> exclui o item — sempre com confirmação.',
-            side: 'left',
-          },
-        },
-        {
-          popover: {
-            title: 'Pronto!',
-            description:
-              'Você já conhece a tela de Estoque. Para rever, clique em ' +
-              '<b>Tutorial</b> no topo a qualquer momento.',
-          },
-        },
-      ],
-      () => {
-        if (this.drawerAberto()) this.fecharDrawer();
-      },
-    );
-  }
-}
+export class EstoqueComponent extends EstoqueStore {}

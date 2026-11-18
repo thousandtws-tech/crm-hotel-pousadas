@@ -1,19 +1,7 @@
-// MAR IA — widget oficial ElevenLabs (<elevenlabs-convai>) no shell do CRM.
-// A sessão sai de POST /api/maria/session (signed_url) e as tools rodam
-// como client tools → POST /mcp com o JWT do funcionário. O card abaixo é
-// a única UI nossa: a confirmação de escrita (preparar_* → confirmar_acao).
-
-import { Component, CUSTOM_ELEMENTS_SCHEMA, inject, OnDestroy, OnInit } from '@angular/core';
+// UI de maria-widget — template, estilos e bindings. A lógica vive em maria-widget.store.ts.
+import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { MariaService } from '@core/services/maria.service';
-
-interface CallEventDetail {
-  config: {
-    clientTools?: Record<string, (p: unknown) => Promise<string | object>>;
-    signedUrl?: string;
-    dynamicVariables?: Record<string, string>;
-  };
-}
+import { MariaWidgetStore } from './maria-widget.store';
 
 @Component({
   selector: 'app-maria',
@@ -62,84 +50,84 @@ interface CallEventDetail {
   styles: `
     /* Card de confirmação — flutua acima do orb do widget (bottom-right). */
     .mar-acao {
-      position: fixed; right: 22px; bottom: 96px; z-index: 400;
-      width: 300px; padding: 14px 16px;
-      background: #fff; border: 1px solid #d8e4e8; border-radius: 14px;
-      box-shadow: 0 8px 30px rgba(5, 40, 56, .22);
-      display: flex; flex-direction: column; gap: 10px;
+      position: fixed;
+      right: 22px;
+      bottom: 96px;
+      z-index: 400;
+      width: 300px;
+      padding: 14px 16px;
+      background: #fff;
+      border: 1px solid #d8e4e8;
+      border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(5, 40, 56, 0.22);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
     .mar-acao-tit {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 13px; font-weight: 700; color: #054054;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #054054;
     }
-    .mar-acao-tit mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    .mar-acao-tit mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
     .mar-acao-res {
-      display: flex; flex-direction: column; gap: 3px;
-      font-size: 12.5px; color: #33474f; max-height: 160px; overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 12.5px;
+      color: #33474f;
+      max-height: 160px;
+      overflow-y: auto;
     }
-    .mar-acao-res b { color: #054054; margin-bottom: 2px; }
-    .mar-acao-btns { display: flex; gap: 8px; }
-    .mar-ok, .mar-nok {
-      flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
-      padding: 8px 10px; border-radius: 9px; border: none; cursor: pointer;
-      font-size: 12.5px; font-weight: 600;
+    .mar-acao-res b {
+      color: #054054;
+      margin-bottom: 2px;
     }
-    .mar-ok { background: #054054; color: #fff; }
-    .mar-ok:hover { background: #0a5a74; }
-    .mar-nok { background: #eef3f5; color: #5a707a; }
-    .mar-nok:hover { background: #e0e9ec; }
-    .mar-ok mat-icon, .mar-nok mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .mar-acao-btns {
+      display: flex;
+      gap: 8px;
+    }
+    .mar-ok,
+    .mar-nok {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      border: none;
+      cursor: pointer;
+      font-size: 12.5px;
+      font-weight: 600;
+    }
+    .mar-ok {
+      background: #054054;
+      color: #fff;
+    }
+    .mar-ok:hover {
+      background: #0a5a74;
+    }
+    .mar-nok {
+      background: #eef3f5;
+      color: #5a707a;
+    }
+    .mar-nok:hover {
+      background: #e0e9ec;
+    }
+    .mar-ok mat-icon,
+    .mar-nok mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
   `,
 })
-export class MariaWidgetComponent implements OnInit, OnDestroy {
-  readonly m = inject(MariaService);
-
-  private readonly onCall = (ev: Event) => this.aoIniciarChamada(ev);
-
-  get varsJson(): string {
-    return JSON.stringify({ funcionario: this.m.funcionario });
-  }
-
-  ngOnInit(): void {
-    // `elevenlabs-convai:call` borbulha do shadow pro document — escutar
-    // aqui dispensa viewChild e não depende de quando o bundle define o
-    // elemento (':' no nome inviabiliza o event binding do template).
-    document.addEventListener('elevenlabs-convai:call', this.onCall);
-    // Bundle do widget (~self-contained) só carrega junto do shell logado.
-    void import('@elevenlabs/convai-widget-embed').catch((e: unknown) => {
-      this.m.erro.set(`widget maria indisponível: ${e instanceof Error ? e.message : 'erro'}`);
-    });
-    void this.m.preparar();
-  }
-
-  ngOnDestroy(): void {
-    document.removeEventListener('elevenlabs-convai:call', this.onCall);
-    this.m.recusar();
-  }
-
-  /** O evento `call` dispara quando o usuário inicia a conversa — o config
-   *  da sessão é mutável aqui: injetamos signed_url fresca + clientTools
-   *  (JWT real do funcionário) e já repomos o cache pra próxima chamada. */
-  aoIniciarChamada(ev: Event): void {
-    const cfg = (ev as CustomEvent<CallEventDetail>).detail?.config;
-    if (cfg) {
-      cfg.clientTools = this.m.clientTools();
-      const url = this.m.signedUrl();
-      if (url) cfg.signedUrl = url;
-      cfg.dynamicVariables = { funcionario: this.m.funcionario };
-    }
-    void this.m.preparar(); // signed_url é descartável — repõe p/ próxima
-  }
-
-  chaves(resumo: Record<string, unknown>): string[] {
-    return Object.keys(resumo).filter((k) => k !== 'idacao').slice(0, 8);
-  }
-
-  rotuloAcao(acao: string): string {
-    return acao.replace(/^preparar_/, '').replace(/_/g, ' ');
-  }
-
-  rotuloCampo(k: string): string {
-    return k.replace(/_/g, ' ');
-  }
-}
+export class MariaWidgetComponent extends MariaWidgetStore {}

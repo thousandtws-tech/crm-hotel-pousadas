@@ -1,21 +1,11 @@
-import { Component, computed, inject, signal, OnInit, effect, DestroyRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+// UI de estabelecimento — template, estilos e bindings. A lógica vive em estabelecimento.store.ts.
+import { Component } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { EstabelecimentoApi } from '@core/api/estabelecimento.api';
-import { ImpressorasApi } from '@core/api/impressoras.api';
-import { Confirm } from '@core/services/confirm.service';
-import { Notify } from '@core/services/notify.service';
-import { Realtime } from '@core/services/realtime.service';
-import { TourGuiado } from '@core/services/tour.service';
-import * as M from '@core/models';
+import { EstabelecimentoStore } from './estabelecimento.store';
 
-const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao'];
-
-// Configurações do estabelecimento: dados fiscais, endereço, logo e
-// impressoras térmicas por setor (roteamento de comprovantes e pedidos).
 @Component({
   selector: 'app-estabelecimento',
   host: { '(document:keydown.escape)': 'onEsc()' },
@@ -27,10 +17,17 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
         <div>
           <p class="eyebrow">Configurações</p>
           <h2 class="est-titulo">Estabelecimento</h2>
-          <p class="est-sub">Dados da pousada usados em comprovantes, documentos e na impressão térmica</p>
+          <p class="est-sub">
+            Dados da pousada usados em comprovantes, documentos e na impressão térmica
+          </p>
         </div>
         <div class="est-acoes">
-          <button class="btn-tour" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
+          <button
+            class="btn-tour"
+            type="button"
+            (click)="iniciarTour()"
+            aria-label="Ver tutorial da tela"
+          >
             <mat-icon>school</mat-icon> Tutorial
           </button>
           <button id="tour-logo" class="btn-dark-blue" type="button" (click)="abrirLogo()">
@@ -46,7 +43,9 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
           <mat-icon>{{ dadosOk() ? 'check_circle' : 'error' }}</mat-icon>
           <span>
             <b>Dados fiscais</b>
-            <small>{{ dadosOk() ? 'razão social e CNPJ preenchidos' : 'informe razão social e CNPJ' }}</small>
+            <small>{{
+              dadosOk() ? 'razão social e CNPJ preenchidos' : 'informe razão social e CNPJ'
+            }}</small>
           </span>
         </div>
         <div class="est-check-item" [class.ok]="endOk()">
@@ -60,14 +59,18 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
           <mat-icon>{{ logoOk() ? 'check_circle' : 'error' }}</mat-icon>
           <span>
             <b>Logo</b>
-            <small>{{ logoOk() ? 'enviada — aparece nos comprovantes' : 'não enviada ainda' }}</small>
+            <small>{{
+              logoOk() ? 'enviada — aparece nos comprovantes' : 'não enviada ainda'
+            }}</small>
           </span>
         </div>
         <div class="est-check-item" [class.ok]="impOk()">
           <mat-icon>{{ impOk() ? 'check_circle' : 'error' }}</mat-icon>
           <span>
             <b>Impressora padrão</b>
-            <small>{{ impOk() ? 'comprovantes configurados' : 'nenhuma marcada como padrão' }}</small>
+            <small>{{
+              impOk() ? 'comprovantes configurados' : 'nenhuma marcada como padrão'
+            }}</small>
           </span>
         </div>
       </div>
@@ -86,39 +89,83 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
             <div class="grid-3">
               <label class="lbl">
                 CNPJ
-                <input class="input-inn" type="text" formControlName="cnpj" placeholder="00.000.000/0000-00" />
+                <input
+                  class="input-inn"
+                  type="text"
+                  formControlName="cnpj"
+                  placeholder="00.000.000/0000-00"
+                />
               </label>
               <label class="lbl">
                 Telefone
-                <input class="input-inn" type="text" formControlName="telefone" placeholder="(22) 0000-0000" />
+                <input
+                  class="input-inn"
+                  type="text"
+                  formControlName="telefone"
+                  placeholder="(22) 0000-0000"
+                />
               </label>
               <label class="lbl">
                 Celular / WhatsApp
-                <input class="input-inn" type="text" formControlName="celular" placeholder="(22) 90000-0000" />
+                <input
+                  class="input-inn"
+                  type="text"
+                  formControlName="celular"
+                  placeholder="(22) 90000-0000"
+                />
               </label>
             </div>
             <div class="duo">
               <label class="lbl">
                 Razão social
-                <input class="input-inn" type="text" formControlName="razao_social" placeholder="Nome jurídico da pousada" />
+                <input
+                  class="input-inn"
+                  type="text"
+                  formControlName="razao_social"
+                  placeholder="Nome jurídico da pousada"
+                />
               </label>
               <label class="lbl">
                 E-mail
-                <input class="input-inn" type="email" formControlName="email" placeholder="contato@pousada.com.br" />
+                <input
+                  class="input-inn"
+                  type="email"
+                  formControlName="email"
+                  placeholder="contato@pousada.com.br"
+                />
               </label>
             </div>
             <div class="grid-3">
               <label class="lbl">
                 Site
-                <input class="input-inn" type="text" formControlName="site" placeholder="www.pousada.com.br" />
+                <input
+                  class="input-inn"
+                  type="text"
+                  formControlName="site"
+                  placeholder="www.pousada.com.br"
+                />
               </label>
               <label class="lbl">
                 Taxa early check-in (R$)
-                <input class="input-inn" type="number" min="0" step="0.01" formControlName="taxa_early" placeholder="0,00" />
+                <input
+                  class="input-inn"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  formControlName="taxa_early"
+                  placeholder="0,00"
+                />
               </label>
               <label class="lbl">
                 Taxa late checkout (R$)
-                <input class="input-inn" type="number" min="0" step="0.01" formControlName="taxa_late" placeholder="0,00" />
+                <input
+                  class="input-inn"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  formControlName="taxa_late"
+                  placeholder="0,00"
+                />
               </label>
             </div>
             <fieldset class="fld">
@@ -126,30 +173,60 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
               <div class="duo">
                 <label class="lbl">
                   Rede Wi-Fi
-                  <input class="input-inn" type="text" formControlName="wifi_nome" placeholder="Pousada-Guest" />
+                  <input
+                    class="input-inn"
+                    type="text"
+                    formControlName="wifi_nome"
+                    placeholder="Pousada-Guest"
+                  />
                 </label>
                 <label class="lbl">
                   Senha Wi-Fi
-                  <input class="input-inn" type="text" formControlName="wifi_senha" placeholder="bemvindo2026" />
+                  <input
+                    class="input-inn"
+                    type="text"
+                    formControlName="wifi_senha"
+                    placeholder="bemvindo2026"
+                  />
                 </label>
               </div>
               <div class="grid-3">
                 <label class="lbl">
                   Horário de check-in
-                  <input class="input-inn" type="text" formControlName="horario_checkin" placeholder="a partir das 14h" />
+                  <input
+                    class="input-inn"
+                    type="text"
+                    formControlName="horario_checkin"
+                    placeholder="a partir das 14h"
+                  />
                 </label>
                 <label class="lbl">
                   Horário de check-out
-                  <input class="input-inn" type="text" formControlName="horario_checkout" placeholder="até as 12h" />
+                  <input
+                    class="input-inn"
+                    type="text"
+                    formControlName="horario_checkout"
+                    placeholder="até as 12h"
+                  />
                 </label>
                 <label class="lbl">
                   Horário do café da manhã
-                  <input class="input-inn" type="text" formControlName="horario_cafe" placeholder="7h às 10h no salão principal" />
+                  <input
+                    class="input-inn"
+                    type="text"
+                    formControlName="horario_cafe"
+                    placeholder="7h às 10h no salão principal"
+                  />
                 </label>
               </div>
               <label class="lbl">
                 Serviços e informações (piscina, estacionamento, passeios…)
-                <textarea class="input-inn" rows="3" formControlName="info_servicos" placeholder="Piscina das 8h às 20h; estacionamento gratuito;…"></textarea>
+                <textarea
+                  class="input-inn"
+                  rows="3"
+                  formControlName="info_servicos"
+                  placeholder="Piscina das 8h às 20h; estacionamento gratuito;…"
+                ></textarea>
               </label>
             </fieldset>
             <fieldset class="fld">
@@ -157,15 +234,31 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
               <div class="grid-3">
                 <label class="lbl">
                   Cadastur (MTur)
-                  <input class="input-inn" type="text" formControlName="cadastur" placeholder="Nº do cadastro no Ministério do Turismo" />
+                  <input
+                    class="input-inn"
+                    type="text"
+                    formControlName="cadastur"
+                    placeholder="Nº do cadastro no Ministério do Turismo"
+                  />
                 </label>
                 <label class="lbl">
                   E-mail do encarregado de dados (DPO — LGPD)
-                  <input class="input-inn" type="email" formControlName="dpo_email" placeholder="privacidade@pousada.com.br" />
+                  <input
+                    class="input-inn"
+                    type="email"
+                    formControlName="dpo_email"
+                    placeholder="privacidade@pousada.com.br"
+                  />
                 </label>
                 <label class="lbl">
                   Retenção de dados do hóspede (anos)
-                  <input class="input-inn" type="number" min="1" max="30" formControlName="retencao_dados_anos" />
+                  <input
+                    class="input-inn"
+                    type="number"
+                    min="1"
+                    max="30"
+                    formControlName="retencao_dados_anos"
+                  />
                 </label>
               </div>
               <label class="lbl lbl-check">
@@ -183,23 +276,46 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                 </label>
                 <label class="lbl">
                   Reembolso final (%)
-                  <input class="input-inn" type="number" min="0" max="100" formControlName="pol3_pct" />
+                  <input
+                    class="input-inn"
+                    type="number"
+                    min="0"
+                    max="100"
+                    formControlName="pol3_pct"
+                  />
                 </label>
               </div>
               <div class="grid-3">
                 <label class="lbl">
                   % reembolso integral
-                  <input class="input-inn" type="number" min="0" max="100" formControlName="pol1_pct" />
+                  <input
+                    class="input-inn"
+                    type="number"
+                    min="0"
+                    max="100"
+                    formControlName="pol1_pct"
+                  />
                 </label>
                 <label class="lbl">
                   % reembolso parcial
-                  <input class="input-inn" type="number" min="0" max="100" formControlName="pol2_pct" />
+                  <input
+                    class="input-inn"
+                    type="number"
+                    min="0"
+                    max="100"
+                    formControlName="pol2_pct"
+                  />
                 </label>
                 <span class="hint">Faixas por proximidade do check-in (CDC art. 49).</span>
               </div>
             </fieldset>
             <div class="end">
-              <button class="btn-dark-blue" type="button" (click)="salvarDados()" [disabled]="salvando()">
+              <button
+                class="btn-dark-blue"
+                type="button"
+                (click)="salvarDados()"
+                [disabled]="salvando()"
+              >
                 <mat-icon>save</mat-icon> {{ salvando() ? 'Salvando…' : 'Gravar dados' }}
               </button>
             </div>
@@ -218,11 +334,21 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
             <div class="grid-end">
               <label class="lbl">
                 CEP
-                <input class="input-inn" type="text" formControlName="cep" placeholder="00000-000" />
+                <input
+                  class="input-inn"
+                  type="text"
+                  formControlName="cep"
+                  placeholder="00000-000"
+                />
               </label>
               <label class="lbl">
                 Logradouro
-                <input class="input-inn" type="text" formControlName="logradouro" placeholder="Rua, avenida…" />
+                <input
+                  class="input-inn"
+                  type="text"
+                  formControlName="logradouro"
+                  placeholder="Rua, avenida…"
+                />
               </label>
               <label class="lbl">
                 Número
@@ -230,21 +356,41 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
               </label>
               <label class="lbl">
                 Complemento
-                <input class="input-inn" type="text" formControlName="complemento" placeholder="Opcional" />
+                <input
+                  class="input-inn"
+                  type="text"
+                  formControlName="complemento"
+                  placeholder="Opcional"
+                />
               </label>
             </div>
             <div class="duo">
               <label class="lbl">
                 Bairro
-                <input class="input-inn" type="text" formControlName="bairro" placeholder="Centro" />
+                <input
+                  class="input-inn"
+                  type="text"
+                  formControlName="bairro"
+                  placeholder="Centro"
+                />
               </label>
               <label class="lbl">
                 Cidade
-                <input class="input-inn" type="text" formControlName="cidade" placeholder="Cabo Frio" />
+                <input
+                  class="input-inn"
+                  type="text"
+                  formControlName="cidade"
+                  placeholder="Cabo Frio"
+                />
               </label>
             </div>
             <div class="end">
-              <button class="btn-dark-blue" type="button" (click)="salvarEndereco()" [disabled]="salvando()">
+              <button
+                class="btn-dark-blue"
+                type="button"
+                (click)="salvarEndereco()"
+                [disabled]="salvando()"
+              >
                 <mat-icon>save</mat-icon> {{ salvando() ? 'Salvando…' : 'Gravar endereço' }}
               </button>
             </div>
@@ -259,7 +405,10 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
             <span class="est-card-ic"><mat-icon>print</mat-icon></span>
             <div>
               <h4>Impressoras por setor</h4>
-              <small>Comprovantes saem na <b>padrão</b>; pedidos de consumo saem na impressora do setor da categoria</small>
+              <small
+                >Comprovantes saem na <b>padrão</b>; pedidos de consumo saem na impressora do setor
+                da categoria</small
+              >
             </div>
           </div>
           <button class="btn-dark-blue" type="button" (click)="abrirImpressora()">
@@ -281,11 +430,17 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                 <div class="desc-info">
                   <b>{{ d.modelo || d.endereco }}</b>
                   <span>
-                    {{ d.tipo === 'usb' ? 'USB · ' + d.endereco : d.endereco + ':' + (d.porta ?? 9100) }}
+                    {{
+                      d.tipo === 'usb'
+                        ? 'USB · ' + d.endereco
+                        : d.endereco + ':' + (d.porta ?? 9100)
+                    }}
                     · detectada por {{ d.origem }}
                   </span>
                 </div>
-                <button class="btn-dark-blue mini" type="button" (click)="abrirRegistro(d)">Registrar</button>
+                <button class="btn-dark-blue mini" type="button" (click)="abrirRegistro(d)">
+                  Registrar
+                </button>
                 <button class="btn-gray mini" type="button" (click)="ignorar(d)">Ignorar</button>
               </div>
             }
@@ -307,11 +462,16 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
               @for (p of impressoras(); track p.id) {
                 <tr>
                   <td class="td-nome"><mat-icon>print</mat-icon> {{ p.nome }}</td>
-                  <td><span class="est-chip-setor">{{ p.setor }}</span></td>
+                  <td>
+                    <span class="est-chip-setor">{{ p.setor }}</span>
+                  </td>
                   <td class="td-ip">{{ p.ip }}:{{ p.porta }}</td>
                   <td class="tc">
                     @if (p.etiqueta) {
-                      <span class="est-chip-padrao" title="Recebe as etiquetas ao cadastrar produtos">
+                      <span
+                        class="est-chip-padrao"
+                        title="Recebe as etiquetas ao cadastrar produtos"
+                      >
                         <mat-icon>sell</mat-icon> etiquetas
                       </span>
                     }
@@ -328,16 +488,36 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                       type="button"
                       title="Clique para alternar"
                       (click)="statusImpressora(p)"
-                    >{{ p.ativa ? 'Ativa' : 'Inativa' }}</button>
+                    >
+                      {{ p.ativa ? 'Ativa' : 'Inativa' }}
+                    </button>
                   </td>
                   <td class="tc">
                     <div class="est-acoes-linha">
-                      <button class="acao-btn" type="button" title="Imprimir página de teste"
-                              (click)="testar(p)"><mat-icon>print</mat-icon></button>
-                      <button class="acao-btn" type="button" title="Editar"
-                              (click)="abrirImpressora(p)"><mat-icon>edit</mat-icon></button>
-                      <button class="acao-btn perigo" type="button" title="Excluir"
-                              (click)="removerImpressora(p)"><mat-icon>delete</mat-icon></button>
+                      <button
+                        class="acao-btn"
+                        type="button"
+                        title="Imprimir página de teste"
+                        (click)="testar(p)"
+                      >
+                        <mat-icon>print</mat-icon>
+                      </button>
+                      <button
+                        class="acao-btn"
+                        type="button"
+                        title="Editar"
+                        (click)="abrirImpressora(p)"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button
+                        class="acao-btn perigo"
+                        type="button"
+                        title="Excluir"
+                        (click)="removerImpressora(p)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -345,7 +525,8 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
                 <tr>
                   <td colspan="6" class="est-vazio">
                     <mat-icon>print_disabled</mat-icon>
-                    Nenhuma impressora cadastrada — adicione a primeira para imprimir comprovantes e pedidos.
+                    Nenhuma impressora cadastrada — adicione a primeira para imprimir comprovantes e
+                    pedidos.
                   </td>
                 </tr>
               }
@@ -360,7 +541,10 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
       <div class="overlay" (click.self)="modalImp.set(false)">
         <div class="modal-inn" role="dialog" aria-modal="true" aria-label="Impressora">
           <div class="modal-head">
-            <h5><mat-icon>print</mat-icon> {{ impEditando() ? 'Editar impressora' : 'Nova impressora' }}</h5>
+            <h5>
+              <mat-icon>print</mat-icon>
+              {{ impEditando() ? 'Editar impressora' : 'Nova impressora' }}
+            </h5>
             <button class="close" type="button" (click)="modalImp.set(false)" aria-label="Fechar">
               <mat-icon>close</mat-icon>
             </button>
@@ -369,11 +553,20 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
             <form [formGroup]="impForm" class="form">
               <label class="lbl">
                 Nome <small class="req">*</small>
-                <input class="input-inn" type="text" formControlName="nome" placeholder="Ex.: Impressora da cozinha" />
+                <input
+                  class="input-inn"
+                  type="text"
+                  formControlName="nome"
+                  placeholder="Ex.: Impressora da cozinha"
+                />
               </label>
               <div class="f-field">
                 <span class="f-lbl">Setor <small class="req">*</small></span>
-                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-mat f-mat">
+                <mat-form-field
+                  appearance="outline"
+                  subscriptSizing="dynamic"
+                  class="campo-mat f-mat"
+                >
                   <mat-select formControlName="setor" placeholder="Escolha o setor…">
                     @for (s of setoresOpcoes(); track s) {
                       <mat-option [value]="s">{{ s }}</mat-option>
@@ -385,7 +578,12 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
               <div class="duo">
                 <label class="lbl">
                   IP <small class="req">*</small>
-                  <input class="input-inn" type="text" formControlName="ip" placeholder="192.168.0.50" />
+                  <input
+                    class="input-inn"
+                    type="text"
+                    formControlName="ip"
+                    placeholder="192.168.0.50"
+                  />
                 </label>
                 <label class="lbl">
                   Porta
@@ -398,7 +596,9 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
               </label>
               <label class="lbl check">
                 <input type="checkbox" formControlName="etiqueta" />
-                <span><b>Impressora de etiquetas</b> — recebe a etiqueta ao cadastrar produtos</span>
+                <span
+                  ><b>Impressora de etiquetas</b> — recebe a etiqueta ao cadastrar produtos</span
+                >
               </label>
               <label class="lbl check">
                 <input type="checkbox" formControlName="ativa" />
@@ -408,7 +608,12 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
           </div>
           <div class="modal-foot">
             <button class="btn-gray" type="button" (click)="modalImp.set(false)">Cancelar</button>
-            <button class="btn-dark-blue" type="button" [disabled]="salvando() || impForm.invalid" (click)="salvarImpressora()">
+            <button
+              class="btn-dark-blue"
+              type="button"
+              [disabled]="salvando() || impForm.invalid"
+              (click)="salvarImpressora()"
+            >
               <mat-icon>save</mat-icon> {{ impEditando() ? 'Salvar alterações' : 'Cadastrar' }}
             </button>
           </div>
@@ -429,16 +634,27 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
           <div class="modal-body">
             <p class="est-dica" style="margin-top:0">
               {{ d.tipo === 'usb' ? 'USB · ' + d.endereco : d.endereco + ':' + (d.porta ?? 9100) }}
-              @if (d.modelo) { — {{ d.modelo }} }
+              @if (d.modelo) {
+                — {{ d.modelo }}
+              }
             </p>
             <form [formGroup]="regForm" class="form">
               <label class="lbl">
                 Nome <small class="req">*</small>
-                <input class="input-inn" type="text" formControlName="nome" placeholder="Ex.: Impressora da recepção" />
+                <input
+                  class="input-inn"
+                  type="text"
+                  formControlName="nome"
+                  placeholder="Ex.: Impressora da recepção"
+                />
               </label>
               <div class="f-field">
                 <span class="f-lbl">Setor <small class="req">*</small></span>
-                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-mat f-mat">
+                <mat-form-field
+                  appearance="outline"
+                  subscriptSizing="dynamic"
+                  class="campo-mat f-mat"
+                >
                   <mat-select formControlName="setor" placeholder="Escolha o setor…">
                     @for (s of setoresOpcoes(); track s) {
                       <mat-option [value]="s">{{ s }}</mat-option>
@@ -452,13 +668,20 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
               </label>
               <label class="lbl check">
                 <input type="checkbox" formControlName="etiqueta" />
-                <span><b>Impressora de etiquetas</b> — recebe a etiqueta ao cadastrar produtos</span>
+                <span
+                  ><b>Impressora de etiquetas</b> — recebe a etiqueta ao cadastrar produtos</span
+                >
               </label>
             </form>
           </div>
           <div class="modal-foot">
             <button class="btn-gray" type="button" (click)="modalReg.set(null)">Cancelar</button>
-            <button class="btn-dark-blue" type="button" [disabled]="salvando() || regForm.invalid" (click)="registrar()">
+            <button
+              class="btn-dark-blue"
+              type="button"
+              [disabled]="salvando() || regForm.invalid"
+              (click)="registrar()"
+            >
               <mat-icon>save</mat-icon> Registrar
             </button>
           </div>
@@ -491,18 +714,23 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
               <mat-icon>cloud_upload</mat-icon>
               {{ logoArquivo() ? logoArquivo()!.name : 'Escolher arquivo de imagem' }}
               <input
-                type="file" hidden
+                type="file"
+                hidden
                 accept="image/png,image/jpeg,image/webp,image/svg+xml"
                 (change)="selecionarLogo($event)"
                 aria-label="Arquivo da logo"
               />
             </label>
-            <small class="est-dica">PNG, JPG, WEBP ou SVG — máximo 2 MB. Fundo transparente fica melhor no comprovante.</small>
+            <small class="est-dica"
+              >PNG, JPG, WEBP ou SVG — máximo 2 MB. Fundo transparente fica melhor no
+              comprovante.</small
+            >
           </div>
           <div class="modal-foot">
             <button class="btn-gray" type="button" (click)="modalLogo.set(false)">Cancelar</button>
             <button
-              class="btn-dark-blue" type="button"
+              class="btn-dark-blue"
+              type="button"
               [disabled]="!logoArquivo() || enviando()"
               (click)="enviarLogo()"
             >
@@ -517,695 +745,654 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
   styles: `
     /* ---------- cabeçalho ---------- */
     .est-head {
-      display: flex; justify-content: space-between; align-items: flex-end;
-      gap: 16px; flex-wrap: wrap;
-      padding-bottom: 14px; margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding-bottom: 14px;
+      margin-bottom: 16px;
       border-bottom: 1px solid #e3eaef;
     }
-    .est-titulo { margin: 0; font-size: 1.5rem; font-weight: 800; color: #054054; letter-spacing: -0.02em; }
-    .est-sub { margin: 4px 0 0; font-size: 0.82rem; color: #7d97a1; }
-    .est-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
-    .est-acoes button { display: inline-flex; align-items: center; gap: 6px; }
+    .est-titulo {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #054054;
+      letter-spacing: -0.02em;
+    }
+    .est-sub {
+      margin: 4px 0 0;
+      font-size: 0.82rem;
+      color: #7d97a1;
+    }
+    .est-acoes {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .est-acoes button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
     .fld {
-      border: 1px solid #e3eaef; border-radius: 8px;
-      padding: 12px 14px 14px; margin: 4px 0 0;
-      display: flex; flex-direction: column; gap: 10px;
+      border: 1px solid #e3eaef;
+      border-radius: 8px;
+      padding: 12px 14px 14px;
+      margin: 4px 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
     .fld legend {
-      font-size: 0.74rem; font-weight: 700; color: #536b73; padding: 0 6px;
-      text-transform: uppercase; letter-spacing: 0.05em;
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #536b73;
+      padding: 0 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
     .btn-tour {
-      display: inline-flex; align-items: center; gap: 6px;
-      border: 1px solid #dce6ea; background: #fff;
-      color: #536b73; border-radius: 6px;
-      padding: 0 14px; min-height: 34px; cursor: pointer;
-      font-size: 0.85rem; font-weight: 600; font-family: inherit;
-      transition: border-color .15s ease, color .15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #dce6ea;
+      background: #fff;
+      color: #536b73;
+      border-radius: 6px;
+      padding: 0 14px;
+      min-height: 34px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: inherit;
+      transition:
+        border-color 0.15s ease,
+        color 0.15s ease;
     }
-    .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { border-color: #054054; color: #054054; }
+    .btn-tour mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+    }
+    .btn-tour:hover {
+      border-color: #054054;
+      color: #054054;
+    }
 
     /* ---------- checklist ---------- */
     .est-check {
-      display: flex; align-items: center; gap: 8px 26px; flex-wrap: wrap;
-      background: #fff; border: 1px solid #e3eaef; border-radius: 10px;
-      padding: 12px 18px; margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px 26px;
+      flex-wrap: wrap;
+      background: #fff;
+      border: 1px solid #e3eaef;
+      border-radius: 10px;
+      padding: 12px 18px;
+      margin-bottom: 16px;
     }
     .est-check-tit {
-      display: inline-flex; align-items: center; gap: 7px;
-      font-size: 0.72rem; font-weight: 700; color: #536b73;
-      text-transform: uppercase; letter-spacing: 0.06em;
-      padding-right: 18px; border-right: 1px solid #eef2f5;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #536b73;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding-right: 18px;
+      border-right: 1px solid #eef2f5;
     }
-    .est-check-tit mat-icon { font-size: 17px; width: 17px; height: 17px; color: #8fa3ab; }
+    .est-check-tit mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+      color: #8fa3ab;
+    }
     .est-check-item {
-      display: inline-flex; align-items: center; gap: 9px;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
     }
-    .est-check-item > mat-icon { font-size: 19px; width: 19px; height: 19px; color: #92670b; }
-    .est-check-item.ok > mat-icon { color: #198754; }
-    .est-check-item span { display: flex; flex-direction: column; }
-    .est-check-item b { font-size: 0.82rem; color: #054054; font-weight: 600; }
-    .est-check-item small { font-size: 0.7rem; color: #8fa3ab; }
+    .est-check-item > mat-icon {
+      font-size: 19px;
+      width: 19px;
+      height: 19px;
+      color: #92670b;
+    }
+    .est-check-item.ok > mat-icon {
+      color: #198754;
+    }
+    .est-check-item span {
+      display: flex;
+      flex-direction: column;
+    }
+    .est-check-item b {
+      font-size: 0.82rem;
+      color: #054054;
+      font-weight: 600;
+    }
+    .est-check-item small {
+      font-size: 0.7rem;
+      color: #8fa3ab;
+    }
 
     /* ---------- cards de formulário ---------- */
-    .est-secoes { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem; }
-    .est-card { padding: 0; }
+    .est-secoes {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .est-card {
+      padding: 0;
+    }
     .est-card-head {
-      display: flex; align-items: center; gap: 12px;
-      padding: 13px 18px; border-bottom: 1px solid #eef2f5;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 18px;
+      border-bottom: 1px solid #eef2f5;
     }
-    .est-card-head.com-acao { justify-content: space-between; flex-wrap: wrap; }
-    .est-card-head-grupo { display: flex; align-items: center; gap: 12px; }
+    .est-card-head.com-acao {
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .est-card-head-grupo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
     .est-card-ic {
-      width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
-      display: inline-flex; align-items: center; justify-content: center;
-      background: #eef4f6; color: #054054;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eef4f6;
+      color: #054054;
     }
-    .est-card-ic mat-icon { font-size: 18px; width: 18px; height: 18px; }
-    .est-card-head h4 { margin: 0; font-size: 0.95rem; font-weight: 700; color: #054054; }
-    .est-card-head small { font-size: 0.74rem; color: #8fa3ab; }
-    .est-card form { padding: 16px 18px 18px; }
-    .form { display: flex; flex-direction: column; gap: 12px; }
+    .est-card-ic mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+    .est-card-head h4 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #054054;
+    }
+    .est-card-head small {
+      font-size: 0.74rem;
+      color: #8fa3ab;
+    }
+    .est-card form {
+      padding: 16px 18px 18px;
+    }
+    .form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
     .lbl {
-      display: flex; flex-direction: column; gap: 4px;
-      font-size: 0.82rem; font-weight: 600; color: #40525d;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #40525d;
     }
-    .lbl .req, .f-lbl .req { color: #dc3545; }
-    .lbl-check { flex-direction: row; align-items: center; gap: 8px; font-weight: 500; }
-    .lbl-check input[type='checkbox'], .lbl.check input[type='checkbox'] { accent-color: #054054; }
-    .f-field { display: flex; flex-direction: column; gap: 4px; }
-    .f-lbl { font-size: 0.82rem; font-weight: 600; color: #40525d; }
-    .f-mat { width: 100%; }
-    .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .grid-end { display: grid; grid-template-columns: 140px 2fr 110px 1fr; gap: 10px; }
-    .hint { font-size: 0.73rem; color: #8fa3ab; font-weight: 400; align-self: end; padding-bottom: 10px; }
-    .porta-inn { margin-top: 20px; }
-    .end { display: flex; justify-content: flex-end; }
-    .end button { display: inline-flex; align-items: center; gap: 6px; }
-    .check { flex-direction: row !important; align-items: center; gap: 9px; font-weight: 400 !important; cursor: pointer; }
-    .est-dica { font-size: 0.73rem; color: #8fa3ab; font-weight: 400; }
+    .lbl .req,
+    .f-lbl .req {
+      color: #dc3545;
+    }
+    .lbl-check {
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+    }
+    .lbl-check input[type='checkbox'],
+    .lbl.check input[type='checkbox'] {
+      accent-color: #054054;
+    }
+    .f-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .f-lbl {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #40525d;
+    }
+    .f-mat {
+      width: 100%;
+    }
+    .duo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .grid-end {
+      display: grid;
+      grid-template-columns: 140px 2fr 110px 1fr;
+      gap: 10px;
+    }
+    .hint {
+      font-size: 0.73rem;
+      color: #8fa3ab;
+      font-weight: 400;
+      align-self: end;
+      padding-bottom: 10px;
+    }
+    .porta-inn {
+      margin-top: 20px;
+    }
+    .end {
+      display: flex;
+      justify-content: flex-end;
+    }
+    .end button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .check {
+      flex-direction: row !important;
+      align-items: center;
+      gap: 9px;
+      font-weight: 400 !important;
+      cursor: pointer;
+    }
+    .est-dica {
+      font-size: 0.73rem;
+      color: #8fa3ab;
+      font-weight: 400;
+    }
     @media (max-width: 900px) {
-      .grid-3, .grid-end, .duo { grid-template-columns: 1fr; }
+      .grid-3,
+      .grid-end,
+      .duo {
+        grid-template-columns: 1fr;
+      }
     }
 
     /* ---------- auto-descoberta ---------- */
     .desc-box {
-      margin: 0 0 14px; border: 1px solid #dce6ea; border-radius: 8px;
-      background: #f4f8fa; padding: 10px 12px;
+      margin: 0 0 14px;
+      border: 1px solid #dce6ea;
+      border-radius: 8px;
+      background: #f4f8fa;
+      padding: 10px 12px;
     }
     .desc-head {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 0.84rem; color: #054054; margin-bottom: 8px; font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.84rem;
+      color: #054054;
+      margin-bottom: 8px;
+      font-weight: 600;
     }
-    .desc-head b { font-weight: 600; }
-    .desc-head span { color: #536b73; font-weight: 400; }
-    .desc-head mat-icon { font-size: 18px; width: 18px; height: 18px; color: #92670b; }
+    .desc-head b {
+      font-weight: 600;
+    }
+    .desc-head span {
+      color: #536b73;
+      font-weight: 400;
+    }
+    .desc-head mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #92670b;
+    }
     .desc-linha {
-      display: flex; align-items: center; gap: 10px;
-      padding: 7px 4px; border-top: 1px solid #e3eaef;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 4px;
+      border-top: 1px solid #e3eaef;
     }
-    .desc-ic { color: #8fa3ab; font-size: 20px; width: 20px; height: 20px; }
-    .desc-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-    .desc-info b { font-size: 0.86rem; color: #23404e; }
-    .desc-info span { font-size: 0.75rem; color: #8fa3ab; }
-    .btn-dark-blue.mini, .btn-gray.mini { padding: 6px 12px; font-size: 0.78rem; border-radius: 7px; }
+    .desc-ic {
+      color: #8fa3ab;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+    .desc-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .desc-info b {
+      font-size: 0.86rem;
+      color: #23404e;
+    }
+    .desc-info span {
+      font-size: 0.75rem;
+      color: #8fa3ab;
+    }
+    .btn-dark-blue.mini,
+    .btn-gray.mini {
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      border-radius: 7px;
+    }
 
     /* ---------- tabela impressoras ---------- */
-    .est-tabela-wrap { overflow-x: auto; padding: 0 18px 18px; }
-    .est-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    .est-tabela-wrap {
+      overflow-x: auto;
+      padding: 0 18px 18px;
+    }
+    .est-tabela {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
     .est-tabela thead th {
-      background: #f4f8fa; color: #536b73;
-      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; padding: 10px 14px; text-align: left;
-      border-bottom: 1px solid #e3eaef; white-space: nowrap;
+      background: #f4f8fa;
+      color: #536b73;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid #e3eaef;
+      white-space: nowrap;
     }
     .est-tabela tbody td {
-      padding: 10px 14px; border-bottom: 1px solid #eef2f5;
-      vertical-align: middle; color: #33424c;
+      padding: 10px 14px;
+      border-bottom: 1px solid #eef2f5;
+      vertical-align: middle;
+      color: #33424c;
     }
-    .est-tabela tbody tr:hover { background: #f7fafb; }
-    .est-tabela .tc { text-align: center; }
-    .td-nome { font-weight: 600; color: #054054; white-space: nowrap; }
-    .td-nome mat-icon { font-size: 16px; width: 16px; height: 16px; vertical-align: -3px; color: #8fa3ab; margin-right: 7px; }
-    .td-ip { font-family: monospace; font-size: 0.82rem; color: #536b73; white-space: nowrap; }
-    .est-chip-setor, .est-chip-padrao {
-      display: inline-flex; align-items: center; gap: 4px;
-      background: #eef4f6; color: #054054;
-      border-radius: 999px; padding: 3px 12px;
-      font-size: 0.75rem; font-weight: 600; white-space: nowrap;
+    .est-tabela tbody tr:hover {
+      background: #f7fafb;
     }
-    .est-chip-setor { font-size: 0.78rem; text-transform: capitalize; }
-    .est-chip-padrao mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .est-acoes-linha { display: inline-flex; gap: 4px; }
+    .est-tabela .tc {
+      text-align: center;
+    }
+    .td-nome {
+      font-weight: 600;
+      color: #054054;
+      white-space: nowrap;
+    }
+    .td-nome mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      vertical-align: -3px;
+      color: #8fa3ab;
+      margin-right: 7px;
+    }
+    .td-ip {
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: #536b73;
+      white-space: nowrap;
+    }
+    .est-chip-setor,
+    .est-chip-padrao {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #eef4f6;
+      color: #054054;
+      border-radius: 999px;
+      padding: 3px 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .est-chip-setor {
+      font-size: 0.78rem;
+      text-transform: capitalize;
+    }
+    .est-chip-padrao mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+    .est-acoes-linha {
+      display: inline-flex;
+      gap: 4px;
+    }
     .acao-btn {
-      display: inline-flex; align-items: center; justify-content: center;
-      border: none; background: none; border-radius: 6px; width: 30px; height: 30px;
-      cursor: pointer; color: #536b73; transition: background .14s, color .14s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: none;
+      border-radius: 6px;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      color: #536b73;
+      transition:
+        background 0.14s,
+        color 0.14s;
     }
-    .acao-btn mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .acao-btn:hover { background: #eef4f6; color: #054054; }
-    .acao-btn.perigo:hover { background: #fbeaea; color: #b3343a; }
+    .acao-btn mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+    }
+    .acao-btn:hover {
+      background: #eef4f6;
+      color: #054054;
+    }
+    .acao-btn.perigo:hover {
+      background: #fbeaea;
+      color: #b3343a;
+    }
     .st-chip {
-      display: inline-flex; align-items: center; justify-content: center;
-      border: none; border-radius: 999px; padding: 4px 14px;
-      background: #eef4f6; color: #054054;
-      font-size: 0.75rem; font-weight: 600; font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 999px;
+      padding: 4px 14px;
+      background: #eef4f6;
+      color: #054054;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: inherit;
     }
-    .st-chip.clickable { cursor: pointer; }
-    .st-chip.off { background: #f4f8fa; color: #8fa3ab; }
+    .st-chip.clickable {
+      cursor: pointer;
+    }
+    .st-chip.off {
+      background: #f4f8fa;
+      color: #8fa3ab;
+    }
     .est-vazio {
-      text-align: center; color: #8fa3ab; padding: 34px !important; font-size: 0.86rem;
+      text-align: center;
+      color: #8fa3ab;
+      padding: 34px !important;
+      font-size: 0.86rem;
     }
-    .est-vazio mat-icon { display: block; margin: 0 auto 8px; font-size: 30px; width: 30px; height: 30px; color: #c3d2d9; }
+    .est-vazio mat-icon {
+      display: block;
+      margin: 0 auto 8px;
+      font-size: 30px;
+      width: 30px;
+      height: 30px;
+      color: #c3d2d9;
+    }
 
     /* ---------- modais ---------- */
     .overlay {
-      position: fixed; inset: 0; z-index: 310;
+      position: fixed;
+      inset: 0;
+      z-index: 310;
       background: rgba(5, 64, 84, 0.45);
-      display: flex; align-items: flex-start; justify-content: center;
-      padding: 2rem 1rem; backdrop-filter: blur(2px);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem;
+      backdrop-filter: blur(2px);
     }
     .modal-inn {
-      background: #fff; border-radius: 12px; width: 100%; max-width: 480px;
+      background: #fff;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 480px;
       box-shadow: 0 18px 50px rgba(5, 64, 84, 0.25);
       animation: in 0.16s ease-out;
-      max-height: 90vh; display: flex; flex-direction: column;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
     }
-    @keyframes in { from { transform: translateY(-12px); opacity: 0; } }
+    @keyframes in {
+      from {
+        transform: translateY(-12px);
+        opacity: 0;
+      }
+    }
     .modal-head {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0.85rem 1.15rem; border-bottom: 1px solid #e3eaef;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1.15rem;
+      border-bottom: 1px solid #e3eaef;
     }
     .modal-head h5 {
-      margin: 0; font-size: 1rem; font-weight: 700; color: #054054;
-      display: inline-flex; align-items: center; gap: 8px;
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #054054;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
-    .modal-head h5 mat-icon { font-size: 19px; width: 19px; height: 19px; color: #054054; }
+    .modal-head h5 mat-icon {
+      font-size: 19px;
+      width: 19px;
+      height: 19px;
+      color: #054054;
+    }
     .modal-head .close {
-      border: none; background: #eef2f5; border-radius: 50%;
-      width: 28px; height: 28px; cursor: pointer; color: #536b73;
-      display: inline-flex; align-items: center; justify-content: center; padding: 0;
+      border: none;
+      background: #eef2f5;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      color: #536b73;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
     }
-    .modal-head .close:hover { background: #d7e0e6; }
-    .modal-head .close mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .modal-body { padding: 1.1rem 1.15rem; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-    .modal-body .form input:not([type='checkbox']) { height: 36px; padding: 0 9px; box-sizing: border-box; }
+    .modal-head .close:hover {
+      background: #d7e0e6;
+    }
+    .modal-head .close mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+    .modal-body {
+      padding: 1.1rem 1.15rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .modal-body .form input:not([type='checkbox']) {
+      height: 36px;
+      padding: 0 9px;
+      box-sizing: border-box;
+    }
     .modal-foot {
-      display: flex; justify-content: flex-end; gap: 8px;
-      padding: 0.8rem 1.15rem; border-top: 1px solid #e3eaef;
-      background: #f7fafb; border-radius: 0 0 12px 12px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 0.8rem 1.15rem;
+      border-top: 1px solid #e3eaef;
+      background: #f7fafb;
+      border-radius: 0 0 12px 12px;
     }
-    .modal-foot button { display: inline-flex; align-items: center; gap: 6px; }
-    .modal-foot mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .modal-foot button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .modal-foot mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
     .logo-box {
-      border: 1px dashed #dce6ea; border-radius: 10px;
-      min-height: 140px; display: flex; align-items: center; justify-content: center;
-      background: #f7fafb; padding: 14px;
+      border: 1px dashed #dce6ea;
+      border-radius: 10px;
+      min-height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f7fafb;
+      padding: 14px;
     }
-    .logo-img { max-height: 150px; max-width: 100%; }
-    .logo-vazia { display: flex; flex-direction: column; align-items: center; gap: 6px; color: #a5b6bf; font-size: 0.82rem; }
-    .logo-vazia mat-icon { font-size: 38px; width: 38px; height: 38px; }
+    .logo-img {
+      max-height: 150px;
+      max-width: 100%;
+    }
+    .logo-vazia {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: #a5b6bf;
+      font-size: 0.82rem;
+    }
+    .logo-vazia mat-icon {
+      font-size: 38px;
+      width: 38px;
+      height: 38px;
+    }
     .est-upload {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      border: 1.5px dashed #c6d6dd; border-radius: 10px;
-      padding: 13px 16px; cursor: pointer;
-      font-size: 0.85rem; font-weight: 600; color: #054054;
-      transition: background .14s, border-color .14s;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1.5px dashed #c6d6dd;
+      border-radius: 10px;
+      padding: 13px 16px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #054054;
+      transition:
+        background 0.14s,
+        border-color 0.14s;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    .est-upload:hover { background: #f4f8fa; border-color: #054054; }
-    .est-upload mat-icon { font-size: 19px; width: 19px; height: 19px; flex-shrink: 0; }
+    .est-upload:hover {
+      background: #f4f8fa;
+      border-color: #054054;
+    }
+    .est-upload mat-icon {
+      font-size: 19px;
+      width: 19px;
+      height: 19px;
+      flex-shrink: 0;
+    }
   `,
 })
-export class EstabelecimentoComponent implements OnInit {
-  private readonly estabelecimentoApi = inject(EstabelecimentoApi);
-  private readonly impressorasApi = inject(ImpressorasApi);
-  private readonly notify = inject(Notify);
-  private readonly confirm = inject(Confirm);
-  private readonly rt = inject(Realtime);
-  private readonly fb = inject(FormBuilder);
-  private readonly tour = inject(TourGuiado);
-
-  protected readonly salvando = signal(false);
-  protected readonly enviando = signal(false);
-  protected readonly modalLogo = signal(false);
-  protected readonly logoPreview = signal<string | null>(null);
-  protected readonly logoArquivo = signal<File | null>(null);
-  protected readonly logoOk = signal(false);
-  protected readonly impressoras = signal<M.Impressora[]>([]);
-  protected readonly modalImp = signal(false);
-  protected readonly impEditando = signal<M.Impressora | null>(null);
-  protected readonly descobertas = signal<M.ImpressoraDescoberta[]>([]);
-  protected readonly modalReg = signal<M.ImpressoraDescoberta | null>(null);
-  protected readonly regForm = this.fb.nonNullable.group({
-    nome: [''],
-    setor: [''],
-    padrao: [false],
-    etiqueta: [false],
-  });
-
-  protected readonly impForm = this.fb.nonNullable.group({
-    nome: [''],
-    setor: [''],
-    ip: [''],
-    porta: [9100],
-    padrao: [false],
-    etiqueta: [false],
-    ativa: [true],
-  });
-
-  protected readonly dados = this.fb.nonNullable.group({
-    cnpj: [''],
-    razao_social: [''],
-    site: [''],
-    email: [''],
-    telefone: [''],
-    celular: [''],
-    impressora_ip: [''],
-    impressora_porta: [9100],
-    impressora_ativa: [false],
-    taxa_early: [0],
-    taxa_late: [0],
-    wifi_nome: [''],
-    wifi_senha: [''],
-    horario_checkin: [''],
-    horario_checkout: [''],
-    horario_cafe: [''],
-    info_servicos: [''],
-    cadastur: [''],
-    dpo_email: [''],
-    retencao_dados_anos: [5],
-    fnrh_assinatura: [false],
-    // CDC — faixas escalonadas: reembolso integral, parcial e nenhum.
-    pol1_dias: [15],
-    pol1_pct: [100],
-    pol2_dias: [7],
-    pol2_pct: [50],
-    pol3_pct: [0],
-  });
-  private readonly dadosVersion = signal<number | undefined>(undefined);
-  private readonly endVersion = signal<number | undefined>(undefined);
-  protected readonly endereco = this.fb.nonNullable.group({
-    logradouro: [''],
-    numero: [''],
-    complemento: [''],
-    bairro: [''],
-    cidade: [''],
-    cep: [''],
-  });
-
-  protected readonly dadosOk = signal(false);
-  protected readonly endOk = signal(false);
-  protected readonly impOk = computed(() =>
-    this.impressoras().some((p) => p.padrao && p.ativa),
-  );
-  protected readonly setoresOpcoes = computed(() => {
-    const atual = this.impForm.value.setor?.trim();
-    return atual && !SETORES.includes(atual) ? [...SETORES, atual] : SETORES;
-  });
-
-  constructor() {
-    const destroy = inject(DestroyRef);
-    this.dados.valueChanges.pipe(takeUntilDestroyed(destroy)).subscribe((v) => {
-      this.dadosOk.set(!!(v.razao_social?.trim() && v.cnpj?.trim()));
-    });
-    this.endereco.valueChanges.pipe(takeUntilDestroyed(destroy)).subscribe((v) => {
-      this.endOk.set(!!(v.logradouro?.trim() && v.cidade?.trim() && v.cep?.trim()));
-    });
-    let ultimo = -1;
-    effect(() => {
-      const v = this.rt.mudanca('impressora', 'categoria_estoque', 'impressora_descoberta');
-      if (ultimo < 0) {
-        ultimo = v;
-        return;
-      }
-      if (v !== ultimo) {
-        ultimo = v;
-        this.carregarImpressoras();
-        this.carregarDescobertas();
-      }
-    });
-  }
-
-  ngOnInit(): void {
-    this.estabelecimentoApi.obterEstabelecimento().subscribe({
-      next: (e) => {
-        this.dadosVersion.set(e.version);
-        const faixas = (e.politica_cancelamento as { faixas?: { ate_dias: number; pct: number }[] } | null)?.faixas;
-        const fx = (i: number) => faixas?.[i];
-        this.dados.patchValue({
-          cnpj: e.cnpj ?? '',
-          razao_social: e.razao_social ?? '',
-          site: e.site ?? '',
-          email: e.email ?? '',
-          telefone: e.telefone ?? '',
-          celular: e.celular ?? '',
-          impressora_ip: e.impressora_ip ?? '',
-          impressora_porta: e.impressora_porta ?? 9100,
-          impressora_ativa: e.impressora_ativa ?? false,
-          taxa_early: Number(e.taxa_early ?? 0),
-          taxa_late: Number(e.taxa_late ?? 0),
-          wifi_nome: e.wifi_nome ?? '',
-          wifi_senha: e.wifi_senha ?? '',
-          horario_checkin: e.horario_checkin ?? '',
-          horario_checkout: e.horario_checkout ?? '',
-          horario_cafe: e.horario_cafe ?? '',
-          info_servicos: e.info_servicos ?? '',
-          cadastur: e.cadastur ?? '',
-          dpo_email: e.dpo_email ?? '',
-          retencao_dados_anos: e.retencao_dados_anos ?? 5,
-          fnrh_assinatura: e.fnrh_assinatura ?? false,
-          pol1_dias: fx(0)?.ate_dias ?? 15,
-          pol1_pct: fx(0)?.pct ?? 100,
-          pol2_dias: fx(1)?.ate_dias ?? 7,
-          pol2_pct: fx(1)?.pct ?? 50,
-          pol3_pct: fx(2)?.pct ?? 0,
-        });
-      },
-      error: () => undefined,
-    });
-    this.carregarImpressoras();
-    this.carregarDescobertas();
-    this.estabelecimentoApi.logoAtual().subscribe({
-      next: () => this.logoOk.set(true),
-      error: () => this.logoOk.set(false),
-    });
-    this.estabelecimentoApi.obterEndereco().subscribe({
-      next: (e) => {
-        this.endVersion.set(e.version);
-        this.endereco.patchValue({
-          logradouro: e.logradouro ?? '',
-          numero: e.numero ?? '',
-          complemento: e.complemento ?? '',
-          bairro: e.bairro ?? '',
-          cidade: e.cidade ?? '',
-          cep: e.cep ?? '',
-        });
-      },
-      error: () => undefined,
-    });
-  }
-
-  onEsc(): void {
-    if (this.modalImp()) this.modalImp.set(false);
-    else if (this.modalLogo()) this.modalLogo.set(false);
-  }
-
-  salvarDados(): void {
-    this.salvando.set(true);
-    const v = this.dados.getRawValue();
-    const empty = (s: string) => s || null;
-    this.estabelecimentoApi.salvarEstabelecimento({
-        cnpj: empty(v.cnpj),
-        razao_social: empty(v.razao_social),
-        site: empty(v.site),
-        email: empty(v.email),
-        telefone: empty(v.telefone),
-        celular: empty(v.celular),
-        impressora_ip: empty(v.impressora_ip),
-        impressora_porta: v.impressora_porta || 9100,
-        impressora_ativa: v.impressora_ativa,
-        taxa_early: Number(v.taxa_early) || 0,
-        taxa_late: Number(v.taxa_late) || 0,
-        wifi_nome: empty(v.wifi_nome),
-        wifi_senha: empty(v.wifi_senha),
-        horario_checkin: empty(v.horario_checkin),
-        horario_checkout: empty(v.horario_checkout),
-        horario_cafe: empty(v.horario_cafe),
-        info_servicos: empty(v.info_servicos),
-        cadastur: empty(v.cadastur),
-        dpo_email: empty(v.dpo_email),
-        retencao_dados_anos: Number(v.retencao_dados_anos) || 5,
-        fnrh_assinatura: !!v.fnrh_assinatura,
-        politica_cancelamento: {
-          faixas: [
-            { ate_dias: Number(v.pol1_dias) || 0, pct: Number(v.pol1_pct) || 0 },
-            { ate_dias: Number(v.pol2_dias) || 0, pct: Number(v.pol2_pct) || 0 },
-            { ate_dias: 0, pct: Number(v.pol3_pct) || 0 },
-          ],
-        },
-        version: this.dadosVersion(),
-      })
-      .subscribe({
-        next: () => {
-          this.salvando.set(false);
-          this.notify.ok('Dados salvos.');
-        },
-        error: (e) => {
-          this.salvando.set(false);
-          this.notify.erro(e);
-        },
-      });
-  }
-
-  salvarEndereco(): void {
-    this.salvando.set(true);
-    const v = this.endereco.getRawValue();
-    const empty = (s: string) => s || null;
-    this.estabelecimentoApi.salvarEndereco({
-        logradouro: empty(v.logradouro),
-        numero: empty(v.numero),
-        complemento: empty(v.complemento),
-        bairro: empty(v.bairro),
-        cidade: empty(v.cidade),
-        cep: empty(v.cep),
-        version: this.endVersion(),
-      })
-      .subscribe({
-        next: () => {
-          this.salvando.set(false);
-          this.notify.ok('Endereço salvo.');
-        },
-        error: (e) => {
-          this.salvando.set(false);
-          this.notify.erro(e);
-        },
-      });
-  }
-
-  // -- logo -----------------------------------------------------------------
-
-  abrirLogo(): void {
-    this.logoArquivo.set(null);
-    this.logoPreview.set(null);
-    // logo atual via GET /estabelecimento/logo (404 = não configurada)
-    this.estabelecimentoApi.logoAtual().subscribe({
-      next: (b) => this.logoPreview.set(URL.createObjectURL(b)),
-      error: () => undefined,
-    });
-    this.modalLogo.set(true);
-  }
-
-  selecionarLogo(e: Event): void {
-    const f = (e.target as HTMLInputElement).files?.[0] ?? null;
-    this.logoArquivo.set(f);
-    if (f) {
-      URL.revokeObjectURL(this.logoPreview() ?? '');
-      this.logoPreview.set(URL.createObjectURL(f));
-    }
-  }
-
-  enviarLogo(): void {
-    const f = this.logoArquivo();
-    if (!f) return;
-    this.enviando.set(true);
-    this.estabelecimentoApi.uploadLogo(f).subscribe({
-      next: () => {
-        this.enviando.set(false);
-        this.modalLogo.set(false);
-        this.logoOk.set(true);
-        this.notify.ok('Logo atualizada.');
-      },
-      error: (err) => {
-        this.enviando.set(false);
-        this.notify.erro(err);
-      },
-    });
-  }
-
-  // -- impressoras por setor --------------------------------------------------
-
-  private carregarImpressoras(): void {
-    this.impressorasApi.listarImpressoras().subscribe({
-      next: (l) => this.impressoras.set(l),
-      error: () => undefined,
-    });
-  }
-
-  abrirImpressora(p?: M.Impressora): void {
-    this.impEditando.set(p ?? null);
-    this.impForm.reset({
-      nome: p?.nome ?? '',
-      setor: p?.setor ?? '',
-      ip: p?.ip ?? '',
-      porta: p?.porta ?? 9100,
-      padrao: p?.padrao ?? false,
-      etiqueta: p?.etiqueta ?? false,
-      ativa: p?.ativa ?? true,
-    });
-    this.modalImp.set(true);
-  }
-
-  salvarImpressora(): void {
-    const v = this.impForm.getRawValue();
-    this.salvando.set(true);
-    const edit = this.impEditando();
-    const req = edit
-      ? this.impressorasApi.atualizarImpressora(edit.id, { ...v, version: edit.version })
-      : this.impressorasApi.criarImpressora(v);
-    req.subscribe({
-      next: () => {
-        this.salvando.set(false);
-        this.modalImp.set(false);
-        this.notify.ok(edit ? 'Impressora atualizada.' : 'Impressora cadastrada.');
-        this.carregarImpressoras();
-      },
-      error: (e) => {
-        this.salvando.set(false);
-        this.notify.erro(e);
-      },
-    });
-  }
-
-  statusImpressora(p: M.Impressora): void {
-    this.impressorasApi.statusImpressora(p.id, !p.ativa).subscribe({
-      next: () => this.carregarImpressoras(),
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  testar(p: M.Impressora): void {
-    this.impressorasApi.testarImpressora(p.id).subscribe({
-      next: () => this.notify.ok('Teste de impressão enviado.'),
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  async removerImpressora(p: M.Impressora): Promise<void> {
-    const ok = await this.confirm.perguntar(
-      `Excluir a impressora "${p.nome}" (${p.setor})?`,
-      { titulo: 'Excluir impressora', confirmar: 'Excluir' },
-    );
-    if (!ok) return;
-    this.impressorasApi.removerImpressora(p.id).subscribe({
-      next: () => {
-        this.notify.ok('Impressora excluída.');
-        this.carregarImpressoras();
-      },
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  // -- auto-descoberta (agente local) ----------------------------------------
-
-  private carregarDescobertas(): void {
-    this.impressorasApi.listarDescobertasImpressoras().subscribe({
-      next: (l) => this.descobertas.set(l),
-      error: () => undefined,
-    });
-  }
-
-  abrirRegistro(d: M.ImpressoraDescoberta): void {
-    this.modalReg.set(d);
-    this.regForm.reset({ nome: d.modelo ?? '', setor: '', padrao: false, etiqueta: false });
-  }
-
-  registrar(): void {
-    const d = this.modalReg();
-    if (!d) return;
-    const v = this.regForm.getRawValue();
-    this.salvando.set(true);
-    this.impressorasApi.registrarDescoberta(d.id, v).subscribe({
-      next: () => {
-        this.salvando.set(false);
-        this.modalReg.set(null);
-        this.notify.ok('Impressora registrada.');
-        this.carregarImpressoras();
-        this.carregarDescobertas();
-      },
-      error: (e) => {
-        this.salvando.set(false);
-        this.notify.erro(e);
-      },
-    });
-  }
-
-  async ignorar(d: M.ImpressoraDescoberta): Promise<void> {
-    const ok = await this.confirm.perguntar(
-      `Ignorar "${d.modelo ?? d.endereco}"? Novas varreduras podem reabri-la.`,
-      { titulo: 'Ignorar dispositivo', confirmar: 'Ignorar' },
-    );
-    if (!ok) return;
-    this.impressorasApi.ignorarDescoberta(d.id).subscribe({
-      next: () => this.carregarDescobertas(),
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  /** Tour guiado da tela (driver.js). */
-  iniciarTour(): void {
-    this.tour.iniciar([
-      {
-        popover: {
-          title: 'Bem-vindo às configurações da pousada!',
-          description:
-            'Aqui ficam os dados que aparecem em <b>comprovantes, documentos ' +
-            'e na impressão térmica</b>. Avance com <b>Próximo</b>.',
-        },
-      },
-      {
-        element: '#tour-check',
-        popover: {
-          title: 'Checklist de configuração',
-          description:
-            'Os 4 itens essenciais: <b>dados fiscais</b>, <b>endereço</b>, ' +
-            '<b>logo</b> e <b>impressora padrão</b>. O ícone verde indica ' +
-            'item pronto; o de alerta indica pendência.',
-          side: 'bottom',
-        },
-      },
-      {
-        element: '.est-secoes',
-        popover: {
-          title: 'Dados da pousada',
-          description:
-            'Razão social, CNPJ, contatos e endereço — tudo isso sai no ' +
-            '<b>cabeçalho dos comprovantes</b> e na ficha do hóspede. ' +
-            'Cada card grava separado.',
-          side: 'top',
-        },
-      },
-      {
-        element: '#tour-imp',
-        popover: {
-          title: 'Impressoras por setor',
-          description:
-            'A impressora marcada como <b>padrão</b> recebe os comprovantes ' +
-            'de check-out. Pedidos de consumo saem na impressora do ' +
-            '<b>setor da categoria</b> (cozinha, bar…). O botão print testa na hora.',
-          side: 'top',
-        },
-      },
-      {
-        element: '#tour-logo',
-        popover: {
-          title: 'Logo da pousada',
-          description:
-            'Envie a logo aqui — ela aparece nos <b>comprovantes ' +
-            'impressos</b> e documentos do sistema.',
-          side: 'bottom',
-        },
-      },
-      {
-        popover: {
-          title: 'Pronto!',
-          description:
-            'Deixe os 4 itens do checklist verdes e a operação de ' +
-            'impressão/documentos estará redonda.',
-        },
-      },
-    ]);
-  }
-}
+export class EstabelecimentoComponent extends EstabelecimentoStore {}

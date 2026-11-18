@@ -73,9 +73,19 @@ src/app/
 │   ├── interceptors/   authInterceptor (Bearer + single-flight refresh em 401)
 │   └── config/
 ├── features/<dominio>/ páginas e componentes do domínio
+│   │                   Convenção UI×lógica: cada `x.component.ts` carrega
+│   │                   apenas decorador (template/estilos/imports) e declara
+│   │                   `class XComponent extends XStore` (mais input/output/
+│   │                   model/viewChild — detectados na classe decorada).
+│   │                   O `x.store.ts` irmão tem `@Directive() export abstract
+│   │                   class XStore` com todo o estado/lógica; membros são
+│   │                   herdados, então bindings do template não mudam.
 ├── layout/             shell autenticado com navegação
 └── shared/             UI genérica sem regra de negócio
 ```
+
+Script de split mecânico (mesma convenção em arquivos novos):
+`node scripts/split-components.cjs <caminho.component.ts> [--apply]`.
 
 Fronteiras verificadas por `npm run deps:check` (dependency-cruiser): sem ciclos,
 features isoladas entre si, `core`/`shared` não dependem de features, `models`

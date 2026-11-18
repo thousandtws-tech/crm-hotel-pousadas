@@ -1,17 +1,9 @@
-import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+// UI de estacionamento — template, estilos e bindings. A lógica vive em estacionamento.store.ts.
+import { Component } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
-import { AcomodacoesApi } from '@core/api/acomodacoes.api';
-import { EstacionamentoApi } from '@core/api/estacionamento.api';
-import { Acomodacao } from '@core/models/catalogo.models';
-import { VagaEstacionamento } from '@core/models/estacionamento.models';
-import { Confirm } from '@core/services/confirm.service';
-import { Notify } from '@core/services/notify.service';
-import { Realtime } from '@core/services/realtime.service';
-import { AuthStore } from '@core/services/auth.store';
-import { TourGuiado } from '@core/services/tour.service';
+import { EstacionamentoStore } from './estacionamento.store';
 
 @Component({
   selector: 'app-estacionamento',
@@ -24,13 +16,18 @@ import { TourGuiado } from '@core/services/tour.service';
           <div class="est-titulo-linha">
             <h2 class="est-titulo">Estacionamento</h2>
             <span class="est-contador" title="Total de vagas e quantas estão livres">
-              {{ vagas().length }} {{ vagas().length === 1 ? 'vaga' : 'vagas' }}
-              · {{ livres() }} {{ livres() === 1 ? 'livre' : 'livres' }}
+              {{ vagas().length }} {{ vagas().length === 1 ? 'vaga' : 'vagas' }} · {{ livres() }}
+              {{ livres() === 1 ? 'livre' : 'livres' }}
             </span>
           </div>
         </div>
         <div class="est-head-acoes">
-          <button class="btn-tour" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
+          <button
+            class="btn-tour"
+            type="button"
+            (click)="iniciarTour()"
+            aria-label="Ver tutorial da tela"
+          >
             <mat-icon>school</mat-icon> Tutorial
           </button>
         </div>
@@ -42,8 +39,7 @@ import { TourGuiado } from '@core/services/tour.service';
           <div class="est-info-txt">
             <strong>Uma vaga por acomodação</strong>
             <p>
-              Vincule cada vaga a uma acomodação para saber qual quarto está
-              usando aquela vaga.
+              Vincule cada vaga a uma acomodação para saber qual quarto está usando aquela vaga.
             </p>
           </div>
         </div>
@@ -52,8 +48,7 @@ import { TourGuiado } from '@core/services/tour.service';
           <div class="est-info-txt">
             <strong>Vínculo rápido</strong>
             <p>
-              No seletor da linha você troca o dono da vaga na hora — ou deixa
-              como <b>Livre</b>.
+              No seletor da linha você troca o dono da vaga na hora — ou deixa como <b>Livre</b>.
             </p>
           </div>
         </div>
@@ -62,8 +57,8 @@ import { TourGuiado } from '@core/services/tour.service';
           <div class="est-info-txt">
             <strong>Desative em vez de excluir</strong>
             <p>
-              Vagas inativas não aparecem na hora da reserva. Prefira desativar
-              no selo “Status” a excluir.
+              Vagas inativas não aparecem na hora da reserva. Prefira desativar no selo “Status” a
+              excluir.
             </p>
           </div>
         </div>
@@ -71,7 +66,12 @@ import { TourGuiado } from '@core/services/tour.service';
 
       <div class="inner-card est-card">
         <!-- Cadastro rápido -->
-        <form id="tour-form" class="est-form" (submit)="$event.preventDefault(); criar()" autocomplete="off">
+        <form
+          id="tour-form"
+          class="est-form"
+          (submit)="$event.preventDefault(); criar()"
+          autocomplete="off"
+        >
           <span class="est-form-icone"><mat-icon>local_parking</mat-icon></span>
           <div class="est-form-txt">
             <strong>Nova vaga</strong>
@@ -112,7 +112,9 @@ import { TourGuiado } from '@core/services/tour.service';
                 class="est-limpar"
                 aria-label="Limpar busca"
                 (click)="busca.setValue('')"
-              ><mat-icon>close</mat-icon></button>
+              >
+                <mat-icon>close</mat-icon>
+              </button>
             }
           </div>
           <button
@@ -220,9 +222,11 @@ import { TourGuiado } from '@core/services/tour.service';
                     <td [attr.colspan]="auth.isAdmin() ? 4 : 3" class="est-vazio">
                       <mat-icon>local_parking</mat-icon>
                       <p>
-                        {{ termo() || apenasAtivas()
-                          ? 'Nenhuma vaga encontrada para esses filtros.'
-                          : 'Nenhuma vaga cadastrada ainda.' }}
+                        {{
+                          termo() || apenasAtivas()
+                            ? 'Nenhuma vaga encontrada para esses filtros.'
+                            : 'Nenhuma vaga cadastrada ainda.'
+                        }}
                       </p>
                       @if (!termo() && !apenasAtivas()) {
                         <p class="est-vazio-dica">
@@ -242,463 +246,566 @@ import { TourGuiado } from '@core/services/tour.service';
   styles: `
     /* ---------- cabeçalho da página ---------- */
     .est-head {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 16px; flex-wrap: wrap; margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
     }
-    .est-titulo-grupo { display: flex; flex-direction: column; gap: 2px; }
+    .est-titulo-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
     .eyebrow {
-      margin: 0; font-size: 0.68rem; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.09em; color: #8fa3ab;
+      margin: 0;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: #8fa3ab;
     }
-    .est-titulo-linha { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .est-titulo-linha {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
     .est-titulo {
-      margin: 0; font-size: 1.35rem; font-weight: 700;
-      color: #054054; letter-spacing: -0.01em;
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #054054;
+      letter-spacing: -0.01em;
     }
     .est-contador {
-      font-size: 0.78rem; font-weight: 600; color: #054054;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #054054;
       background: #eef4f6;
-      border-radius: 999px; padding: 3px 10px; white-space: nowrap;
+      border-radius: 999px;
+      padding: 3px 10px;
+      white-space: nowrap;
     }
-    .est-head-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+    .est-head-acoes {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
     .btn-tour {
-      display: inline-flex; align-items: center; gap: 6px;
-      border: 1px solid #d7e0e6; background: #fff;
-      color: #5d6d7e; border-radius: 4px;
-      padding: 0 14px; min-height: 34px; cursor: pointer;
-      font-size: 0.85rem; font-weight: 600;
-      transition: background .15s ease, color .15s ease, border-color .15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #d7e0e6;
+      background: #fff;
+      color: #5d6d7e;
+      border-radius: 4px;
+      padding: 0 14px;
+      min-height: 34px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease;
     }
-    .btn-tour mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .btn-tour:hover { border-color: #054054; color: #054054; }
+    .btn-tour mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+    }
+    .btn-tour:hover {
+      border-color: #054054;
+      color: #054054;
+    }
 
     /* ---------- banners de informação ---------- */
     .est-info {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 14px; margin-bottom: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 16px;
     }
     .est-info-card {
-      display: flex; align-items: flex-start; gap: 12px;
-      background: #fff; border: 1px solid #e3eaef; border-radius: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: #fff;
+      border: 1px solid #e3eaef;
+      border-radius: 12px;
       padding: 15px 16px;
-      transition: box-shadow 0.15s ease, transform 0.15s ease;
+      transition:
+        box-shadow 0.15s ease,
+        transform 0.15s ease;
     }
     .est-info-card:hover {
       box-shadow: 0 6px 18px rgba(5, 64, 84, 0.08);
       transform: translateY(-1px);
     }
     .est-info-icone {
-      width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
-      display: inline-flex; align-items: center; justify-content: center;
-      background: #eef4f6; color: #054054;
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eef4f6;
+      color: #054054;
     }
-    .est-info-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .est-info-txt { min-width: 0; }
+    .est-info-icone mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+    .est-info-txt {
+      min-width: 0;
+    }
     .est-info-txt strong {
-      display: block; font-size: 0.9rem; font-weight: 700;
-      color: #054054; margin-bottom: 3px;
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #054054;
+      margin-bottom: 3px;
     }
     .est-info-txt p {
-      margin: 0; font-size: 0.8rem; line-height: 1.5; color: #7d97a1;
+      margin: 0;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      color: #7d97a1;
     }
-    .est-info-txt b { color: #40525d; }
-    @media (max-width: 960px) { .est-info { grid-template-columns: 1fr; } }
+    .est-info-txt b {
+      color: #40525d;
+    }
+    @media (max-width: 960px) {
+      .est-info {
+        grid-template-columns: 1fr;
+      }
+    }
 
     /* ---------- cadastro rápido ---------- */
-    .est-card { padding-top: 14px; }
+    .est-card {
+      padding-top: 14px;
+    }
     .est-form {
-      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-      background: #f4f8fa; border: 1px dashed #c3d4dc;
-      border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: #f4f8fa;
+      border: 1px dashed #c3d4dc;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
     }
     .est-form-icone {
-      width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
-      background: #eef4f6; color: #054054;
-      display: inline-flex; align-items: center; justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
+      flex-shrink: 0;
+      background: #eef4f6;
+      color: #054054;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
-    .est-form-icone mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .est-form-txt { display: flex; flex-direction: column; line-height: 1.25; margin-right: auto; }
-    .est-form-txt strong { font-size: 0.9rem; font-weight: 700; color: #054054; }
-    .est-form-txt small { font-size: 0.76rem; color: #7d97a1; }
-    .est-num { width: 170px; }
+    .est-form-icone mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+    .est-form-txt {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.25;
+      margin-right: auto;
+    }
+    .est-form-txt strong {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #054054;
+    }
+    .est-form-txt small {
+      font-size: 0.76rem;
+      color: #7d97a1;
+    }
+    .est-num {
+      width: 170px;
+    }
     .est-form .btn-dark-blue {
-      display: inline-flex; align-items: center; gap: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
-    .est-form .btn-dark-blue mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .est-form .btn-dark-blue mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
 
     /* ---------- toolbar ---------- */
     .est-toolbar {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 28px; flex-wrap: wrap; margin-bottom: 18px; padding: 4px 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 28px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+      padding: 4px 2px;
     }
     .est-busca {
-      display: flex; align-items: center; gap: 8px;
-      flex: 1; min-width: 240px; max-width: 460px;
-      background: #fff; border: 1px solid #d7e0e6; border-radius: 8px;
-      padding: 0 10px; height: 40px;
-      transition: border-color 0.15s, box-shadow 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 240px;
+      max-width: 460px;
+      background: #fff;
+      border: 1px solid #d7e0e6;
+      border-radius: 8px;
+      padding: 0 10px;
+      height: 40px;
+      transition:
+        border-color 0.15s,
+        box-shadow 0.15s;
     }
     .est-busca.foco {
       border-color: #054054;
       box-shadow: 0 0 0 3px rgba(5, 64, 84, 0.12);
     }
-    .est-busca-icone { color: #7d97a1; font-size: 20px; width: 20px; height: 20px; }
-    .est-busca-input {
-      flex: 1; border: none; outline: none; background: transparent;
-      font-size: 0.9rem; color: #33424c; font-family: inherit; height: 100%;
+    .est-busca-icone {
+      color: #7d97a1;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
     }
-    .est-busca-input::placeholder { color: #8fa3ab; }
-    .est-busca-input::-webkit-search-cancel-button { display: none; }
+    .est-busca-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 0.9rem;
+      color: #33424c;
+      font-family: inherit;
+      height: 100%;
+    }
+    .est-busca-input::placeholder {
+      color: #8fa3ab;
+    }
+    .est-busca-input::-webkit-search-cancel-button {
+      display: none;
+    }
     .est-limpar {
-      border: none; background: #eef2f5; border-radius: 50%;
-      width: 22px; height: 22px; cursor: pointer; color: #5d6d7e;
-      display: inline-flex; align-items: center; justify-content: center;
+      border: none;
+      background: #eef2f5;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      cursor: pointer;
+      color: #5d6d7e;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       padding: 0;
     }
-    .est-limpar mat-icon { font-size: 14px; width: 14px; height: 14px; }
-    .est-limpar:hover { background: #d7e0e6; }
+    .est-limpar mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+    .est-limpar:hover {
+      background: #d7e0e6;
+    }
 
     .est-toggle {
-      display: inline-flex; align-items: center; gap: 14px;
-      border: 1px solid #d7e0e6; background: #fff; border-radius: 999px;
-      padding: 8px 20px 8px 12px; font-size: 0.84rem; font-weight: 600;
-      color: #5d6d7e; cursor: pointer; font-family: inherit;
-      transition: border-color 0.15s, background 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      border: 1px solid #d7e0e6;
+      background: #fff;
+      border-radius: 999px;
+      padding: 8px 20px 8px 12px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #5d6d7e;
+      cursor: pointer;
+      font-family: inherit;
+      transition:
+        border-color 0.15s,
+        background 0.15s;
     }
     .est-trilho {
-      width: 34px; height: 19px; border-radius: 999px;
-      background: #c3d2d9; position: relative; transition: background 0.18s;
+      width: 34px;
+      height: 19px;
+      border-radius: 999px;
+      background: #c3d2d9;
+      position: relative;
+      transition: background 0.18s;
       flex-shrink: 0;
     }
     .est-bolinha {
-      position: absolute; top: 2px; left: 2px;
-      width: 14px; height: 14px; border-radius: 50%;
-      background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
       transition: transform 0.18s;
     }
-    .est-toggle.on { border-color: #054054; color: #054054; }
-    .est-toggle.on .est-trilho { background: #054054; }
-    .est-toggle.on .est-bolinha { transform: translateX(16px); }
+    .est-toggle.on {
+      border-color: #054054;
+      color: #054054;
+    }
+    .est-toggle.on .est-trilho {
+      background: #054054;
+    }
+    .est-toggle.on .est-bolinha {
+      transform: translateX(16px);
+    }
 
     /* ---------- tabela ---------- */
-    .est-tabela-wrap { overflow-x: auto; border-radius: 8px; min-height: 36vh; }
-    .est-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    .est-tabela-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      min-height: 36vh;
+    }
+    .est-tabela {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
     .est-tabela thead th {
-      position: sticky; top: 0; z-index: 1;
-      background: #f4f8fa; color: #40525d;
-      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.04em; text-align: left;
-      padding: 14px 14px; border-bottom: 1px solid #d7e0e6;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f4f8fa;
+      color: #40525d;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      text-align: left;
+      padding: 14px 14px;
+      border-bottom: 1px solid #d7e0e6;
       white-space: nowrap;
     }
     .est-tabela tbody td {
-      padding: 16px 14px; border-bottom: 1px solid #eef2f5;
-      color: #2c3a44; vertical-align: middle; white-space: nowrap;
+      padding: 16px 14px;
+      border-bottom: 1px solid #eef2f5;
+      color: #2c3a44;
+      vertical-align: middle;
+      white-space: nowrap;
     }
-    .est-row { transition: background 0.12s; }
-    .est-row:hover { background: #f4f8fa; }
-    .est-row:last-child td { border-bottom: none; }
-    .tc { text-align: center; }
-    .est-th-vaga { min-width: 220px; }
+    .est-row {
+      transition: background 0.12s;
+    }
+    .est-row:hover {
+      background: #f4f8fa;
+    }
+    .est-row:last-child td {
+      border-bottom: none;
+    }
+    .tc {
+      text-align: center;
+    }
+    .est-th-vaga {
+      min-width: 220px;
+    }
 
-    .est-cell { display: flex; align-items: center; gap: 12px; min-width: 180px; }
+    .est-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 180px;
+    }
     .est-vaga-icone {
-      width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
-      background: rgba(5, 64, 84, 0.08); color: #054054;
-      display: inline-flex; align-items: center; justify-content: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      background: rgba(5, 64, 84, 0.08);
+      color: #054054;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
-    .est-vaga-icone mat-icon { font-size: 23px; width: 23px; height: 23px; }
-    .est-cell-txt { display: flex; flex-direction: column; line-height: 1.3; }
-    .est-cell-txt strong { color: #054054; font-weight: 600; font-size: 0.95rem; }
-    .est-cell-txt small { color: #7d97a1; font-size: 0.8rem; }
+    .est-vaga-icone mat-icon {
+      font-size: 23px;
+      width: 23px;
+      height: 23px;
+    }
+    .est-cell-txt {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.3;
+    }
+    .est-cell-txt strong {
+      color: #054054;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .est-cell-txt small {
+      color: #7d97a1;
+      font-size: 0.8rem;
+    }
 
-    .est-vinc { display: flex; align-items: center; gap: 9px; }
-    .est-dot {
-      width: 9px; height: 9px; border-radius: 50%;
-      background: #c3d2d9; flex-shrink: 0;
+    .est-vinc {
+      display: flex;
+      align-items: center;
+      gap: 9px;
     }
-    .est-dot.on { background: #054054; }
+    .est-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #c3d2d9;
+      flex-shrink: 0;
+    }
+    .est-dot.on {
+      background: #054054;
+    }
 
     /* (mat-select estilizado globalmente em styles.css) */
 
     .st-chip {
-      display: inline-flex; align-items: center;
-      border: 1px solid #d7e0e6; border-radius: 999px;
-      background: #eef4f6; color: #054054;
-      padding: 6px 14px; font-size: 0.8rem; font-weight: 600;
-      font-family: inherit; cursor: pointer;
-      transition: border-color .15s, background .15s;
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #d7e0e6;
+      border-radius: 999px;
+      background: #eef4f6;
+      color: #054054;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition:
+        border-color 0.15s,
+        background 0.15s;
     }
-    .st-chip:hover { border-color: #054054; }
-    .st-chip.off { background: #f4f6f8; color: #7d97a1; }
+    .st-chip:hover {
+      border-color: #054054;
+    }
+    .st-chip.off {
+      background: #f4f6f8;
+      color: #7d97a1;
+    }
 
     .acao-btn {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 32px; height: 32px; margin: 0 2px;
-      border: 1px solid #d7e0e6; border-radius: 7px;
-      background: #fff; color: #5d6d7e; cursor: pointer;
-      transition: border-color .15s, color .15s, background .15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      margin: 0 2px;
+      border: 1px solid #d7e0e6;
+      border-radius: 7px;
+      background: #fff;
+      color: #5d6d7e;
+      cursor: pointer;
+      transition:
+        border-color 0.15s,
+        color 0.15s,
+        background 0.15s;
     }
-    .acao-btn mat-icon { font-size: 17px; width: 17px; height: 17px; }
-    .acao-btn:hover { border-color: #054054; color: #054054; }
-    .acao-btn.perigo:hover { border-color: #b3261e; color: #b3261e; background: #fdf3f2; }
+    .acao-btn mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+    }
+    .acao-btn:hover {
+      border-color: #054054;
+      color: #054054;
+    }
+    .acao-btn.perigo:hover {
+      border-color: #b3261e;
+      color: #b3261e;
+      background: #fdf3f2;
+    }
 
     /* ---------- estado vazio ---------- */
     .est-vazio {
-      text-align: center; padding: 40px 16px !important; color: #7d97a1;
+      text-align: center;
+      padding: 40px 16px !important;
+      color: #7d97a1;
     }
     .est-vazio mat-icon {
-      font-size: 40px; width: 40px; height: 40px;
-      color: #c3d2d9; margin-bottom: 8px;
+      font-size: 40px;
+      width: 40px;
+      height: 40px;
+      color: #c3d2d9;
+      margin-bottom: 8px;
     }
-    .est-vazio p { margin: 0 0 6px; font-size: 0.9rem; }
-    .est-vazio-dica { font-size: 0.82rem !important; color: #8fa3ab; }
+    .est-vazio p {
+      margin: 0 0 6px;
+      font-size: 0.9rem;
+    }
+    .est-vazio-dica {
+      font-size: 0.82rem !important;
+      color: #8fa3ab;
+    }
 
     /* ---------- skeleton ---------- */
-    .skel-row td { border-bottom: 1px solid #eef2f5; }
+    .skel-row td {
+      border-bottom: 1px solid #eef2f5;
+    }
     .skel {
-      display: inline-block; border-radius: 6px;
+      display: inline-block;
+      border-radius: 6px;
       background: linear-gradient(90deg, #eef2f5 25%, #e3eaef 50%, #eef2f5 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
     }
-    @keyframes shimmer { to { background-position: -200% 0; } }
-    .skel-icone { width: 42px; height: 42px; border-radius: 10px; }
-    .skel-nome { width: 110px; height: 14px; margin-left: 10px; vertical-align: middle; }
-    .skel-sel { width: 200px; height: 38px; border-radius: 8px; }
-    .skel-chip { width: 62px; height: 24px; border-radius: 999px; }
-    .skel-acoes { width: 40px; height: 26px; }
+    @keyframes shimmer {
+      to {
+        background-position: -200% 0;
+      }
+    }
+    .skel-icone {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+    }
+    .skel-nome {
+      width: 110px;
+      height: 14px;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    .skel-sel {
+      width: 200px;
+      height: 38px;
+      border-radius: 8px;
+    }
+    .skel-chip {
+      width: 62px;
+      height: 24px;
+      border-radius: 999px;
+    }
+    .skel-acoes {
+      width: 40px;
+      height: 26px;
+    }
 
     @media (max-width: 640px) {
-      .est-head { flex-direction: column; align-items: stretch; }
-      .est-form-txt { margin-right: 0; }
-      .est-num { flex: 1; }
-      .est-busca { max-width: none; }
+      .est-head {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .est-form-txt {
+        margin-right: 0;
+      }
+      .est-num {
+        flex: 1;
+      }
+      .est-busca {
+        max-width: none;
+      }
     }
   `,
 })
-export class EstacionamentoComponent implements OnInit {
-  private readonly rt = inject(Realtime);
-
-  constructor() {
-    let ultimo = -1;
-    effect(() => {
-      const v = this.rt.mudanca('estacionamento', 'acomodacao');
-      if (ultimo < 0) {
-        ultimo = v;
-        return;
-      }
-      if (v !== ultimo) {
-        ultimo = v;
-        this.carregar();
-      }
-    });
-    this.busca.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe((v) => this.termo.set(v.trim().toLowerCase()));
-  }
-  private readonly acomodacoesApi = inject(AcomodacoesApi);
-  private readonly estacionamentoApi = inject(EstacionamentoApi);
-  private readonly notify = inject(Notify);
-  private readonly tour = inject(TourGuiado);
-  private readonly confirm = inject(Confirm);
-  protected readonly auth = inject(AuthStore);
-
-  protected readonly vagas = signal<VagaEstacionamento[]>([]);
-  protected readonly acomodacoes = signal<Acomodacao[]>([]);
-  protected readonly carregando = signal(true);
-  protected readonly busca = new FormControl('', { nonNullable: true });
-  /** Termo da busca já normalizado — alimenta o filtro instantâneo. */
-  protected readonly termo = signal('');
-  protected readonly buscaFoco = signal(false);
-  protected readonly apenasAtivas = signal(false);
-  /** Linhas fantasma exibidas enquanto a lista carrega. */
-  protected readonly skel = [1, 2, 3, 4];
-  protected readonly numero = new FormControl<number | null>(null, [
-    Validators.required,
-    Validators.min(1),
-  ]);
-
-  /** Vagas sem acomodação vinculada — exibidas no selo dourado do cabeçalho. */
-  protected readonly livres = computed(
-    () => this.vagas().filter((v) => !v.idacomodacao).length,
-  );
-
-  /** Filtro instantâneo: número da vaga, nome/número da acomodação ou "livre". */
-  protected readonly vagasFiltradas = computed(() => {
-    const q = this.termo();
-    return this.vagas().filter((v) => {
-      if (this.apenasAtivas() && !v.ativo) return false;
-      if (!q) return true;
-      const acomod = this.acomodacoes().find((a) => a.id === v.idacomodacao);
-      return (
-        v.numero.toLowerCase().includes(q) ||
-        (acomod ? `${acomod.nome} ${acomod.numero}`.toLowerCase().includes(q) : false) ||
-        (q === 'livre' && !v.idacomodacao)
-      );
-    });
-  });
-
-  ngOnInit(): void {
-    this.carregar();
-    this.acomodacoesApi.listarAcomodacoes(1, 200, true).subscribe({
-      next: (p) => this.acomodacoes.set(p.items),
-      error: () => undefined,
-    });
-  }
-
-  carregar(): void {
-    this.estacionamentoApi.listarVagas().subscribe({
-      next: (v) => {
-        this.vagas.set(v);
-        this.carregando.set(false);
-      },
-      error: (e) => {
-        this.carregando.set(false);
-        this.notify.erro(e);
-      },
-    });
-  }
-
-  criar(): void {
-    const n = this.numero.value;
-    if (n == null || n < 1) return;
-    this.estacionamentoApi.criarVaga(String(n)).subscribe({
-      next: () => {
-        this.numero.reset();
-        this.notify.ok('Vaga cadastrada.');
-        this.carregar();
-      },
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  vincular(v: VagaEstacionamento, idacomodacao: number | null): void {
-    this.estacionamentoApi.vincularVaga(v.id, idacomodacao).subscribe({
-      next: () => {
-        this.notify.ok('Vínculo atualizado.');
-        this.carregar();
-      },
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  status(v: VagaEstacionamento, ativo: boolean): void {
-    this.estacionamentoApi.statusVaga(v.id, ativo).subscribe({
-      next: () => this.carregar(),
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  async remover(v: VagaEstacionamento): Promise<void> {
-    const ok = await this.confirm.perguntar(`Remover a vaga ${v.numero}?`, {
-      titulo: 'Remover vaga',
-      confirmar: 'Remover',
-    });
-    if (!ok) return;
-    this.estacionamentoApi.removerVaga(v.id).subscribe({
-      next: () => {
-        this.notify.ok('Vaga removida.');
-        this.carregar();
-      },
-      error: (e) => this.notify.erro(e),
-    });
-  }
-
-  /** Tour guiado da tela (driver.js). */
-  iniciarTour(): void {
-    this.tour.iniciar([
-      {
-        popover: {
-          title: 'Bem-vindo à tela de Estacionamento!',
-          description:
-            'Este tour rápido mostra cada parte da tela. Avance com <b>Próximo</b> ' +
-            'e feche a qualquer momento no ✕ ou pela tecla Esc.',
-        },
-      },
-      {
-        element: '#tour-form',
-        popover: {
-          title: 'Cadastrar nova vaga',
-          description:
-            'Digite o <b>número da vaga física</b> e clique em <b>Cadastrar</b>. ' +
-            'A vaga entra na lista na hora.',
-          side: 'bottom',
-        },
-      },
-      {
-        element: '#tour-busca',
-        popover: {
-          title: 'Busca rápida',
-          description:
-            'Filtre por <b>número da vaga</b> ou pelo <b>nome da acomodação</b> — ' +
-            'a lista filtra sozinha enquanto digita. Dica: digite <b>livre</b> para ' +
-            'ver só as vagas sem dono.',
-          side: 'bottom',
-        },
-      },
-      {
-        element: '#tour-ativas',
-        popover: {
-          title: 'Somente ativas',
-          description:
-            'Ligado, a lista mostra apenas vagas ativas. Desligado, aparecem ' +
-            'todas — inclusive as inativas.',
-          side: 'bottom',
-        },
-      },
-      {
-        element: '#tour-tabela',
-        popover: {
-          title: 'Lista de vagas',
-          description:
-            'Cada linha é uma vaga: número, acomodação dona da vaga e o status.',
-          side: 'top',
-        },
-      },
-      {
-        element: 'tr.est-row .est-vinc',
-        skipMissingElement: true,
-        popover: {
-          title: 'Vincular a uma acomodação',
-          description:
-            'Use o seletor para escolher qual <b>acomodação</b> fica com a vaga. ' +
-            'A bolinha fica <b>destacada quando vinculada</b> e cinza quando livre. ' +
-            'A troca salva na hora.',
-          side: 'top',
-        },
-      },
-      {
-        element: 'tr.est-row .st-chip',
-        skipMissingElement: true,
-        popover: {
-          title: 'Ativar / desativar',
-          description:
-            'Clique no selo para mudar o status — <b>Ativo</b> aparece ' +
-            'destacado, <b>Inativo</b> esmaecido. Vagas inativas não aparecem ' +
-            'na hora da reserva.',
-          side: 'top',
-        },
-      },
-      {
-        element: 'tr.est-row .acao-btn',
-        skipMissingElement: true,
-        popover: {
-          title: 'Excluir vaga',
-          description:
-            'A <b>lixeira</b> exclui a vaga — sempre pedindo confirmação ' +
-            'antes. Disponível apenas para administradores.',
-          side: 'left',
-        },
-      },
-      {
-        popover: {
-          title: 'Pronto!',
-          description:
-            'Você já conhece a tela de Estacionamento. Para rever, clique em ' +
-            '<b>Tutorial</b> no topo a qualquer momento.',
-        },
-      },
-    ]);
-  }
-}
+export class EstacionamentoComponent extends EstacionamentoStore {}
