@@ -156,6 +156,12 @@ impl ChannexCliente {
             if a["id"].is_null() {
                 a["id"] = v["id"].clone();
             }
+            // `property_id` mora em `relationships.data.property.id`,
+            // não em attributes — sem ele o struct falha e o feed
+            // inteiro aborta antes de qualquer ingestão.
+            if a["property_id"].is_null() {
+                a["property_id"] = v["relationships"]["data"]["property"]["id"].clone();
+            }
             a
         } else {
             v.clone()
@@ -519,5 +525,37 @@ mod tests {
         assert_eq!(rev.id, "rev-1");
         assert_eq!(rev.rooms.len(), 1);
         assert_eq!(rev.rooms[0].days["2026-11-17"].to_string(), "450.00");
+    }
+
+    #[test]
+    fn revision_parse_property_em_relationships() {
+        // Forma real da API: `property_id` mora em relationships,
+        // não em attributes — sem o fallback o feed inteiro aborta.
+        let v = serde_json::json!({
+            "type": "booking_revision",
+            "id": "rev-2",
+            "attributes": {
+                "booking_id": "b-2",
+                "status": "new",
+                "rooms": [{
+                    "checkin_date": "2026-11-27",
+                    "checkout_date": "2026-11-28",
+                    "room_type_id": "rt-9",
+                    "occupancy": {"adults": 1, "children": 1, "infants": 1}
+                }],
+                "customer": {"name": "Dev", "mail": "d@x.io"},
+                "arrival_date": "2026-11-27",
+                "departure_date": "2026-11-28"
+            },
+            "relationships": {
+                "data": {
+                    "property": {"id": "prop-real", "type": "property"},
+                    "booking": {"id": "b-2", "type": "booking"}
+                }
+            }
+        });
+        let rev = ChannexCliente::revisao_de(&v).unwrap();
+        assert_eq!(rev.property_id, "prop-real");
+        assert_eq!(rev.rooms.len(), 1);
     }
 }
