@@ -52,7 +52,7 @@ async fn catalogo_sem_config_mostra_nao_configurada(pool: PgPool) {
 
     let cat = svc.catalogo(&c.ator).await.unwrap();
     // 3 pagamentos × 2 ambientes + Z-API/Spedy/Didit/Channex por ambiente.
-    assert_eq!(cat.len(), 11);
+    assert_eq!(cat.len(), 13);
     assert!(cat.iter().all(|i| matches!(
         i.estado,
         EstadoEfetivo::NaoConfigurada | EstadoEfetivo::GerenciadoPeloAmbiente
