@@ -299,7 +299,63 @@ export abstract class ReservaDetailStore implements OnInit {
   }
 
   protected rotuloCanal(canal: ItemFila['canal']): string {
-    return { email: 'E-mail', whatsapp: 'WhatsApp', push: 'Push', inbox: 'Interna' }[canal];
+    return {
+      email: 'E-mail',
+      whatsapp: 'WhatsApp',
+      sms: 'SMS',
+      push: 'Push',
+      inbox: 'Interna',
+    }[canal];
+  }
+
+  protected statusTone(status: ItemFila['status']): 'ok' | 'warn' | 'erro' | 'mut' {
+    switch (status) {
+      case 'enviado':
+        return 'ok';
+      case 'pendente':
+      case 'enviando':
+        return 'warn';
+      case 'falhou':
+      case 'desconhecido':
+      case 'cancelado':
+        return 'erro';
+      default:
+        return 'mut';
+    }
+  }
+
+  private fmtTs(iso: string | null | undefined): string {
+    if (!iso) {
+      return '—';
+    }
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(iso));
+  }
+
+  /** Marco mais avançado da entrega — rótulo + horário para o stepper. */
+  protected marcoFinal(c: ItemFila): string {
+    if (c.lido_em) {
+      return `Lido ${this.fmtTs(c.lido_em)}`;
+    }
+    if (c.entregue_em) {
+      return `Entregue ${this.fmtTs(c.entregue_em)}`;
+    }
+    if (c.enviado_em) {
+      return `Enviado ${this.fmtTs(c.enviado_em)}`;
+    }
+    return '—';
+  }
+
+  /** Descrição acessível do stepper (screen readers). */
+  protected progressoDesc(c: ItemFila): string {
+    return (
+      `enviado ${this.fmtTs(c.enviado_em)}, ` +
+      `entregue ${this.fmtTs(c.entregue_em)}, lido ${this.fmtTs(c.lido_em)}`
+    );
   }
 
   protected rotuloStatus(status: ItemFila['status']): string {

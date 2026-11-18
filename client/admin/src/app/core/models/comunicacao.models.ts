@@ -38,7 +38,7 @@ export interface Atendimento {
 }
 
 // -- mapa por andar + bloqueio ---------------------------------------------------
-export type CanalEnvio = 'email' | 'whatsapp' | 'push' | 'inbox';
+export type CanalEnvio = 'email' | 'whatsapp' | 'sms' | 'push' | 'inbox';
 export type StatusEnvio =
   | 'pendente'
   | 'enviando'

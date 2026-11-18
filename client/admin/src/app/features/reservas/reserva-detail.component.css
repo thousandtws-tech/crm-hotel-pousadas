@@ -379,3 +379,168 @@ table.plain td {
     grid-column: span 12;
   }
 }
+
+/* ===== Comunicações com o hóspede — tabela limpa/minimalista ========= */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.tbl-wrap {
+  overflow-x: auto;
+}
+.com-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.com-tbl th {
+  text-align: left;
+  padding: 8px 14px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #75858f;
+  border-bottom: 1px solid #e3eaef;
+  white-space: nowrap;
+}
+.com-tbl td {
+  padding: 11px 14px;
+  border-bottom: 1px solid #f0f4f6;
+  vertical-align: middle;
+}
+.com-tbl tbody tr:last-child td {
+  border-bottom: 0;
+}
+.com-tbl tbody tr:hover td {
+  background: #f8fbfc;
+}
+
+/* canal — dot por canal + rótulo */
+.canal {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  font-weight: 500;
+  color: #2d3e46;
+}
+.canal-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #aab6bc;
+}
+.canal-dot.canal-whatsapp { background: #25d366; }
+.canal-dot.canal-email    { background: #4c8bf5; }
+.canal-dot.canal-sms      { background: #8e63ce; }
+.canal-dot.canal-push     { background: #f0a22e; }
+
+/* mensagem e destino */
+.msg {
+  color: #2d3e46;
+  white-space: nowrap;
+}
+.dest {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 12px;
+  color: #5c6e77;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* status — dot semântico + texto; motivo vai no title, não em linha solta */
+.st {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  font-size: 12.5px;
+  color: #40525d;
+}
+.st-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.st-dot.st-ok   { background: var(--inn-green); }
+.st-dot.st-warn { background: #f0a22e; }
+.st-dot.st-erro { background: var(--inn-danger); }
+.st-dot.st-mut  { background: #aab6bc; }
+
+/* progresso — stepper enviado → entregue → lido + último marco */
+.prog {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+.msteps {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.mdot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid #c7d3d9;
+  background: #fff;
+  box-sizing: border-box;
+}
+.mdot.on {
+  background: var(--inn-green);
+  border-color: var(--inn-green);
+}
+.mlink {
+  width: 16px;
+  height: 1.5px;
+  background: #dde5e9;
+}
+.mlink.on {
+  background: var(--inn-green);
+}
+.mtime {
+  font-size: 11.5px;
+  color: #8a9aa3;
+}
+
+/* ação */
+.acao {
+  text-align: right;
+  width: 1%;
+}
+.btn-reenviar {
+  border: 1px solid #d7e0e6;
+  background: #fff;
+  color: var(--inn-darkblue);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.btn-reenviar:hover:not(:disabled) {
+  background: #eef4f6;
+  border-color: #b9c8cf;
+}
+.btn-reenviar:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.btn-reenviar:focus-visible {
+  outline: 2px solid var(--inn-darkblue);
+  outline-offset: 1px;
+}
