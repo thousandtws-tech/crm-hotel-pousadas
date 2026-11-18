@@ -33,8 +33,9 @@ pub struct Cenario {
 
 pub async fn cenario(pool: PgPool) -> Cenario {
     let idfuncionario = sqlx::query_scalar::<_, i64>(
-        "INSERT INTO funcionario (nome, login, senha_hash, nivel)
-         VALUES ('Recepcionista Teste', 'recep.teste', 'x', 1) RETURNING id",
+        "INSERT INTO funcionario (nome, login, senha_hash, nivel, cargo_id)
+         VALUES ('Recepcionista Teste', 'recep.teste', 'x', 1,
+                 (SELECT id FROM cargo WHERE nivel = 1 LIMIT 1)) RETURNING id",
     )
     .fetch_one(&pool)
     .await
