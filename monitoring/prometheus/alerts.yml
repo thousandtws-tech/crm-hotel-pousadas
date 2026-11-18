@@ -74,3 +74,51 @@ groups:
           severity: warning
         annotations:
           summary: "Postgres com {{ $value }} conexões — teto seguro ~80% do max_connections"
+
+  - name: clarituz-backup
+    rules:
+      # Falha pontual: uma execução quebrou — warning (a próxima pode
+      # se curar sozinha, mas convém olhar o log).
+      - alert: BackupPgFalhou
+        expr: increase(maria_backup_pg_erros_total[6h]) > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} execuções do dump Postgres falharam nas últimas 6h"
+
+      - alert: BackupDadosFalhou
+        expr: increase(maria_backup_dados_erros_total[6h]) > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} execuções do backup do data/ falharam nas últimas 6h"
+
+      # Ausência silenciosa — O alerta crítico do DR: falha visível é
+      # metade do risco; a outra metade é backup que "roda" sem gravar
+      # nada (credencial expirada, bucket apagado, task morta). 26h
+      # cobre a janela diária ~04:00 UTC com folga e dá à implantação
+      # recém-subida um ciclo inteiro para produzir o primeiro dump.
+      # count_over_time > 100 exige a série viva pela janela inteira —
+      # sem isso um deploy recém-subido (contador 0, série jovem) abriria
+      # falso positivo na primeira hora.
+      - alert: BackupPgAusente
+        expr: >-
+          increase(maria_backup_pg_ok_total[26h]) == 0
+          and count_over_time(maria_backup_pg_ok_total[26h]) > 100
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: "Nenhum dump Postgres concluído nas últimas 26h — DR sem rede de segurança"
+
+      - alert: BackupDadosAusente
+        expr: >-
+          increase(maria_backup_dados_ok_total[26h]) == 0
+          and count_over_time(maria_backup_dados_ok_total[26h]) > 100
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Nenhum backup do data/ concluído nas últimas 26h"

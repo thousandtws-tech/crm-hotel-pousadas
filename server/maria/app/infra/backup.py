@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import get_settings
+from ..telemetry.metrics import Uso
 
 log = logging.getLogger("maria.backup")
 
@@ -155,10 +156,12 @@ async def backup_agora(store=None,
 
     try:
         stats = await asyncio.to_thread(_sync)
+        Uso.inc("backup_dados_ok")
         log.info("backup ok — %s objetos em %s (podados %s)",
                  stats["enviados"], stats["prefixo"], stats["podados"])
         return {"ok": True, **stats}
     except Exception:
+        Uso.inc("backup_dados_erros")
         log.exception("backup falhou")
         return {"ok": False, "motivo": "falha no upload — ver log"}
 

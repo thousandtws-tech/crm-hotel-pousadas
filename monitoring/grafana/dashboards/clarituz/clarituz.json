@@ -99,6 +99,18 @@
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28},
       "targets": [{"refId": "A", "expr": "clarituz_sse_subscribers", "legendFormat": "{{instance}}", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}],
       "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+    },
+    {
+      "id": 15, "type": "stat", "title": "Backup PG — sucessos/26h",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 36},
+      "targets": [{"refId": "A", "expr": "sum(increase(maria_backup_pg_ok_total[26h]))", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}],
+      "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []}
+    },
+    {
+      "id": 16, "type": "stat", "title": "Backup — falhas/6h",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 36},
+      "targets": [{"refId": "A", "expr": "sum(increase(maria_backup_pg_erros_total[6h])) + sum(increase(maria_backup_dados_erros_total[6h]))", "datasource": {"type": "prometheus", "uid": "clarituz-prom"}}],
+      "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}, "overrides": []}
     }
   ]
 }
