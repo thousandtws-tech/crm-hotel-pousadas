@@ -29,6 +29,7 @@ pub mod frigobar;
 pub mod funcionarios;
 pub mod governanca;
 pub mod impressoras;
+pub mod infobip;
 pub mod integracoes;
 pub mod lgpd;
 pub mod manutencao;
@@ -71,6 +72,7 @@ pub use frigobar::FrigobarService;
 pub use funcionarios::FuncionarioService;
 pub use governanca::GovernancaService;
 pub use impressoras::ImpressoraService;
+pub use infobip::InfobipService;
 pub use integracoes::IntegracoesService;
 pub use lgpd::LgpdService;
 pub use manutencao::ManutencaoService;
@@ -138,6 +140,8 @@ pub struct Services {
     pub alertas: Arc<AlertaFalhaService>,
     /// Webhook/provedor Z-API — `None` sem o cofre (master key ausente).
     pub zapi: Option<Arc<ZApiService>>,
+    /// DLR Infobip (SMS) — `None` sem o cofre; o receptor responde 503.
+    pub infobip: Option<Arc<InfobipService>>,
     /// Fiscal Spedy — `None` sem o cofre (api_key fica cifrada no vault).
     pub fiscal: Option<Arc<FiscalService>>,
     /// Verificação Didit — `None` sem o cofre (api_key cifrada no vault).

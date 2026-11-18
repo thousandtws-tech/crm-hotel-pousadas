@@ -28,6 +28,9 @@ fn campos_permitidos(provedor: ProvedorIntegracao) -> &'static [&'static str] {
         ProvedorIntegracao::Spedy | ProvedorIntegracao::Didit | ProvedorIntegracao::Channex => {
             &["api_key", "webhook_secret"]
         }
+        // Infobip: `api_key` (App auth) + `webhook_secret` gerado pelo
+        // sistema na 1ª gravação — autentica o DLR no path do callback.
+        ProvedorIntegracao::Infobip => &["api_key", "webhook_secret"],
     }
 }
 
@@ -78,6 +81,18 @@ fn config_permitida(provedor: ProvedorIntegracao) -> &'static [&'static str] {
             "webhook_signing_key_id",
             "publicacao_pausada",
         ],
+        // Infobip: endpoint/remetente/segmentos, toggles de evento da
+        // matriz pós-reserva, pausa operacional e allowlist do teste.
+        ProvedorIntegracao::Infobip => &[
+            "base_url",
+            "remetente",
+            "limite_segmentos",
+            "callback_url",
+            "eventos",
+            "envio_pausado",
+            "destinatarios_teste",
+            "webhook_registrado",
+        ],
         _ => &[],
     }
 }
@@ -86,10 +101,32 @@ fn contexto_aad(p: ProvedorIntegracao, a: AmbienteIntegracao, campo: &str, id: i
     format!("{}|{}|{campo}|{id}", p.as_str(), a.as_str())
 }
 
+/// Remetente SMS aceito pelas operadoras: alfanumérico (≤11, letras/
+/// dígitos/espaço) ou long code numérico (≤15, com ou sem `+`).
+fn validar_remetente_sms(rem: &str) -> Result<(), DomainError> {
+    let r = rem.trim();
+    let alfanum = !r.is_empty()
+        && r.chars().count() <= 11
+        && r.chars().all(|c| c.is_ascii_alphanumeric() || c == ' ');
+    let numerico = {
+        let d: String = r.chars().filter(|c| c.is_ascii_digit()).collect();
+        !d.is_empty() && d.len() <= 15 && r.chars().all(|c| c.is_ascii_digit() || c == '+')
+    };
+    if alfanum || numerico {
+        Ok(())
+    } else {
+        Err(DomainError::validacao(
+            "Remetente inválido — use alfanumérico (até 11 caracteres) \
+             ou número no formato internacional.",
+        ))
+    }
+}
+
 /// Escopo do botão "definir padrão" — comunicação usa `whatsapp`.
 fn escopo_padrao(provedor: ProvedorIntegracao) -> &'static str {
     match provedor {
         ProvedorIntegracao::Zapi => "whatsapp",
+        ProvedorIntegracao::Infobip => "sms",
         ProvedorIntegracao::Spedy => "fiscal",
         ProvedorIntegracao::Didit => "verificacao",
         ProvedorIntegracao::Channex => "distribuicao",
@@ -133,6 +170,12 @@ fn capabilities_padrao(provedor: ProvedorIntegracao) -> serde_json::Value {
             "feed": true, "webhook_assinado": true, "ack": true,
             "canal_iframe": true, "reconciliacao": true,
             "rate_limit_por_propriedade": {"availability": 10, "restrictions": 10},
+        }),
+        ProvedorIntegracao::Infobip => serde_json::json!({
+            "canal": "sms", "remetente_alfanumerico": true,
+            "segmentos_limite": true, "callback_segredo_url": true,
+            "dlr": ["delivered", "rejected", "undeliverable", "expired", "pending"],
+            "estados": ["aceito", "enviado", "entregue", "falhou"],
         }),
     }
 }
@@ -201,6 +244,7 @@ impl IntegracoesService {
             ProvedorIntegracao::Spedy,
             ProvedorIntegracao::Didit,
             ProvedorIntegracao::Channex,
+            ProvedorIntegracao::Infobip,
         ] {
             let padrao = self.repo.padrao(escopo_padrao(provedor)).await?;
             for ambiente in provedor.ambientes() {
@@ -354,28 +398,73 @@ impl IntegracoesService {
             }
         }
 
-        // Z-API: gera o segredo de callback na 1ª gravação — bearer na
-        // URL é o único mecanismo de autenticidade do provedor.
-        if provedor == ProvedorIntegracao::Zapi {
+        // Infobip: valores de config validados na escrita — base_url
+        // oficial da conta, remetente dentro do alfabeto aceito e
+        // teto de segmentos razoável (custo × parte).
+        if provedor == ProvedorIntegracao::Infobip {
+            if let Some(c) = &config {
+                if let Some(base) = c["base_url"].as_str() {
+                    clarituz_domain::value_objects::infobip_url::validar_base_url(base)?;
+                }
+                if let Some(rem) = c["remetente"].as_str() {
+                    validar_remetente_sms(rem)?;
+                }
+                if let Some(n) = c["limite_segmentos"].as_i64() {
+                    if !(1..=10).contains(&n) {
+                        return Err(DomainError::validacao(
+                            "limite_segmentos deve ficar entre 1 e 10.",
+                        )
+                        .into());
+                    }
+                }
+                if let Some(lista) = c["destinatarios_teste"].as_array() {
+                    for d in lista {
+                        let ok = d
+                            .as_str()
+                            .map(|s| {
+                                clarituz_domain::value_objects::telefone::normalizar_whatsapp(s)
+                                    .is_some()
+                            })
+                            .unwrap_or(false);
+                        if !ok {
+                            return Err(DomainError::validacao(
+                                "destinatarios_teste: todo item precisa ser E.164 \
+                                 ou celular BR (+55...).",
+                            )
+                            .into());
+                        }
+                    }
+                }
+            }
+        }
+
+        // Callback assinado por segredo no path — zapi (`webhook_segredo`)
+        // e infobip (`webhook_secret`) geram na 1ª gravação; a URL do
+        // provedor é o único mecanismo de autenticidade do callback.
+        let campo_segredo_auto = match provedor {
+            ProvedorIntegracao::Zapi => Some("webhook_segredo"),
+            ProvedorIntegracao::Infobip => Some("webhook_secret"),
+            _ => None,
+        };
+        if let Some(campo) = campo_segredo_auto {
             let ja_tem = self
                 .repo
                 .mapa_segredos(atual.id)
                 .await?
                 .campos
-                .get("webhook_segredo")
+                .get(campo)
                 .copied()
                 .unwrap_or(false);
-            if !ja_tem && !segredos_enc.contains_key("webhook_segredo") {
+            if !ja_tem && !segredos_enc.contains_key(campo) {
                 let segredo = format!(
                     "{}{}",
                     uuid::Uuid::new_v4().simple(),
                     uuid::Uuid::new_v4().simple()
                 );
-                let enc = self.vault.selar(
-                    &contexto_aad(provedor, ambiente, "webhook_segredo", atual.id),
-                    &segredo,
-                )?;
-                segredos_enc.insert("webhook_segredo".into(), enc);
+                let enc = self
+                    .vault
+                    .selar(&contexto_aad(provedor, ambiente, campo, atual.id), &segredo)?;
+                segredos_enc.insert(campo.into(), enc);
             }
         }
 
@@ -625,6 +714,51 @@ impl IntegracoesService {
             });
         }
 
+        // Infobip: teste = GET /sms/1/logs — leitura autenticada,
+        // nunca um envio cobrável.
+        if provedor == ProvedorIntegracao::Infobip {
+            let resultado = match self.com.as_ref() {
+                Some(com) => match com.infobip_testar().await {
+                    Ok(Some(rotulo)) => (StatusVerificacao::Ok, None, Some(rotulo)),
+                    Ok(None) => (
+                        StatusVerificacao::Falha,
+                        Some("Sem credenciais configuradas para teste.".into()),
+                        None,
+                    ),
+                    Err(e) => (StatusVerificacao::Falha, Some(e.to_string()), None),
+                },
+                None => (
+                    StatusVerificacao::Falha,
+                    Some("Resolver de comunicação indisponível.".into()),
+                    None,
+                ),
+            };
+            let (status, erro, conta) = resultado;
+            let caps = capabilities_padrao(provedor);
+            self.repo
+                .registrar_verificacao(
+                    i.id,
+                    i.versao,
+                    status,
+                    erro.as_deref(),
+                    conta.as_deref(),
+                    &caps,
+                )
+                .await?;
+            return Ok(TesteConexaoOutput {
+                verificacao_status: status.as_str().into(),
+                nome_conta: conta,
+                mensagem: match status {
+                    StatusVerificacao::Ok => {
+                        "Conexão verificada — conta Infobip autenticada.".into()
+                    }
+                    _ => erro
+                        .clone()
+                        .unwrap_or_else(|| "Falha na verificação.".into()),
+                },
+            });
+        }
+
         // Teste de conexão é leitura — resolve mesmo com a integração
         // desabilitada (é assim que o operador valida antes de habilitar).
         let resultado = match self.resolver.resolver_historico(provedor, ambiente).await? {
@@ -717,7 +851,10 @@ impl IntegracoesService {
             .await?
             .ok_or_else(|| DomainError::nao_encontrado("Integração não configurada."))?;
         // Comunicação: inbox própria; pagamentos: inbox de webhooks.
-        if provedor == ProvedorIntegracao::Zapi {
+        if matches!(
+            provedor,
+            ProvedorIntegracao::Zapi | ProvedorIntegracao::Infobip
+        ) {
             let Some(repo) = &self.com_eventos else {
                 return Ok(Vec::new());
             };
@@ -873,5 +1010,52 @@ impl IntegracoesService {
             .await?;
         info!(ator = %ator.login, "zapi: mensagem de teste enviada");
         Ok(serde_json::json!({"enviado": true, "id_provedor": msgid}))
+    }
+
+    // ------------------------------------------------------------------
+    // Infobip — SMS de teste fora da fila, destinatário preso à
+    // allowlist `destinatarios_teste` da config (lista vazia = qualquer
+    // número — ação admin explícita, registrada em log).
+    // ------------------------------------------------------------------
+
+    pub async fn infobip_enviar_teste(
+        &self,
+        ator: &Ator,
+        input: &MensagemTesteInput,
+    ) -> AppResult<serde_json::Value> {
+        ator.exigir_admin()?;
+        let com = self.com_resolver()?;
+        let digitos: String = input
+            .telefone
+            .chars()
+            .filter(char::is_ascii_digit)
+            .collect();
+        if digitos.len() < 10 || digitos.len() > 15 {
+            return Err(DomainError::validacao("Telefone inválido — envie com DDI+DDD.").into());
+        }
+        if let Some(i) = com.integracao_infobip().await? {
+            if let Some(lista) = i.config["destinatarios_teste"].as_array() {
+                if !lista.is_empty() {
+                    let permitido = lista.iter().filter_map(|v| v.as_str()).any(|d| {
+                        let d: String = d.chars().filter(char::is_ascii_digit).collect();
+                        !d.is_empty() && (d == digitos || digitos.ends_with(&d))
+                    });
+                    if !permitido {
+                        return Err(DomainError::regra(
+                            "Destino fora da allowlist de teste — adicione o número \
+                             em destinatarios_teste ou esvazie a lista.",
+                        )
+                        .into());
+                    }
+                }
+            }
+        }
+        let texto = input
+            .texto
+            .as_deref()
+            .unwrap_or("Teste de integração Infobip — Pousada Espírito do Mar. Pode ignorar.");
+        let msgid = com.infobip_enviar_teste(&digitos, texto).await?;
+        info!(ator = %ator.login, "infobip: SMS de teste enviado");
+        Ok(serde_json::json!({"enviado": msgid.is_some(), "id_provedor": msgid}))
     }
 }

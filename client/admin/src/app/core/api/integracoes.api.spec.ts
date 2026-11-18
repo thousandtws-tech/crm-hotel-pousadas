@@ -73,4 +73,14 @@ describe('IntegracoesApi — contratos HTTP', () => {
     expect(req.request.method).toBe('GET');
     req.flush([]);
   });
+
+  it('infobipTeste posta telefone e texto opcional', () => {
+    api
+      .infobipTeste('producao', { telefone: '5544999990000', texto: 'Teste' })
+      .subscribe();
+    const req = mock.expectOne(`${API}/integracoes/infobip/producao/teste-msg`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ telefone: '5544999990000', texto: 'Teste' });
+    req.flush({ enviado: true, id_provedor: 'msg-1' });
+  });
 });

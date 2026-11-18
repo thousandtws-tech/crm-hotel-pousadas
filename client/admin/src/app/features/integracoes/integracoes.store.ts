@@ -37,6 +37,7 @@ const DESCRITOR_PROVEDOR: Record<M.ProvedorIntegracao, string> = {
   spedy: 'NFS-e de hospedagem',
   didit: 'Verificação de identidade (KYC)',
   channex: 'Channel manager (OTAs)',
+  infobip: 'SMS transacional',
 };
 
 /**

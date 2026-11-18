@@ -8,6 +8,7 @@ pub enum CanalEnvio {
     Whatsapp,
     Push,
     Inbox,
+    Sms,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]

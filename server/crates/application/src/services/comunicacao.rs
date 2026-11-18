@@ -113,7 +113,8 @@ impl ComunicacaoService {
     ) -> AppResult<()> {
         for regra in self.fila.regras_do_evento(evento).await? {
             match regra.canal {
-                CanalEnvio::Whatsapp => {}
+                // Canais de hóspede — alerta interno não sai por eles.
+                CanalEnvio::Whatsapp | CanalEnvio::Sms => {}
                 CanalEnvio::Inbox => {
                     let mut aviso = Aviso::novo(TipoAviso::Info, assunto, mensagem)
                         .dados(serde_json::json!({"idreserva": idreserva}));
@@ -181,7 +182,7 @@ impl ComunicacaoService {
                     // vira 'desconhecido' (nunca retry cego; reconciliação
                     // ou reenvio manual auditado).
                     if e == DomainError::Infra
-                        && item.canal == CanalEnvio::Whatsapp
+                        && matches!(item.canal, CanalEnvio::Whatsapp | CanalEnvio::Sms)
                         && item.template.starts_with(TPL_POS_RESERVA_PREFIX)
                     {
                         self.fila
@@ -233,12 +234,16 @@ impl ComunicacaoService {
                 }
             }
         }
-        // WhatsApp: seleção explícita — provedor gravado no item tem
-        // precedência; quando vazio, o resolver decide e o resultado é
-        // persistido pra que retries nunca troquem de conta.
-        if item.canal == CanalEnvio::Whatsapp {
+        // WhatsApp/SMS: seleção explícita — provedor gravado no item
+        // tem precedência; quando vazio, o resolver decide e o
+        // resultado é persistido pra que retries nunca troquem de conta.
+        if matches!(item.canal, CanalEnvio::Whatsapp | CanalEnvio::Sms) {
             if let Some(resolver) = &self.com_resolver {
-                let r = resolver.whatsapp(item.provedor.as_deref()).await?;
+                let r = if item.canal == CanalEnvio::Whatsapp {
+                    resolver.whatsapp(item.provedor.as_deref()).await?
+                } else {
+                    resolver.sms(item.provedor.as_deref()).await?
+                };
                 if item.provedor.is_none() {
                     self.fila
                         .vincular_provedor(item.id, &r.provedor, r.idintegracao)
@@ -271,9 +276,11 @@ impl ComunicacaoService {
         let Some(snap) = self.automacao.reserva_pos_reserva(idr).await? else {
             return Ok(Some("reserva não encontrada".into()));
         };
-        if item.canal == CanalEnvio::Whatsapp {
+        if matches!(item.canal, CanalEnvio::Whatsapp | CanalEnvio::Sms) {
             if !snap.whatsapp_optin {
-                return Ok(Some("hóspede não autorizou WhatsApp transacional".into()));
+                return Ok(Some(
+                    "hóspede não autorizou mensagens transacionais no celular".into(),
+                ));
             }
             if telefone::normalizar_whatsapp(&item.destino).is_none() {
                 return Ok(Some("telefone do hóspede inválido".into()));
@@ -627,7 +634,7 @@ impl ComunicacaoService {
                     .enfileirar_dedup(
                         &NovoEnvio {
                             canal: CanalEnvio::Whatsapp,
-                            destino,
+                            destino: destino.clone(),
                             template: template.into(),
                             payload: corpo,
                             idreserva: Some(r.idreserva),
@@ -639,9 +646,64 @@ impl ComunicacaoService {
                         VERSAO_POS_RESERVA,
                     )
                     .await?;
+                // SMS: mesma janela de consentimento (mensagem no celular);
+                // o toggle por evento da integração decide se o canal
+                // entra — custo por segmento, opt-in do operador, texto
+                // compacto próprio (versão WhatsApp estouraria o teto).
+                if let Some(com) = &self.com_resolver {
+                    if com.sms_evento_ativo(template).await.unwrap_or(false) {
+                        let texto_sms = self.texto_sms_pos_reserva(r, template);
+                        self.fila
+                            .enfileirar_dedup(
+                                &NovoEnvio {
+                                    canal: CanalEnvio::Sms,
+                                    destino,
+                                    template: template.into(),
+                                    payload: serde_json::json!({"texto": texto_sms}),
+                                    idreserva: Some(r.idreserva),
+                                    idcliente: Some(r.idcliente),
+                                    idfuncionario: None,
+                                    agendado_para: agora,
+                                },
+                                &dedup_pos_reserva(r.idreserva, template, CanalEnvio::Sms),
+                                VERSAO_POS_RESERVA,
+                            )
+                            .await?;
+                    }
+                }
             }
         }
         Ok(())
+    }
+
+    /// Texto compacto do SMS pós-reserva — essencial + link, sem
+    /// acentos quando dá (GSM-7 cabe mais; o teto de segmentos é
+    /// enforce pelo emissor).
+    fn texto_sms_pos_reserva(&self, r: &ReservaPosReserva, template: &str) -> String {
+        let link = self
+            .link_portal(r)
+            .unwrap_or_else(|| self.site_base.clone());
+        match template {
+            TPL_RESERVA_CONFIRMADA => format!(
+                "{}: reserva #{} CONFIRMADA! Check-in {}, check-out {}. Detalhes: {}",
+                self.pousada,
+                r.idreserva,
+                r.entradaprevista.format("%d/%m"),
+                r.saidaprevista.format("%d/%m"),
+                link,
+            ),
+            TPL_RESERVA_CANCELADA => format!(
+                "{}: reserva #{} cancelada. Detalhes: {}",
+                self.pousada, r.idreserva, link,
+            ),
+            _ => format!(
+                "{}: recebemos sua reserva #{} (check-in {}). Acompanhe: {}",
+                self.pousada,
+                r.idreserva,
+                r.entradaprevista.format("%d/%m"),
+                link,
+            ),
+        }
     }
 
     /// Histórico de comunicações da reserva — seção "Comunicações" do
@@ -1121,6 +1183,7 @@ fn canal_rotulo(canal: CanalEnvio) -> &'static str {
         CanalEnvio::Whatsapp => "whatsapp",
         CanalEnvio::Push => "push",
         CanalEnvio::Inbox => "inbox",
+        CanalEnvio::Sms => "sms",
     }
 }
 

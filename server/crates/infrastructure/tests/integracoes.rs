@@ -51,8 +51,9 @@ async fn catalogo_sem_config_mostra_nao_configurada(pool: PgPool) {
     let (svc, _) = stack(&pool);
 
     let cat = svc.catalogo(&c.ator).await.unwrap();
-    // 3 pagamentos × 2 ambientes + Z-API/Spedy/Didit/Channex por ambiente.
-    assert_eq!(cat.len(), 13);
+    // 3 pagamentos × 2 ambientes + Z-API/Spedy/Didit/Channex por ambiente
+    // + Infobip (só produção).
+    assert_eq!(cat.len(), 14);
     assert!(cat.iter().all(|i| matches!(
         i.estado,
         EstadoEfetivo::NaoConfigurada | EstadoEfetivo::GerenciadoPeloAmbiente

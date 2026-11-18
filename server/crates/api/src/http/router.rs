@@ -31,7 +31,6 @@ async fn readyz(State(s): State<AppState>) -> (axum::http::StatusCode, Json<serd
     }
 }
 
-
 fn cors_layer(origins: &[String]) -> CorsLayer {
     if origins.iter().any(|o| o == "*") {
         return CorsLayer::permissive();
@@ -373,6 +372,10 @@ pub fn build(state: AppState) -> Router {
         .route(
             "/integracoes/zapi/{ambiente}/desconectar",
             post(routes::integracoes::zapi_desconectar),
+        )
+        .route(
+            "/integracoes/infobip/{ambiente}/teste-msg",
+            post(routes::integracoes::infobip_teste),
         )
         // ---- Fiscal (Spedy/NFS-e) — config + documentos -------------------
         .route(
@@ -1162,6 +1165,10 @@ pub fn build(state: AppState) -> Router {
         .route(
             "/api/v1/webhooks/zapi/{segredo}",
             post(routes::comunicacao::webhook_zapi),
+        )
+        .route(
+            "/api/v1/webhooks/infobip/{segredo}",
+            post(routes::comunicacao::webhook_infobip),
         )
         // webhook Spedy — Standard Webhooks (assinatura HMAC obrigatória).
         .route(

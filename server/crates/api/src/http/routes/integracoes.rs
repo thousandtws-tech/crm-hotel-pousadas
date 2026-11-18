@@ -157,3 +157,26 @@ pub async fn zapi_desconectar(
     svc(&s)?.zapi_desconectar(&ator).await?;
     Ok(StatusCode::NO_CONTENT)
 }
+
+// ---------------------------------------------------------------------------
+// Infobip — SMS de teste (admin). Também só produção: sem sandbox.
+// ---------------------------------------------------------------------------
+
+fn infobip_par(ambiente: &str) -> Result<AmbienteIntegracao, AppError> {
+    if AmbienteIntegracao::parse(ambiente) != Some(AmbienteIntegracao::Producao) {
+        return Err(DomainError::nao_encontrado("Infobip opera apenas em produção.").into());
+    }
+    Ok(AmbienteIntegracao::Producao)
+}
+
+/// SMS de teste único — destinatário preso à allowlist da config,
+/// fora da fila, sem retry automático.
+pub async fn infobip_teste(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(ambiente): Path<String>,
+    Json(input): Json<MensagemTesteInput>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    infobip_par(&ambiente)?;
+    Ok(Json(svc(&s)?.infobip_enviar_teste(&ator, &input).await?))
+}

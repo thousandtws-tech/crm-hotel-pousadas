@@ -12,6 +12,7 @@ pub enum ProvedorIntegracao {
     Spedy,
     Didit,
     Channex,
+    Infobip,
 }
 
 impl ProvedorIntegracao {
@@ -24,6 +25,7 @@ impl ProvedorIntegracao {
             Self::Spedy => "spedy",
             Self::Didit => "didit",
             Self::Channex => "channex",
+            Self::Infobip => "infobip",
         }
     }
 
@@ -36,13 +38,14 @@ impl ProvedorIntegracao {
             "spedy" => Some(Self::Spedy),
             "didit" => Some(Self::Didit),
             "channex" => Some(Self::Channex),
+            "infobip" => Some(Self::Infobip),
             _ => None,
         }
     }
 
     pub fn categoria(&self) -> &'static str {
         match self {
-            Self::Zapi => "comunicacao",
+            Self::Zapi | Self::Infobip => "comunicacao",
             Self::Spedy => "fiscal",
             Self::Didit => "seguranca",
             Self::Channex => "distribuicao",
@@ -52,7 +55,7 @@ impl ProvedorIntegracao {
 
     pub fn ambientes(&self) -> &'static [AmbienteIntegracao] {
         match self {
-            Self::Zapi => &[AmbienteIntegracao::Producao],
+            Self::Zapi | Self::Infobip => &[AmbienteIntegracao::Producao],
             _ => &[AmbienteIntegracao::Teste, AmbienteIntegracao::Producao],
         }
     }

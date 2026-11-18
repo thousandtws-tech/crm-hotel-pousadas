@@ -303,6 +303,16 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             integracoes_repo.clone() as Arc<dyn clarituz_domain::ports::IntegracaoRepository>,
         ))
     });
+
+    // Infobip — DLR do canal SMS; mesma dependência do cofre.
+    let infobip_svc = com_resolver.clone().map(|com| {
+        Arc::new(InfobipService::new(
+            com,
+            com_eventos_repo.clone()
+                as Arc<dyn clarituz_domain::ports::ComunicacaoEventoRepository>,
+            fila_envio_repo.clone(),
+        ))
+    });
     let lgpd_svc = Arc::new(LgpdService::new(
         lgpd_repo.clone(),
         publisher.clone(),
@@ -418,6 +428,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         )))),
         alertas: alertas_svc,
         zapi: zapi_svc,
+        infobip: infobip_svc,
         fiscal: fiscal_svc,
         verificacao: verificacao_svc,
         distribuicao: distribuicao_svc,

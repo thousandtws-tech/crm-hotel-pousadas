@@ -98,13 +98,18 @@ impl AlertaFalhaService {
             return Ok(false);
         }
         // Recepção resolve — contato alternativo com o hóspede.
-        self.eventos.avisar(
-            Aviso::novo(TipoAviso::Alerta, titulo, mensagem).dados(serde_json::json!({
-                "fila_envio": item.id,
-                "idreserva": item.idreserva,
-            })),
+        self.eventos
+            .avisar(
+                Aviso::novo(TipoAviso::Alerta, titulo, mensagem).dados(serde_json::json!({
+                    "fila_envio": item.id,
+                    "idreserva": item.idreserva,
+                })),
+            );
+        tracing::warn!(
+            fila_envio = item.id,
+            status,
+            "monitor: falha de envio alertada"
         );
-        tracing::warn!(fila_envio = item.id, status, "monitor: falha de envio alertada");
         Ok(true)
     }
 
@@ -147,6 +152,7 @@ impl AlertaFalhaService {
 fn mensagem_envio(item: &ItemFila) -> (String, String) {
     let canal = match item.canal {
         CanalEnvio::Whatsapp => "WhatsApp",
+        CanalEnvio::Sms => "SMS",
         CanalEnvio::Email => "E-mail",
         CanalEnvio::Push => "Push",
         CanalEnvio::Inbox => "Mensagem interna",
@@ -177,9 +183,10 @@ fn mensagem_envio(item: &ItemFila) -> (String, String) {
 
 /// Texto do alerta fiscal — modelo, reserva e detalhe do provedor.
 fn mensagem_fiscal(doc: &FiscalDocumento) -> (String, String) {
-    let alvo = doc
-        .idreserva
-        .map_or_else(|| format!("documento #{}", doc.id), |r| format!("reserva #{r}"));
+    let alvo = doc.idreserva.map_or_else(
+        || format!("documento #{}", doc.id),
+        |r| format!("reserva #{r}"),
+    );
     // Rejeição: o motivo vem do provedor (processing_detail); falha
     // técnica: o erro local é o mais fresco (processing_detail pode ser
     // de uma transição remota anterior, preservado por COALESCE).
@@ -220,17 +227,19 @@ fn mensagem_fiscal(doc: &FiscalDocumento) -> (String, String) {
 /// reprocessamento que volta a falhar alerta de novo.
 fn dedup_fiscal(doc: &FiscalDocumento) -> String {
     let minuto = doc.atualizado_em.timestamp().div_euclid(60);
-    format!("fiscal_documento:{}:{}:{minuto}", doc.id, doc.status.as_str())
+    format!(
+        "fiscal_documento:{}:{}:{minuto}",
+        doc.id,
+        doc.status.as_str()
+    )
 }
 
 /// Erro legível para o staff — recorta o trecho útil do erro técnico.
 fn motivo_curto(erro: Option<&str>) -> String {
-    erro.map(str::trim)
-        .filter(|m| !m.is_empty())
-        .map_or_else(
-            || "sem detalhe registrado".into(),
-            |m| m.chars().take(MOTIVO_MAX).collect::<String>(),
-        )
+    erro.map(str::trim).filter(|m| !m.is_empty()).map_or_else(
+        || "sem detalhe registrado".into(),
+        |m| m.chars().take(MOTIVO_MAX).collect::<String>(),
+    )
 }
 
 #[cfg(test)]

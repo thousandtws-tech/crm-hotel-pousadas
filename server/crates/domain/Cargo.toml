@@ -17,6 +17,7 @@ uuid.workspace = true
 async-trait.workspace = true
 thiserror.workspace = true
 sqlx.workspace = true
+url.workspace = true
 
 [dev-dependencies]
 rust_decimal_macros = "1"

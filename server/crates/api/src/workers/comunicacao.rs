@@ -43,3 +43,19 @@ pub(crate) fn spawn_zapi_eventos(state: &AppState) {
         }
     });
 }
+
+pub(crate) fn spawn_infobip_eventos(state: &AppState) {
+    let Some(infobip) = state.services.infobip.clone() else {
+        return;
+    };
+    tokio::spawn(async move {
+        let mut tick = tokio::time::interval(std::time::Duration::from_secs(60));
+        tick.tick().await;
+        loop {
+            tick.tick().await;
+            if let Err(e) = infobip.reprocessar().await {
+                tracing::warn!(erro = %e, "infobip: sweeper de DLR falhou");
+            }
+        }
+    });
+}

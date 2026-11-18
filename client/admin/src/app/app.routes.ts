@@ -266,6 +266,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'integracoes/infobip/:ambiente',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/integracoes/integracao-infobip.component').then(
+            (m) => m.IntegracaoInfobipComponent,
+          ),
+      },
+      {
         path: 'integracoes/:provedor/:ambiente',
         canActivate: [adminGuard],
         loadComponent: () =>

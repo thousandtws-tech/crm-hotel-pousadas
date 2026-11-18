@@ -30,6 +30,16 @@ pub trait FilaEnvioRepository: Send + Sync {
         provider_msg_id: &str,
     ) -> Result<u64, DomainError>;
     async fn marcar_lido(&self, provedor: &str, provider_msg_id: &str) -> Result<u64, DomainError>;
+    /// Falha terminal reportada pelo provedor via callback (DLR do
+    /// SMS) — casa pelo `provider_msg_id` e encerra o item SEM
+    /// reagendar; também resolve itens `desconhecido` (a resposta
+    /// tardia fecha a ambiguidade). Não toca estados já terminais.
+    async fn marcar_falha_remota(
+        &self,
+        provedor: &str,
+        provider_msg_id: &str,
+        erro: &str,
+    ) -> Result<u64, DomainError>;
     async fn marcar_falha(
         &self,
         id: i64,
@@ -72,7 +82,8 @@ pub trait FilaEnvioRepository: Send + Sync {
     /// ação humana — varredura do monitor de alertas. `desde` filtra
     /// por `agendado_para`, proxy do instante da última tentativa
     /// (`marcar_falha` empurra a agenda a cada retry).
-    async fn falhas(&self, desde: DateTime<Utc>, limite: i64) -> Result<Vec<ItemFila>, DomainError>;
+    async fn falhas(&self, desde: DateTime<Utc>, limite: i64)
+        -> Result<Vec<ItemFila>, DomainError>;
 
     async fn email_suprimido(&self, email: &str) -> Result<bool, DomainError>;
     async fn suprimir_email(&self, email: &str, motivo: &str) -> Result<(), DomainError>;
@@ -105,6 +116,21 @@ pub struct CredenciaisZApi {
     pub instance_id: String,
     pub instance_token: String,
     pub client_token: String,
+}
+
+/// Credenciais abertas da integração Infobip — montadas pelo resolver
+/// a partir de `config` (não-secreta) + cofre (`api_key`).
+pub struct CredenciaisInfobip {
+    pub idintegracao: i64,
+    /// https://xxxx.api.infobip.com — validada na gravação.
+    pub base_url: String,
+    pub api_key: String,
+    /// Remetente autorizado na conta (alfanumérico ou long code).
+    pub remetente: String,
+    /// Teto de partes por mensagem — envio acima é recusado antes do POST.
+    pub limite_segmentos: i32,
+    /// URL do DLR configurada na conta (segredo no path).
+    pub callback_url: Option<String>,
 }
 
 pub struct ZApiStatusView {
@@ -142,6 +168,33 @@ pub trait ComunicacaoResolver: Send + Sync {
         telefone: &str,
         mensagem: &str,
     ) -> Result<Option<String>, DomainError>;
+
+    // -- SMS (Infobip) — mesmo desenho do WhatsApp: resolver decide o
+    // emissor, o item grava o provedor usado, credencial nunca sai do
+    // cofre fora da borda.
+
+    /// Emissor SMS resolvido — hoje só Infobip; `provedor` reservado
+    /// pra futuro multi-provedor (ignorado por ora).
+    async fn sms(&self, provedor: Option<&str>) -> Result<EmissorResolvido, DomainError>;
+    /// Integração infobip persistida (config + estado).
+    async fn integracao_infobip(&self) -> Result<Option<crate::entities::Integracao>, DomainError>;
+    /// Segredo aberto por campo — `webhook_secret` valida o DLR.
+    async fn segredo_infobip(&self, campo: &str) -> Result<Option<String>, DomainError>;
+    /// Credenciais completas — emissor, teste e envio direto.
+    async fn credenciais_infobip_abertas(&self) -> Result<Option<CredenciaisInfobip>, DomainError>;
+
+    /// `GET /sms/1/logs?limit=1` — teste de conexão por leitura, sem
+    /// cobrar envio. `Some(detalhe)` quando a credencial responde.
+    async fn infobip_testar(&self) -> Result<Option<String>, DomainError>;
+    /// Envio direto de teste — ação explícita, destinatário restrito
+    /// aos `destinatarios_teste` da config. Devolve o messageId.
+    async fn infobip_enviar_teste(
+        &self,
+        telefone: &str,
+        texto: &str,
+    ) -> Result<Option<String>, DomainError>;
+    /// Evento SMS habilitado? — gate do enfileiramento pós-reserva.
+    async fn sms_evento_ativo(&self, evento: &str) -> Result<bool, DomainError>;
 }
 
 #[async_trait]

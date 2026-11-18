@@ -3,7 +3,9 @@
 
 pub mod cpf;
 pub mod email;
+pub mod infobip_url;
 pub mod periodo;
+pub mod sms;
 pub mod telefone;
 
 pub use cpf::Cpf;

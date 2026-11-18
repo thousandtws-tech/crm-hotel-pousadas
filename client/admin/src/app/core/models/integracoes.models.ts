@@ -11,7 +11,8 @@ export type ProvedorIntegracao =
   | 'zapi'
   | 'spedy'
   | 'didit'
-  | 'channex';
+  | 'channex'
+  | 'infobip';
 
 /** @deprecated Alias legado — prefira `ProvedorIntegracao`. */
 export type ProvedorPagamento = ProvedorIntegracao;
@@ -120,6 +121,36 @@ export interface ZapiTesteInput {
 }
 
 export interface ZapiTesteResultado {
+  enviado: boolean;
+  id_provedor: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Infobip (categoria 'comunicacao', ambiente 'producao') — SMS transacional.
+// ---------------------------------------------------------------------------
+
+/**
+ * Config não-secreta da integração (`config`):
+ * `base_url` (https://xxxx.api.infobip.com), `remetente` (alfanumérico
+ * ≤11 ou long code), `limite_segmentos` (1–10), `callback_url` (DLR com
+ * segredo no path — exibição segura), `eventos` (toggles por template:
+ * reserva_aguardando/confirmada/cancelada), `envio_pausado` (kill
+ * switch), `destinatarios_teste` (allowlist do SMS de teste).
+ */
+export interface InfobipEventos {
+  reserva_aguardando?: boolean;
+  reserva_confirmada?: boolean;
+  reserva_cancelada?: boolean;
+}
+
+/** POST .../infobip/{ambiente}/teste-msg — SMS único, allowlist, sem retry. */
+export interface InfobipTesteInput {
+  /** Com DDI+DDD — o backend valida 10–15 dígitos + allowlist da config. */
+  telefone: string;
+  texto?: string;
+}
+
+export interface InfobipTesteResultado {
   enviado: boolean;
   id_provedor: string | null;
 }

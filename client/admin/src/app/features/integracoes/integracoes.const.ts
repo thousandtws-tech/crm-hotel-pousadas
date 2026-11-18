@@ -15,6 +15,7 @@ export const ORDEM_PROVEDOR: ProvedorIntegracao[] = [
   'pagbank',
   'mercadopago',
   'zapi',
+  'infobip',
   'spedy',
   'didit',
   'channex',
@@ -26,6 +27,7 @@ export const ROTULO_PROVEDOR: Record<ProvedorIntegracao, string> = {
   pagbank: 'PagBank',
   mercadopago: 'Mercado Pago',
   zapi: 'Z-API',
+  infobip: 'Infobip',
   spedy: 'Spedy',
   didit: 'Didit',
   channex: 'Channex',
@@ -59,6 +61,7 @@ export const CATEGORIA_PROVEDOR: Record<ProvedorIntegracao, CategoriaIntegracao>
   pagbank: 'pagamento',
   mercadopago: 'pagamento',
   zapi: 'comunicacao',
+  infobip: 'comunicacao',
   spedy: 'fiscal',
   didit: 'seguranca',
   channex: 'distribuicao',
@@ -196,6 +199,23 @@ export const CAMPOS_POR_PROVEDOR: Record<ProvedorIntegracao, CampoCredencial[]> 
       segredo: true,
       obrigatorio: true,
       dica: 'Token de segurança da conta (Client-Token)',
+    },
+  ],
+  // Infobip: App API key da conta. `webhook_secret` não aparece aqui —
+  // o backend o gera na 1ª gravação e compõe o path do DLR.
+  infobip: [
+    {
+      nome: 'api_key',
+      rotulo: 'API key',
+      segredo: true,
+      obrigatorio: true,
+      dica: 'Chave da conta — Settings → API keys (escopo SMS)',
+    },
+    {
+      nome: 'webhook_secret',
+      rotulo: 'Webhook signing secret',
+      segredo: true,
+      dica: 'Gerado automaticamente na 1ª gravação — autentica o DLR no path',
     },
   ],
   // Spedy: a X-Api-Key é por empresa — gerada no painel Spedy da conta.

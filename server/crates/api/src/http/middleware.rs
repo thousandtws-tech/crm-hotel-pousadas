@@ -151,9 +151,7 @@ pub async fn security_headers(req: Request, next: Next) -> Response {
 pub async fn cache_curto(req: Request, next: Next) -> Response {
     let cacheavel = req.method() == Method::GET;
     let mut res = next.run(req).await;
-    if cacheavel
-        && res.status().is_success()
-        && !res.headers().contains_key(header::CACHE_CONTROL)
+    if cacheavel && res.status().is_success() && !res.headers().contains_key(header::CACHE_CONTROL)
     {
         res.headers_mut().insert(
             header::CACHE_CONTROL,

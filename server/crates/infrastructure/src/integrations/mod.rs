@@ -4,6 +4,7 @@
 
 pub mod channex;
 pub mod didit;
+pub mod infobip;
 pub mod maria;
 pub mod mercadopago;
 pub mod pagbank;

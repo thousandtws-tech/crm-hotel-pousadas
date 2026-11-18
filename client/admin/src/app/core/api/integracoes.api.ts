@@ -68,6 +68,15 @@ export class IntegracoesApi extends ApiHttp {
   }
 
   // -----------------------------------------------------------------------
+  // Infobip — SMS transacional; `ambiente` deve ser 'producao'.
+  // -----------------------------------------------------------------------
+
+  /** SMS de teste único — destinatário preso à allowlist da config. */
+  infobipTeste(ambiente: M.AmbienteIntegracao, input: M.InfobipTesteInput) {
+    return this.post<M.InfobipTesteResultado>(`/integracoes/infobip/${ambiente}/teste-msg`, input);
+  }
+
+  // -----------------------------------------------------------------------
   // Spedy — configuração da empresa/município/webhook (categoria 'fiscal').
   // -----------------------------------------------------------------------
 

@@ -177,6 +177,34 @@ impl FilaEnvioRepository for PgFilaEnvio {
         Ok(r.rows_affected())
     }
 
+    /// DLR terminal do provedor — encerra sem retry; 'desconhecido'
+    /// vira 'falhou' (a resposta tardia fecha a ambiguidade), estados
+    /// já terminais ficam intactos.
+    async fn marcar_falha_remota(
+        &self,
+        provedor: &str,
+        provider_msg_id: &str,
+        erro: &str,
+    ) -> Result<u64, DomainError> {
+        let r = sqlx::query(
+            "UPDATE fila_envio SET status='falhou', ultimo_erro=$3
+             WHERE provedor = $1
+               AND status IN ('pendente','enviando','enviado','desconhecido')
+               AND (
+                   provider_msg_id = $2
+                   OR provider_msg_id LIKE $2 || '|%'
+                   OR provider_msg_id LIKE '%|' || $2
+               )",
+        )
+        .bind(provedor)
+        .bind(provider_msg_id)
+        .bind(erro)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(r.rows_affected())
+    }
+
     async fn listar(&self, limite: i64) -> Result<Vec<ItemFila>, DomainError> {
         sqlx::query_as::<_, ItemFila>("SELECT * FROM fila_envio ORDER BY id DESC LIMIT $1")
             .bind(limite)

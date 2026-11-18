@@ -401,6 +401,32 @@ pub async fn webhook_zapi(
     }
 }
 
+/// DLR Infobip — delivery reports do canal SMS. Segredo no path é a
+/// autenticação (notification profiles aceitam URL arbitrária); a
+/// inbox deduplica antes de qualquer efeito na fila.
+pub async fn webhook_infobip(
+    State(st): State<AppState>,
+    Path(segredo): Path<String>,
+    body: axum::body::Bytes,
+) -> StatusCode {
+    let Some(infobip) = &st.services.infobip else {
+        return StatusCode::SERVICE_UNAVAILABLE; // módulo sem cofre
+    };
+    let Ok(payload) = serde_json::from_slice::<serde_json::Value>(&body) else {
+        return StatusCode::BAD_REQUEST;
+    };
+    let Ok(Some(idintegracao)) = infobip.autenticar(&segredo).await else {
+        return StatusCode::UNAUTHORIZED;
+    };
+    match infobip.receber(&payload, idintegracao).await {
+        Ok(_) => StatusCode::OK,
+        Err(e) => {
+            tracing::warn!(erro = %e, "infobip webhook: processamento falhou");
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
+    }
+}
+
 pub async fn webhook_resend(
     State(st): State<AppState>,
     Json(evento): Json<serde_json::Value>,

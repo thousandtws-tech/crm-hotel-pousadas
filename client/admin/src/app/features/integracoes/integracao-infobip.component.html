@@ -1,0 +1,458 @@
+<div class="pag">
+  <a class="volta" routerLink="/integracoes"> <mat-icon>arrow_back</mat-icon> Integrações </a>
+
+  @if (carregando()) {
+    <div class="inner-card" aria-hidden="true">
+      <span class="skel sk-t"></span>
+      <span class="skel sk-p"></span>
+      <span class="skel sk-m"></span>
+      <span class="skel sk-m"></span>
+    </div>
+  } @else if (falhou() || !i()) {
+    <div class="inner-card vazio-card">
+      <mat-icon>cloud_off</mat-icon>
+      <p>Não foi possível carregar esta integração.</p>
+      <button type="button" class="btn-sec" (click)="carregar()">Tentar novamente</button>
+    </div>
+  } @else {
+    @if (i(); as int) {
+      <div class="cab">
+        <div>
+          <p class="eyebrow">Configurações · Integrações · Comunicação</p>
+          <h2 class="titulo">
+            Infobip
+            <span class="env">Produção</span>
+          </h2>
+          <p class="sub">
+            SMS transacional via Infobip — API key cifrada no servidor, confirmação de entrega por
+            webhook (DLR).
+          </p>
+        </div>
+        <div class="cab-pills">
+          <span [class]="'pill ' + estadoDe(int.estado).pill">
+            {{ estadoDe(int.estado).rotulo }}
+          </span>
+          @if (int.padrao_site) {
+            <span class="pill pill-gold"> <mat-icon>star</mat-icon> Padrão SMS </span>
+          }
+        </div>
+      </div>
+
+      @if (conflito()) {
+        <div class="aviso" role="alert">
+          <mat-icon>warning</mat-icon>
+          <span>
+            Outro administrador alterou esta integração. Recarregue para ver a versão atual antes de
+            salvar.
+          </span>
+          <button type="button" class="mini-btn" (click)="carregar()">Recarregar</button>
+        </div>
+      }
+
+      <!-- ================= Credenciais ================= -->
+      <div class="inner-card">
+        <h3 class="card-h">Credenciais</h3>
+        <p class="card-sub">
+          API key da conta Infobip (Settings → API keys, escopo SMS). Campo em branco mantém o valor
+          atual; “Limpar” remove ao salvar.
+        </p>
+
+        <label class="dl">
+          <span class="dl-rotulo">Nome da conexão</span>
+          <input
+            class="input-inn"
+            [formControl]="fNomeConta"
+            placeholder="Ex.: SMS da pousada"
+          />
+        </label>
+
+        @for (c of campos; track c.nome) {
+          @if (c.nome !== 'webhook_secret') {
+            <div class="dl">
+              <span class="dl-rotulo">
+                {{ c.rotulo }}{{ c.obrigatorio ? ' *' : '' }}
+                @if (configurado(c)) {
+                  <span class="conf">•••••• configurado</span>
+                }
+              </span>
+              <span class="segredo-linha">
+                <input
+                  class="input-inn"
+                  [type]="c.segredo ? 'password' : 'text'"
+                  [formControl]="controle(c.nome)"
+                  [placeholder]="
+                    limpar()[c.nome]
+                      ? 'Será removido ao salvar'
+                      : configurado(c)
+                        ? 'Deixe em branco para manter'
+                        : (c.placeholder ?? '')
+                  "
+                  [disabled]="!!limpar()[c.nome]"
+                  [attr.autocomplete]="c.segredo ? 'new-password' : null"
+                  [attr.aria-label]="c.rotulo"
+                />
+                @if (configurado(c)) {
+                  <button
+                    type="button"
+                    class="mini-btn"
+                    [class.perigo]="limpar()[c.nome]"
+                    [attr.aria-label]="
+                      (limpar()[c.nome] ? 'Desfazer remoção de ' : 'Remover ') + c.rotulo
+                    "
+                    (click)="alternarLimpar(c.nome)"
+                  >
+                    {{ limpar()[c.nome] ? 'Desfazer' : 'Limpar' }}
+                  </button>
+                }
+              </span>
+              @if (c.dica) {
+                <span class="mini">{{ c.dica }}</span>
+              }
+            </div>
+          }
+        }
+
+        <div class="dl">
+          <span class="dl-rotulo">
+            Segredo do webhook
+            @if (i()?.segredos.campos['webhook_secret']) {
+              <span class="conf">•••••• configurado</span>
+            }
+          </span>
+          <input
+            class="input-inn"
+            readonly
+            [value]="
+              i()?.segredos.campos['webhook_secret']
+                ? 'Gerado automaticamente pelo servidor'
+                : 'Será gerado automaticamente ao salvar'
+            "
+            aria-label="Segredo do webhook — gerado automaticamente"
+          />
+          <span class="mini">
+            Autentica os relatórios de entrega (DLR) na URL pública — gerado pelo servidor.
+          </span>
+        </div>
+      </div>
+
+      <!-- ================= Configuração SMS ================= -->
+      <div class="inner-card">
+        <h3 class="card-h">Configuração do canal</h3>
+        <p class="card-sub">
+          Endpoint da conta e remetente autorizado — cobrados por segmento (160 chars GSM-7, 70 com
+          acentos/emoji).
+        </p>
+
+        <label class="dl">
+          <span class="dl-rotulo">Base URL *</span>
+          <input
+            class="input-inn mono"
+            [formControl]="fBaseUrl"
+            placeholder="https://xxxxxx.api.infobip.com"
+            autocomplete="off"
+          />
+          <span class="mini">Host oficial da conta — visível no painel Infobip → API keys.</span>
+        </label>
+
+        <div class="msg-linha">
+          <label class="dl msg-tel">
+            <span class="dl-rotulo">Remetente *</span>
+            <input
+              class="input-inn"
+              [formControl]="fRemetente"
+              placeholder="EspiritoMar ou +55…"
+              autocomplete="off"
+            />
+            <span class="mini">Alfanumérico (até 11) ou número aprovado na conta.</span>
+          </label>
+          <label class="dl msg-tel">
+            <span class="dl-rotulo">Limite de segmentos</span>
+            <input
+              class="input-inn"
+              [formControl]="fLimiteSegmentos"
+              inputmode="numeric"
+              placeholder="3"
+            />
+            <span class="mini">1–10 — mensagens maiores são recusadas antes do envio.</span>
+          </label>
+        </div>
+
+        <label class="dl">
+          <span class="dl-rotulo">Destinatários de teste <span class="mut">(opcional)</span></span>
+          <input
+            class="input-inn"
+            [formControl]="fDestinatarios"
+            placeholder="+55 44 99999-0000, +55 44 98888-1111"
+          />
+          <span class="mini">
+            Separados por vírgula — quando preenchida, o SMS de teste só sai para estes números.
+          </span>
+        </label>
+
+        <div class="dl">
+          <span class="dl-rotulo">Eventos com SMS</span>
+          <div class="op-lista">
+            @for (e of eventosSms; track e.chave) {
+              <div class="op-linha op-mini">
+                <div>
+                  <strong>{{ e.rotulo }}</strong>
+                </div>
+                <button
+                  type="button"
+                  class="sw"
+                  [class.on]="fEventos[e.chave].value"
+                  role="switch"
+                  [attr.aria-checked]="fEventos[e.chave].value"
+                  [attr.aria-label]="'SMS em ' + e.rotulo"
+                  (click)="fEventos[e.chave].setValue(!fEventos[e.chave].value)"
+                >
+                  <span class="sw-dot"></span>
+                </button>
+              </div>
+            }
+          </div>
+          <span class="mini">
+            Avisos pós-reserva saem por SMS apenas com o toggle ligado — e-mail e WhatsApp não são
+            afetados.
+          </span>
+        </div>
+
+        <div class="op-linha">
+          <div>
+            <strong>Pausar envios</strong>
+            <p class="mini">Congela o canal sem desligar a integração — itens aguardam na fila.</p>
+          </div>
+          <button
+            type="button"
+            class="sw"
+            [class.on]="fEnvioPausado.value"
+            role="switch"
+            [attr.aria-checked]="fEnvioPausado.value"
+            aria-label="Pausar envios SMS"
+            (click)="fEnvioPausado.setValue(!fEnvioPausado.value)"
+          >
+            <span class="sw-dot"></span>
+          </button>
+        </div>
+
+        <div class="acoes">
+          <button type="button" class="btn-pri" (click)="salvar()" [disabled]="salvando()">
+            {{ salvando() ? 'Salvando…' : 'Salvar configuração' }}
+          </button>
+        </div>
+
+        <div class="verif">
+          @if (int.ultima_verificacao_em) {
+            <span class="mini">
+              Última verificação:
+              {{ int.ultima_verificacao_em | date: 'dd/MM/yyyy HH:mm' }}
+              — {{ int.verificacao_status === 'ok' ? 'ok' : 'falhou' }}
+            </span>
+            @if (int.verificacao_status === 'falha' && int.verificacao_erro) {
+              <span class="mini erro">{{ int.verificacao_erro }}</span>
+            }
+          } @else {
+            <span class="mini">Nunca verificada.</span>
+          }
+
+          <button type="button" class="btn-sec" (click)="testar()" [disabled]="testando()">
+            <mat-icon>network_check</mat-icon>
+            {{ testando() ? 'Testando…' : 'Testar conexão' }}
+          </button>
+        </div>
+
+        @if (teste(); as t) {
+          <div
+            class="res"
+            [class.res-ok]="t.verificacao_status === 'ok'"
+            [class.res-erro]="t.verificacao_status !== 'ok'"
+            role="status"
+          >
+            <mat-icon>
+              {{ t.verificacao_status === 'ok' ? 'check_circle' : 'error' }}
+            </mat-icon>
+            <span>
+              @if (t.verificacao_status === 'ok') {
+                Conexão verificada{{ t.nome_conta ? ' — ' + t.nome_conta : '' }}.
+              } @else {
+                Falha na verificação{{ t.mensagem ? ' — ' + t.mensagem : '' }}.
+              }
+            </span>
+          </div>
+        }
+      </div>
+
+      <!-- ================= Webhook DLR ================= -->
+      <div class="inner-card">
+        <h3 class="card-h">Relatórios de entrega (DLR)</h3>
+        <p class="card-sub">
+          Cadastre esta URL no painel Infobip (notification profiles → delivery reports) para a
+          confirmação de entrega fechar o ciclo na fila de envio.
+        </p>
+
+        @if (callbackUrl(); as url) {
+          <span class="segredo-linha">
+            <input class="input-inn mono" readonly [value]="url" aria-label="URL do DLR" />
+            <button type="button" class="mini-btn" (click)="copiar(url)">
+              <mat-icon>content_copy</mat-icon> Copiar
+            </button>
+          </span>
+        } @else {
+          <p class="vazio">
+            A URL aparece após salvar — o segredo do path é gerado na primeira gravação.
+          </p>
+        }
+      </div>
+
+      <!-- ================= SMS de teste ================= -->
+      <div class="inner-card">
+        <h3 class="card-h">SMS de teste</h3>
+        <p class="card-sub">
+          Envio único, fora da fila — restrito aos destinatários da allowlist quando ela está
+          preenchida.
+        </p>
+
+        <div class="msg-linha">
+          <label class="dl msg-tel">
+            <span class="dl-rotulo">Telefone</span>
+            <input
+              class="input-inn"
+              [formControl]="fTelefone"
+              placeholder="+55 44 99999-0000"
+              inputmode="tel"
+              autocomplete="tel"
+            />
+            <span class="mini">Com DDI e DDD — só números são enviados.</span>
+          </label>
+          <label class="dl msg-txt">
+            <span class="dl-rotulo">Mensagem <span class="mut">(opcional)</span></span>
+            <input class="input-inn" [formControl]="fTextoMsg" placeholder="Usa o texto padrão se vazio" />
+          </label>
+          <div class="msg-acao">
+            <button
+              type="button"
+              class="btn-pri"
+              (click)="enviarTeste()"
+              [disabled]="enviandoMsg() || fTelefone.value.trim().length === 0"
+            >
+              <mat-icon>send</mat-icon>
+              {{ enviandoMsg() ? 'Enviando…' : 'Enviar SMS' }}
+            </button>
+          </div>
+        </div>
+
+        @if (msgErro()) {
+          <p class="mini erro" role="alert">{{ msgErro() }}</p>
+        }
+        @if (msgResultado(); as r) {
+          <div class="res res-ok" role="status">
+            <mat-icon>check_circle</mat-icon>
+            <span> SMS aceito{{ r.id_provedor ? ' — id ' + r.id_provedor : '' }}. </span>
+          </div>
+        }
+      </div>
+
+      <div class="inner-card">
+        <h3 class="card-h">Operação</h3>
+
+        <div class="op-linha">
+          <div>
+            <strong>Integração habilitada</strong>
+            <p class="mini">
+              Quando desabilitada, nenhum SMS sai — configuração e credenciais são mantidas.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="sw"
+            [class.on]="int.habilitado"
+            role="switch"
+            [attr.aria-checked]="int.habilitado"
+            aria-label="Integração habilitada"
+            (click)="alternarHabilitado(int)"
+            [disabled]="alternando()"
+          >
+            <span class="sw-dot"></span>
+          </button>
+        </div>
+
+        <div class="op-linha">
+          <div>
+            <strong>Padrão do canal SMS</strong>
+            <p class="mini">Novas mensagens SMS usam esta conta.</p>
+          </div>
+          <button
+            type="button"
+            class="btn-sec"
+            (click)="definirPadrao()"
+            [disabled]="definindo() || int.padrao_site || int.estado !== 'ativa'"
+            [title]="
+              int.padrao_site
+                ? 'Já é o padrão do canal SMS'
+                : int.estado !== 'ativa'
+                  ? 'Só é possível quando a integração está ativa'
+                  : 'Definir como padrão'
+            "
+          >
+            <mat-icon>star</mat-icon>
+            {{
+              int.padrao_site ? 'Já é o padrão' : definindo() ? 'Definindo…' : 'Definir como padrão'
+            }}
+          </button>
+        </div>
+      </div>
+
+      <div class="inner-card">
+        <h3 class="card-h">Eventos de webhook</h3>
+        <p class="card-sub">Últimos relatórios de entrega recebidos.</p>
+
+        @if (carregandoEventos()) {
+          <p class="vazio">Carregando…</p>
+        } @else if (eventos().length === 0) {
+          <p class="vazio">
+            Nenhum DLR recebido ainda — depois de configurar a URL no painel Infobip, os relatórios
+            aparecem aqui.
+          </p>
+        } @else {
+          <table class="tab">
+            <thead>
+              <tr>
+                <th>Evento</th>
+                <th>Status</th>
+                <th>Recebido em</th>
+                <th>Último erro</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of eventos(); track e.event_id) {
+                <tr>
+                  <td>
+                    <strong class="ev-tipo">Relatório de entrega</strong>
+                    <span class="mini ev-id">{{ e.event_id }}</span>
+                  </td>
+                  <td>
+                    <span [class]="'pill ' + pillEvento(e.status)">
+                      {{ rotuloStatusEvento(e.status) }}
+                    </span>
+                  </td>
+                  <td class="ev-data">
+                    {{ e.recebido_em | date: 'dd/MM/yyyy HH:mm' }}
+                  </td>
+                  <td>
+                    @if (e.ultimo_erro) {
+                      <span class="mini erro" [title]="e.ultimo_erro">
+                        {{ e.ultimo_erro }}
+                      </span>
+                    } @else {
+                      <span class="mini mut">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    }
+  }
+</div>
