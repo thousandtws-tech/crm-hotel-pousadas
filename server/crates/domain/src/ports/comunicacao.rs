@@ -219,6 +219,17 @@ pub trait ComunicacaoEventoRepository: Send + Sync {
 }
 
 #[async_trait]
+pub trait CampanhaRepository: Send + Sync {
+    async fn criar(&self, nome: &str, texto: &str, criado_por: i64) -> Result<i64, DomainError>;
+    async fn marcar_disparada(&self, id: i64) -> Result<(), DomainError>;
+    /// Campanhas com contadores agregados da fila — mais recente primeiro.
+    async fn listar(&self) -> Result<Vec<CampanhaView>, DomainError>;
+    /// Hóspedes com `consent_marketing` e sem `lgpd_opt_out`, telefone
+    /// presente — audiência LGPD do blast.
+    async fn elegiveis_marketing(&self) -> Result<Vec<CampanhaDestinatario>, DomainError>;
+}
+
+#[async_trait]
 pub trait PushRepository: Send + Sync {
     async fn gravar(&self, sub: &PushSubscription) -> Result<(), DomainError>;
     async fn remover(&self, endpoint: &str) -> Result<(), DomainError>;

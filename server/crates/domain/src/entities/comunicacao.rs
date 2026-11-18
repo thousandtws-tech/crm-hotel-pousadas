@@ -118,6 +118,41 @@ pub struct RespostaAvaliacao {
     pub comentario: Option<String>,
 }
 
+/// Campanha de marketing WhatsApp — cabeçalho; cada destinatário é um
+/// item `fila_envio` com `dedup_key = 'campanha:{id}:cliente:{id}'`.
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct Campanha {
+    pub id: i64,
+    pub nome: String,
+    pub texto: String,
+    pub criado_por: Option<i64>,
+    pub criado_em: DateTime<Utc>,
+    pub disparada_em: Option<DateTime<Utc>>,
+}
+
+/// Linha do relatório — campanha + contadores agregados da fila.
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct CampanhaView {
+    pub id: i64,
+    pub nome: String,
+    pub texto: String,
+    pub criado_em: DateTime<Utc>,
+    pub disparada_em: Option<DateTime<Utc>>,
+    /// Destinatários elegíveis no disparo (itens gerados).
+    pub destinatarios: i64,
+    pub enviados: i64,
+    pub falhas: i64,
+    pub pendentes: i64,
+}
+
+/// Destinatário elegível de marketing — opt-in + telefone presente.
+#[derive(Debug, Clone, FromRow)]
+pub struct CampanhaDestinatario {
+    pub idcliente: i64,
+    pub nome: String,
+    pub telefone: String,
+}
+
 #[derive(Debug, Clone, FromRow, Serialize)]
 pub struct NivelFidelidade {
     pub id: i64,

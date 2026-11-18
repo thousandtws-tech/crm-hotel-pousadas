@@ -31,6 +31,8 @@ _ACOES_RESTRITAS = {
     "preparar_receber_pedido",
     "preparar_cancelar_pedido",
     "preparar_mesa",
+    "preparar_promocao",
+    "preparar_campanha",
 }
 
 _LEITURAS_RESTRITAS = {

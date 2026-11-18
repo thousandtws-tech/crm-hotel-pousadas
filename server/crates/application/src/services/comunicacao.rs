@@ -62,6 +62,7 @@ pub struct ComunicacaoService {
     link_secret: String,
     pousada: String,
     lgpd: Arc<dyn LgpdRepository>,
+    campanhas: Arc<dyn CampanhaRepository>,
     /// Seleção explícita do provedor WhatsApp — `None` em testes legados.
     com_resolver: Option<Arc<dyn ComunicacaoResolver>>,
 }
@@ -80,6 +81,7 @@ impl ComunicacaoService {
         link_secret: String,
         pousada: String,
         lgpd: Arc<dyn LgpdRepository>,
+        campanhas: Arc<dyn CampanhaRepository>,
         com_resolver: Option<Arc<dyn ComunicacaoResolver>>,
     ) -> Self {
         Self {
@@ -94,6 +96,7 @@ impl ComunicacaoService {
             link_secret,
             pousada,
             lgpd,
+            campanhas,
             com_resolver,
         }
     }
@@ -1079,6 +1082,85 @@ impl ComunicacaoService {
     /// Reserva enxuta por id — cobrança manual da recepção.
     pub async fn reserva_auto_publica(&self, idreserva: i64) -> AppResult<Option<ReservaAuto>> {
         Ok(self.automacao.reserva_por_id(idreserva).await?)
+    }
+
+    // ------------------------------------------------------------------
+    // campanhas de marketing — blast WhatsApp para opt-ins LGPD
+    // ------------------------------------------------------------------
+
+    /// Dispara uma campanha WhatsApp para todos os hóspedes com
+    /// `consent_marketing` e sem opt-out. Cada destinatário vira um item
+    /// da fila comum com dedup `campanha:{id}:cliente:{id}` — retry,
+    /// supressão e relatório vêm de graça. `{nome}` no texto vira o
+    /// primeiro nome do hóspede.
+    pub async fn criar_campanha(
+        &self,
+        ator: &Ator,
+        nome: &str,
+        texto: &str,
+    ) -> AppResult<CampanhaView> {
+        ator.exigir_gerencial()?;
+        let nome = nome.trim();
+        let texto = texto.trim();
+        if nome.is_empty() {
+            return Err(DomainError::validacao("campanha precisa de nome").into());
+        }
+        if texto.is_empty() || texto.len() > 1000 {
+            return Err(DomainError::validacao(
+                "texto da campanha vazio ou longo demais (máx. 1000)",
+            )
+            .into());
+        }
+        let elegiveis = self.campanhas.elegiveis_marketing().await?;
+        let id = self.campanhas.criar(nome, texto, ator.id).await?;
+        let agora = Utc::now();
+        let mut enfileirados = 0i64;
+        for d in &elegiveis {
+            let corpo = serde_json::json!({
+                "tipo": "texto",
+                "texto": texto.replace("{nome}", primeiro_nome(&d.nome)),
+            });
+            let dedup = format!("campanha:{id}:cliente:{}", d.idcliente);
+            if self
+                .fila
+                .enfileirar_dedup(
+                    &NovoEnvio {
+                        canal: CanalEnvio::Whatsapp,
+                        destino: d.telefone.clone(),
+                        template: "campanha".into(),
+                        payload: corpo,
+                        idreserva: None,
+                        idcliente: Some(d.idcliente),
+                        idfuncionario: Some(ator.id),
+                        agendado_para: agora,
+                    },
+                    &dedup,
+                    1,
+                )
+                .await?
+                .is_some()
+            {
+                enfileirados += 1;
+            }
+        }
+        self.campanhas.marcar_disparada(id).await?;
+        Ok(CampanhaView {
+            id,
+            nome: nome.into(),
+            texto: texto.into(),
+            criado_em: agora,
+            disparada_em: Some(agora),
+            destinatarios: enfileirados,
+            enviados: 0,
+            falhas: 0,
+            pendentes: enfileirados,
+        })
+    }
+
+    /// Relatório — campanhas com contadores da fila, mais recente antes.
+    pub async fn listar_campanhas(&self, ator: &Ator) -> AppResult<Vec<CampanhaView>> {
+        ator.exigir_gerencial()?;
+        Ok(self.campanhas.listar().await?)
     }
 
     // ------------------------------------------------------------------

@@ -98,6 +98,46 @@ SCHEMAS: list[dict[str, Any]] = [
     },
     {
         "type": "function",
+        "name": "preparar_promocao",
+        "description": (
+            "Prepara a criação de uma promoção/cupom de marketing "
+            "(contrato corporativo): código público, % de desconto na "
+            "diária e vigência. O hóspede digita o código no site e a "
+            "diária já sai com desconto. NÃO cria — exige confirmar_acao."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": _props(
+                empresa={"type": "string", "description": "Nome da campanha, ex.: 'Promoção Verão'"},
+                codigo={"type": "string", "description": "Código público, ex.: VERAO10 (maiúsculo)"},
+                desconto_pct={"type": "number", "description": "Percentual de desconto 0-100"},
+                vigente_de={"type": "string", "description": "Início da vigência ISO yyyy-mm-dd"},
+                vigente_ate={"type": "string", "description": "Fim da vigência ISO yyyy-mm-dd"},
+                notas={"type": "string", "description": "Observações internas"},
+            ),
+            "required": ["empresa", "codigo", "desconto_pct", "vigente_de", "vigente_ate"],
+        },
+    },
+    {
+        "type": "function",
+        "name": "preparar_campanha",
+        "description": (
+            "Prepara o disparo de uma campanha de marketing por WhatsApp "
+            "para TODOS os hóspedes com consentimento de marketing "
+            "(opt-in LGPD). Use {nome} no texto para o primeiro nome do "
+            "hóspede. NÃO dispara — exige confirmar_acao."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": _props(
+                nome={"type": "string", "description": "Nome da campanha, ex.: 'Inauguração 10%'"},
+                texto={"type": "string", "description": "Texto do WhatsApp — use {nome} para personalizar"},
+            ),
+            "required": ["nome", "texto"],
+        },
+    },
+    {
+        "type": "function",
         "name": "preparar_cliente",
         "description": (
             "Cria ou atualiza o cadastro de um hóspede. acao='criar' exige "
@@ -512,6 +552,10 @@ async def handle(ex, nome: str, a: dict[str, Any]) -> dict[str, Any]:
             return await ex._preparar_consumo(a)
 
         # ----- CRUD completo -----
+        case "preparar_promocao":
+            return await ex._preparar_promocao(a)
+        case "preparar_campanha":
+            return await ex._preparar_campanha(a)
         case "preparar_cliente":
             return await ex._preparar_cliente(a)
         case "preparar_funcionario":

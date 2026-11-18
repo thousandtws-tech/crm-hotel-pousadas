@@ -38,8 +38,8 @@ pub use catalogo::{
 pub use cms::PgCmsRepository;
 pub use compras::PgComprasRepository;
 pub use comunicacao::{
-    PgAtendimentoRepository, PgAutomacaoRepository, PgAvaliacaoRepository, PgComunicacaoEventos,
-    PgFidelidadeRepository, PgFilaEnvio, PgInnaRepository, PgLgpdRepository,
+    PgAtendimentoRepository, PgAutomacaoRepository, PgAvaliacaoRepository, PgCampanhaRepository,
+    PgComunicacaoEventos, PgFidelidadeRepository, PgFilaEnvio, PgInnaRepository, PgLgpdRepository,
     PgPreReservaRepository, PgPushRepository,
 };
 pub use contrato::PgContratoRepository;

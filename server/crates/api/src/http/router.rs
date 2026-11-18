@@ -460,6 +460,10 @@ pub fn build(state: AppState) -> Router {
         )
         .route("/comunicacao/fila", get(routes::comunicacao::fila_listar))
         .route(
+            "/comunicacao/campanhas",
+            get(routes::comunicacao::campanhas_listar).post(routes::comunicacao::campanhas_criar),
+        )
+        .route(
             "/comunicacao/matriz",
             get(routes::comunicacao::matriz_listar).post(routes::comunicacao::matriz_gravar),
         )

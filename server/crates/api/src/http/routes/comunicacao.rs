@@ -488,6 +488,38 @@ pub async fn matriz_gravar(
     Ok(StatusCode::NO_CONTENT)
 }
 
+// ---------------------------------------------------------------------------
+// Campanhas de marketing — blast WhatsApp para opt-ins LGPD (gerencial).
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+pub struct CampanhaInput {
+    pub nome: String,
+    pub texto: String,
+}
+
+pub async fn campanhas_listar(
+    State(st): State<AppState>,
+    ator: Ator,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    Ok(Json(serde_json::json!(
+        st.services.comunicacao.listar_campanhas(&ator).await?
+    )))
+}
+
+pub async fn campanhas_criar(
+    State(st): State<AppState>,
+    ator: Ator,
+    Json(input): Json<CampanhaInput>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let v = st
+        .services
+        .comunicacao
+        .criar_campanha(&ator, &input.nome, &input.texto)
+        .await?;
+    Ok(Json(serde_json::json!(v)))
+}
+
 #[derive(Debug, Deserialize)]
 pub struct AvaliacaoFiltro {
     status: Option<String>,

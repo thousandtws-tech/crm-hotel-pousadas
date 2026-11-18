@@ -204,6 +204,31 @@ class Preparadores:
             for k in campos
         }
 
+    async def _preparar_promocao(self, a: dict[str, Any]) -> dict[str, Any]:
+        corpo = {
+            "empresa": a["empresa"].strip(),
+            "codigo": a["codigo"].strip().upper(),
+            "desconto_pct": float(a["desconto_pct"]),
+            "vigente_de": a["vigente_de"],
+            "vigente_ate": a["vigente_ate"],
+        }
+        if a.get("notas"):
+            corpo["notas"] = a["notas"]
+        return self._exec(
+            "criar_promocao", "post", "/contratos", corpo,
+            {"codigo": corpo["codigo"], "desconto_pct": corpo["desconto_pct"],
+             "vigencia": f"{corpo['vigente_de']} a {corpo['vigente_ate']}"},
+            f"Promoção {corpo['codigo']} ({corpo['desconto_pct']}%) criada.",
+        )
+
+    async def _preparar_campanha(self, a: dict[str, Any]) -> dict[str, Any]:
+        corpo = {"nome": a["nome"].strip(), "texto": a["texto"].strip()}
+        return self._exec(
+            "disparar_campanha", "post", "/comunicacao/campanhas", corpo,
+            {"campanha": corpo["nome"], "trecho": corpo["texto"][:60]},
+            f"Campanha '{corpo['nome']}' enfileirada para hóspedes opt-in.",
+        )
+
     async def _preparar_cliente(self, a: dict[str, Any]) -> dict[str, Any]:
         if a["acao"] == "criar":
             if not (a.get("cpf") and a.get("data_nascimento")):

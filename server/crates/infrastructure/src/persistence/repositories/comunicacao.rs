@@ -1619,3 +1619,73 @@ impl ComunicacaoEventoRepository for PgComunicacaoEventos {
         .map_err(map_db_err)
     }
 }
+
+// ---------------------------------------------------------------------------
+// Campanhas de marketing — blast WhatsApp para hóspedes com opt-in LGPD.
+// ---------------------------------------------------------------------------
+
+pub struct PgCampanhaRepository {
+    pool: PgPool,
+}
+
+impl PgCampanhaRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl CampanhaRepository for PgCampanhaRepository {
+    async fn criar(&self, nome: &str, texto: &str, criado_por: i64) -> Result<i64, DomainError> {
+        sqlx::query_scalar::<_, i64>(
+            "INSERT INTO comunicacao_campanha (nome, texto, criado_por)
+             VALUES ($1, $2, $3) RETURNING id",
+        )
+        .bind(nome)
+        .bind(texto)
+        .bind(criado_por)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn marcar_disparada(&self, id: i64) -> Result<(), DomainError> {
+        sqlx::query("UPDATE comunicacao_campanha SET disparada_em = now() WHERE id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    async fn listar(&self) -> Result<Vec<CampanhaView>, DomainError> {
+        sqlx::query_as::<_, CampanhaView>(
+            "SELECT c.id, c.nome, c.texto, c.criado_em, c.disparada_em,
+                    COUNT(f.id) AS destinatarios,
+                    COUNT(f.id) FILTER (WHERE f.status = 'enviado') AS enviados,
+                    COUNT(f.id) FILTER (WHERE f.status IN ('falhou','desconhecido','suprimido','cancelado')) AS falhas,
+                    COUNT(f.id) FILTER (WHERE f.status IN ('pendente','enviando')) AS pendentes
+             FROM comunicacao_campanha c
+             LEFT JOIN fila_envio f
+                    ON f.dedup_key LIKE 'campanha:' || c.id || ':%'
+             GROUP BY c.id
+             ORDER BY c.id DESC",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn elegiveis_marketing(&self) -> Result<Vec<CampanhaDestinatario>, DomainError> {
+        sqlx::query_as::<_, CampanhaDestinatario>(
+            "SELECT id AS idcliente, nome, telefone FROM cliente
+             WHERE consent_marketing = true
+               AND coalesce(lgpd_opt_out, false) = false
+               AND telefone IS NOT NULL AND btrim(telefone) <> ''
+             ORDER BY id",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+}

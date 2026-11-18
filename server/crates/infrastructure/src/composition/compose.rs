@@ -154,6 +154,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         settings.jwt_secret.clone(),
         settings.pousada_nome.clone(),
         lgpd_repo.clone(),
+        Arc::new(PgCampanhaRepository::new(pool.clone())),
         com_resolver.clone(),
     ));
 
