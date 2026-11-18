@@ -182,7 +182,7 @@ export abstract class ComunicacaoStore implements OnInit {
     this.modalAv.set(av);
   }
 
-  /** Pede à Inná (HTTP stateless no serviço Maria) uma resposta pública
+  /** Pede à Maria (HTTP stateless no serviço Maria) uma resposta pública
    *  sugerida — o texto cai no textarea pra revisão humana antes de publicar. */
   protected readonly gerandoIa = signal(false);
   async sugerirIa(): Promise<void> {
@@ -214,7 +214,7 @@ export abstract class ComunicacaoStore implements OnInit {
       if (!res.ok) throw new Error(data?.detail ?? 'IA indisponível');
       this.textoResposta = String(data.resposta ?? '');
     } catch (e) {
-      this.notify.erroMsg(`Inná não respondeu: ${e instanceof Error ? e.message : e}`);
+      this.notify.erroMsg(`Maria não respondeu: ${e instanceof Error ? e.message : e}`);
     } finally {
       this.gerandoIa.set(false);
     }

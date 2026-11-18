@@ -1047,6 +1047,111 @@ impl ComunicacaoService {
     }
 
     // ------------------------------------------------------------------
+    // dados do titular — PDF + envio por e-mail/WhatsApp (art. 18 LGPD)
+    // ------------------------------------------------------------------
+
+    /// Export LGPD do titular (reuso do mesmo escopo do endpoint JSON).
+    async fn export_por_token(&self, token: uuid::Uuid) -> AppResult<serde_json::Value> {
+        let r = self
+            .automacao
+            .reserva_publica_por_token(token)
+            .await?
+            .ok_or_else(|| DomainError::nao_encontrado("reserva não encontrada"))?;
+        Ok(self.lgpd.exportar_cliente(r.idcliente).await?)
+    }
+
+    /// PDF legível dos dados do titular — baixado direto pelo portal.
+    pub async fn lgpd_pdf_publico(&self, token: uuid::Uuid) -> AppResult<Vec<u8>> {
+        let export = self.export_por_token(token).await?;
+        crate::services::lgpd_pdf::render_export(&export, &self.pousada)
+    }
+
+    /// Enfileira o documento do titular — e-mail com PDF anexo ou
+    /// WhatsApp com o link único do PDF (mesmo token do portal).
+    pub async fn lgpd_enviar_publico(&self, token: uuid::Uuid, canal: CanalEnvio) -> AppResult<()> {
+        let r = self
+            .automacao
+            .reserva_publica_por_token(token)
+            .await?
+            .ok_or_else(|| DomainError::nao_encontrado("reserva não encontrada"))?;
+
+        let link_pdf = match &self.api_base {
+            Some(base) => format!(
+                "{}/api/v1/publico/lgpd/{token}/dados.pdf",
+                base.trim_end_matches('/')
+            ),
+            None => {
+                return Err(DomainError::Infra.into());
+            }
+        };
+        let export = self.lgpd.exportar_cliente(r.idcliente).await?;
+        let pdf = crate::services::lgpd_pdf::render_export(&export, &self.pousada)?;
+        let pdf_b64 = {
+            use base64::Engine;
+            base64::engine::general_purpose::STANDARD.encode(&pdf)
+        };
+
+        let corpo = serde_json::json!({
+            "assunto": format!("Seus dados — {}", self.pousada),
+            "html": format!(
+                "<p>Olá, {}!</p>\
+                 <p>Segue em anexo o documento com seus dados pessoais \
+                 (art. 18, LGPD), conforme solicitado no portal do hóspede.</p>\
+                 <p>Qualquer dúvida, responda este e-mail.</p>",
+                primeiro_nome(&r.cliente_nome)
+            ),
+            "tipo": "texto",
+            "texto": format!(
+                "Olá, {}! Seus dados pessoais estão neste documento: {}",
+                primeiro_nome(&r.cliente_nome),
+                link_pdf
+            ),
+            "anexos": [{
+                "nome": "meus-dados.pdf",
+                "conteudo_b64": pdf_b64,
+            }],
+        });
+
+        let (canal_envio, destino) = match canal {
+            CanalEnvio::Email => (
+                CanalEnvio::Email,
+                r.cliente_email
+                    .clone()
+                    .ok_or_else(|| DomainError::validacao("hóspede sem e-mail cadastrado"))?,
+            ),
+            CanalEnvio::Whatsapp => {
+                if !r.whatsapp_optin {
+                    return Err(DomainError::validacao(
+                        "hóspede não autorizou WhatsApp — use o e-mail",
+                    )
+                    .into());
+                }
+                (
+                    CanalEnvio::Whatsapp,
+                    r.cliente_telefone
+                        .clone()
+                        .ok_or_else(|| DomainError::validacao("hóspede sem telefone cadastrado"))?,
+                )
+            }
+            _ => return Err(DomainError::validacao("canal inválido").into()),
+        };
+
+        self.fila
+            .enfileirar(NovoEnvio {
+                canal: canal_envio,
+                destino,
+                template: "lgpd_dados".into(),
+                payload: corpo,
+                idreserva: Some(r.idreserva),
+                idcliente: Some(r.idcliente),
+                idfuncionario: None,
+                agendado_para: Utc::now(),
+            })
+            .await?;
+        Ok(())
+    }
+
+    // ------------------------------------------------------------------
     // push subscriptions
     // ------------------------------------------------------------------
 

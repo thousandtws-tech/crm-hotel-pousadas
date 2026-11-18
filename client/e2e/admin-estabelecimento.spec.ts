@@ -99,7 +99,7 @@ test('estabelecimento — página minimalista e densa', async ({ page }) => {
 
   // cards empilhados (sem grade lado a lado com espaço morto)
   await expect(page.locator('.est-secoes .est-card')).toHaveCount(2);
-  await expect(page.locator('fieldset.fld')).toHaveCount(2); // Concierge Inná + Conformidade
+  await expect(page.locator('fieldset.fld')).toHaveCount(2); // Concierge Maria + Conformidade
   await expect(page.locator('.grid-3').first()).toBeVisible();
 
   // descoberta: caixa neutra + registrar navy

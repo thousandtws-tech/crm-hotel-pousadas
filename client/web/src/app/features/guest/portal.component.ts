@@ -7,17 +7,19 @@ import { GuestService, MensagemChat, PortalInfo } from '../../core/services/gues
 import { SeoService } from '../../core/services/seo.service';
 
 type Estado = 'carregando' | 'ok' | 'erro';
+type CanalDados = 'email' | 'whatsapp';
+type EstadoEnvio = 'ocioso' | 'enviando' | 'enviado' | 'erro';
 
-/** Portal do hóspede — resumo da estadia + chat com a concierge Inná.
+/** Portal do hóspede — resumo da estadia + chat com a concierge Maria.
  *  Acesso pelo token opaco da reserva; o backend só expõe dados dela. */
 @Component({
   selector: 'app-portal',
   imports: [RouterLink, DatePipe, FormsModule],
   template: `
-    <header class="pt-32 pb-12 bg-[#032B38] text-white">
+    <header class="pt-32 pb-10 bg-[#032B38] text-white">
       <div class="max-w-2xl mx-auto px-6">
-        <p class="text-sm uppercase tracking-[0.2em] text-[#8FBECB] mb-2">Portal do hóspede</p>
-        <h1 class="text-3xl sm:text-4xl font-semibold">Sua hospedagem</h1>
+        <p class="text-xs font-medium uppercase tracking-[0.2em] text-[#8FBECB]">Portal do hóspede</p>
+        <h1 class="mt-2 text-3xl sm:text-4xl font-semibold">Sua hospedagem</h1>
         @if (info(); as i) {
           <p class="mt-3 text-white/80">
             {{ i.hospede }} · {{ i.acomodacao }} ·
@@ -27,37 +29,44 @@ type Estado = 'carregando' | 'ok' | 'erro';
       </div>
     </header>
 
-    <main class="max-w-2xl mx-auto px-6 py-10">
+    <main class="max-w-2xl mx-auto px-6 py-10 space-y-8">
       @switch (estado()) {
         @case ('carregando') {
-          <p class="text-center text-gray-500 py-16">Carregando sua reserva…</p>
+          <p class="py-16 text-center text-gray-600" role="status">Carregando sua reserva…</p>
         }
         @case ('erro') {
-          <div class="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+          <div class="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
             <h2 class="text-xl font-semibold text-red-800">Link inválido</h2>
-            <p class="mt-2 text-red-700">Não encontramos esta reserva. Fale com a recepção.</p>
-            <a routerLink="/" class="inline-block mt-6 text-[#032B38] underline">Voltar ao site</a>
+            <p class="mt-2 text-sm text-red-700">Não encontramos esta reserva. Fale com a recepção.</p>
+            <a routerLink="/"
+               class="mt-6 inline-block rounded-full bg-[#032B38] px-6 py-2.5 text-sm font-medium text-white
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
+              Voltar ao site
+            </a>
           </div>
         }
         @default {
-          <section aria-label="Conversa com a concierge" class="rounded-xl border border-gray-200 overflow-hidden">
-            <div class="bg-[#032B38] px-5 py-3 flex items-center gap-3">
-              <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#8FBECB] text-[#032B38] font-bold">I</span>
+          <section aria-labelledby="chat-titulo" class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div class="flex items-center gap-3 border-b border-gray-100 bg-[#032B38] px-5 py-4">
+              <span aria-hidden="true"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#8FBECB] text-lg font-bold text-[#032B38]">
+                M
+              </span>
               <div>
-                <p class="text-white font-medium">Inná</p>
+                <h2 id="chat-titulo" class="font-medium text-white">Maria</h2>
                 <p class="text-xs text-[#8FBECB]">Concierge da pousada — responde na hora</p>
               </div>
             </div>
 
-            <div class="h-96 overflow-y-auto bg-gray-50 p-4 space-y-3" role="log" aria-live="polite" aria-label="Mensagens">
+            <div class="h-96 space-y-3 overflow-y-auto bg-gray-50 p-4" role="log" aria-live="polite" aria-label="Mensagens com a Maria">
               @if (!mensagens().length) {
-                <p class="text-center text-sm text-gray-400 mt-8">
+                <p class="mt-8 text-center text-sm text-gray-600">
                   Pergunte sobre check-in, café da manhã, Wi-Fi ou serviços.
                 </p>
               }
               @for (m of mensagens(); track $index) {
                 <div class="flex" [class.justify-end]="m.origem === 'hospede'">
-                  <p class="max-w-[80%] rounded-2xl px-4 py-2 text-sm whitespace-pre-line"
+                  <p class="max-w-[80%] whitespace-pre-line rounded-2xl px-4 py-2 text-sm"
                      [class.bg-white]="m.origem === 'inna'"
                      [class.text-gray-800]="m.origem === 'inna'"
                      [class.border]="m.origem === 'inna'"
@@ -71,37 +80,81 @@ type Estado = 'carregando' | 'ok' | 'erro';
                 </div>
               }
               @if (enviando()) {
-                <p class="text-sm text-gray-400 italic">Inná está digitando…</p>
+                <p class="text-sm italic text-gray-600" role="status">Maria está digitando…</p>
               }
             </div>
 
             <form (ngSubmit)="enviar()" class="flex gap-2 border-t border-gray-200 bg-white p-3">
-              <label for="msg" class="sr-only">Sua mensagem</label>
+              <label for="msg" class="sr-only">Sua mensagem para a Maria</label>
               <input id="msg" name="msg" [(ngModel)]="rascunho" maxlength="1000" required
                      placeholder="Escreva sua pergunta…" autocomplete="off"
-                     class="flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm focus:border-[#032B38] focus:outline-none" />
+                     class="flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm
+                            focus:border-[#032B38] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8FBECB]" />
               <button type="submit" [disabled]="enviando() || !rascunho.trim()"
-                      class="rounded-full bg-[#032B38] px-5 py-2 text-sm font-medium text-white disabled:opacity-40">
+                      class="rounded-full bg-[#032B38] px-5 py-2 text-sm font-medium text-white
+                             disabled:opacity-40
+                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
                 Enviar
               </button>
             </form>
           </section>
 
-          <section aria-label="Seus dados e privacidade" class="mt-8 rounded-xl border border-gray-200 p-5">
-            <h2 class="text-sm font-semibold text-[#032B38]">Seus dados — LGPD</h2>
-            <p class="mt-1 text-xs text-gray-500">
-              Você pode baixar todos os seus dados ou pedir acesso, correção,
-              eliminação, portabilidade ou revogar consentimentos.
-              Respondemos em até 15 dias.
+          <section aria-labelledby="dados-titulo" class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <p class="text-xs font-medium uppercase tracking-[0.15em] text-[#032B38]/60">Privacidade</p>
+            <h2 id="dados-titulo" class="mt-1 text-lg font-semibold text-[#032B38]">Seus dados</h2>
+            <p class="mt-1 text-sm text-gray-600">
+              Baixe o documento com seus dados ou receba no seu e-mail e WhatsApp.
             </p>
-            <div class="mt-3 flex flex-wrap gap-2">
-              <button type="button" (click)="baixarDados()" [disabled]="baixando()"
-                      class="rounded-full border border-[#032B38] px-4 py-1.5 text-xs font-medium text-[#032B38]">
-                {{ baixando() ? 'Gerando…' : 'Baixar meus dados (JSON)' }}
+
+            <div class="mt-4 flex flex-wrap items-center gap-2">
+              <a [href]="urlDadosPdf" download
+                 class="inline-flex items-center gap-2 rounded-full bg-[#032B38] px-5 py-2 text-sm font-medium text-white
+                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
+                <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10 2a1 1 0 0 1 1 1v8.6l2.3-2.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L9 11.6V3a1 1 0 0 1 1-1Z"/>
+                  <path d="M3 15a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z"/>
+                </svg>
+                Baixar meus dados
+              </a>
+              <button type="button" (click)="enviarDados('email')" [disabled]="envioDados() === 'enviando'"
+                      [attr.aria-busy]="envioDados() === 'enviando'"
+                      class="rounded-full border border-[#032B38] px-4 py-2 text-sm font-medium text-[#032B38]
+                             disabled:opacity-40
+                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
+                Receber por e-mail
+              </button>
+              <button type="button" (click)="enviarDados('whatsapp')" [disabled]="envioDados() === 'enviando'"
+                      [attr.aria-busy]="envioDados() === 'enviando'"
+                      class="rounded-full border border-[#032B38] px-4 py-2 text-sm font-medium text-[#032B38]
+                             disabled:opacity-40
+                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
+                Receber no WhatsApp
               </button>
             </div>
+
+            <div role="status" aria-live="polite" class="mt-3 min-h-5">
+              @if (envioDados() === 'enviando') {
+                <p class="text-sm text-gray-600">Enviando para {{ ultimoCanal() === 'email' ? 'seu e-mail' : 'seu WhatsApp' }}…</p>
+              }
+              @if (envioDados() === 'enviado') {
+                <p class="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+                  Enviado — confira {{ ultimoCanal() === 'email' ? 'sua caixa de entrada' : 'seu WhatsApp' }} em instantes.
+                </p>
+              }
+              @if (envioDados() === 'erro') {
+                <p class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                  {{ erroEnvio() }}
+                </p>
+              }
+            </div>
+
+            <h3 class="mt-6 text-sm font-semibold text-[#032B38]">Outros pedidos</h3>
+            <p class="mt-1 text-sm text-gray-600">
+              Correção, eliminação, portabilidade ou revogação de consentimentos —
+              respondemos em até 15 dias.
+            </p>
             @if (protocolo(); as p) {
-              <p class="mt-3 rounded-lg bg-green-50 border border-green-200 p-3 text-xs text-green-800">
+              <p class="mt-3 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
                 Solicitação registrada — protocolo <strong>#{{ p.protocolo }}</strong>.
                 Nossa equipe responde em até {{ p.prazo_dias }} dias.
               </p>
@@ -110,7 +163,8 @@ type Estado = 'carregando' | 'ok' | 'erro';
                 <div class="flex flex-wrap gap-2">
                   <label for="tipo-lgpd" class="sr-only">Tipo de solicitação</label>
                   <select id="tipo-lgpd" name="tipo-lgpd" [(ngModel)]="tipoLgpd"
-                          class="rounded-full border border-gray-300 px-3 py-1.5 text-xs">
+                          class="rounded-full border border-gray-300 px-3 py-2 text-sm
+                                 focus:border-[#032B38] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8FBECB]">
                     <option value="acesso">Confirmar/acessar meus dados</option>
                     <option value="retificacao">Corrigir meus dados</option>
                     <option value="eliminacao">Eliminar meus dados pessoais</option>
@@ -118,14 +172,17 @@ type Estado = 'carregando' | 'ok' | 'erro';
                     <option value="revogacao">Revogar consentimentos</option>
                   </select>
                   <button type="submit" [disabled]="solicitando()"
-                          class="rounded-full bg-[#032B38] px-4 py-1.5 text-xs font-medium text-white disabled:opacity-40">
+                          class="rounded-full bg-[#032B38] px-4 py-2 text-sm font-medium text-white
+                                 disabled:opacity-40
+                                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
                     {{ solicitando() ? 'Enviando…' : 'Solicitar' }}
                   </button>
                 </div>
-                <label for="detalhe-lgpd" class="sr-only">Detalhe (opcional)</label>
+                <label for="detalhe-lgpd" class="sr-only">Detalhe do pedido (opcional)</label>
                 <input id="detalhe-lgpd" name="detalhe-lgpd" [(ngModel)]="detalheLgpd" maxlength="500"
                        placeholder="Detalhe do pedido (opcional)"
-                       class="rounded-full border border-gray-300 px-4 py-1.5 text-xs focus:border-[#032B38] focus:outline-none" />
+                       class="rounded-full border border-gray-300 px-4 py-2 text-sm
+                              focus:border-[#032B38] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8FBECB]" />
               </form>
             }
           </section>
@@ -144,9 +201,12 @@ export class PortalComponent implements OnInit {
   readonly info = signal<PortalInfo | null>(null);
   readonly mensagens = signal<MensagemChat[]>([]);
   readonly enviando = signal(false);
-  readonly baixando = signal(false);
+  readonly envioDados = signal<EstadoEnvio>('ocioso');
+  readonly ultimoCanal = signal<CanalDados>('email');
+  readonly erroEnvio = signal('');
   readonly solicitando = signal(false);
   readonly protocolo = signal<{ protocolo: number; prazo_dias: number } | null>(null);
+  urlDadosPdf = '';
   rascunho = '';
   tipoLgpd = 'acesso';
   detalheLgpd = '';
@@ -156,6 +216,7 @@ export class PortalComponent implements OnInit {
     this.seo.updateSeo({ title: 'Portal do hóspede', description: 'Concierge digital da sua hospedagem' });
     this.meta.updateTag({ name: 'robots', content: 'noindex' });
     this.token = this.route.snapshot.paramMap.get('token') ?? '';
+    this.urlDadosPdf = this.guest.dadosPdfUrl(this.token);
     this.guest.portal(this.token).subscribe({
       next: (i) => {
         this.info.set(i);
@@ -187,22 +248,23 @@ export class PortalComponent implements OnInit {
     });
   }
 
-  /** LGPD art. 18 — baixa o JSON com todos os dados pessoais do titular. */
-  baixarDados(): void {
-    if (this.baixando()) return;
-    this.baixando.set(true);
-    this.guest.exportarDados(this.token).subscribe({
-      next: (dados) => {
-        const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'meus-dados.json';
-        a.click();
-        URL.revokeObjectURL(url);
-        this.baixando.set(false);
+  /** LGPD — envia o documento do titular pelo canal escolhido (fila do backend). */
+  enviarDados(canal: CanalDados): void {
+    if (this.envioDados() === 'enviando') return;
+    this.ultimoCanal.set(canal);
+    this.envioDados.set('enviando');
+    this.erroEnvio.set('');
+    this.guest.enviarDados(this.token, canal).subscribe({
+      next: () => this.envioDados.set('enviado'),
+      error: (e) => {
+        const msg =
+          e?.error?.mensagem ??
+          e?.error?.erro ??
+          e?.error?.message ??
+          'Não foi possível enviar agora — fale com a recepção ou tente pelo e-mail.';
+        this.erroEnvio.set(msg);
+        this.envioDados.set('erro');
       },
-      error: () => this.baixando.set(false),
     });
   }
 

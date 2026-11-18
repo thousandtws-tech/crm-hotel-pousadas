@@ -59,12 +59,27 @@ impl Emissor for ResendEmissor {
         _template: &str,
         payload: &serde_json::Value,
     ) -> Result<Option<String>, DomainError> {
-        let corpo = serde_json::json!({
+        let mut corpo = serde_json::json!({
             "from": self.remetente,
             "to": [destino],
             "subject": payload["assunto"].as_str().unwrap_or("Pousada Espírito do Mar"),
             "html": payload["html"].as_str().unwrap_or(""),
         });
+        // Anexos opcionais — `anexos: [{nome, conteudo_b64}]` (ex.: PDF
+        // LGPD). Resend espera `attachments: [{filename, content}]`.
+        if let Some(anexos) = payload["anexos"].as_array() {
+            let atts: Vec<serde_json::Value> = anexos
+                .iter()
+                .filter_map(|a| {
+                    let nome = a["nome"].as_str()?;
+                    let conteudo = a["conteudo_b64"].as_str()?;
+                    Some(serde_json::json!({"filename": nome, "content": conteudo}))
+                })
+                .collect();
+            if !atts.is_empty() {
+                corpo["attachments"] = serde_json::json!(atts);
+            }
+        }
         let r = self
             .http
             .post("https://api.resend.com/emails")

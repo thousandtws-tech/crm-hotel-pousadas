@@ -290,7 +290,7 @@
           } @empty {
             <tr>
               <td colspan="9" class="vazio">
-                Fila vazia — escaladas da Inná e urgências caem aqui.
+                Fila vazia — escaladas da Maria e urgências caem aqui.
               </td>
             </tr>
           }
@@ -347,7 +347,7 @@
         </label>
         <div class="acoes">
           <button class="btn-sec" (click)="sugerirIa()" [disabled]="gerandoIa()">
-            {{ gerandoIa() ? 'Inná escrevendo…' : '✨ Sugerir com Inná' }}
+            {{ gerandoIa() ? 'Maria escrevendo…' : '✨ Sugerir com Maria' }}
           </button>
           <button class="btn-sec" (click)="modalAv.set(null)">Cancelar</button>
           <button class="btn" [disabled]="!textoResposta.trim()" (click)="enviarResposta()">

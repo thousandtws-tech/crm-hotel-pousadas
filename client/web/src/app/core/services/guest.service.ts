@@ -78,9 +78,16 @@ export class GuestService {
     return this.http.post<RespostaConcierge>(`${this.base}/concierge/${token}`, { mensagem });
   }
 
-  /** LGPD art. 18 — todos os dados pessoais do titular (download JSON). */
-  exportarDados(token: string): Observable<unknown> {
-    return this.http.get<unknown>(`${this.base}/lgpd/${token}`);
+  /** LGPD art. 18 — documento PDF legível com os dados do titular.
+   *  URL direta: o navegador baixa via Content-Disposition do backend. */
+  dadosPdfUrl(token: string): string {
+    return `${this.base}/lgpd/${token}/dados.pdf`;
+  }
+
+  /** LGPD — enfileira o documento do titular no canal pedido
+   *  (e-mail com PDF anexo ou WhatsApp com o link do documento). */
+  enviarDados(token: string, canal: 'email' | 'whatsapp'): Observable<void> {
+    return this.http.post<void>(`${this.base}/lgpd/${token}/enviar`, { canal });
   }
 
   /** LGPD — nova solicitação do titular (protocolo + prazo de 15 dias). */

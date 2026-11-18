@@ -129,7 +129,7 @@ impl AtendimentoService {
         let telefone = r.cliente_telefone.as_deref();
         let (idreserva, idcliente) = (Some(r.idreserva), Some(r.idcliente));
         let assunto = format!(
-            "Escalada Inná — {}",
+            "Escalada Maria — {}",
             r.cliente_nome
                 .split_whitespace()
                 .next()

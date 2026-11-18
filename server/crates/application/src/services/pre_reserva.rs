@@ -1,6 +1,6 @@
 //! Pré-reserva via WhatsApp — máquina de estados determinística por
 //! telefone. A IA nunca toca em datas/dinheiro: intenção de reserva cai
-//! aqui antes de chegar à Inná.
+//! aqui antes de chegar à Maria.
 //!
 //! Fluxo: intenção → datas → cotação real (`disponibilidade`) → nome →
 //! confirmação explícita → reserva pendente (hold) + link oficial do
@@ -72,7 +72,7 @@ impl PreReservaService {
     }
 
     /// `Some(texto)` quando a mensagem pertence ao fluxo de pré-reserva —
-    /// o concierge enfileira a resposta e não chama a Inná.
+    /// o concierge enfileira a resposta e não chama a Maria.
     pub async fn processar(&self, telefone: &str, texto: &str) -> AppResult<Option<String>> {
         let t = normalizar(texto);
         let estado = self.repo.pre_reserva_obter(telefone).await?;
@@ -246,7 +246,7 @@ impl PreReservaService {
                     email: format!("wa{tel}@whatsapp.local"),
                     telefone: tel.to_string(),
                     cpf: None,
-                    observacoes: Some("Pré-reserva via WhatsApp (Inná)".into()),
+                    observacoes: Some("Pré-reserva via WhatsApp (Maria)".into()),
                     early_checkin: None,
                     late_checkout: None,
                     codigo_corporativo: None,

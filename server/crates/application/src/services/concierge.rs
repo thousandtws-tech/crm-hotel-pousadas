@@ -1,4 +1,4 @@
-//! Inná Concierge — chat do hóspede sem login, com escopo restrito por
+//! Maria Concierge — chat do hóspede sem login, com escopo restrito por
 //! token opaco da reserva (portal) ou por telefone (WhatsApp inbound).
 //!
 //! O serviço de IA (`ConciergeIa`) só recebe o contexto seguro montado
@@ -33,7 +33,7 @@ pub struct ConciergeService {
     app_secret: Option<String>,
     lgpd: Arc<dyn LgpdRepository>,
     /// Pré-reserva determinística — intercepta intenção de reserva antes
-    /// da Inná responder (IA nunca toca em datas/dinheiro).
+    /// da Maria responder (IA nunca toca em datas/dinheiro).
     pre_reserva: Arc<crate::services::PreReservaService>,
     /// Roteamento — escalada vira protocolo por setor com SLA.
     atendimento: Arc<crate::services::AtendimentoService>,
@@ -147,7 +147,7 @@ impl ConciergeService {
         }
         // Pré-reserva — fluxo determinístico por telefone; funciona sem
         // reserva ativa (é justamente pra criar uma). Se a mensagem não é
-        // do fluxo, segue pro caminho normal (reserva → Inná).
+        // do fluxo, segue pro caminho normal (reserva → Maria).
         if let Some(resp) = self.pre_reserva.processar(&digitos, texto).await? {
             self.fila
                 .enfileirar(NovoEnvio {
@@ -298,7 +298,7 @@ impl ConciergeService {
                     self.comunicacao
                         .avisar_equipe(
                             "inna.escalada",
-                            "Inná pediu atendimento humano",
+                            "Maria pediu atendimento humano",
                             &format!(
                                 "{} (reserva #{}, {}): {}",
                                 primeiro_nome(&r.cliente_nome),

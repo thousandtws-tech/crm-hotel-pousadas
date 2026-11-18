@@ -32,6 +32,7 @@ pub mod impressoras;
 pub mod infobip;
 pub mod integracoes;
 pub mod lgpd;
+pub mod lgpd_pdf;
 pub mod manutencao;
 pub mod notificacoes;
 pub mod operadoras;

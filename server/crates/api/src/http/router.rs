@@ -1232,6 +1232,21 @@ pub fn build(state: AppState) -> Router {
                     IpRateLimit::middleware,
                 )),
         )
+        // documento do titular — PDF + envio por e-mail/WhatsApp
+        .route(
+            "/api/v1/publico/lgpd/{token}/dados.pdf",
+            get(routes::comunicacao::lgpd_pdf_publico).route_layer(from_fn_with_state(
+                IpRateLimit::novo(10, Duration::from_secs(60)),
+                IpRateLimit::middleware,
+            )),
+        )
+        .route(
+            "/api/v1/publico/lgpd/{token}/enviar",
+            post(routes::comunicacao::lgpd_enviar_publico).route_layer(from_fn_with_state(
+                IpRateLimit::novo(10, Duration::from_secs(60)),
+                IpRateLimit::middleware,
+            )),
+        )
         .route("/api/v1/midia/{id}", get(routes::cms::servir_midia))
         .route(
             "/metrics",

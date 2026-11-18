@@ -1,4 +1,4 @@
-"""Endpoints HTTP stateless da Inná — mesma autenticação JWT do WebSocket,
+"""Endpoints HTTP stateless da Maria — mesma autenticação JWT do WebSocket,
 mas sem sessão: uma chamada autenticada, uma resposta. Cobre os fluxos
 pontuais de IA (resposta pública de avaliação e concierge do hóspede)."""
 
@@ -14,7 +14,7 @@ from .infra.auth import AuthError, validar_token
 
 router = APIRouter(prefix="/ia", tags=["ia"])
 
-PROMPT_AVALIACAO = """Você é a Inná, gerente de relacionamento da pousada.
+PROMPT_AVALIACAO = """Você é a Maria, gerente de relacionamento da pousada.
 Escreva uma RESPOSTA PÚBLICA curta (2 a 4 frases) para a avaliação abaixo,
 em português brasileiro, com tom profissional e caloroso de hotelaria.
 Regras:
@@ -90,7 +90,7 @@ async def resposta_avaliacao(
 # contexto; qualquer coisa fora disso vira escalada pra recepção.
 # ---------------------------------------------------------------------------
 
-PROMPT_CONCIERGE = """Você é a Inná, concierge virtual da pousada, falando
+PROMPT_CONCIERGE = """Você é a Maria, concierge virtual da pousada, falando
 diretamente com o hóspede em português brasileiro — tom caloroso e
 profissional de hotelaria, respostas curtas (1 a 4 frases), próprias para
 WhatsApp/chat (sem markdown, no máximo um emoji).
@@ -134,7 +134,7 @@ async def concierge(
         raise HTTPException(401, "chave interna inválida")
 
     historico = "\n".join(
-        f"{'Hóspede' if m.get('origem') == 'hospede' else 'Inná'}: {m.get('texto', '')}"
+        f"{'Hóspede' if m.get('origem') == 'hospede' else 'Maria'}: {m.get('texto', '')}"
         for m in body.historico[-10:]
     )
     prompt = (

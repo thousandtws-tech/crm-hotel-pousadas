@@ -179,6 +179,51 @@ pub async fn lgpd_exportar_publico(
     ))
 }
 
+/// PDF legível dos dados do titular — baixado direto pelo portal.
+pub async fn lgpd_pdf_publico(
+    State(st): State<AppState>,
+    Path(token): Path<uuid::Uuid>,
+) -> Result<axum::response::Response, ApiError> {
+    let pdf = st.services.comunicacao.lgpd_pdf_publico(token).await?;
+    use axum::response::IntoResponse;
+    Ok((
+        [
+            (axum::http::header::CONTENT_TYPE, "application/pdf"),
+            (
+                axum::http::header::CONTENT_DISPOSITION,
+                "attachment; filename=\"meus-dados.pdf\"",
+            ),
+        ],
+        pdf,
+    )
+        .into_response())
+}
+
+#[derive(Deserialize)]
+pub struct EnviarDadosInput {
+    pub canal: String,
+}
+
+/// Enfileira o documento do titular — e-mail com PDF anexo ou WhatsApp
+/// com o link único do PDF. Mesmo token opaco que libera o portal.
+pub async fn lgpd_enviar_publico(
+    State(st): State<AppState>,
+    Path(token): Path<uuid::Uuid>,
+    Json(body): Json<EnviarDadosInput>,
+) -> Result<StatusCode, ApiError> {
+    use clarituz_domain::enums::CanalEnvio;
+    let canal = match body.canal.as_str() {
+        "email" => CanalEnvio::Email,
+        "whatsapp" => CanalEnvio::Whatsapp,
+        _ => return Err(DomainError::validacao("canal deve ser 'email' ou 'whatsapp'").into()),
+    };
+    st.services
+        .comunicacao
+        .lgpd_enviar_publico(token, canal)
+        .await?;
+    Ok(StatusCode::ACCEPTED)
+}
+
 pub async fn lgpd_listar(
     State(st): State<AppState>,
     ator: Ator,
