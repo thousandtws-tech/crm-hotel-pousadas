@@ -5,6 +5,7 @@
 //! preventiva por uso e histórico 12m pro contexto da Inná.
 
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use chrono::Utc;
 use clarituz_domain::entities::preditivo::*;
@@ -27,14 +28,23 @@ const LTV_VIP: i64 = 5000;
 const ESTADIAS_VIP: i64 = 3;
 const DIAS_ATIVO: i64 = 180;
 const DIAS_EM_RISCO: i64 = 365;
+/// TTL do resumo executivo — dado de dashboard, minuto de defasagem
+/// é imperceptível e evita reexecutar 7 agregações por refresh.
+const RESUMO_TTL: Duration = Duration::from_secs(60);
 
 pub struct PreditivoService {
     repo: Arc<dyn PreditivoRepository>,
+    /// Cache single-flight: o write lock segura a recompute — concorrentes
+    /// esperam e leem a entrada fresca em vez de disparar N×7 queries.
+    resumo_cache: tokio::sync::RwLock<Option<(Instant, IaResumo)>>,
 }
 
 impl PreditivoService {
     pub fn new(repo: Arc<dyn PreditivoRepository>) -> Self {
-        Self { repo }
+        Self {
+            repo,
+            resumo_cache: tokio::sync::RwLock::new(None),
+        }
     }
 
     // ------------------------------------------------------------------
@@ -370,21 +380,48 @@ impl PreditivoService {
     // ------------------------------------------------------------------
 
     pub async fn resumo(&self, ator: &Ator) -> AppResult<IaResumo> {
-        let ocup = self.ocupacao_14d(ator).await?;
-        let ocup_media = media_ocupacao(&ocup);
-        let fluxo = self.fluxo_caixa_30d(ator).await?;
-        let pace = self.pace(ator).await?;
-        let riscos = self.risco_cancelamentos(ator).await?;
-        let upsells = self.upsells(ator).await?;
-        let perfis = self.perfis(ator).await?;
+        // Autorização antes do cache: sem isso um ator sem nível gerencial
+        // receberia a entrada cacheada que ele nunca conseguiria calcular.
+        ator.exigir_gerencial()?;
+        {
+            let guard = self.resumo_cache.read().await;
+            if let Some((em, r)) = &*guard {
+                if em.elapsed() < RESUMO_TTL {
+                    return Ok(r.clone());
+                }
+            }
+        }
+        let mut guard = self.resumo_cache.write().await;
+        if let Some((em, r)) = &*guard {
+            if em.elapsed() < RESUMO_TTL {
+                return Ok(r.clone());
+            }
+        }
+        let r = self.resumo_calcular(ator).await?;
+        *guard = Some((Instant::now(), r.clone()));
+        Ok(r)
+    }
+
+    /// As 7 agregações rodam em paralelo — o tempo de resposta passa a ser
+    /// o da query mais lenta, não a soma de todos os round-trips.
+    async fn resumo_calcular(&self, ator: &Ator) -> AppResult<IaResumo> {
+        let (ocup, fluxo, pace, riscos, upsells, perfis, receita) = tokio::try_join!(
+            self.ocupacao_14d(ator),
+            self.fluxo_caixa_30d(ator),
+            self.pace(ator),
+            self.risco_cancelamentos(ator),
+            self.upsells(ator),
+            self.perfis(ator),
+            self.receita_4sem(ator),
+        )?;
         let mut mapa = std::collections::HashMap::new();
         for p in &perfis {
             *mapa.entry(p.classe.clone()).or_insert(0i64) += 1;
         }
         Ok(IaResumo {
-            ocupacao_media_pct: ocup_media,
+            ocupacao_media_pct: media_ocupacao(&ocup),
             ocupacao_14d: ocup,
-            receita_4sem: self.receita_4sem(ator).await?,
+            receita_4sem: receita,
             fluxo,
             pace,
             riscos_altos: riscos.iter().filter(|r| r.nivel == "vermelho").count() as i64,
