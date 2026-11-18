@@ -1,0 +1,257 @@
+<div class="fd">
+  <!-- ============================ cabeçalho ============================ -->
+  <header class="fd-head">
+    <div>
+      <p class="eyebrow">Front Desk</p>
+      <h2 class="titulo">Recepção</h2>
+      <p class="sub">{{ hoje | date: "EEEE, d 'de' MMMM 'de' yyyy" }}</p>
+    </div>
+    <div class="fd-acoes">
+      <button
+        class="btn-ghost"
+        type="button"
+        (click)="carregar()"
+        [disabled]="carregando()"
+        aria-label="Atualizar painel"
+        title="Atualizar"
+      >
+        <mat-icon>refresh</mat-icon>
+      </button>
+      <a class="btn-pri" routerLink="/reservas"> <mat-icon>calendar_month</mat-icon> Reservas </a>
+    </div>
+  </header>
+
+  <!-- ============================ KPIs do turno ============================ -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-txt">
+        <span class="stat-l">Ocupação</span>
+        <p>
+          <strong>{{ ocupacao() }}%</strong
+          ><small>{{ ocupados() }} de {{ mapa().length }} quartos</small>
+        </p>
+        <div class="stat-bar" role="img" [attr.aria-label]="'Ocupação de ' + ocupacao() + '%'">
+          <i [style.width.%]="ocupacao()"></i>
+        </div>
+      </div>
+      <span class="stat-ico"><mat-icon>hotel</mat-icon></span>
+    </div>
+    <div class="stat">
+      <div class="stat-txt">
+        <span class="stat-l">Chegadas hoje</span>
+        <p>
+          <strong [class.stat-warn]="chegadas().length > 0">{{ chegadas().length }}</strong>
+          <small>{{ chegadas().length === 1 ? 'reserva' : 'reservas' }}</small>
+        </p>
+      </div>
+      <span class="stat-ico ico-in"><mat-icon>luggage</mat-icon></span>
+    </div>
+    <div class="stat">
+      <div class="stat-txt">
+        <span class="stat-l">Saídas hoje</span>
+        <p>
+          <strong [class.stat-warn]="saidas().length > 0">{{ saidas().length }}</strong>
+          <small>{{ saidas().length === 1 ? 'saída' : 'saídas' }}</small>
+        </p>
+      </div>
+      <span class="stat-ico ico-out"><mat-icon>meeting_room</mat-icon></span>
+    </div>
+    <div class="stat">
+      <div class="stat-txt">
+        <span class="stat-l">Na casa</span>
+        <p>
+          <strong>{{ naCasa().length }}</strong>
+          <small>{{ naCasa().length === 1 ? 'reserva' : 'reservas' }}</small>
+        </p>
+      </div>
+      <span class="stat-ico ico-casa"><mat-icon>king_bed</mat-icon></span>
+    </div>
+    <div class="stat">
+      <div class="stat-txt">
+        <span class="stat-l">Em atenção</span>
+        <p>
+          <strong>{{ emAtencao() }}</strong>
+          <small>{{ limpezaPend() }} limpeza · {{ manutAberta() }} manut.</small>
+        </p>
+      </div>
+      <span class="stat-ico ico-atn"><mat-icon>room_preferences</mat-icon></span>
+    </div>
+  </div>
+
+  <div class="fd-grid">
+    <!-- ==================== coluna operacional ==================== -->
+    <div class="fd-col">
+      <!-- ============ chegadas ============ -->
+      <section class="fd-card">
+        <header class="sec-head">
+          <h3><mat-icon>how_to_reg</mat-icon> Chegadas</h3>
+          <span class="pill p-arr">{{ chegadas().length }}</span>
+        </header>
+        @if (carregando()) {
+          @for (s of skel; track s) {
+            <div class="skel skel-row"></div>
+          }
+        } @else {
+          @for (r of chegadas(); track r.id) {
+            <div class="row">
+              <span class="av">{{ iniciais(r.cliente_nome) }}</span>
+              <span class="row-txt">
+                <strong>{{ r.cliente_nome }}</strong>
+                <small>
+                  {{ r.acomodacao_nome }} Nº{{ r.acomodacao_numero }} ·
+                  {{ r.quantidade_hospedes }}
+                  {{ r.quantidade_hospedes === 1 ? 'hóspede' : 'hóspedes' }} · {{ diarias(r) }}
+                  {{ diarias(r) === 1 ? 'diária' : 'diárias' }}
+                </small>
+              </span>
+              <button
+                class="btn-ck"
+                type="button"
+                [disabled]="aguardando() === r.id"
+                (click)="checkin(r)"
+              >
+                <mat-icon>key</mat-icon>
+                {{ aguardando() === r.id ? 'Check-in…' : 'Check-in' }}
+              </button>
+            </div>
+          } @empty {
+            <p class="vazio">
+              <mat-icon>done_all</mat-icon>
+              Todas as chegadas previstas já entraram.
+            </p>
+          }
+        }
+      </section>
+
+      <!-- ============ saídas ============ -->
+      <section class="fd-card">
+        <header class="sec-head">
+          <h3><mat-icon>meeting_room</mat-icon> Saídas</h3>
+          <span class="pill p-out">{{ saidas().length }}</span>
+        </header>
+        @if (carregando()) {
+          @for (s of skel; track s) {
+            <div class="skel skel-row"></div>
+          }
+        } @else {
+          @for (r of saidas(); track r.id) {
+            <a class="row link" [routerLink]="['/reservas', r.id]">
+              <span class="av">{{ iniciais(r.cliente_nome) }}</span>
+              <span class="row-txt">
+                <strong>{{ r.cliente_nome }}</strong>
+                <small>{{ r.acomodacao_nome }} Nº{{ r.acomodacao_numero }} · sai hoje</small>
+              </span>
+              <span class="go">
+                <small>Check-out</small>
+                <mat-icon>chevron_right</mat-icon>
+              </span>
+            </a>
+          } @empty {
+            <p class="vazio">
+              <mat-icon>done_all</mat-icon>
+              Nenhuma saída prevista para hoje.
+            </p>
+          }
+        }
+      </section>
+
+      <!-- ============ na casa ============ -->
+      <section class="fd-card">
+        <header class="sec-head">
+          <h3><mat-icon>king_bed</mat-icon> Hóspedes na casa</h3>
+          <span class="pill p-casa">{{ naCasa().length }}</span>
+        </header>
+        @if (carregando()) {
+          @for (s of skel; track s) {
+            <div class="skel skel-row"></div>
+          }
+        } @else {
+          @for (r of naCasa(); track r.id) {
+            <a class="row link" [routerLink]="['/reservas', r.id]">
+              <span class="av">{{ iniciais(r.cliente_nome) }}</span>
+              <span class="row-txt">
+                <strong>{{ r.cliente_nome }}</strong>
+                <small>{{ r.acomodacao_nome }} Nº{{ r.acomodacao_numero }}</small>
+              </span>
+              <span class="go">
+                <small>até {{ r.saidaprevista | date: 'dd/MM' }}</small>
+                <mat-icon>chevron_right</mat-icon>
+              </span>
+            </a>
+          } @empty {
+            <p class="vazio">
+              <mat-icon>bedtime</mat-icon>
+              Nenhum hóspede na casa.
+            </p>
+          }
+        }
+      </section>
+    </div>
+
+    <!-- ==================== mapa de quartos ==================== -->
+    <section class="fd-card fd-mapa">
+      <header class="sec-head">
+        <h3><mat-icon>map</mat-icon> Mapa de quartos</h3>
+        <div class="leg" role="list" aria-label="Legenda de status">
+          <span role="listitem"><i class="dt lv"></i>Livre</span>
+          <span role="listitem"><i class="dt oc"></i>Ocupado</span>
+          <span role="listitem"><i class="dt pd"></i>Chega hoje</span>
+          <span role="listitem"><i class="dt bq"></i>Bloqueado</span>
+          <span role="listitem"><i class="dt lm"></i>Limpeza</span>
+          <span role="listitem"><i class="dt mn"></i>Manutenção</span>
+        </div>
+      </header>
+
+      @if (carregando()) {
+        <div class="qt-grid">
+          @for (s of skelMapa; track s) {
+            <div class="skel skel-qt"></div>
+          }
+        </div>
+      } @else {
+        @for (a of andares(); track a.andar) {
+          <div class="andar">
+            <span class="andar-lbl">
+              {{ a.andar === 0 ? 'Térreo' : a.andar + 'º andar' }}
+              <em>{{ a.quartos.length }} {{ a.quartos.length === 1 ? 'quarto' : 'quartos' }}</em>
+            </span>
+            <div class="qt-grid">
+              @for (q of a.quartos; track q.id) {
+                <button
+                  class="qt"
+                  [class]="'qt ' + statusQuarto(q)"
+                  type="button"
+                  [routerLink]="q.idreserva_hoje ? ['/reservas', q.idreserva_hoje] : []"
+                  [title]="q.nome + ' Nº' + q.numero + ' — ' + rotuloQuarto(q)"
+                  [attr.aria-label]="q.nome + ' Nº' + q.numero + ' — ' + rotuloQuarto(q)"
+                >
+                  <b>{{ q.numero }}</b>
+                  <small>{{ q.nome }}</small>
+                  @if (q.limpeza_pendente > 0 || q.manut_aberta > 0) {
+                    <span class="qt-flags">
+                      @if (q.limpeza_pendente > 0) {
+                        <em class="flg lm" title="Limpeza pendente">
+                          <mat-icon>cleaning_services</mat-icon>{{ q.limpeza_pendente }}
+                        </em>
+                      }
+                      @if (q.manut_aberta > 0) {
+                        <em class="flg mn" title="Manutenção aberta">
+                          <mat-icon>build</mat-icon>{{ q.manut_aberta }}
+                        </em>
+                      }
+                    </span>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        } @empty {
+          <p class="vazio">
+            <mat-icon>hotel</mat-icon>
+            Nenhuma acomodação cadastrada.
+          </p>
+        }
+      }
+    </section>
+  </div>
+</div>

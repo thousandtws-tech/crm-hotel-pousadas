@@ -1,0 +1,95 @@
+<div class="page">
+  <app-fin-nav />
+
+  <div class="fin-head">
+    <div>
+      <h2 class="fin-titulo">Fluxo de caixa diário</h2>
+      <p class="fin-sub">Realizado por dia + projeção dos vencimentos em aberto</p>
+    </div>
+    <div class="fin-periodo">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="fin-range">
+        <mat-date-range-input [rangePicker]="picker" [formGroup]="range">
+          <input matStartDate formControlName="inicio" aria-label="Data inicial" />
+          <input matEndDate formControlName="fim" aria-label="Data final" />
+        </mat-date-range-input>
+        <mat-datepicker-toggle matIconSuffix [for]="picker" />
+        <mat-date-range-picker #picker (closed)="aplicarRange()" />
+      </mat-form-field>
+    </div>
+  </div>
+
+  @if (fx(); as f) {
+    <div class="kpi">
+      <div class="kpi-item">
+        <span class="kpi-num">{{ fmt(f.saldo_abertura) }}</span>
+        <span class="kpi-lbl"><mat-icon>account_balance_wallet</mat-icon> Abertura</span>
+      </div>
+      <div class="kpi-item">
+        <span class="kpi-num pos">{{ fmt(f.total_entradas) }}</span>
+        <span class="kpi-lbl"><mat-icon>arrow_downward</mat-icon> Entradas</span>
+      </div>
+      <div class="kpi-item">
+        <span class="kpi-num neg">{{ fmt(f.total_saidas) }}</span>
+        <span class="kpi-lbl"><mat-icon>arrow_upward</mat-icon> Saídas</span>
+      </div>
+      <div class="kpi-item">
+        <span class="kpi-num" [class.neg]="num(saldoFinalReal()) < 0">{{
+          fmt(saldoFinalReal())
+        }}</span>
+        <span class="kpi-lbl"><mat-icon>flag</mat-icon> Saldo final</span>
+      </div>
+      <div class="kpi-item">
+        <span class="kpi-num" [class.neg]="num(f.saldo_final_previsto) < 0">{{
+          fmt(f.saldo_final_previsto)
+        }}</span>
+        <span class="kpi-lbl"><mat-icon>trending_up</mat-icon> Previsto c/ vencimentos</span>
+      </div>
+    </div>
+
+    <section class="card">
+      <header class="card-head">
+        <h3>Movimento diário</h3>
+        <small>Barras: entradas × saídas — linha: saldo acumulado</small>
+      </header>
+      <app-echart [option]="chartOption()" rotulo="Fluxo de caixa por dia" />
+    </section>
+
+    <section class="card">
+      <header class="card-head"><h3>Detalhamento por dia</h3></header>
+      <div class="tab-wrap">
+        <table class="tab">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th class="tr">Entradas</th>
+              <th class="tr">Saídas</th>
+              <th class="tr">Saldo do dia</th>
+              <th class="tr">Acumulado</th>
+              <th class="tr">Prev. entradas</th>
+              <th class="tr">Prev. saídas</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of f.dias; track d.data) {
+              <tr>
+                <td>{{ d.data | date: 'EEE dd/MM' }}</td>
+                <td class="tr pos">{{ fmt(d.entradas) }}</td>
+                <td class="tr neg">{{ fmt(d.saidas) }}</td>
+                <td class="tr" [class.neg]="num(d.saldo) < 0">{{ fmt(d.saldo) }}</td>
+                <td class="tr fw" [class.neg]="num(d.acumulado) < 0">{{ fmt(d.acumulado) }}</td>
+                <td class="tr prev">{{ fmt(d.prev_entradas) }}</td>
+                <td class="tr prev">{{ fmt(d.prev_saidas) }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="vazio">Sem dados no período.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  } @else {
+    <div class="skel sk-bloco"></div>
+  }
+</div>

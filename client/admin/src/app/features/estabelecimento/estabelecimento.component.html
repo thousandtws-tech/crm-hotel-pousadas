@@ -1,0 +1,676 @@
+<div class="page">
+  <!-- ================= Cabeçalho ================= -->
+  <div class="est-head">
+    <div>
+      <p class="eyebrow">Configurações</p>
+      <h2 class="est-titulo">Estabelecimento</h2>
+      <p class="est-sub">
+        Dados da pousada usados em comprovantes, documentos e na impressão térmica
+      </p>
+    </div>
+    <div class="est-acoes">
+      <button
+        class="btn-tour"
+        type="button"
+        (click)="iniciarTour()"
+        aria-label="Ver tutorial da tela"
+      >
+        <mat-icon>school</mat-icon> Tutorial
+      </button>
+      <button id="tour-logo" class="btn-dark-blue" type="button" (click)="abrirLogo()">
+        <mat-icon>image</mat-icon> Alterar logo
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= Checklist de configuração ================= -->
+  <div class="est-check" id="tour-check">
+    <span class="est-check-tit"><mat-icon>task_alt</mat-icon> Configuração da pousada</span>
+    <div class="est-check-item" [class.ok]="dadosOk()">
+      <mat-icon>{{ dadosOk() ? 'check_circle' : 'error' }}</mat-icon>
+      <span>
+        <b>Dados fiscais</b>
+        <small>{{
+          dadosOk() ? 'razão social e CNPJ preenchidos' : 'informe razão social e CNPJ'
+        }}</small>
+      </span>
+    </div>
+    <div class="est-check-item" [class.ok]="endOk()">
+      <mat-icon>{{ endOk() ? 'check_circle' : 'error' }}</mat-icon>
+      <span>
+        <b>Endereço</b>
+        <small>{{ endOk() ? 'logradouro, cidade e CEP' : 'complete o endereço' }}</small>
+      </span>
+    </div>
+    <div class="est-check-item" [class.ok]="logoOk()">
+      <mat-icon>{{ logoOk() ? 'check_circle' : 'error' }}</mat-icon>
+      <span>
+        <b>Logo</b>
+        <small>{{ logoOk() ? 'enviada — aparece nos comprovantes' : 'não enviada ainda' }}</small>
+      </span>
+    </div>
+    <div class="est-check-item" [class.ok]="impOk()">
+      <mat-icon>{{ impOk() ? 'check_circle' : 'error' }}</mat-icon>
+      <span>
+        <b>Impressora padrão</b>
+        <small>{{ impOk() ? 'comprovantes configurados' : 'nenhuma marcada como padrão' }}</small>
+      </span>
+    </div>
+  </div>
+
+  <!-- ================= Formulários ================= -->
+  <div class="est-secoes">
+    <div class="inner-card est-card">
+      <div class="est-card-head">
+        <span class="est-card-ic"><mat-icon>badge</mat-icon></span>
+        <div>
+          <h4>Dados da hospedagem</h4>
+          <small>Saem no cabeçalho de comprovantes e documentos</small>
+        </div>
+      </div>
+      <form [formGroup]="dados" class="form">
+        <div class="grid-3">
+          <label class="lbl">
+            CNPJ
+            <input
+              class="input-inn"
+              type="text"
+              formControlName="cnpj"
+              placeholder="00.000.000/0000-00"
+            />
+          </label>
+          <label class="lbl">
+            Telefone
+            <input
+              class="input-inn"
+              type="text"
+              formControlName="telefone"
+              placeholder="(22) 0000-0000"
+            />
+          </label>
+          <label class="lbl">
+            Celular / WhatsApp
+            <input
+              class="input-inn"
+              type="text"
+              formControlName="celular"
+              placeholder="(22) 90000-0000"
+            />
+          </label>
+        </div>
+        <div class="duo">
+          <label class="lbl">
+            Razão social
+            <input
+              class="input-inn"
+              type="text"
+              formControlName="razao_social"
+              placeholder="Nome jurídico da pousada"
+            />
+          </label>
+          <label class="lbl">
+            E-mail
+            <input
+              class="input-inn"
+              type="email"
+              formControlName="email"
+              placeholder="contato@pousada.com.br"
+            />
+          </label>
+        </div>
+        <div class="grid-3">
+          <label class="lbl">
+            Site
+            <input
+              class="input-inn"
+              type="text"
+              formControlName="site"
+              placeholder="www.pousada.com.br"
+            />
+          </label>
+          <label class="lbl">
+            Taxa early check-in (R$)
+            <input
+              class="input-inn"
+              type="number"
+              min="0"
+              step="0.01"
+              formControlName="taxa_early"
+              placeholder="0,00"
+            />
+          </label>
+          <label class="lbl">
+            Taxa late checkout (R$)
+            <input
+              class="input-inn"
+              type="number"
+              min="0"
+              step="0.01"
+              formControlName="taxa_late"
+              placeholder="0,00"
+            />
+          </label>
+        </div>
+        <fieldset class="fld">
+          <legend>Concierge Inná — o que a IA pode responder ao hóspede</legend>
+          <div class="duo">
+            <label class="lbl">
+              Rede Wi-Fi
+              <input
+                class="input-inn"
+                type="text"
+                formControlName="wifi_nome"
+                placeholder="Pousada-Guest"
+              />
+            </label>
+            <label class="lbl">
+              Senha Wi-Fi
+              <input
+                class="input-inn"
+                type="text"
+                formControlName="wifi_senha"
+                placeholder="bemvindo2026"
+              />
+            </label>
+          </div>
+          <div class="grid-3">
+            <label class="lbl">
+              Horário de check-in
+              <input
+                class="input-inn"
+                type="text"
+                formControlName="horario_checkin"
+                placeholder="a partir das 14h"
+              />
+            </label>
+            <label class="lbl">
+              Horário de check-out
+              <input
+                class="input-inn"
+                type="text"
+                formControlName="horario_checkout"
+                placeholder="até as 12h"
+              />
+            </label>
+            <label class="lbl">
+              Horário do café da manhã
+              <input
+                class="input-inn"
+                type="text"
+                formControlName="horario_cafe"
+                placeholder="7h às 10h no salão principal"
+              />
+            </label>
+          </div>
+          <label class="lbl">
+            Serviços e informações (piscina, estacionamento, passeios…)
+            <textarea
+              class="input-inn"
+              rows="3"
+              formControlName="info_servicos"
+              placeholder="Piscina das 8h às 20h; estacionamento gratuito;…"
+            ></textarea>
+          </label>
+        </fieldset>
+        <fieldset class="fld">
+          <legend>Conformidade legal — CDC, LGPD e MTur</legend>
+          <div class="grid-3">
+            <label class="lbl">
+              Cadastur (MTur)
+              <input
+                class="input-inn"
+                type="text"
+                formControlName="cadastur"
+                placeholder="Nº do cadastro no Ministério do Turismo"
+              />
+            </label>
+            <label class="lbl">
+              E-mail do encarregado de dados (DPO — LGPD)
+              <input
+                class="input-inn"
+                type="email"
+                formControlName="dpo_email"
+                placeholder="privacidade@pousada.com.br"
+              />
+            </label>
+            <label class="lbl">
+              Retenção de dados do hóspede (anos)
+              <input
+                class="input-inn"
+                type="number"
+                min="1"
+                max="30"
+                formControlName="retencao_dados_anos"
+              />
+            </label>
+          </div>
+          <label class="lbl lbl-check">
+            <input type="checkbox" formControlName="fnrh_assinatura" />
+            Exigir assinatura desenhada do hóspede na pré-ficha (FNRH)
+          </label>
+          <div class="grid-3">
+            <label class="lbl">
+              Reembolso integral até (dias antes)
+              <input class="input-inn" type="number" min="0" formControlName="pol1_dias" />
+            </label>
+            <label class="lbl">
+              Reembolso parcial até (dias antes)
+              <input class="input-inn" type="number" min="0" formControlName="pol2_dias" />
+            </label>
+            <label class="lbl">
+              Reembolso final (%)
+              <input class="input-inn" type="number" min="0" max="100" formControlName="pol3_pct" />
+            </label>
+          </div>
+          <div class="grid-3">
+            <label class="lbl">
+              % reembolso integral
+              <input class="input-inn" type="number" min="0" max="100" formControlName="pol1_pct" />
+            </label>
+            <label class="lbl">
+              % reembolso parcial
+              <input class="input-inn" type="number" min="0" max="100" formControlName="pol2_pct" />
+            </label>
+            <span class="hint">Faixas por proximidade do check-in (CDC art. 49).</span>
+          </div>
+        </fieldset>
+        <div class="end">
+          <button
+            class="btn-dark-blue"
+            type="button"
+            (click)="salvarDados()"
+            [disabled]="salvando()"
+          >
+            <mat-icon>save</mat-icon> {{ salvando() ? 'Salvando…' : 'Gravar dados' }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="inner-card est-card">
+      <div class="est-card-head">
+        <span class="est-card-ic"><mat-icon>location_on</mat-icon></span>
+        <div>
+          <h4>Endereço da hospedagem</h4>
+          <small>Usado em documentos fiscais e na ficha do hóspede</small>
+        </div>
+      </div>
+      <form [formGroup]="endereco" class="form">
+        <div class="grid-end">
+          <label class="lbl">
+            CEP
+            <input class="input-inn" type="text" formControlName="cep" placeholder="00000-000" />
+          </label>
+          <label class="lbl">
+            Logradouro
+            <input
+              class="input-inn"
+              type="text"
+              formControlName="logradouro"
+              placeholder="Rua, avenida…"
+            />
+          </label>
+          <label class="lbl">
+            Número
+            <input class="input-inn" type="text" formControlName="numero" placeholder="123" />
+          </label>
+          <label class="lbl">
+            Complemento
+            <input
+              class="input-inn"
+              type="text"
+              formControlName="complemento"
+              placeholder="Opcional"
+            />
+          </label>
+        </div>
+        <div class="duo">
+          <label class="lbl">
+            Bairro
+            <input class="input-inn" type="text" formControlName="bairro" placeholder="Centro" />
+          </label>
+          <label class="lbl">
+            Cidade
+            <input class="input-inn" type="text" formControlName="cidade" placeholder="Cabo Frio" />
+          </label>
+        </div>
+        <div class="end">
+          <button
+            class="btn-dark-blue"
+            type="button"
+            (click)="salvarEndereco()"
+            [disabled]="salvando()"
+          >
+            <mat-icon>save</mat-icon> {{ salvando() ? 'Salvando…' : 'Gravar endereço' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= Impressoras por setor ================= -->
+  <div class="inner-card est-card" id="tour-imp">
+    <div class="est-card-head com-acao">
+      <div class="est-card-head-grupo">
+        <span class="est-card-ic"><mat-icon>print</mat-icon></span>
+        <div>
+          <h4>Impressoras por setor</h4>
+          <small
+            >Comprovantes saem na <b>padrão</b>; pedidos de consumo saem na impressora do setor da
+            categoria</small
+          >
+        </div>
+      </div>
+      <button class="btn-dark-blue" type="button" (click)="abrirImpressora()">
+        <mat-icon>add</mat-icon> Nova impressora
+      </button>
+    </div>
+    @if (descobertas().length) {
+      <div class="desc-box">
+        <div class="desc-head">
+          <mat-icon>travel_explore</mat-icon>
+          <b>{{ descobertas().length }} dispositivo(s) detectado(s) na rede</b>
+          <span>— confirme para registrar ou ignore</span>
+        </div>
+        @for (d of descobertas(); track d.id) {
+          <div class="desc-linha">
+            <mat-icon [class]="d.tipo === 'usb' ? 'desc-ic usb' : 'desc-ic'">
+              {{ d.tipo === 'usb' ? 'usb' : 'print' }}
+            </mat-icon>
+            <div class="desc-info">
+              <b>{{ d.modelo || d.endereco }}</b>
+              <span>
+                {{
+                  d.tipo === 'usb' ? 'USB · ' + d.endereco : d.endereco + ':' + (d.porta ?? 9100)
+                }}
+                · detectada por {{ d.origem }}
+              </span>
+            </div>
+            <button class="btn-dark-blue mini" type="button" (click)="abrirRegistro(d)">
+              Registrar
+            </button>
+            <button class="btn-gray mini" type="button" (click)="ignorar(d)">Ignorar</button>
+          </div>
+        }
+      </div>
+    }
+    <div class="est-tabela-wrap">
+      <table class="est-tabela">
+        <thead>
+          <tr>
+            <th>Impressora</th>
+            <th>Setor</th>
+            <th>Endereço</th>
+            <th class="tc">Padrão</th>
+            <th class="tc">Status</th>
+            <th class="tc">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of impressoras(); track p.id) {
+            <tr>
+              <td class="td-nome"><mat-icon>print</mat-icon> {{ p.nome }}</td>
+              <td>
+                <span class="est-chip-setor">{{ p.setor }}</span>
+              </td>
+              <td class="td-ip">{{ p.ip }}:{{ p.porta }}</td>
+              <td class="tc">
+                @if (p.etiqueta) {
+                  <span class="est-chip-padrao" title="Recebe as etiquetas ao cadastrar produtos">
+                    <mat-icon>sell</mat-icon> etiquetas
+                  </span>
+                }
+                @if (p.padrao) {
+                  <span class="est-chip-padrao" title="Recebe os comprovantes de check-out">
+                    <mat-icon>star</mat-icon> Comprovantes
+                  </span>
+                }
+              </td>
+              <td class="tc">
+                <button
+                  class="st-chip clickable"
+                  [class.off]="!p.ativa"
+                  type="button"
+                  title="Clique para alternar"
+                  (click)="statusImpressora(p)"
+                >
+                  {{ p.ativa ? 'Ativa' : 'Inativa' }}
+                </button>
+              </td>
+              <td class="tc">
+                <div class="est-acoes-linha">
+                  <button
+                    class="acao-btn"
+                    type="button"
+                    title="Imprimir página de teste"
+                    (click)="testar(p)"
+                  >
+                    <mat-icon>print</mat-icon>
+                  </button>
+                  <button
+                    class="acao-btn"
+                    type="button"
+                    title="Editar"
+                    (click)="abrirImpressora(p)"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button
+                    class="acao-btn perigo"
+                    type="button"
+                    title="Excluir"
+                    (click)="removerImpressora(p)"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="est-vazio">
+                <mat-icon>print_disabled</mat-icon>
+                Nenhuma impressora cadastrada — adicione a primeira para imprimir comprovantes e
+                pedidos.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Modal: Nova/Editar impressora ================= -->
+@if (modalImp()) {
+  <div class="overlay" (click.self)="modalImp.set(false)">
+    <div class="modal-inn" role="dialog" aria-modal="true" aria-label="Impressora">
+      <div class="modal-head">
+        <h5>
+          <mat-icon>print</mat-icon>
+          {{ impEditando() ? 'Editar impressora' : 'Nova impressora' }}
+        </h5>
+        <button class="close" type="button" (click)="modalImp.set(false)" aria-label="Fechar">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="impForm" class="form">
+          <label class="lbl">
+            Nome <small class="req">*</small>
+            <input
+              class="input-inn"
+              type="text"
+              formControlName="nome"
+              placeholder="Ex.: Impressora da cozinha"
+            />
+          </label>
+          <div class="f-field">
+            <span class="f-lbl">Setor <small class="req">*</small></span>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-mat f-mat">
+              <mat-select formControlName="setor" placeholder="Escolha o setor…">
+                @for (s of setoresOpcoes(); track s) {
+                  <mat-option [value]="s">{{ s }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <small class="est-dica">Pedidos de itens desse setor saem nesta impressora.</small>
+          </div>
+          <div class="duo">
+            <label class="lbl">
+              IP <small class="req">*</small>
+              <input
+                class="input-inn"
+                type="text"
+                formControlName="ip"
+                placeholder="192.168.0.50"
+              />
+            </label>
+            <label class="lbl">
+              Porta
+              <input class="input-inn porta-inn" type="number" formControlName="porta" />
+            </label>
+          </div>
+          <label class="lbl check">
+            <input type="checkbox" formControlName="padrao" />
+            <span><b>Impressora padrão</b> — recebe os comprovantes de check-out</span>
+          </label>
+          <label class="lbl check">
+            <input type="checkbox" formControlName="etiqueta" />
+            <span><b>Impressora de etiquetas</b> — recebe a etiqueta ao cadastrar produtos</span>
+          </label>
+          <label class="lbl check">
+            <input type="checkbox" formControlName="ativa" />
+            <span>Impressora <b>ativa</b> (disponível para uso)</span>
+          </label>
+        </form>
+      </div>
+      <div class="modal-foot">
+        <button class="btn-gray" type="button" (click)="modalImp.set(false)">Cancelar</button>
+        <button
+          class="btn-dark-blue"
+          type="button"
+          [disabled]="salvando() || impForm.invalid"
+          (click)="salvarImpressora()"
+        >
+          <mat-icon>save</mat-icon> {{ impEditando() ? 'Salvar alterações' : 'Cadastrar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= Modal: Registrar descoberta ================= -->
+@if (modalReg(); as d) {
+  <div class="overlay" (click.self)="modalReg.set(null)">
+    <div class="modal-inn" role="dialog" aria-modal="true" aria-label="Registrar impressora">
+      <div class="modal-head">
+        <h5><mat-icon>travel_explore</mat-icon> Registrar impressora detectada</h5>
+        <button class="close" type="button" (click)="modalReg.set(null)" aria-label="Fechar">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="est-dica" style="margin-top: 0">
+          {{ d.tipo === 'usb' ? 'USB · ' + d.endereco : d.endereco + ':' + (d.porta ?? 9100) }}
+          @if (d.modelo) {
+            — {{ d.modelo }}
+          }
+        </p>
+        <form [formGroup]="regForm" class="form">
+          <label class="lbl">
+            Nome <small class="req">*</small>
+            <input
+              class="input-inn"
+              type="text"
+              formControlName="nome"
+              placeholder="Ex.: Impressora da recepção"
+            />
+          </label>
+          <div class="f-field">
+            <span class="f-lbl">Setor <small class="req">*</small></span>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-mat f-mat">
+              <mat-select formControlName="setor" placeholder="Escolha o setor…">
+                @for (s of setoresOpcoes(); track s) {
+                  <mat-option [value]="s">{{ s }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <label class="lbl check">
+            <input type="checkbox" formControlName="padrao" />
+            <span><b>Impressora padrão</b> — recebe os comprovantes de check-out</span>
+          </label>
+          <label class="lbl check">
+            <input type="checkbox" formControlName="etiqueta" />
+            <span><b>Impressora de etiquetas</b> — recebe a etiqueta ao cadastrar produtos</span>
+          </label>
+        </form>
+      </div>
+      <div class="modal-foot">
+        <button class="btn-gray" type="button" (click)="modalReg.set(null)">Cancelar</button>
+        <button
+          class="btn-dark-blue"
+          type="button"
+          [disabled]="salvando() || regForm.invalid"
+          (click)="registrar()"
+        >
+          <mat-icon>save</mat-icon> Registrar
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= Modal: Alterar logo ================= -->
+@if (modalLogo()) {
+  <div class="overlay" (click.self)="modalLogo.set(false)">
+    <div class="modal-inn" role="dialog" aria-modal="true" aria-label="Alterar logo">
+      <div class="modal-head">
+        <h5><mat-icon>image</mat-icon> Logo do estabelecimento</h5>
+        <button class="close" type="button" (click)="modalLogo.set(false)" aria-label="Fechar">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="logo-box" [class.vazia]="!logoPreview()">
+          @if (logoPreview()) {
+            <img class="logo-img" [src]="logoPreview()" alt="Logo do estabelecimento" />
+          } @else {
+            <div class="logo-vazia">
+              <mat-icon>add_photo_alternate</mat-icon>
+              <span>Nenhuma logo enviada</span>
+            </div>
+          }
+        </div>
+        <label class="est-upload">
+          <mat-icon>cloud_upload</mat-icon>
+          {{ logoArquivo() ? logoArquivo()!.name : 'Escolher arquivo de imagem' }}
+          <input
+            type="file"
+            hidden
+            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            (change)="selecionarLogo($event)"
+            aria-label="Arquivo da logo"
+          />
+        </label>
+        <small class="est-dica"
+          >PNG, JPG, WEBP ou SVG — máximo 2 MB. Fundo transparente fica melhor no
+          comprovante.</small
+        >
+      </div>
+      <div class="modal-foot">
+        <button class="btn-gray" type="button" (click)="modalLogo.set(false)">Cancelar</button>
+        <button
+          class="btn-dark-blue"
+          type="button"
+          [disabled]="!logoArquivo() || enviando()"
+          (click)="enviarLogo()"
+        >
+          <mat-icon>{{ enviando() ? 'hourglass_top' : 'save' }}</mat-icon>
+          {{ enviando() ? 'Enviando…' : 'Salvar logo' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

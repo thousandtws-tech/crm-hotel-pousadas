@@ -1,0 +1,696 @@
+<div class="rv">
+  <!-- ============================ cabeçalho ============================ -->
+  <header class="rv-head">
+    <div>
+      <p class="eyebrow">Central de reservas</p>
+      <h2 class="titulo">Reservas</h2>
+      <p class="sub">{{ hojeExtenso }}</p>
+    </div>
+    <div class="rv-acoes">
+      <button
+        class="btn-ghost"
+        type="button"
+        (click)="iniciarTour()"
+        title="Ver tutorial da tela"
+        aria-label="Ver tutorial da tela"
+      >
+        <mat-icon>school</mat-icon>
+      </button>
+      <button
+        class="btn-ghost"
+        type="button"
+        (click)="atualizar()"
+        [disabled]="carregando()"
+        title="Atualizar"
+        aria-label="Atualizar"
+      >
+        <mat-icon>refresh</mat-icon>
+      </button>
+      <button id="tour-nova" class="btn-pri" type="button" (click)="novaReserva()">
+        <mat-icon>add</mat-icon> Nova reserva
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================ KPIs do dia ============================ -->
+  <div id="tour-kpis" class="stats">
+    <button
+      type="button"
+      class="stat stat-btn"
+      (click)="atalho('chegadas')"
+      title="Ver chegadas previstas para hoje"
+    >
+      <div class="stat-txt">
+        <span class="stat-l">Chegadas hoje</span>
+        <p>
+          <strong [class.stat-warn]="chegadasHoje() > 0">{{ chegadasHoje() }}</strong>
+          <small>{{ chegadasHoje() === 1 ? 'reserva' : 'reservas' }}</small>
+        </p>
+      </div>
+      <span class="stat-ico ico-in"><mat-icon>luggage</mat-icon></span>
+    </button>
+    <button
+      type="button"
+      class="stat stat-btn"
+      (click)="atalho('saidas')"
+      title="Ver hospedados com saída hoje"
+    >
+      <div class="stat-txt">
+        <span class="stat-l">Saídas hoje</span>
+        <p>
+          <strong [class.stat-warn]="saidasHoje() > 0">{{ saidasHoje() }}</strong>
+          <small>{{ saidasHoje() === 1 ? 'saída' : 'saídas' }}</small>
+        </p>
+      </div>
+      <span class="stat-ico ico-out"><mat-icon>meeting_room</mat-icon></span>
+    </button>
+    <button
+      type="button"
+      class="stat stat-btn"
+      (click)="atalho('hospedados')"
+      title="Ver hóspedes na pousada agora"
+    >
+      <div class="stat-txt">
+        <span class="stat-l">Hospedados</span>
+        <p>
+          <strong>{{ hospedados() }}</strong>
+          <small>{{ hospedados() === 1 ? 'reserva ativa' : 'reservas ativas' }}</small>
+        </p>
+      </div>
+      <span class="stat-ico ico-casa"><mat-icon>king_bed</mat-icon></span>
+    </button>
+    <button
+      type="button"
+      class="stat stat-btn"
+      (click)="atalho('pendentes')"
+      title="Ver reservas pendentes"
+    >
+      <div class="stat-txt">
+        <span class="stat-l">Pendentes</span>
+        <p>
+          <strong>{{ pendentes() }}</strong>
+          <small>{{ pendentes() === 1 ? 'reserva' : 'reservas' }}</small>
+        </p>
+      </div>
+      <span class="stat-ico ico-atn"><mat-icon>schedule</mat-icon></span>
+    </button>
+  </div>
+
+  <!-- ============================ card principal ============================ -->
+  <section class="fd-card rv-card">
+    <div class="rv-toolbar">
+      <div id="tour-visao" class="seg" role="tablist" aria-label="Alternar visualização">
+        @for (v of visoes; track v.id) {
+          <button
+            type="button"
+            role="tab"
+            class="seg-btn"
+            [class.ativo]="visao() === v.id"
+            [attr.aria-selected]="visao() === v.id"
+            (click)="mudarVisao(v.id)"
+          >
+            <mat-icon>{{ v.icone }}</mat-icon> {{ v.rotulo }}
+          </button>
+        }
+      </div>
+
+      @if (visao() === 'lista') {
+        <div id="tour-busca" class="rv-busca" [class.foco]="buscaFoco()">
+          <mat-icon class="rv-busca-icone">search</mat-icon>
+          <input
+            class="rv-busca-input"
+            type="search"
+            [formControl]="fBusca"
+            placeholder="Hóspede, acomodação ou nº da reserva…"
+            aria-label="Buscar reserva"
+            autocomplete="off"
+            (focus)="buscaFoco.set(true)"
+            (blur)="buscaFoco.set(false)"
+          />
+          @if (fBusca.value) {
+            <button
+              type="button"
+              class="rv-limpar"
+              aria-label="Limpar busca"
+              (click)="fBusca.setValue('')"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          }
+        </div>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-mat rs-range">
+          <mat-date-range-input [rangePicker]="picker" [formGroup]="range">
+            <input
+              matStartDate
+              formControlName="inicio"
+              placeholder="Entrada"
+              aria-label="Entrada a partir de"
+            />
+            <input matEndDate formControlName="fim" placeholder="Saída" aria-label="Saída até" />
+          </mat-date-range-input>
+          <mat-datepicker-toggle matIconSuffix [for]="picker" />
+          <mat-date-range-picker #picker />
+        </mat-form-field>
+        @if (rangeAtiva()) {
+          <button type="button" class="btn-linha" (click)="limparRange()" title="Limpar período">
+            <mat-icon>date_range</mat-icon> Limpar
+          </button>
+        }
+      } @else if (visao() === 'cal') {
+        <div class="rv-nav">
+          <button type="button" class="rv-nav-btn" (click)="nav(-7)" aria-label="Voltar 7 dias">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <button type="button" class="rv-nav-hoje" (click)="irHoje()">
+            <mat-icon>today</mat-icon> Hoje
+          </button>
+          <button type="button" class="rv-nav-btn" (click)="nav(7)" aria-label="Avançar 7 dias">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+          <span class="rv-nav-periodo">
+            {{ dias()[0] | date: 'dd/MM' }} — {{ dias()[JANELA_DIAS - 1] | date: 'dd/MM/yyyy' }}
+          </span>
+        </div>
+      }
+    </div>
+
+    @if (visao() === 'lista') {
+      <div id="tour-status" class="pills" role="group" aria-label="Filtrar por status">
+        @for (s of statusFiltro; track s.id) {
+          <button
+            type="button"
+            class="pf"
+            [class.on]="fStatus() === s.id"
+            [attr.aria-pressed]="fStatus() === s.id"
+            (click)="filtrarStatus(s.id)"
+          >
+            {{ s.rotulo }}
+          </button>
+        }
+      </div>
+    }
+
+    <!-- ==================== VISÃO: LISTA ==================== -->
+    @if (visao() === 'lista') {
+      <div id="tour-tabela" class="rv-tabela-wrap">
+        <table class="rv-tabela">
+          <thead>
+            <tr>
+              <th>Hóspede</th>
+              <th>Acomodação</th>
+              <th>Período</th>
+              <th>Diária</th>
+              <th class="tc">Status</th>
+              <th class="tc">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (carregando()) {
+              @for (s of skel; track s) {
+                <tr class="skel-row">
+                  <td>
+                    <span class="skel skel-av"></span>
+                    <span class="skel skel-nome"></span>
+                  </td>
+                  <td><span class="skel skel-txt"></span></td>
+                  <td><span class="skel skel-txt"></span></td>
+                  <td><span class="skel skel-txt"></span></td>
+                  <td class="tc"><span class="skel skel-chip"></span></td>
+                  <td class="tc"><span class="skel skel-acoes"></span></td>
+                </tr>
+              }
+            } @else {
+              @for (r of items(); track r.id) {
+                <tr class="rs-row">
+                  <td>
+                    <div class="rv-cell">
+                      <span class="rv-avatar">{{ iniciais(r.cliente_nome) }}</span>
+                      <span class="rv-cell-txt">
+                        <strong>{{ r.cliente_nome }}</strong>
+                        <small>
+                          Reserva Nº{{ r.id }} ·
+                          {{ r.quantidade_hospedes }}
+                          {{ r.quantidade_hospedes === 1 ? 'hóspede' : 'hóspedes' }}
+                        </small>
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="rv-cell">
+                      <span
+                        class="rv-dot"
+                        [style.background]="r.acomodacao_cor || '#8fa3ab'"
+                      ></span>
+                      <span class="rv-cell-txt">
+                        <strong class="rv-acom-nome">{{ r.acomodacao_nome }}</strong>
+                        <small>Nº {{ r.acomodacao_numero }}</small>
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="rv-periodo">
+                      <strong>
+                        {{ parseDia(r.entradaprevista) | date: 'dd/MM' }}
+                        <mat-icon>arrow_forward</mat-icon>
+                        {{ parseDia(r.saidaprevista) | date: 'dd/MM/yyyy' }}
+                      </strong>
+                      <small>
+                        {{ noites(r) }} {{ noites(r) === 1 ? 'noite' : 'noites' }}
+                        @if (emCurso(r)) {
+                          · <b class="rv-hj">em curso</b>
+                        }
+                        @if (chegaHoje(r)) {
+                          · <b class="rv-hj">chega hoje</b>
+                        }
+                      </small>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="rv-valor">R$ {{ num(r.valordiaria) | number: '1.2-2' }}</span>
+                    @if (r.valor_estadia !== null) {
+                      <small class="rv-total">
+                        total R$ {{ num(r.valor_estadia) | number: '1.2-2' }}
+                      </small>
+                    }
+                  </td>
+                  <td class="tc">
+                    <span
+                      class="rv-st"
+                      [style.background]="st(r.status).bg"
+                      [style.color]="st(r.status).fg"
+                      >{{ st(r.status).rotulo }}</span
+                    >
+                  </td>
+                  <td class="tc rv-acoes">
+                    @if (chegaHoje(r)) {
+                      <button
+                        type="button"
+                        class="btn-ck"
+                        title="Fazer check-in"
+                        aria-label="Fazer check-in de {{ r.cliente_nome }}"
+                        [disabled]="aguardando() === r.id"
+                        (click)="checkin(r)"
+                      >
+                        <mat-icon>key</mat-icon>
+                        {{ aguardando() === r.id ? '…' : 'Check-in' }}
+                      </button>
+                    }
+                    <a
+                      class="badge-acao bg-blue rs-ver"
+                      title="Abrir reserva"
+                      aria-label="Abrir reserva de {{ r.cliente_nome }}"
+                      [routerLink]="['/reservas', r.id]"
+                    >
+                      <mat-icon>visibility</mat-icon>
+                    </a>
+                    @if (auth.isAdmin() && (r.status === 'p' || r.status === 'c')) {
+                      <button
+                        type="button"
+                        class="badge-acao bg-dark-blue"
+                        title="Excluir"
+                        aria-label="Excluir reserva"
+                        (click)="excluir(r)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="rv-vazio">
+                    <mat-icon>event_busy</mat-icon>
+                    <p>
+                      {{
+                        temFiltro()
+                          ? 'Nenhuma reserva encontrada para esses filtros.'
+                          : 'Nenhuma reserva registrada ainda.'
+                      }}
+                    </p>
+                    @if (!temFiltro()) {
+                      <button class="btn-pri" type="button" (click)="novaReserva()">
+                        <mat-icon>add</mat-icon> Criar a primeira reserva
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="total()"
+        [pageSize]="24"
+        [pageIndex]="pagina() - 1"
+        (page)="mudouPagina($event)"
+      />
+    }
+
+    <!-- ==================== VISÃO: CALENDÁRIO ==================== -->
+    @if (visao() === 'cal') {
+      <div id="tour-mapa" class="tape-wrap">
+        <div class="tape">
+          <div class="tape-head">
+            <div class="tape-room tape-room-head">Acomodação</div>
+            @for (d of dias(); track d.getTime()) {
+              <div
+                class="tape-dia"
+                [class.hj]="isoLocal(d) === hojeIso"
+                [class.fds]="d.getDay() === 0 || d.getDay() === 6"
+              >
+                <small>{{ d | date: 'EEE' }}</small>
+                <strong>{{ d | date: 'dd' }}</strong>
+              </div>
+            }
+          </div>
+          @if (carregandoEventos()) {
+            @for (a of acomodacoes(); track a.id) {
+              <div class="tape-row">
+                <div class="tape-room" [style.border-left-color]="a.cor || '#8fa3ab'">
+                  <strong>{{ a.nome }}</strong>
+                  <small>Nº {{ a.numero }}</small>
+                </div>
+                <div class="tape-track"><span class="skel skel-bar"></span></div>
+              </div>
+            } @empty {
+              <div class="vazio">
+                <mat-icon>hotel</mat-icon>
+                <p>Nenhuma acomodação ativa cadastrada.</p>
+              </div>
+            }
+          } @else {
+            @for (a of acomodacoes(); track a.id) {
+              <div class="tape-row">
+                <div class="tape-room" [style.border-left-color]="a.cor || '#8fa3ab'">
+                  <strong>{{ a.nome }}</strong>
+                  <small>Nº {{ a.numero }}</small>
+                </div>
+                <div class="tape-track">
+                  @for (d of dias(); track d.getTime()) {
+                    <span
+                      class="tape-cel"
+                      [class.hj]="isoLocal(d) === hojeIso"
+                      [class.fds]="d.getDay() === 0 || d.getDay() === 6"
+                    ></span>
+                  }
+                  @for (r of eventosDe(a.id); track r.id) {
+                    @if (barGeo(r); as g) {
+                      <a
+                        class="tape-bar"
+                        [class.can]="r.status === 'c'"
+                        [style.left.px]="g.l"
+                        [style.width.px]="g.w"
+                        [style.background]="barCor(r)"
+                        [routerLink]="['/reservas', r.id]"
+                        [title]="
+                          r.cliente_nome +
+                          ' · ' +
+                          st(r.status).rotulo +
+                          ' (' +
+                          (parseDia(r.entradaprevista) | date: 'dd/MM') +
+                          ' → ' +
+                          (parseDia(r.saidaprevista) | date: 'dd/MM') +
+                          ')'
+                        "
+                      >
+                        <span class="tape-bar-txt">{{ primeiroNome(r.cliente_nome) }}</span>
+                      </a>
+                    }
+                  }
+                </div>
+              </div>
+            } @empty {
+              <div class="vazio">
+                <mat-icon>hotel</mat-icon>
+                <p>Nenhuma acomodação ativa cadastrada.</p>
+              </div>
+            }
+          }
+        </div>
+        <div class="tape-legenda">
+          <span><i class="lg lg-cor"></i> Cor da acomodação</span>
+          <span><i class="lg lg-hj"></i> Hoje</span>
+          <span><i class="lg lg-fds"></i> Fim de semana</span>
+          <span><i class="lg lg-can"></i> Cancelada</span>
+        </div>
+      </div>
+    }
+
+    <!-- ==================== VISÃO: MAPA ==================== -->
+    @if (visao() === 'mapa') {
+      <div class="leg" role="list" aria-label="Legenda de status">
+        <span role="listitem"><i class="dt lv"></i>Livre</span>
+        <span role="listitem"><i class="dt oc"></i>Ocupado</span>
+        <span role="listitem"><i class="dt pd"></i>Chega hoje</span>
+        <span role="listitem"><i class="dt bq"></i>Bloqueado</span>
+        <span role="listitem"><i class="dt lm"></i>Limpeza</span>
+        <span role="listitem"><i class="dt mn"></i>Manutenção</span>
+      </div>
+
+      @if (carregandoMapa()) {
+        <div class="qt-grid">
+          @for (s of skelMapa; track s) {
+            <div class="skel skel-qt"></div>
+          }
+        </div>
+      } @else {
+        @for (f of andares(); track f.andar) {
+          <div class="andar">
+            <span class="andar-lbl">
+              {{ f.andar === 0 ? 'Térreo' : f.andar + 'º andar' }}
+              <em>{{ f.quartos.length }} {{ f.quartos.length === 1 ? 'quarto' : 'quartos' }}</em>
+            </span>
+            <div class="qt-grid">
+              @for (a of f.quartos; track a.id) {
+                <div class="qt" [class]="'qt ' + statusQuarto(a)">
+                  <div class="qt-topo">
+                    <b>{{ a.numero }}</b>
+                    <small>{{ a.nome }}</small>
+                  </div>
+                  <span class="qt-tipo">{{ a.tipo ?? '—' }}</span>
+                  <span class="qt-tags">
+                    @if (a.bloqueado) {
+                      <em class="tg tg-bloq"><mat-icon>lock</mat-icon>Bloqueado</em>
+                    } @else if (a.status_hoje === 'i') {
+                      <em class="tg tg-ocup">Ocupado</em>
+                    } @else if (a.status_hoje === 'p') {
+                      <em class="tg tg-pend">Chega hoje</em>
+                    } @else {
+                      <em class="tg tg-livre">Livre</em>
+                    }
+                    @if (a.limpeza_pendente > 0) {
+                      <em class="tg tg-limp" title="Tarefas de limpeza pendentes">
+                        <mat-icon>cleaning_services</mat-icon>{{ a.limpeza_pendente }}
+                      </em>
+                    }
+                    @if (a.manut_aberta > 0) {
+                      <em class="tg tg-man" title="OS de manutenção abertas">
+                        <mat-icon>build</mat-icon>{{ a.manut_aberta }}
+                      </em>
+                    }
+                  </span>
+                  <span class="qt-acoes">
+                    @if (a.idreserva_hoje) {
+                      <a class="qt-btn" [routerLink]="['/reservas', a.idreserva_hoje]">
+                        Reserva #{{ a.idreserva_hoje }}
+                      </a>
+                    }
+                    @if (bloqueioDe(a.id); as b) {
+                      <button type="button" class="qt-btn" (click)="desbloquear(b.id)">
+                        <mat-icon>lock_open</mat-icon> Desbloquear
+                      </button>
+                    } @else {
+                      <button type="button" class="qt-btn" (click)="abrirBloqueio(a)">
+                        <mat-icon>lock</mat-icon> Bloquear
+                      </button>
+                    }
+                  </span>
+                </div>
+              }
+            </div>
+          </div>
+        } @empty {
+          <p class="vazio"><mat-icon>hotel</mat-icon>Nenhuma acomodação ativa cadastrada.</p>
+        }
+      }
+    }
+
+    <!-- ==================== VISÃO: GRUPOS ==================== -->
+    @if (visao() === 'grupos') {
+      <div class="gr-wrap">
+        <div class="gr-novo">
+          <h3 class="gr-tit"><mat-icon>group</mat-icon> Novo grupo / evento</h3>
+          <div class="gr-form">
+            <input
+              class="inp"
+              placeholder="Nome do grupo *"
+              [value]="gNome"
+              (input)="gNome = $any($event.target).value"
+              aria-label="Nome do grupo"
+            />
+            <input
+              class="inp"
+              placeholder="Contato"
+              [value]="gContato"
+              (input)="gContato = $any($event.target).value"
+              aria-label="Contato"
+            />
+          </div>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-mat gr-range">
+            <mat-date-range-input [rangePicker]="gPicker" [formGroup]="gRange">
+              <input
+                matStartDate
+                formControlName="inicio"
+                placeholder="Início"
+                aria-label="Início do período do grupo"
+              />
+              <input
+                matEndDate
+                formControlName="fim"
+                placeholder="Fim"
+                aria-label="Fim do período do grupo"
+              />
+            </mat-date-range-input>
+            <mat-datepicker-toggle matIconSuffix [for]="gPicker" />
+            <mat-date-range-picker #gPicker />
+          </mat-form-field>
+          <p class="gr-sub">Unidades (rooming list):</p>
+          <div class="gr-units">
+            @for (a of acomodacoes(); track a.id) {
+              <label class="gr-unit" [class.sel]="gSel().has(a.id)">
+                <input
+                  type="checkbox"
+                  [checked]="gSel().has(a.id)"
+                  (change)="toggleUnidade(a.id)"
+                />
+                {{ a.numero }} · {{ a.nome }}
+              </label>
+            }
+          </div>
+          <label class="gr-blk">
+            <input type="checkbox" [checked]="gBloquear" (change)="gBloquear = !gBloquear" />
+            Bloquear as unidades para venda no período
+          </label>
+          <button
+            type="button"
+            class="btn-pri gr-cta"
+            [disabled]="salvandoGrupo()"
+            (click)="criarGrupo()"
+          >
+            <mat-icon>{{ salvandoGrupo() ? 'hourglass_top' : 'add' }}</mat-icon>
+            {{ salvandoGrupo() ? 'Salvando…' : 'Criar grupo' }}
+          </button>
+        </div>
+
+        <div class="gr-lista">
+          @for (g of grupos(); track g.id) {
+            <div class="gr-card">
+              <div class="gr-head">
+                <span class="gr-av"><mat-icon>groups</mat-icon></span>
+                <div class="gr-head-txt">
+                  <strong>{{ g.nome }}</strong>
+                  <small class="gr-datas">
+                    <mat-icon>event</mat-icon>
+                    {{ g.inicio | date: 'dd/MM' }} → {{ g.fim | date: 'dd/MM' }}
+                  </small>
+                </div>
+                <button type="button" class="qt-btn" (click)="toggleRooming(g.id)">
+                  {{ roomingAberto() === g.id ? 'Fechar' : 'Rooming' }}
+                </button>
+                <button type="button" class="qt-btn danger" (click)="removerGrupo(g)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+              @if (g.contato) {
+                <p class="gr-contato"><mat-icon>person</mat-icon> {{ g.contato }}</p>
+              }
+              @if (roomingAberto() === g.id) {
+                <table class="plain bordered gr-tb">
+                  <thead>
+                    <tr>
+                      <th>Unidade</th>
+                      <th>Hóspede</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (u of rooming(); track u.id) {
+                      <tr>
+                        <td>{{ u.acomodacao_numero }} · {{ u.acomodacao_nome }}</td>
+                        <td>{{ u.hospede ?? '—' }}</td>
+                        <td>
+                          {{
+                            u.reserva_status === 'i'
+                              ? 'Na casa'
+                              : u.reserva_status === 'p'
+                                ? 'Reservado'
+                                : '—'
+                          }}
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="3" class="muted tc">Sem unidades.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              }
+            </div>
+          } @empty {
+            <p class="vazio">
+              <mat-icon>groups</mat-icon>Nenhum grupo cadastrado — casamentos, retiros, excursões.
+            </p>
+          }
+        </div>
+      </div>
+    }
+  </section>
+</div>
+
+@if (bloqueioAlvo(); as alvo) {
+  <div class="ovl" (click)="bloqueioAlvo.set(null)" (keydown.escape)="bloqueioAlvo.set(null)">
+    <div class="dlg" role="dialog" aria-modal="true" aria-label="Bloquear acomodação">
+      <h3><mat-icon>lock</mat-icon> Bloquear {{ alvo.nome }} — Nº {{ alvo.numero }}</h3>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-mat">
+        <mat-date-range-input [rangePicker]="bPicker" [formGroup]="bRange">
+          <input
+            matStartDate
+            formControlName="inicio"
+            placeholder="Início"
+            aria-label="Início do bloqueio"
+          />
+          <input matEndDate formControlName="fim" placeholder="Fim" aria-label="Fim do bloqueio" />
+        </mat-date-range-input>
+        <mat-datepicker-toggle matIconSuffix [for]="bPicker" />
+        <mat-date-range-picker #bPicker />
+      </mat-form-field>
+      <label class="dl"
+        >Motivo
+        <input
+          type="text"
+          class="inp"
+          placeholder="reforma, uso próprio…"
+          [value]="bMot"
+          (input)="bMot = $any($event.target).value"
+      /></label>
+      <div class="dlg-acoes">
+        <button type="button" class="qt-btn" (click)="bloqueioAlvo.set(null)">Cancelar</button>
+        <button
+          type="button"
+          class="btn-pri"
+          [disabled]="salvandoBloq()"
+          (click)="confirmarBloqueio()"
+        >
+          {{ salvandoBloq() ? 'Bloqueando…' : 'Confirmar bloqueio' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (modalNova()) {
+  <app-nova-reserva-dialog (fechar)="modalNova.set(false)" (criada)="reservaCriada()" />
+}

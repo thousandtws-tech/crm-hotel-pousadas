@@ -1,0 +1,256 @@
+<div class="page">
+  <app-fin-nav />
+
+  <div class="fin-head">
+    <div>
+      <h2 class="fin-titulo">Conciliação bancária</h2>
+      <p class="fin-sub">Extrato (OFX/CSV) × baixas da tesouraria</p>
+    </div>
+    <div class="acoes">
+      <select class="inp" [formControl]="contaCtrl" aria-label="Conta bancária">
+        @for (c of contasBanco(); track c.id) {
+          <option [ngValue]="c.id">{{ c.nome }}</option>
+        }
+      </select>
+      <label class="btn-ghost" for="arq-extrato">
+        <mat-icon>upload_file</mat-icon> Importar OFX/CSV
+      </label>
+      <input
+        id="arq-extrato"
+        type="file"
+        class="sr-only"
+        accept=".ofx,.csv,.txt"
+        (change)="importar($event)"
+        aria-label="Arquivo de extrato"
+      />
+      <button type="button" class="btn-prim" (click)="autoConciliar()" [disabled]="rodando()">
+        <mat-icon>bolt</mat-icon> {{ rodando() ? 'Conciliando…' : 'Conciliar automático' }}
+      </button>
+    </div>
+  </div>
+
+  @if (resumo(); as r) {
+    <div class="resumo">
+      <button
+        type="button"
+        class="rz pend"
+        [class.ativo]="status() === 'pendente'"
+        (click)="filtroStatus('pendente')"
+      >
+        <strong>{{ r.pendentes }}</strong><span>pendentes</span>
+      </button>
+      <button
+        type="button"
+        class="rz conc"
+        [class.ativo]="status() === 'conciliado'"
+        (click)="filtroStatus('conciliado')"
+      >
+        <strong>{{ r.conciliados }}</strong><span>conciliados</span>
+      </button>
+      <button
+        type="button"
+        class="rz ign"
+        [class.ativo]="status() === 'ignorado'"
+        (click)="filtroStatus('ignorado')"
+      >
+        <strong>{{ r.ignorados }}</strong><span>ignorados</span>
+      </button>
+      <button
+        type="button"
+        class="rz"
+        [class.ativo]="status() === null"
+        (click)="filtroStatus(null)"
+      >
+        <strong>{{ r.pendentes + r.conciliados + r.ignorados }}</strong><span>todos</span>
+      </button>
+      @if (r.coberto_ate) {
+        <span class="rz-info"
+          ><mat-icon>event</mat-icon> Extrato até {{ r.coberto_ate | date: 'dd/MM/yyyy' }}</span
+        >
+      }
+    </div>
+  }
+
+  <section class="card">
+    @if (carregando()) {
+      <div class="skel sk-tab"></div>
+    } @else {
+      <div class="tab-wrap">
+        <table class="tab">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th class="tr">Valor</th>
+              <th class="tc">Status</th>
+              <th class="tc">Match</th>
+              <th class="tc">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of itens(); track e.id) {
+              <tr [class.desat]="e.status === 'ignorado'">
+                <td class="nw">{{ e.data | date: 'dd/MM/yy' }}</td>
+                <td>
+                  <div class="td-desc">{{ e.descricao }}</div>
+                  @if (e.documento) {
+                    <span class="td-mini">{{ e.documento }}</span>
+                  }
+                </td>
+                <td
+                  class="tr td-valor"
+                  [class.pos]="num(e.valor) > 0"
+                  [class.neg]="num(e.valor) < 0"
+                >
+                  {{ fmt(e.valor) }}
+                </td>
+                <td class="tc">
+                  <span class="st" [class]="'st st-' + e.status">{{ rotulo(e.status) }}</span>
+                </td>
+                <td class="tc">
+                  @if (e.melhor_score) {
+                    <span class="score" [class.alto]="num(e.melhor_score) >= 80">
+                      {{ num(e.melhor_score).toFixed(0) }}%
+                    </span>
+                  } @else {
+                    —
+                  }
+                </td>
+                <td class="tc td-acoes">
+                  @if (e.status === 'pendente') {
+                    <button
+                      type="button"
+                      class="badge-acao bg-blue1"
+                      title="Ver sugestões"
+                      (click)="toggleSugestoes(e)"
+                    >
+                      <mat-icon>psychology</mat-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="badge-acao bg-teal"
+                      title="Classificar direto"
+                      (click)="toggleClassificar(e)"
+                    >
+                      <mat-icon>label</mat-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="badge-acao bg-gray"
+                      title="Ignorar"
+                      (click)="ignorar(e)"
+                    >
+                      <mat-icon>visibility_off</mat-icon>
+                    </button>
+                  }
+                </td>
+              </tr>
+              @if (aberto() === e.id) {
+                <tr class="tr-det">
+                  <td colspan="6">
+                    @if (carregandoSug()) {
+                      <p class="vazio">Buscando candidatos…</p>
+                    } @else if (sugestoes().length) {
+                      <div class="sug-lista">
+                        @for (s of sugestoes(); track s.baixa.id; let i = $index) {
+                          <div class="sug">
+                            <span class="sug-score" [class.alto]="num(s.score) >= 80"
+                              >{{ num(s.score).toFixed(0) }}%</span
+                            >
+                            <div class="sug-info">
+                              <strong>{{ s.lancamento_descricao }}</strong>
+                              <small>
+                                Baixa Nº{{ s.baixa.id }} · {{ s.baixa.data | date: 'dd/MM/yy' }} ·
+                                {{ s.baixa.forma_pagamento ?? 'sem forma' }} · Δ
+                                {{ s.dias_diferenca }}d
+                              </small>
+                            </div>
+                            <span class="sug-valor">{{ fmt(s.baixa.valor) }}</span>
+                            <button
+                              type="button"
+                              class="btn-prim sm"
+                              (click)="conciliar(e, s.baixa.id)"
+                            >
+                              Conciliar
+                            </button>
+                          </div>
+                        }
+                      </div>
+                    } @else {
+                      <p class="vazio">
+                        Nenhuma baixa candidata — classifique diretamente ou importe o lançamento.
+                      </p>
+                    }
+                  </td>
+                </tr>
+              }
+              @if (classAberto() === e.id) {
+                <tr class="tr-det">
+                  <td colspan="6">
+                    <form
+                      class="cls-form"
+                      [formGroup]="clsForm"
+                      (ngSubmit)="confirmarClassificar(e)"
+                    >
+                      <strong
+                        >Criar lançamento {{ num(e.valor) > 0 ? 'a receber' : 'a pagar' }} de
+                        {{ fmt(num(e.valor) < 0 ? -num(e.valor) : e.valor) }}</strong
+                      >
+                      <select
+                        class="inp"
+                        formControlName="idplano_conta"
+                        aria-label="Plano de contas"
+                      >
+                        <option [ngValue]="null" disabled>Plano de contas *</option>
+                        @for (p of planoPara(e); track p.id) {
+                          <option [ngValue]="p.id">{{ p.codigo }} — {{ p.nome }}</option>
+                        }
+                      </select>
+                      <input
+                        class="inp"
+                        formControlName="descricao"
+                        placeholder="Descrição (opcional)"
+                        aria-label="Descrição"
+                      />
+                      <button class="btn-prim sm" type="submit" [disabled]="clsForm.invalid">
+                        Classificar
+                      </button>
+                      <button class="btn-ghost" type="button" (click)="classAberto.set(null)">
+                        Fechar
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              }
+            } @empty {
+              <tr>
+                <td colspan="6" class="vazio">
+                  Nenhum item de extrato. Importe um OFX/CSV para começar.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <footer class="pag">
+        <button
+          type="button"
+          class="btn-ghost"
+          [disabled]="page() <= 1"
+          (click)="pagina(page() - 1)"
+        >
+          <mat-icon>chevron_left</mat-icon> Anterior
+        </button>
+        <span>{{ page() }} / {{ totalPaginas() }} — {{ total() }} itens</span>
+        <button
+          type="button"
+          class="btn-ghost"
+          [disabled]="page() >= totalPaginas()"
+          (click)="pagina(page() + 1)"
+        >
+          Próxima <mat-icon>chevron_right</mat-icon>
+        </button>
+      </footer>
+    }
+  </section>
+</div>

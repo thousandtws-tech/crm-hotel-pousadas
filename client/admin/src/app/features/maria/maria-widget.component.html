@@ -1,0 +1,38 @@
+<elevenlabs-convai
+  [attr.agent-id]="m.agentId"
+  [attr.signed-url]="m.signedUrl()"
+  [attr.dynamic-variables]="varsJson"
+  variant="compact"
+  placement="bottom-right"
+  text-input="true"
+  transcript="true"
+  mic-muting="true"
+  dismissible="false"
+  show-agent-status="true"
+  action-text="Falar com a MARIA"
+  start-call-text="Iniciar conversa"
+  end-call-text="Encerrar"
+  expand-text="Abrir assistente"
+  listening-text="Ouvindo…"
+  speaking-text="MARIA falando"
+></elevenlabs-convai>
+
+@if (m.pendente(); as a) {
+  <section class="mar-acao" role="alertdialog" aria-label="Confirmação de ação">
+    <div class="mar-acao-tit"><mat-icon>verified_user</mat-icon> Confirmar ação</div>
+    <div class="mar-acao-res">
+      <b>{{ rotuloAcao(a.acao) }}</b>
+      @for (k of chaves(a.resumo); track k) {
+        <span>{{ rotuloCampo(k) }}: {{ a.resumo[k] ?? '—' }}</span>
+      }
+    </div>
+    <div class="mar-acao-btns">
+      <button class="mar-ok" type="button" (click)="m.confirmar(a.idacao)">
+        <mat-icon>check</mat-icon> Confirmar
+      </button>
+      <button class="mar-nok" type="button" (click)="m.recusar()">
+        <mat-icon>close</mat-icon> Cancelar
+      </button>
+    </div>
+  </section>
+}

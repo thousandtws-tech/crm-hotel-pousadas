@@ -1,0 +1,180 @@
+<div class="pag">
+  <div class="cab">
+    <div>
+      <a class="volta" routerLink="/integracoes"><mat-icon>arrow_back</mat-icon> Integrações</a>
+      <h2 class="titulo">
+        Didit <span class="amb">{{ rotuloAmb }}</span>
+      </h2>
+      <p class="sub">
+        Verificação de identidade (KYC) dos funcionários — documento, biometria facial e análise de
+        IP em sessão hospedada pela Didit.
+      </p>
+    </div>
+    @if (i(); as int) {
+      <span class="pill" [class]="estadoDe(int.estado).pill">{{
+        estadoDe(int.estado).rotulo
+      }}</span>
+    }
+  </div>
+
+  @if (carregando()) {
+    <p class="mut">Carregando…</p>
+  } @else if (!i()) {
+    <div class="card">
+      <p class="mut">Integração ainda não criada — salve as credenciais.</p>
+    </div>
+  }
+
+  <!-- Credenciais -->
+  <section class="card">
+    <h3 class="card-t"><mat-icon>key</mat-icon> Credenciais</h3>
+    <p class="mut">Valores nunca são exibidos — só o estado configurado.</p>
+    @for (c of campos; track c.nome) {
+      <label class="fld">
+        <span class="fld-l"
+          >{{ c.rotulo }}
+          @if (configurado(c)) {
+            <em class="conf">•••••• configurado</em>
+          }
+        </span>
+        <input
+          class="fld-i"
+          [type]="c.segredo ? 'password' : 'text'"
+          [formControl]="controle(c.nome)"
+          [placeholder]="c.placeholder ?? (configurado(c) ? 'Deixe em branco para manter' : '')"
+          autocomplete="off"
+        />
+        @if (c.dica) {
+          <span class="fld-d">{{ c.dica }}</span>
+        }
+        @if (configurado(c)) {
+          <label class="mini"
+            ><input type="checkbox" [checked]="limpar()[c.nome]" (change)="toggleLimpar(c.nome)" />
+            Limpar ao salvar</label
+          >
+        }
+      </label>
+    }
+    <div class="acoes">
+      <button type="button" class="btn-pri" (click)="salvar()" [disabled]="salvando()">
+        {{ salvando() ? 'Salvando…' : 'Salvar credenciais' }}
+      </button>
+      <button type="button" class="btn-sec" (click)="testar()" [disabled]="testando()">
+        <mat-icon>bolt</mat-icon> {{ testando() ? 'Testando…' : 'Testar conexão' }}
+      </button>
+    </div>
+    @if (teste(); as t) {
+      <p
+        class="teste"
+        [class.ok]="t.verificacao_status === 'ok'"
+        [class.erro]="t.verificacao_status !== 'ok'"
+      >
+        {{ t.mensagem }} {{ t.nome_conta ? '— ' + t.nome_conta : '' }}
+      </p>
+    }
+  </section>
+
+  <!-- Operação -->
+  @if (i(); as int) {
+    <section class="card">
+      <h3 class="card-t"><mat-icon>tune</mat-icon> Operação</h3>
+      <label class="sw">
+        <input
+          type="checkbox"
+          [checked]="int.habilitado"
+          (change)="alternar(int)"
+          [disabled]="alternando()"
+        />
+        <span
+          ><strong>Integração habilitada</strong> — sessões de verificação podem ser criadas.</span
+        >
+      </label>
+    </section>
+  }
+
+  <!-- Verificação -->
+  <section class="card">
+    <h3 class="card-t"><mat-icon>verified_user</mat-icon> Verificação de identidade</h3>
+    <p class="mut">
+      O workflow define os checks (documento + rosto + AML). Crie/edite em
+      <b>business.didit.me → Workflows</b> e cole o ID aqui.
+    </p>
+    <label class="fld">
+      <span class="fld-l">Workflow ID</span>
+      <input class="fld-i" [formControl]="fWorkflow" placeholder="UUID do workflow Didit" />
+    </label>
+    <label class="fld">
+      <span class="fld-l">URL de retorno (opcional)</span>
+      <input
+        class="fld-i"
+        [formControl]="fCallback"
+        placeholder="https://crm.espiritodomar.com.br/verificacao"
+      />
+      <span class="fld-d">Para onde o funcionário volta ao terminar a verificação hospedada.</span>
+    </label>
+    <label class="sw">
+      <input type="checkbox" [formControl]="fExigir" />
+      <span>
+        <strong>Exigir verificação no login</strong> — funcionários não aprovados ficam na tela de
+        verificação até concluir o KYC (válido só para a integração de produção).
+      </span>
+    </label>
+    <div class="acoes">
+      <button type="button" class="btn-pri" (click)="salvarConfig()" [disabled]="salvandoCfg()">
+        {{ salvandoCfg() ? 'Salvando…' : 'Salvar configuração' }}
+      </button>
+    </div>
+  </section>
+
+  <!-- Webhook -->
+  <section class="card">
+    <h3 class="card-t"><mat-icon>webhook</mat-icon> Webhook</h3>
+    @if (i()?.webhook_url) {
+      <div class="hook">
+        <code class="hook-url">{{ i()!.webhook_url }}</code>
+        <button type="button" class="btn-sec" (click)="copiar(i()!.webhook_url!)">
+          <mat-icon>content_copy</mat-icon> Copiar
+        </button>
+      </div>
+      <p class="mut">Registrado na Didit — o segredo de assinatura já está guardado.</p>
+    } @else {
+      <p class="mut">
+        Registre o destino para receber os eventos <code>status.updated</code> — sem ele o status só
+        avança pela sincronização manual.
+      </p>
+    }
+    <div class="acoes">
+      <button
+        type="button"
+        class="btn-sec"
+        (click)="registrarWebhook()"
+        [disabled]="registrandoHook()"
+      >
+        <mat-icon>add_link</mat-icon>
+        {{ registrandoHook() ? 'Registrando…' : 'Registrar webhook na Didit' }}
+      </button>
+    </div>
+  </section>
+
+  <section class="card aviso-card">
+    <h3 class="card-t"><mat-icon>info</mat-icon> Como funciona</h3>
+    <ul class="lista">
+      <li>
+        Cada funcionário recebe um <b>link hospedado</b> (em Funcionários → Verificar) para fazer o
+        KYC — documento + selfie.
+      </li>
+      <li>
+        O status chega pelo <b>webhook</b> (ou pelo botão Sincronizar) e aparece como badge na
+        equipe.
+      </li>
+      <li>
+        Com <b>“Exigir verificação”</b> ligado, quem não aprovou fica na tela de verificação após o
+        login — admin pode seguir em emergência.
+      </li>
+      <li>
+        Ambiente <b>teste</b> nunca bloqueia login — serve para homologar o fluxo com cenários de
+        sandbox.
+      </li>
+    </ul>
+  </section>
+</div>

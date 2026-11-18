@@ -1,0 +1,237 @@
+<div class="pag">
+  <div class="cab">
+    <div>
+      <p class="eyebrow">Parcerias B2B</p>
+      <h2 class="titulo">Contratos corporativos</h2>
+      <p class="sub">
+        Desconto negociado por código — o hóspede digita no motor e a diária já sai reduzida.
+      </p>
+    </div>
+    <button type="button" class="btn-pri" (click)="abrirForm(null)">
+      <mat-icon>add</mat-icon> Novo contrato
+    </button>
+  </div>
+
+  @if (carregando()) {
+    <p class="vazio">Carregando…</p>
+  } @else {
+    @if (contratos().length) {
+      <div class="kpis">
+        <div class="kpi">
+          <div class="kpi-top">
+            <span class="kpi-lbl">Cadastrados</span>
+            <span class="kpi-ic"><mat-icon>corporate_fare</mat-icon></span>
+          </div>
+          <strong class="kpi-num">{{ contratos().length }}</strong>
+          <span class="kpi-sub">contratos no total</span>
+        </div>
+        <div class="kpi">
+          <div class="kpi-top">
+            <span class="kpi-lbl">Ativos</span>
+            <span class="kpi-ic"><mat-icon>check_circle</mat-icon></span>
+          </div>
+          <strong class="kpi-num">{{ ativos() }}</strong>
+          <span class="kpi-sub">códigos valendo</span>
+        </div>
+        <div class="kpi">
+          <div class="kpi-top">
+            <span class="kpi-lbl">Expirados</span>
+            <span class="kpi-ic"><mat-icon>event_busy</mat-icon></span>
+          </div>
+          <strong class="kpi-num">{{ expirados() }}</strong>
+          <span class="kpi-sub">fora da vigência</span>
+        </div>
+        <div class="kpi">
+          <div class="kpi-top">
+            <span class="kpi-lbl">Desconto médio</span>
+            <span class="kpi-ic"><mat-icon>percent</mat-icon></span>
+          </div>
+          <strong class="kpi-num">{{ descontoMedio() }}</strong>
+          <span class="kpi-sub">nos contratos ativos</span>
+        </div>
+      </div>
+    }
+
+    @if (contratos().length === 0) {
+      <div class="inner-card vazio-card">
+        <mat-icon>corporate_fare</mat-icon>
+        <p>Nenhum contrato cadastrado. Empresas com código ganham desconto automático no motor.</p>
+      </div>
+    } @else {
+      <div class="inner-card">
+        <table class="tab">
+          <thead>
+            <tr>
+              <th>Empresa</th>
+              <th>Código</th>
+              <th>Desconto</th>
+              <th>Vigência</th>
+              <th>Contato</th>
+              <th>Status</th>
+              <th class="ac">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of contratos(); track c.id) {
+              <tr [class.inativa]="!c.ativo">
+                <td>
+                  <strong>{{ c.empresa }}</strong>
+                  @if (c.notas) {
+                    <span class="mini notas">{{ c.notas }}</span>
+                  }
+                </td>
+                <td>
+                  <span class="codigo">{{ c.codigo }}</span>
+                </td>
+                <td>{{ c.desconto_pct }}%</td>
+                <td>
+                  <span class="mini">{{ dataBr(c.vigente_de) }} → {{ dataBr(c.vigente_ate) }}</span>
+                  @if (expirado(c)) {
+                    <span class="pill pill-off">expirado</span>
+                  }
+                </td>
+                <td>
+                  <span class="mini">{{ c.contato ?? '—' }} · {{ c.email ?? '—' }}</span>
+                </td>
+                <td>
+                  <span class="pill" [class.pill-off]="!c.ativo">
+                    {{ c.ativo ? 'Ativo' : 'Inativo' }}
+                  </span>
+                </td>
+                <td class="ac">
+                  <button type="button" class="mini-btn" (click)="abrirForm(c)" title="Editar">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="mini-btn"
+                    [class.perigo]="c.ativo"
+                    (click)="alternar(c)"
+                    [title]="c.ativo ? 'Desativar' : 'Reativar'"
+                  >
+                    <mat-icon>{{ c.ativo ? 'block' : 'check_circle' }}</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <div class="como">
+      <h3>Como funciona</h3>
+      <div class="como-grid">
+        <div class="como-passo">
+          <span class="como-ic"><mat-icon>corporate_fare</mat-icon></span>
+          <div>
+            <strong>1 · Cadastre a empresa</strong>
+            <p>Defina o desconto, a vigência e um código público curto — ex.: <b>ACME2025</b>.</p>
+          </div>
+        </div>
+        <div class="como-passo">
+          <span class="como-ic"><mat-icon>key</mat-icon></span>
+          <div>
+            <strong>2 · Compartilhe o código</strong>
+            <p>
+              Entregue o código ao contato da empresa — ele funciona enquanto o contrato estiver
+              ativo e na vigência.
+            </p>
+          </div>
+        </div>
+        <div class="como-passo">
+          <span class="como-ic"><mat-icon>sell</mat-icon></span>
+          <div>
+            <strong>3 · Desconto automático</strong>
+            <p>
+              O hóspede digita o código no motor de reservas e a diária já sai com o desconto
+              negociado.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (modalForm()) {
+    <div
+      class="modal-fundo"
+      (click)="modalForm.set(false)"
+      (keydown.escape)="modalForm.set(false)"
+      role="presentation"
+    ></div>
+    <div
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="editando() ? 'Editar contrato' : 'Novo contrato'"
+    >
+      <h2>{{ editando() ? 'Editar contrato' : 'Novo contrato' }}</h2>
+      <form [formGroup]="form" (ngSubmit)="salvar()">
+        <label class="dl">
+          <span>Empresa *</span>
+          <input
+            class="input-inn"
+            formControlName="empresa"
+            placeholder="Ex.: Acme Logística Ltda"
+          />
+        </label>
+        <div class="grid2">
+          <label class="dl">
+            <span>Código público *</span>
+            <input
+              class="input-inn mono"
+              formControlName="codigo"
+              placeholder="ACME2025"
+              aria-describedby="codigo-dica"
+            />
+            <span id="codigo-dica" class="dica"
+              >O hóspede digita no motor — maiúsculas, sem espaço.</span
+            >
+          </label>
+          <label class="dl">
+            <span>Desconto % *</span>
+            <input
+              class="input-inn"
+              type="number"
+              formControlName="desconto_pct"
+              min="1"
+              max="100"
+              step="0.5"
+            />
+          </label>
+        </div>
+        <div class="grid2">
+          <label class="dl">
+            <span>Vigente de *</span>
+            <input class="input-inn" type="date" formControlName="vigente_de" />
+          </label>
+          <label class="dl">
+            <span>Vigente até *</span>
+            <input class="input-inn" type="date" formControlName="vigente_ate" />
+          </label>
+        </div>
+        <div class="grid2">
+          <label class="dl">
+            <span>Contato</span>
+            <input class="input-inn" formControlName="contato" />
+          </label>
+          <label class="dl">
+            <span>E-mail</span>
+            <input class="input-inn" type="email" formControlName="email" />
+          </label>
+        </div>
+        <label class="dl">
+          <span>Notas internas</span>
+          <textarea class="input-inn" formControlName="notas" rows="2"></textarea>
+        </label>
+        <div class="modal-acoes">
+          <button type="button" class="btn-sec" (click)="modalForm.set(false)">Cancelar</button>
+          <button type="submit" class="btn-pri" [disabled]="salvando()">
+            {{ salvando() ? 'Salvando…' : 'Salvar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+</div>

@@ -1,0 +1,994 @@
+<div class="page cms-shell">
+  <header class="cms-head">
+    <div class="cms-head-copy">
+      <h1 class="cms-titulo">Conteúdo do site</h1>
+      <p class="cms-sub">
+        Gerencie acomodações, páginas institucionais, SEO e integração do motor de reservas.
+      </p>
+    </div>
+    <div class="cms-acoes">
+      <button
+        class="btn-ghost"
+        type="button"
+        (click)="iniciarTour()"
+        aria-label="Ver tutorial da tela"
+      >
+        Tutorial
+      </button>
+      <button id="tour-novo" class="btn-primary" type="button" (click)="abrirNovo()">
+        <mat-icon>add</mat-icon>
+        Novo quarto
+      </button>
+    </div>
+  </header>
+
+  <nav class="cms-tabs" role="tablist" aria-label="Seções do conteúdo do site">
+    <button
+      type="button"
+      role="tab"
+      class="cms-tab"
+      [class.ativo]="aba() === 'quartos'"
+      [attr.aria-selected]="aba() === 'quartos'"
+      (click)="aba.set('quartos')"
+    >
+      Acomodações
+      <span class="tab-count">{{ items().length }}</span>
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="cms-tab"
+      [class.ativo]="aba() === 'site'"
+      [attr.aria-selected]="aba() === 'site'"
+      (click)="aba.set('site')"
+    >
+      Página inicial e SEO
+    </button>
+    @if (widget()) {
+      <button
+        type="button"
+        role="tab"
+        class="cms-tab"
+        [class.ativo]="aba() === 'widget'"
+        [attr.aria-selected]="aba() === 'widget'"
+        (click)="aba.set('widget')"
+      >
+        Motor e integração
+      </button>
+    }
+  </nav>
+
+  @if (aba() === 'quartos') {
+    <section class="cms-section" aria-label="Gestão de acomodações no site">
+      <div class="cms-resumo" id="tour-resumo">
+        <div class="cms-est">
+          <span class="cms-est-lbl">Total de quartos</span>
+          <span class="cms-est-num">{{ items().length }}</span>
+        </div>
+        <div class="cms-est">
+          <span class="cms-est-lbl">Publicados no site</span>
+          <span class="cms-est-num">{{ totalPublicados() }}</span>
+        </div>
+        <div class="cms-est">
+          <span class="cms-est-lbl">Rascunhos ou ocultos</span>
+          <span class="cms-est-num">{{ totalRascunhos() }}</span>
+        </div>
+        <div class="cms-est">
+          <span class="cms-est-lbl">Sem fotos</span>
+          <span class="cms-est-num">{{ semFotos() }}</span>
+        </div>
+      </div>
+
+      <div class="cms-panel" id="tour-tabela">
+        <div class="cms-toolbar">
+          <div class="cms-busca" [class.foco]="buscaFoco()">
+            <mat-icon class="cms-busca-icone">search</mat-icon>
+            <input
+              class="cms-busca-input"
+              type="search"
+              [value]="termo()"
+              (input)="termo.set(valorDe($event))"
+              placeholder="Buscar por nome, número ou slug…"
+              aria-label="Buscar quarto"
+              autocomplete="off"
+              (focus)="buscaFoco.set(true)"
+              (blur)="buscaFoco.set(false)"
+            />
+            @if (termo()) {
+              <button
+                type="button"
+                class="cms-limpar"
+                aria-label="Limpar busca"
+                (click)="termo.set('')"
+              >
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </div>
+
+          <div class="seg-group" role="group" aria-label="Filtrar por status de publicação">
+            <button
+              type="button"
+              class="seg-btn"
+              [class.ativo]="filtro() === 'todos'"
+              [attr.aria-pressed]="filtro() === 'todos'"
+              (click)="filtro.set('todos')"
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              class="seg-btn"
+              [class.ativo]="filtro() === 'pub'"
+              [attr.aria-pressed]="filtro() === 'pub'"
+              (click)="filtro.set('pub')"
+            >
+              No ar
+            </button>
+            <button
+              type="button"
+              class="seg-btn"
+              [class.ativo]="filtro() === 'rasc'"
+              [attr.aria-pressed]="filtro() === 'rasc'"
+              (click)="filtro.set('rasc')"
+            >
+              Rascunhos
+            </button>
+          </div>
+        </div>
+
+        <div class="cms-tabela-wrap">
+          <table class="cms-tabela">
+            <thead>
+              <tr>
+                <th class="col-capa">Capa</th>
+                <th>Acomodação</th>
+                <th class="tr">Diária base</th>
+                <th>Mídia</th>
+                <th class="tc">Sistema</th>
+                <th class="tc">Publicação</th>
+                <th class="tr">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (carregando()) {
+                @for (s of skel; track s) {
+                  <tr class="skel-row">
+                    <td><span class="skel sk-capa"></span></td>
+                    <td><span class="skel sk-txt-l"></span><span class="skel sk-txt-s"></span></td>
+                    <td><span class="skel sk-txt tr-auto"></span></td>
+                    <td><span class="skel sk-txt"></span></td>
+                    <td><span class="skel sk-chip"></span></td>
+                    <td><span class="skel sk-chip"></span></td>
+                    <td><span class="skel sk-acoes"></span></td>
+                  </tr>
+                }
+              } @else {
+                @for (a of filtrados(); track a.id) {
+                  <tr [class.inativo-row]="!a.ativo">
+                    <td>
+                      @if (thumbs()[a.id]) {
+                        <img [src]="thumbs()[a.id]" alt="Capa de {{ a.nome }}" class="capa-thumb" />
+                      } @else {
+                        <div class="capa-vazia" title="Sem foto de capa">
+                          <mat-icon>image</mat-icon>
+                        </div>
+                      }
+                    </td>
+                    <td>
+                      <div class="q-cell">
+                        <div class="q-title-row">
+                          <strong class="q-name">{{ a.nome }}</strong>
+                          @if (a.cms?.destaque) {
+                            <span class="tag-neutral" title="Exibido na vitrine da página inicial"
+                              >Destaque</span
+                            >
+                          }
+                        </div>
+                        <small class="q-meta">
+                          Nº {{ a.numero }} · {{ a.capacidade }} hóspede{{
+                            a.capacidade === 1 ? '' : 's'
+                          }}
+                          @if (a.cms?.slug) {
+                            · <span class="slug">/{{ a.cms!.slug }}</span>
+                          }
+                        </small>
+                      </div>
+                    </td>
+                    <td class="tr preco-cell">
+                      @if (Number(a.valor) > 0) {
+                        R$ {{ num(a.valor) | number: '1.2-2' }}
+                      } @else {
+                        <span class="sob-consulta">Sob consulta</span>
+                      }
+                    </td>
+                    <td class="midias-cell">
+                      <span class="midia-n" [class.off]="contar(a, 'foto') === 0">
+                        {{ contar(a, 'foto') }} foto{{ contar(a, 'foto') === 1 ? '' : 's' }}
+                      </span>
+                      <span class="midia-sep">·</span>
+                      <span class="midia-n" [class.off]="contar(a, 'video') === 0">
+                        {{ contar(a, 'video') }} vídeo{{ contar(a, 'video') === 1 ? '' : 's' }}
+                      </span>
+                    </td>
+                    <td class="tc">
+                      <button
+                        class="pill-toggle"
+                        [class.pill-solid]="a.ativo"
+                        type="button"
+                        [title]="
+                          a.ativo
+                            ? 'Clique para desativar quarto no PMS'
+                            : 'Clique para reativar quarto'
+                        "
+                        (click)="toggleAtivo(a)"
+                      >
+                        <span class="pill-dot"></span>
+                        {{ a.ativo ? 'Ativo' : 'Inativo' }}
+                      </button>
+                    </td>
+                    <td class="tc">
+                      @if (!a.cms) {
+                        <span class="pill-static">Sem conteúdo</span>
+                      } @else if (a.cms!.status === 'publicado' && a.ativo) {
+                        <button
+                          class="pill-toggle pill-solid"
+                          type="button"
+                          title="Clique para mover para rascunho"
+                          (click)="togglePublicacao(a, false)"
+                        >
+                          <span class="pill-dot"></span>
+                          No ar
+                        </button>
+                      } @else {
+                        <button
+                          class="pill-toggle"
+                          type="button"
+                          title="Clique para publicar imediatamente no site"
+                          (click)="togglePublicacao(a, true)"
+                        >
+                          <span class="pill-dot"></span>
+                          Rascunho
+                        </button>
+                      }
+                    </td>
+                    <td class="tr">
+                      <div class="cms-acoes-linha">
+                        <button
+                          class="btn-row"
+                          type="button"
+                          title="Abrir editor do quarto"
+                          (click)="abrirEditor(a)"
+                        >
+                          Editar
+                        </button>
+                        @if (auth.isAdmin()) {
+                          <button
+                            class="btn-icon-row"
+                            type="button"
+                            title="Excluir quarto"
+                            aria-label="Excluir quarto {{ a.nome }}"
+                            (click)="excluirQuarto(a)"
+                          >
+                            <mat-icon>delete_outline</mat-icon>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="7" class="cms-vazio">
+                      <p class="vazio-tit">
+                        {{
+                          termo() || filtro() !== 'todos'
+                            ? 'Nenhuma acomodação encontrada para os filtros aplicados.'
+                            : 'Nenhuma acomodação cadastrada.'
+                        }}
+                      </p>
+                      @if (!termo() && filtro() === 'todos') {
+                        <p class="vazio-sub">
+                          Clique em "Novo quarto" no canto superior direito para cadastrar a
+                          primeira acomodação.
+                        </p>
+                      }
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (aba() === 'site') {
+    <section class="cms-section" aria-label="Conteúdo institucional e SEO">
+      <div class="site-topbar">
+        <p class="settings-desc">
+          As alterações publicadas abaixo atualizam a página inicial do site em tempo real.
+        </p>
+        <div class="aside-actions">
+          @if (siteUrl()) {
+            <a class="btn-ghost btn-sm" [href]="siteUrl()" target="_blank" rel="noopener">
+              Ver site
+            </a>
+          }
+          <button
+            type="button"
+            class="btn-primary btn-sm"
+            [disabled]="salvandoSite()"
+            (click)="salvarTudoSite()"
+          >
+            {{ salvandoSite() ? 'Salvando…' : 'Salvar todas as alterações' }}
+          </button>
+        </div>
+      </div>
+
+      <form class="settings-stack" [formGroup]="siteForm" (ngSubmit)="salvarTudoSite()">
+        <div class="settings-row">
+          <div class="settings-aside">
+            <h2 class="settings-tit">Primeira dobra (Hero)</h2>
+            <p class="settings-desc">
+              Título principal e subtítulo exibidos na abertura da página inicial do site
+              institucional.
+            </p>
+            <button
+              type="button"
+              class="btn-ghost btn-sm"
+              [disabled]="salvandoSite()"
+              (click)="salvarSite('hero')"
+            >
+              Salvar Hero
+            </button>
+          </div>
+          <div class="settings-card">
+            <label class="field">
+              <span class="field-lbl">Título principal</span>
+              <input
+                class="cms-input"
+                formControlName="hero_titulo"
+                placeholder="Pousada Espírito do Mar: sua estadia pertinho da Praia do Peró"
+              />
+            </label>
+            <label class="field">
+              <span class="field-lbl">Subtítulo</span>
+              <textarea
+                class="cms-input"
+                formControlName="hero_subtitulo"
+                rows="3"
+                placeholder="Em Cabo Frio, aproveite dias de descanso em uma pousada acolhedora, com piscina e fácil acesso à Praia do Peró."
+              ></textarea>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-aside">
+            <h2 class="settings-tit">SEO e buscadores</h2>
+            <p class="settings-desc">
+              Metadados utilizados pelo Google e redes sociais ao indexar e compartilhar o endereço
+              principal.
+            </p>
+            <button
+              type="button"
+              class="btn-ghost btn-sm"
+              [disabled]="salvandoSite()"
+              (click)="salvarSite('seo')"
+            >
+              Salvar SEO
+            </button>
+          </div>
+          <div class="settings-card">
+            <label class="field">
+              <span class="field-lbl">
+                Título da página
+                <span class="field-hint">{{ siteForm.controls.seo_titulo.value.length }}/60</span>
+              </span>
+              <input
+                class="cms-input"
+                formControlName="seo_titulo"
+                maxlength="60"
+                placeholder="Pousada Espírito do Mar | Hospedagem no Peró, Cabo Frio"
+              />
+            </label>
+            <label class="field">
+              <span class="field-lbl">
+                Descrição (meta description)
+                <span class="field-hint"
+                  >{{ siteForm.controls.seo_descricao.value.length }}/160</span
+                >
+              </span>
+              <textarea
+                class="cms-input"
+                formControlName="seo_descricao"
+                rows="3"
+                maxlength="160"
+                placeholder="Conheça a Pousada Espírito do Mar, no Peró, em Cabo Frio."
+              ></textarea>
+            </label>
+            <label class="field">
+              <span class="field-lbl">Palavras-chave (separadas por vírgula)</span>
+              <input
+                class="cms-input"
+                formControlName="seo_keywords"
+                placeholder="Pousada Espírito do Mar, pousada no Peró, pousada em Cabo Frio"
+              />
+            </label>
+          </div>
+        </div>
+      </form>
+
+      <div class="settings-row">
+        <div class="settings-aside">
+          <h2 class="settings-tit">Perguntas frequentes (FAQ)</h2>
+          <p class="settings-desc">
+            Dúvidas comuns exibidas na página inicial com marcação estruturada (JSON-LD) para
+            buscadores.
+          </p>
+          <div class="aside-actions">
+            <button type="button" class="btn-ghost btn-sm" (click)="addFaq()">
+              <mat-icon>add</mat-icon>
+              Adicionar pergunta
+            </button>
+            <button
+              type="button"
+              class="btn-primary btn-sm"
+              [disabled]="salvandoSite()"
+              (click)="salvarSite('faq')"
+            >
+              Salvar FAQ
+            </button>
+          </div>
+        </div>
+        <div class="settings-card">
+          @if (faq().length === 0) {
+            <div class="empty-inline">
+              Nenhuma pergunta cadastrada. Quando vazia, a seção de FAQ fica oculta no site.
+            </div>
+          } @else {
+            <div class="faq-list">
+              @for (f of faq(); track $index) {
+                <div class="faq-item">
+                  <div class="faq-item-head">
+                    <span class="faq-num">Pergunta {{ $index + 1 }}</span>
+                    <button
+                      type="button"
+                      class="btn-icon-row"
+                      [attr.aria-label]="'Remover pergunta ' + ($index + 1)"
+                      (click)="delFaq($index)"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                  <input
+                    class="cms-input"
+                    [value]="f.pergunta"
+                    placeholder="Digite a pergunta…"
+                    [attr.aria-label]="'Pergunta ' + ($index + 1)"
+                    (input)="setFaq($index, 'pergunta', $event)"
+                  />
+                  <textarea
+                    class="cms-input"
+                    [value]="f.resposta"
+                    rows="2"
+                    placeholder="Digite a resposta…"
+                    [attr.aria-label]="'Resposta ' + ($index + 1)"
+                    (input)="setFaq($index, 'resposta', $event)"
+                  ></textarea>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (aba() === 'widget' && widget(); as w) {
+    <section class="cms-section" aria-label="Integração do motor de reservas">
+      <div class="settings-row">
+        <div class="settings-aside">
+          <h2 class="settings-tit">Link direto e QR Code</h2>
+          <p class="settings-desc">
+            Compartilhe em redes sociais, materiais impressos na recepção ou atendimento via
+            WhatsApp.
+          </p>
+          <a class="btn-ghost btn-sm" [href]="w.url" target="_blank" rel="noopener">
+            Abrir motor em nova aba
+          </a>
+        </div>
+        <div class="settings-card wg-card-grid">
+          <img class="wg-qr" alt="QR code para o motor de reservas" [src]="qrSrc()" />
+          <div class="wg-url-box">
+            <label class="field">
+              <span class="field-lbl">Endereço público do motor</span>
+              <div class="copy-row">
+                <input
+                  class="cms-input mono"
+                  readonly
+                  [value]="w.url"
+                  aria-label="Link do motor de reservas"
+                />
+                <button type="button" class="btn-ghost" (click)="copiarWidget(w.url)">
+                  Copiar link
+                </button>
+              </div>
+            </label>
+            <p class="field-help">
+              As reservas concluídas no motor sincronizam disponibilidade, pagamento e ficha do
+              hóspede automaticamente.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div class="settings-aside">
+          <h2 class="settings-tit">Widget HTML incorporável</h2>
+          <p class="settings-desc">
+            Cole este trecho em qualquer página externa para exibir um seletor de datas conectado
+            direto ao motor.
+          </p>
+          <button type="button" class="btn-primary btn-sm" (click)="copiarWidget(w.snippet)">
+            Copiar código HTML
+          </button>
+        </div>
+        <div class="settings-card">
+          <label class="field">
+            <span class="field-lbl">Snippet de incorporação</span>
+            <textarea
+              class="cms-input mono wg-snippet"
+              readonly
+              rows="7"
+              [value]="w.snippet"
+              aria-label="Código HTML do widget"
+            ></textarea>
+          </label>
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (modalAberto()) {
+    <div class="overlay" (click.self)="fecharEditor()">
+      <div class="modal-cms" role="dialog" aria-modal="true" aria-labelledby="tit-cms">
+        <div class="modal-head">
+          <div>
+            <h2 id="tit-cms" class="modal-tit">
+              {{ modoNovo() ? 'Nova acomodação' : 'Editar acomodação' }}
+            </h2>
+            <p class="modal-sub">
+              {{
+                modoNovo()
+                  ? 'Cadastro operacional e conteúdo exibido no site'
+                  : form.controls.nome.value
+              }}
+            </p>
+          </div>
+          <button
+            class="btn-icon-row"
+            type="button"
+            aria-label="Fechar janela"
+            (click)="fecharEditor()"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <form [formGroup]="form" (ngSubmit)="salvar(false)">
+            <div class="sec-block">
+              <div class="sec-header">
+                <span class="sec-step">01</span>
+                <h3 class="sec-title">Identificação e tarifa</h3>
+              </div>
+              <div class="form-grid">
+                <label class="field f-span2">
+                  <span class="field-lbl">Nome da acomodação <span class="req">*</span></span>
+                  <input
+                    class="cms-input"
+                    formControlName="nome"
+                    placeholder="Ex.: Suíte Master com Varanda"
+                  />
+                </label>
+                <label class="field">
+                  <span class="field-lbl">Número / código <span class="req">*</span></span>
+                  <input
+                    class="cms-input"
+                    type="number"
+                    formControlName="numero"
+                    min="1"
+                    placeholder="101"
+                  />
+                </label>
+
+                <label class="field">
+                  <span class="field-lbl">Categoria</span>
+                  <select class="cms-input" formControlName="idtipo_acomodacao">
+                    <option [ngValue]="null">Sem categoria</option>
+                    @for (t of tipos(); track t.id) {
+                      <option [ngValue]="t.id">{{ t.nome }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="field">
+                  <span class="field-lbl">Capacidade (hóspedes) <span class="req">*</span></span>
+                  <input
+                    class="cms-input"
+                    type="number"
+                    formControlName="capacidade"
+                    min="1"
+                    max="20"
+                  />
+                </label>
+                <label class="field">
+                  <span class="field-lbl"
+                    >Diária base (R$) <span class="field-hint">0 = Sob consulta</span></span
+                  >
+                  <input
+                    class="cms-input"
+                    type="number"
+                    formControlName="valor"
+                    min="0"
+                    step="0.01"
+                    placeholder="0,00"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div class="sec-block">
+              <div class="sec-header">
+                <span class="sec-step">02</span>
+                <h3 class="sec-title">Textos e ficha técnica</h3>
+              </div>
+              <div class="form-grid">
+                <label class="field f-span2">
+                  <span class="field-lbl"
+                    >Subtítulo de apresentação <span class="req">*</span></span
+                  >
+                  <input
+                    class="cms-input"
+                    formControlName="subtitulo"
+                    placeholder="Ex.: Conforto e silêncio a poucos passos da praia"
+                  />
+                </label>
+                <label class="field">
+                  <span class="field-lbl"
+                    >Slug da URL <span class="field-hint">opcional</span></span
+                  >
+                  <input
+                    class="cms-input mono"
+                    formControlName="slug"
+                    placeholder="suite-master-varanda"
+                  />
+                </label>
+
+                <label class="field f-full">
+                  <span class="field-lbl">Descrição curta (listagens e cards)</span>
+                  <textarea
+                    class="cms-input"
+                    formControlName="descricao_curta"
+                    rows="2"
+                    placeholder="Resumo objetivo exibido nos cards de acomodação."
+                  ></textarea>
+                </label>
+                <label class="field f-full">
+                  <span class="field-lbl">Descrição completa (página da acomodação)</span>
+                  <textarea
+                    class="cms-input"
+                    formControlName="descricao_longa"
+                    rows="4"
+                    placeholder="Texto completo apresentando o espaço, iluminação, enxoval e diferenciais."
+                  ></textarea>
+                </label>
+                <label class="field f-full">
+                  <span class="field-lbl">Frase em destaque</span>
+                  <input
+                    class="cms-input"
+                    formControlName="destaque_editorial"
+                    placeholder="Citação curta exibida em destaque na página individual."
+                  />
+                </label>
+
+                <label class="field">
+                  <span class="field-lbl">Camas</span>
+                  <input class="cms-input" formControlName="camas" placeholder="1 cama queen" />
+                </label>
+                <label class="field">
+                  <span class="field-lbl">Banheiros</span>
+                  <input class="cms-input" type="number" formControlName="banheiros" min="0" />
+                </label>
+                <label class="field">
+                  <span class="field-lbl">Área (m²)</span>
+                  <input
+                    class="cms-input"
+                    type="number"
+                    formControlName="metragem"
+                    min="0"
+                    step="0.5"
+                    placeholder="Opcional"
+                  />
+                </label>
+                <label class="field">
+                  <span class="field-lbl">Vista / ambiente</span>
+                  <input
+                    class="cms-input"
+                    formControlName="vista"
+                    placeholder="Vista para o jardim"
+                  />
+                </label>
+                <label class="field">
+                  <span class="field-lbl">Andar / localização</span>
+                  <input class="cms-input" formControlName="andar" placeholder="Térreo" />
+                </label>
+                <label class="field">
+                  <span class="field-lbl">Ordem de exibição</span>
+                  <input class="cms-input" type="number" formControlName="ordem" min="0" />
+                </label>
+
+                <label class="check-row f-full">
+                  <input type="checkbox" formControlName="destaque" />
+                  <span>
+                    <strong>Exibir na vitrine da página inicial</strong>
+                    <small>Destaca esta acomodação na seção principal da Home.</small>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </form>
+
+          <div class="sec-block">
+            <div class="sec-header sec-between">
+              <div class="sec-header-left">
+                <span class="sec-step">03</span>
+                <div>
+                  <h3 class="sec-title">Comodidades</h3>
+                  <p class="sec-sub">
+                    Selecione itens rápidos ou cadastre comodidades específicas.
+                  </p>
+                </div>
+              </div>
+              <button class="btn-ghost btn-sm" type="button" (click)="addComodidade()">
+                <mat-icon>add</mat-icon>
+                Item personalizado
+              </button>
+            </div>
+
+            <div class="presets-bar">
+              @for (p of presets; track p.name) {
+                <button
+                  type="button"
+                  class="preset-chip"
+                  [class.ativo]="temComodidade(p.name)"
+                  (click)="togglePreset(p)"
+                >
+                  {{ temComodidade(p.name) ? '✓ ' : '+ ' }}{{ p.name }}
+                </button>
+              }
+            </div>
+
+            @if (comodidades().length > 0) {
+              <div class="como-list">
+                @for (c of comodidades(); track $index; let i = $index) {
+                  <div class="como-row">
+                    <input
+                      class="cms-input como-nome"
+                      [value]="c.name"
+                      [attr.aria-label]="'Nome da comodidade ' + (i + 1)"
+                      (input)="atualizarComodidadeNome(i, $event)"
+                      placeholder="Nome da comodidade"
+                    />
+                    <select
+                      class="cms-input ic-sel"
+                      [attr.aria-label]="'Ícone da comodidade ' + (i + 1)"
+                      (change)="atualizarComodidadeIcone(i, valorDe($event))"
+                    >
+                      @for (ic of iconesSite; track ic.id) {
+                        <option [value]="ic.id" [selected]="ic.id === c.icon">
+                          {{ ic.label }}
+                        </option>
+                      }
+                    </select>
+                    <label class="como-check">
+                      <input
+                        type="checkbox"
+                        [checked]="c.highlight"
+                        (change)="atualizarComodidadeDestaque(i, $event)"
+                      />
+                      <span>Destaque</span>
+                    </label>
+                    <button
+                      class="btn-icon-row"
+                      type="button"
+                      title="Remover comodidade"
+                      [attr.aria-label]="'Remover comodidade ' + (i + 1)"
+                      (click)="delComodidade(i)"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="sec-block">
+            <div class="sec-header sec-between">
+              <div class="sec-header-left">
+                <span class="sec-step">04</span>
+                <div>
+                  <h3 class="sec-title">Fotos e vídeos</h3>
+                  <p class="sec-sub">Defina a imagem de capa e ordene a sequência da galeria.</p>
+                </div>
+              </div>
+              <label class="btn-primary btn-sm upload-lbl">
+                <mat-icon>upload</mat-icon>
+                Enviar arquivos
+                <input
+                  type="file"
+                  hidden
+                  multiple
+                  accept="image/*,video/mp4,video/webm"
+                  (change)="upload($event)"
+                />
+              </label>
+            </div>
+
+            @if (enviando()) {
+              <div class="loading-bar">
+                <mat-spinner diameter="18" />
+                <span>Enviando arquivos para o armazenamento…</span>
+              </div>
+            }
+
+            @if (editandoMidias().length === 0 && !enviando()) {
+              <div class="midia-empty">
+                Nenhum arquivo enviado. Formatos aceitos: JPG, PNG, WebP, MP4 e WebM.
+              </div>
+            } @else {
+              <div class="midia-grid">
+                @for (m of editandoMidias(); track m.id; let i = $index) {
+                  <div class="midia-card" [class.capa]="m.capa">
+                    @if (m.tipo === 'foto') {
+                      <img
+                        [src]="midiaUrl(m.id)"
+                        [alt]="m.capa ? 'Foto de capa' : 'Foto ' + (i + 1)"
+                        title="Clique para ampliar"
+                        (click)="abrirPreview(i)"
+                      />
+                    } @else {
+                      <video
+                        [src]="midiaUrl(m.id)"
+                        muted
+                        preload="metadata"
+                        title="Clique para ampliar"
+                        (click)="abrirPreview(i)"
+                      ></video>
+                      <span class="media-badge right">Vídeo</span>
+                    }
+                    @if (m.capa) {
+                      <span class="media-badge left">Capa</span>
+                    }
+                    <div class="midia-ops">
+                      <button
+                        type="button"
+                        title="Mover para trás"
+                        aria-label="Mover mídia para trás"
+                        (click)="mover(i, -1)"
+                      >
+                        <mat-icon>arrow_back</mat-icon>
+                      </button>
+                      <button
+                        type="button"
+                        title="Mover para frente"
+                        aria-label="Mover mídia para frente"
+                        (click)="mover(i, 1)"
+                      >
+                        <mat-icon>arrow_forward</mat-icon>
+                      </button>
+                      @if (m.tipo === 'foto' && !m.capa) {
+                        <button
+                          type="button"
+                          title="Definir como capa"
+                          aria-label="Definir como foto de capa"
+                          (click)="capa(m.id)"
+                        >
+                          <mat-icon>star_outline</mat-icon>
+                        </button>
+                      }
+                      <button
+                        type="button"
+                        title="Remover mídia"
+                        aria-label="Remover mídia"
+                        (click)="removerMidia(m)"
+                      >
+                        <mat-icon>delete_outline</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="modal-foot">
+          <button class="btn-ghost" type="button" (click)="fecharEditor()">Cancelar</button>
+          <div class="foot-right">
+            <button class="btn-ghost" type="button" [disabled]="salvando()" (click)="salvar(false)">
+              Salvar rascunho
+            </button>
+            <button
+              class="btn-primary"
+              type="button"
+              [disabled]="salvando()"
+              (click)="salvar(true)"
+            >
+              {{
+                editando()?.cms?.status === 'publicado' ? 'Salvar e atualizar' : 'Salvar e publicar'
+              }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (preview(); as p) {
+    <div
+      class="lightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Pré-visualização de mídia"
+      tabindex="-1"
+      #lightbox
+      (click)="fecharPreview()"
+    >
+      <button
+        type="button"
+        class="lb-btn lb-close"
+        aria-label="Fechar visualização"
+        (click)="fecharPreview()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+      @if (editandoMidias().length > 1) {
+        <button
+          type="button"
+          class="lb-btn lb-nav prev"
+          aria-label="Mídia anterior"
+          (click)="navPreview(-1); $event.stopPropagation()"
+        >
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <button
+          type="button"
+          class="lb-btn lb-nav next"
+          aria-label="Próxima mídia"
+          (click)="navPreview(1); $event.stopPropagation()"
+        >
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      }
+      <figure class="lb-midia" (click)="$event.stopPropagation()">
+        @if (p.tipo === 'foto') {
+          <img
+            [src]="midiaUrl(p.id)"
+            [alt]="p.capa ? 'Foto de capa do quarto' : 'Foto da galeria'"
+          />
+        } @else {
+          <video [src]="midiaUrl(p.id)" controls autoplay></video>
+        }
+        <figcaption>
+          @if (p.capa) {
+            <span>Capa · </span>
+          }
+          {{ (previewIdx() ?? 0) + 1 }} / {{ editandoMidias().length }}
+        </figcaption>
+      </figure>
+    </div>
+  }
+</div>

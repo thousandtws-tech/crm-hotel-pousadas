@@ -1,0 +1,104 @@
+<div class="page">
+  <app-fin-nav />
+
+  <div class="fin-head">
+    <div>
+      <h2 class="fin-titulo">DRE — Demonstrativo de Resultados</h2>
+      <p class="fin-sub">Regime de competência (por competência/vencimento)</p>
+    </div>
+    <div class="fin-periodo">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="fin-range">
+        <mat-date-range-input [rangePicker]="picker" [formGroup]="range">
+          <input matStartDate formControlName="inicio" aria-label="Data inicial" />
+          <input matEndDate formControlName="fim" aria-label="Data final" />
+        </mat-date-range-input>
+        <mat-datepicker-toggle matIconSuffix [for]="picker" />
+        <mat-date-range-picker #picker (closed)="aplicarRange()" />
+      </mat-form-field>
+    </div>
+  </div>
+
+  @if (dre(); as d) {
+    <div class="kpi" [class.neg]="num(d.resultado_liquido) < 0">
+      <div class="kpi-item">
+        <span class="kpi-num">{{ fmt(d.resultado_liquido) }}</span>
+        <span class="kpi-lbl"><mat-icon>emoji_events</mat-icon> Resultado líquido</span>
+      </div>
+      <div class="kpi-item">
+        <span class="kpi-num">{{ margem() }}%</span>
+        <span class="kpi-lbl"><mat-icon>percent</mat-icon> Margem líquida</span>
+      </div>
+      <div class="kpi-item">
+        <span class="kpi-num">{{ fmt(d.ibs) }}</span>
+        <span class="kpi-lbl"><mat-icon>account_balance</mat-icon> IBS provisionado</span>
+      </div>
+      <div class="kpi-item">
+        <span class="kpi-num">{{ fmt(d.cbs) }}</span>
+        <span class="kpi-lbl"><mat-icon>account_balance</mat-icon> CBS provisionado</span>
+      </div>
+    </div>
+
+    <section class="card">
+      <header class="card-head">
+        <h3>Estrutura do resultado</h3>
+        <small>{{ d.inicio | date: 'dd/MM/yyyy' }} — {{ d.fim | date: 'dd/MM/yyyy' }}</small>
+      </header>
+      <table class="tab dre">
+        <tbody>
+          @for (l of estrutura(); track l.rotulo) {
+            <tr [class]="'l-' + l.estilo">
+              <td>{{ l.rotulo }}</td>
+              <td class="tr" [class.neg]="l.valor < 0">
+                @if (l.sinal === -1) {
+                  (−{{ fmt(-l.valor) }})
+                } @else {
+                  {{ fmt(l.valor) }}
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <header class="card-head">
+        <h3>Detalhamento por conta</h3>
+        <small>Plano de contas + itens operacionais da pousada</small>
+      </header>
+      <div class="tab-wrap">
+        <table class="tab">
+          <thead>
+            <tr>
+              <th>Conta</th>
+              <th>Grupo</th>
+              <th class="tr">Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (l of d.linhas; track $index) {
+              <tr>
+                <td>
+                  @if (l.codigo) {
+                    <span class="cod">{{ l.codigo }}</span>
+                  }
+                  {{ l.rotulo }}
+                </td>
+                <td>
+                  <span class="chip">{{ ROTULO[l.grupo] }}</span>
+                </td>
+                <td class="tr fw" [class.neg]="num(l.valor) < 0">{{ fmt(l.valor) }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="3" class="vazio">Sem lançamentos no período.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  } @else {
+    <div class="skel sk-bloco"></div>
+  }
+</div>

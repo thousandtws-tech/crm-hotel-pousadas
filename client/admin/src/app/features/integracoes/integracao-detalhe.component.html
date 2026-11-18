@@ -1,0 +1,278 @@
+<div class="pag">
+  <a class="volta" routerLink="/integracoes"> <mat-icon>arrow_back</mat-icon> Integrações </a>
+
+  @if (carregando()) {
+    <div class="inner-card" aria-hidden="true">
+      <span class="skel sk-t"></span>
+      <span class="skel sk-p"></span>
+      <span class="skel sk-m"></span>
+      <span class="skel sk-m"></span>
+    </div>
+  } @else if (falhou() || !i()) {
+    <div class="inner-card vazio-card">
+      <mat-icon>cloud_off</mat-icon>
+      <p>Não foi possível carregar esta integração.</p>
+      <button type="button" class="btn-sec" (click)="carregar()">Tentar novamente</button>
+    </div>
+  } @else {
+    @if (i(); as int) {
+      <div class="cab">
+        <div>
+          <p class="eyebrow">Configurações · Integrações</p>
+          <h2 class="titulo">
+            {{ rotuloProvedor(int.provedor) }}
+            <span class="env">{{ rotuloAmbiente(int.ambiente) }}</span>
+          </h2>
+          <p class="sub">Credenciais cifradas no servidor — os valores nunca saem do backend.</p>
+        </div>
+        <div class="cab-pills">
+          <span [class]="'pill ' + estadoDe(int.estado).pill">
+            {{ estadoDe(int.estado).rotulo }}
+          </span>
+          @if (int.padrao_site) {
+            <span class="pill pill-gold"> <mat-icon>star</mat-icon> Padrão do site </span>
+          }
+        </div>
+      </div>
+
+      @if (conflito()) {
+        <div class="aviso" role="alert">
+          <mat-icon>warning</mat-icon>
+          <span>
+            Outro administrador alterou esta integração. Recarregue para ver a versão atual antes de
+            salvar.
+          </span>
+          <button type="button" class="mini-btn" (click)="carregar()">Recarregar</button>
+        </div>
+      }
+
+      <!-- ================= Credenciais ================= -->
+      <div class="inner-card">
+        <h3 class="card-h">Credenciais</h3>
+        <p class="card-sub">
+          Campos em branco mantêm o valor atual; “Limpar” remove o credencial ao salvar.
+        </p>
+
+        @for (c of campos(); track c.nome) {
+          <div class="dl">
+            <span class="dl-rotulo">
+              {{ c.rotulo }}{{ c.obrigatorio ? ' *' : '' }}
+              @if (configurado(c)) {
+                <span class="conf">•••••• configurado</span>
+              }
+            </span>
+            <span class="segredo-linha">
+              <input
+                class="input-inn"
+                [type]="c.segredo ? 'password' : 'text'"
+                [formControl]="controle(c.nome)"
+                [placeholder]="
+                  limpar()[c.nome]
+                    ? 'Será removido ao salvar'
+                    : configurado(c)
+                      ? 'Deixe em branco para manter'
+                      : (c.placeholder ?? '')
+                "
+                [disabled]="!!limpar()[c.nome]"
+                [attr.autocomplete]="c.segredo ? 'new-password' : null"
+                [attr.aria-label]="c.rotulo"
+              />
+              @if (configurado(c)) {
+                <button
+                  type="button"
+                  class="mini-btn"
+                  [class.perigo]="limpar()[c.nome]"
+                  [attr.aria-label]="
+                    (limpar()[c.nome] ? 'Desfazer remoção de ' : 'Remover ') + c.rotulo
+                  "
+                  (click)="alternarLimpar(c.nome)"
+                >
+                  {{ limpar()[c.nome] ? 'Desfazer' : 'Limpar' }}
+                </button>
+              }
+            </span>
+            @if (c.dica) {
+              <span class="mini">{{ c.dica }}</span>
+            }
+          </div>
+        }
+
+        <label class="dl">
+          <span class="dl-rotulo">Nome da conta</span>
+          <input class="input-inn" [formControl]="fNomeConta" placeholder="Ex.: Conta da pousada" />
+        </label>
+
+        <div class="acoes">
+          <button type="button" class="btn-pri" (click)="salvar()" [disabled]="salvando()">
+            {{ salvando() ? 'Salvando…' : 'Salvar credenciais' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= Webhook ================= -->
+      <div class="inner-card">
+        <h3 class="card-h">Webhook</h3>
+        <p class="card-sub">
+          Cadastre esta URL no painel do provedor para receber os eventos de pagamento.
+        </p>
+        @if (int.webhook_url) {
+          <span class="segredo-linha">
+            <input
+              class="input-inn mono"
+              readonly
+              [value]="int.webhook_url"
+              aria-label="URL do webhook"
+            />
+            <button type="button" class="mini-btn" (click)="copiar(int.webhook_url!)">
+              <mat-icon>content_copy</mat-icon> Copiar
+            </button>
+          </span>
+        } @else {
+          <p class="mini mut">Nenhuma URL de webhook definida.</p>
+        }
+
+        <div class="verif">
+          @if (int.ultima_verificacao_em) {
+            <span class="mini">
+              Última verificação:
+              {{ int.ultima_verificacao_em | date: 'dd/MM/yyyy HH:mm' }}
+              — {{ int.verificacao_status === 'ok' ? 'ok' : 'falhou' }}
+            </span>
+            @if (int.verificacao_status === 'falha' && int.verificacao_erro) {
+              <span class="mini erro">{{ int.verificacao_erro }}</span>
+            }
+          } @else {
+            <span class="mini">Nunca verificada.</span>
+          }
+
+          <button type="button" class="btn-sec" (click)="testar()" [disabled]="testando()">
+            <mat-icon>network_check</mat-icon>
+            {{ testando() ? 'Testando…' : 'Testar conexão' }}
+          </button>
+        </div>
+
+        @if (teste(); as t) {
+          <div
+            class="res"
+            [class.res-ok]="t.verificacao_status === 'ok'"
+            [class.res-erro]="t.verificacao_status !== 'ok'"
+            role="status"
+          >
+            <mat-icon>
+              {{ t.verificacao_status === 'ok' ? 'check_circle' : 'error' }}
+            </mat-icon>
+            <span>
+              @if (t.verificacao_status === 'ok') {
+                Conexão verificada{{ t.nome_conta ? ' — ' + t.nome_conta : '' }}.
+              } @else {
+                Falha na verificação{{ t.mensagem ? ' — ' + t.mensagem : '' }}.
+              }
+            </span>
+          </div>
+        }
+      </div>
+
+      <!-- ================= Operação ================= -->
+      <div class="inner-card">
+        <h3 class="card-h">Operação</h3>
+
+        <div class="op-linha">
+          <div>
+            <strong>Integração habilitada</strong>
+            <p class="mini">Quando desabilitada, o provedor não recebe novas cobranças.</p>
+          </div>
+          <button
+            type="button"
+            class="sw"
+            [class.on]="int.habilitado"
+            role="switch"
+            [attr.aria-checked]="int.habilitado"
+            aria-label="Integração habilitada"
+            (click)="alternarHabilitado(int)"
+            [disabled]="alternando()"
+          >
+            <span class="sw-dot"></span>
+          </button>
+        </div>
+
+        <div class="op-linha">
+          <div>
+            <strong>Padrão do site</strong>
+            <p class="mini">Novas cobranças do site usam este provedor e ambiente.</p>
+          </div>
+          <button
+            type="button"
+            class="btn-sec"
+            (click)="definirPadrao()"
+            [disabled]="definindo() || int.padrao_site || int.estado !== 'ativa'"
+            [title]="
+              int.padrao_site
+                ? 'Já é o padrão do site'
+                : int.estado !== 'ativa'
+                  ? 'Só é possível quando a integração está ativa'
+                  : 'Definir como padrão'
+            "
+          >
+            <mat-icon>star</mat-icon>
+            {{
+              int.padrao_site ? 'Já é o padrão' : definindo() ? 'Definindo…' : 'Definir como padrão'
+            }}
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= Eventos ================= -->
+      <div class="inner-card">
+        <h3 class="card-h">Eventos de webhook</h3>
+        <p class="card-sub">Últimos eventos recebidos do provedor.</p>
+
+        @if (carregandoEventos()) {
+          <p class="vazio">Carregando…</p>
+        } @else if (eventos().length === 0) {
+          <p class="vazio">
+            Nenhum evento recebido ainda — quando o provedor chamar a URL acima, os eventos aparecem
+            aqui.
+          </p>
+        } @else {
+          <table class="tab">
+            <thead>
+              <tr>
+                <th>Evento</th>
+                <th>Status</th>
+                <th>Recebido em</th>
+                <th>Último erro</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of eventos(); track e.event_id) {
+                <tr>
+                  <td>
+                    <strong class="ev-tipo">{{ e.event_type }}</strong>
+                    <span class="mini ev-id">{{ e.event_id }}</span>
+                  </td>
+                  <td>
+                    <span [class]="'pill ' + pillEvento(e.status)">
+                      {{ rotuloEvento(e.status) }}
+                    </span>
+                  </td>
+                  <td class="ev-data">
+                    {{ e.recebido_em | date: 'dd/MM/yyyy HH:mm' }}
+                  </td>
+                  <td>
+                    @if (e.ultimo_erro) {
+                      <span class="mini erro" [title]="e.ultimo_erro">
+                        {{ e.ultimo_erro }}
+                      </span>
+                    } @else {
+                      <span class="mini mut">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    }
+  }
+</div>

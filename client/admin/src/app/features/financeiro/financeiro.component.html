@@ -1,0 +1,309 @@
+<div class="page">
+  <app-fin-nav />
+  <!-- ================= Cabeçalho editorial ================= -->
+  <div class="fin-head">
+    <div>
+      <h2 class="fin-titulo">Financeiro</h2>
+      <p class="fin-periodo">
+        {{ ini() | date: "dd 'de' MMMM" }} — {{ fim() | date: "dd 'de' MMMM 'de' yyyy" }}
+      </p>
+    </div>
+    <div class="fin-head-acoes">
+      <button
+        class="btn-tour"
+        type="button"
+        (click)="iniciarTour()"
+        aria-label="Ver tutorial da tela"
+      >
+        <mat-icon>school</mat-icon> Tutorial
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= Período ================= -->
+  <div class="inner-card fin-periodo-card">
+    <div class="fin-presets" role="group" aria-label="Períodos rápidos">
+      <button
+        type="button"
+        class="pre-btn"
+        [class.ativo]="preset() === 'mes'"
+        (click)="aplicarPreset('mes')"
+      >
+        Este mês
+      </button>
+      <button
+        type="button"
+        class="pre-btn"
+        [class.ativo]="preset() === 'mesAnt'"
+        (click)="aplicarPreset('mesAnt')"
+      >
+        Mês passado
+      </button>
+      <button
+        type="button"
+        class="pre-btn"
+        [class.ativo]="preset() === 'd30'"
+        (click)="aplicarPreset('d30')"
+      >
+        Últimos 30 dias
+      </button>
+      <button
+        type="button"
+        class="pre-btn"
+        [class.ativo]="preset() === 'ano'"
+        (click)="aplicarPreset('ano')"
+      >
+        Este ano
+      </button>
+    </div>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-mat fin-range">
+      <mat-date-range-input [rangePicker]="picker" [formGroup]="range">
+        <input matStartDate formControlName="inicio" placeholder="De" aria-label="Data inicial" />
+        <input matEndDate formControlName="fim" placeholder="Até" aria-label="Data final" />
+      </mat-date-range-input>
+      <mat-datepicker-toggle matIconSuffix [for]="picker" />
+      <mat-date-range-picker #picker />
+    </mat-form-field>
+  </div>
+
+  <!-- ================= Barra de números ================= -->
+  <div class="fin-resumo" id="tour-kpis">
+    <div class="fin-est">
+      <span class="fin-est-num">{{ fmt(num(resumo()?.recebido)) }}</span>
+      <span class="fin-est-lbl"><mat-icon>payments</mat-icon> Recebido</span>
+      @if (num(resumo()?.recebido_online) > 0) {
+        <span
+          class="fin-est-online"
+          title="Cobranças online confirmadas (Pix/cartão antecipado) — entram na receita quando a estadia é faturada"
+        >
+          + {{ fmt(num(resumo()?.recebido_online)) }} online
+        </span>
+      }
+    </div>
+    <div class="fin-est">
+      <span class="fin-est-num">{{ fmt(num(resumo()?.previsto)) }}</span>
+      <span class="fin-est-lbl"><mat-icon>event_available</mat-icon> Previsto</span>
+    </div>
+    <div class="fin-est">
+      <span class="fin-est-num">{{ fmt(num(resumo()?.descontos)) }}</span>
+      <span class="fin-est-lbl"><mat-icon>percent</mat-icon> Descontos</span>
+    </div>
+    <div class="fin-est">
+      <span class="fin-est-num">{{ resumo()?.qtd_contas_fechadas ?? 0 }}</span>
+      <span class="fin-est-lbl"><mat-icon>receipt_long</mat-icon> Contas fechadas</span>
+    </div>
+    <div class="fin-est">
+      <span class="fin-est-num">{{ fmt(ticketMedio()) }}</span>
+      <span class="fin-est-lbl"><mat-icon>point_of_sale</mat-icon> Ticket médio</span>
+    </div>
+    <span class="fin-resumo-info">
+      <mat-icon>info</mat-icon> Todos os valores referem-se ao período acima
+    </span>
+  </div>
+
+  <!-- ================= Grade de gráficos ================= -->
+  <div class="fin-grid">
+    <section class="fin-card span2" id="tour-fluxo">
+      <header class="fin-card-head">
+        <div>
+          <h3>Receita no período</h3>
+          <small>Caixa recebido por dia × reservas faturadas</small>
+        </div>
+        <strong class="fin-card-total">{{ fmt(totalRecebido()) }}</strong>
+      </header>
+      @if (carregando()) {
+        <div class="skel sk-chart"></div>
+      } @else if (serieRecebido().length) {
+        <app-echart [option]="optFluxo()" rotulo="Receita recebida por dia" />
+      } @else {
+        <p class="fin-vazio"><mat-icon>show_chart</mat-icon> Sem movimentação no período.</p>
+      }
+    </section>
+
+    <section class="fin-card">
+      <header class="fin-card-head">
+        <div>
+          <h3>Composição da receita</h3>
+          <small>De onde veio o valor recebido</small>
+        </div>
+      </header>
+      @if (carregando()) {
+        <div class="skel sk-chart"></div>
+      } @else if (temComposicao()) {
+        <app-echart [option]="optComposicao()" rotulo="Composição da receita" />
+      } @else {
+        <p class="fin-vazio"><mat-icon>pie_chart</mat-icon> Nada recebido no período.</p>
+      }
+    </section>
+
+    <section class="fin-card">
+      <header class="fin-card-head">
+        <div>
+          <h3>Formas de pagamento</h3>
+          <small>Participação de cada meio no recebido</small>
+        </div>
+      </header>
+      @if (carregando()) {
+        <div class="skel sk-chart"></div>
+      } @else if (seriePagamento().length) {
+        <app-echart [option]="optPagamento()" rotulo="Recebido por forma de pagamento" />
+      } @else {
+        <p class="fin-vazio"><mat-icon>credit_card</mat-icon> Sem pagamentos no período.</p>
+      }
+    </section>
+
+    <section class="fin-card">
+      <header class="fin-card-head">
+        <div>
+          <h3>Receita por acomodação</h3>
+          <small>Ranking de faturamento de reservas</small>
+        </div>
+      </header>
+      @if (carregando()) {
+        <div class="skel sk-chart"></div>
+      } @else if (serieAcomodacao().length) {
+        <app-echart [option]="optAcomodacao()" rotulo="Receita por acomodação" />
+      } @else {
+        <p class="fin-vazio"><mat-icon>hotel</mat-icon> Sem reservas faturadas.</p>
+      }
+    </section>
+
+    <section class="fin-card">
+      <header class="fin-card-head">
+        <div>
+          <h3>Vendas por dia</h3>
+          <small>Itens e consumo vendidos</small>
+        </div>
+        <strong class="fin-card-total">{{ fmt(totalVendas()) }}</strong>
+      </header>
+      @if (carregando()) {
+        <div class="skel sk-chart"></div>
+      } @else if (serieVendas().length) {
+        <app-echart [option]="optVendas()" rotulo="Vendas por dia" />
+      } @else {
+        <p class="fin-vazio"><mat-icon>shopping_bag</mat-icon> Sem vendas no período.</p>
+      }
+    </section>
+
+    <section class="fin-card">
+      <header class="fin-card-head">
+        <div>
+          <h3>Itens mais vendidos</h3>
+          <small>Por quantidade — {{ totalItens() }} unid. no período</small>
+        </div>
+      </header>
+      @if (carregando()) {
+        <div class="skel sk-chart"></div>
+      } @else if (itensVendidos().length) {
+        <app-echart [option]="optItens()" rotulo="Itens mais vendidos" />
+      } @else {
+        <p class="fin-vazio"><mat-icon>inventory_2</mat-icon> Nenhum item vendido.</p>
+      }
+    </section>
+  </div>
+
+  <!-- ================= Tabelas ================= -->
+  <div class="inner-card fin-tabelas" id="tour-tabelas">
+    <mat-tab-group animationDuration="200ms" mat-stretch-tabs="false">
+      <mat-tab label="Reservas do período">
+        <div class="fin-tabela-wrap">
+          <table class="fin-tabela">
+            <thead>
+              <tr>
+                <th>Reserva</th>
+                <th>Hóspede</th>
+                <th>Acomodação</th>
+                <th>Período</th>
+                <th class="tc">Status</th>
+                <th class="tr">Valor final</th>
+                <th class="tc">Ação</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of reservas(); track r.id) {
+                <tr>
+                  <td class="td-id">Nº {{ r.id }}</td>
+                  <td>
+                    <div class="fin-cell">
+                      <span class="fin-avatar">{{ iniciais(r.cliente_nome) }}</span>
+                      <span class="fin-cell-nome">{{ r.cliente_nome }}</span>
+                    </div>
+                  </td>
+                  <td>{{ r.acomodacao_nome }}</td>
+                  <td class="td-per">
+                    {{ r.entradaprevista | date: 'dd/MM/yy' }}
+                    <mat-icon>arrow_forward</mat-icon>
+                    {{ r.saidaprevista | date: 'dd/MM/yy' }}
+                  </td>
+                  <td class="tc">
+                    <span
+                      class="status-chip"
+                      [style.background]="statusCor(r.status)"
+                      [style.color]="statusTexto(r.status)"
+                      >{{ statusRotulo(r.status) }}</span
+                    >
+                  </td>
+                  <td class="tr td-valor">{{ fmt(num(r.valor_estadia)) }}</td>
+                  <td class="tc">
+                    <a
+                      class="badge-acao bg-blue1"
+                      [routerLink]="['/reservas', r.id]"
+                      title="Abrir reserva"
+                    >
+                      <mat-icon>visibility</mat-icon>
+                    </a>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7" class="fin-vazio-tab">Nenhuma reserva no período.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Vendas do período">
+        <div class="fin-tabela-wrap">
+          <table class="fin-tabela">
+            <thead>
+              <tr>
+                <th>Reserva</th>
+                <th>Produto</th>
+                <th class="tc">Qtd.</th>
+                <th class="tr">Valor</th>
+                <th>Data</th>
+                <th class="tc">Ação</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (v of vendasItens(); track $index) {
+                <tr>
+                  <td class="td-id">Nº {{ v.idreserva }}</td>
+                  <td>{{ v.item }}</td>
+                  <td class="tc">{{ v.quantidade }}</td>
+                  <td class="tr td-valor">{{ fmt(num(v.valor_total)) }}</td>
+                  <td>{{ v.criado_em | date: 'dd/MM/yy HH:mm' }}</td>
+                  <td class="tc">
+                    <a
+                      class="badge-acao bg-blue1"
+                      [routerLink]="['/reservas', v.idreserva]"
+                      title="Abrir reserva"
+                    >
+                      <mat-icon>visibility</mat-icon>
+                    </a>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="fin-vazio-tab">Nenhuma venda no período.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+</div>

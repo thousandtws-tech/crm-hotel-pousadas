@@ -1,0 +1,628 @@
+<div class="page">
+  <!-- ================= Cabeçalho ================= -->
+  <div class="fn-head">
+    <div>
+      <p class="eyebrow">Configurações</p>
+      <h2 class="fn-titulo">Funcionários</h2>
+      <p class="fn-sub">
+        Equipe com acesso ao sistema — cada pessoa entra com login e senha próprios
+      </p>
+    </div>
+    <div class="fn-acoes">
+      <a class="btn-tour" routerLink="/auditoria"> <mat-icon>history</mat-icon> Auditoria </a>
+      <button class="btn-tour" type="button" (click)="abrirCargos()" id="tour-cargos">
+        <mat-icon>work</mat-icon> Cargos
+      </button>
+      <button
+        class="btn-tour"
+        type="button"
+        (click)="iniciarTour()"
+        aria-label="Ver tutorial da tela"
+      >
+        <mat-icon>school</mat-icon> Tutorial
+      </button>
+      <button id="tour-novo" class="btn-dark-blue" type="button" (click)="abrirNovo()">
+        <mat-icon>person_add</mat-icon> Novo funcionário
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= Banners ================= -->
+  <div class="fn-banners">
+    <div class="fn-banner">
+      <span class="fn-banner-ic"><mat-icon>badge</mat-icon></span>
+      <div>
+        <strong>Três níveis de acesso</strong>
+        <p>
+          <b>Recepção</b> opera o dia a dia · <b>Gerente</b> acompanha relatórios ·
+          <b>Administrador</b> tem acesso total ao sistema.
+        </p>
+      </div>
+    </div>
+    <div class="fn-banner">
+      <span class="fn-banner-ic"><mat-icon>key</mat-icon></span>
+      <div>
+        <strong>Conta individual e rastreável</strong>
+        <p>
+          Cada ação no sistema fica registrada com o nome de quem fez — por isso cada pessoa tem seu
+          próprio login. Nunca compartilhe senhas.
+        </p>
+      </div>
+    </div>
+    <div class="fn-banner">
+      <span class="fn-banner-ic"><mat-icon>shield</mat-icon></span>
+      <div>
+        <strong>Você está protegido</strong>
+        <p>
+          O sistema não deixa você desativar nem excluir a sua própria conta — evita bloquear o
+          acesso por engano.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Barra de números ================= -->
+  <div class="fn-resumo">
+    <div class="fn-est">
+      <span class="fn-est-num">{{ total() }}</span>
+      <span class="fn-est-lbl"><mat-icon>groups</mat-icon> Funcionários</span>
+    </div>
+    <div class="fn-est">
+      <span class="fn-est-num">{{ ativos() }}</span>
+      <span class="fn-est-lbl"><mat-icon>check_circle</mat-icon> Ativos</span>
+    </div>
+    <div class="fn-est">
+      <span class="fn-est-num">{{ porNivel(3) }}</span>
+      <span class="fn-est-lbl"><mat-icon>room_service</mat-icon> Recepção</span>
+    </div>
+    <div class="fn-est">
+      <span class="fn-est-num">{{ porNivel(2) }}</span>
+      <span class="fn-est-lbl"><mat-icon>manage_accounts</mat-icon> Gerentes</span>
+    </div>
+    <div class="fn-est">
+      <span class="fn-est-num">{{ porNivel(1) }}</span>
+      <span class="fn-est-lbl"><mat-icon>admin_panel_settings</mat-icon> Admins</span>
+    </div>
+  </div>
+
+  <!-- ================= Lista ================= -->
+  <div class="inner-card fn-card" id="tour-tabela">
+    <div class="fn-toolbar">
+      <div class="fn-busca" [class.foco]="buscaFoco()">
+        <mat-icon class="fn-busca-icone">search</mat-icon>
+        <input
+          class="fn-busca-input"
+          type="search"
+          [value]="termo()"
+          (input)="termo.set(valorDe($event)); pagina.set(0)"
+          placeholder="Buscar por nome, login ou CPF…"
+          aria-label="Buscar funcionário"
+          autocomplete="off"
+          (focus)="buscaFoco.set(true)"
+          (blur)="buscaFoco.set(false)"
+        />
+        @if (termo()) {
+          <button
+            type="button"
+            class="fn-limpar"
+            aria-label="Limpar busca"
+            (click)="termo.set(''); pagina.set(0)"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+      <span class="fn-contagem">{{ filtrados().length }} de {{ items().length }}</span>
+    </div>
+
+    <div class="fn-tabela-wrap">
+      <table class="fn-tabela">
+        <thead>
+          <tr>
+            <th>Funcionário</th>
+            <th>CPF</th>
+            <th class="tc">Função</th>
+            <th class="tc">Status</th>
+            <th class="tc">Identidade</th>
+            <th class="tc">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (carregando()) {
+            @for (s of skel; track s) {
+              <tr class="skel-row">
+                <td>
+                  <span class="skel-cell"
+                    ><span class="skel sk-av"></span><span class="skel sk-txt-l"></span
+                  ></span>
+                </td>
+                <td><span class="skel sk-txt"></span></td>
+                <td><span class="skel sk-chip"></span></td>
+                <td><span class="skel sk-chip"></span></td>
+                <td><span class="skel sk-chip"></span></td>
+                <td><span class="skel sk-acoes"></span></td>
+              </tr>
+            }
+          } @else {
+            @for (f of paginados(); track f.id) {
+              <tr>
+                <td>
+                  <div class="fn-cell">
+                    <span class="fn-avatar" [class.eu]="f.id === auth.user()?.id">{{
+                      iniciais(f.nome)
+                    }}</span>
+                    <div class="fn-cell-txt">
+                      <strong>
+                        {{ f.nome }}
+                        @if (f.id === auth.user()?.id) {
+                          <span class="fn-voce">você</span>
+                        }
+                      </strong>
+                      <small><mat-icon>alternate_email</mat-icon>{{ f.login }}</small>
+                    </div>
+                  </div>
+                </td>
+                <td class="td-cpf">{{ f.cpf || '—' }}</td>
+                <td class="tc">
+                  <span class="fn-nivel n{{ f.nivel }}" [title]="nivelNome(f.nivel)">
+                    <mat-icon>{{ nivelIcone(f.nivel) }}</mat-icon>
+                    {{ cargoNome(f) }}
+                  </span>
+                </td>
+                <td class="tc">
+                  <button
+                    type="button"
+                    class="st-chip"
+                    [class.off]="!f.ativo"
+                    [disabled]="f.id === auth.user()?.id"
+                    [title]="
+                      f.id === auth.user()?.id
+                        ? 'Você não pode desativar a si mesmo'
+                        : f.ativo
+                          ? 'Clique para desativar'
+                          : 'Clique para ativar'
+                    "
+                    (click)="status(f, !f.ativo)"
+                  >
+                    {{ f.ativo ? 'Ativo' : 'Inativo' }}
+                  </button>
+                </td>
+                <td class="tc">
+                  <span
+                    class="v-pill"
+                    [class]="verificacaoDe(f.id).cls"
+                    [title]="verificacaoDe(f.id).titulo"
+                  >
+                    <mat-icon class="v-pill-ic">{{ verificacaoDe(f.id).icone }}</mat-icon>
+                    {{ verificacaoDe(f.id).rotulo }}
+                  </span>
+                  <button
+                    type="button"
+                    class="acao-btn v-link"
+                    [disabled]="gerandoLink() === f.id"
+                    [title]="'Gerar link de verificação Didit para ' + f.nome"
+                    [attr.aria-label]="'Gerar link de verificação para ' + f.nome"
+                    (click)="verificar(f)"
+                  >
+                    <mat-icon>{{ gerandoLink() === f.id ? 'hourglass_top' : 'link' }}</mat-icon>
+                  </button>
+                </td>
+                <td class="tc">
+                  <div class="fn-acoes-linha">
+                    <button
+                      type="button"
+                      class="acao-btn"
+                      title="Editar"
+                      aria-label="Editar funcionário"
+                      (click)="abrirEdicao(f)"
+                    >
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="acao-btn perigo"
+                      [disabled]="f.id === auth.user()?.id"
+                      (click)="excluir(f)"
+                      aria-label="Excluir funcionário"
+                      [title]="
+                        f.id === auth.user()?.id ? 'Você não pode excluir a si mesmo' : 'Excluir'
+                      "
+                    >
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="fn-vazio">
+                  <mat-icon>badge</mat-icon>
+                  {{
+                    termo()
+                      ? 'Nenhum funcionário encontrado para a busca.'
+                      : 'Nenhum funcionário cadastrado — clique em Novo funcionário.'
+                  }}
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <mat-paginator
+      [length]="filtrados().length"
+      [pageSize]="pageSize()"
+      [pageIndex]="pagina()"
+      [pageSizeOptions]="[10, 20, 50]"
+      (page)="mudouPagina($event)"
+    />
+  </div>
+</div>
+
+<!-- ================= Modal: link de verificação ================= -->
+@if (linkVerificacao(); as lv) {
+  <div class="vl-backdrop" (click)="linkVerificacao.set(null)" role="presentation">
+    <div
+      class="vl-modal"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="'Link de verificação de ' + lv.nome"
+    >
+      <h3 class="vl-t"><mat-icon>verified_user</mat-icon> Verificação de identidade</h3>
+      <p class="vl-sub">
+        Envie este link para <strong>{{ lv.nome }}</strong> — a pessoa abre no celular, faz o KYC
+        (documento + selfie) e o status aparece aqui sozinho.
+      </p>
+      <div class="vl-linha">
+        <input class="vl-url" [value]="lv.url" readonly aria-label="URL de verificação" />
+        <button type="button" class="btn-dark-blue" (click)="copiarLink()">
+          <mat-icon>content_copy</mat-icon> Copiar
+        </button>
+      </div>
+      <button type="button" class="vl-fechar" (click)="linkVerificacao.set(null)">Fechar</button>
+    </div>
+  </div>
+}
+
+<!-- ================= Drawer: funcionário (criar/editar) ================= -->
+@if (drawerAberto()) {
+  <div class="drawer-backdrop" (click.self)="fecharDrawer()">
+    <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="titulo-drawer">
+      <header class="drawer-head">
+        <div class="drawer-head-txt">
+          <h5 id="titulo-drawer">
+            {{ editando() ? 'Editar funcionário' : 'Novo funcionário' }}
+          </h5>
+          <p>
+            {{
+              editando()
+                ? 'Atualize os dados de ' + editando()!.nome
+                : 'Cadastre um membro da equipe e sua conta de acesso'
+            }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="drawer-fechar"
+          (click)="fecharDrawer()"
+          aria-label="Fechar painel"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+
+      <form [formGroup]="form" (ngSubmit)="salvar()" autocomplete="off" class="drawer-form">
+        <div class="drawer-body">
+          <!-- Dados pessoais -->
+          <section class="dsec">
+            <div class="dsec-tit"><mat-icon>badge</mat-icon> Dados pessoais</div>
+            <div class="dgrid">
+              <div class="campo full">
+                <label class="lbl" for="fu-nome">Nome completo <small class="req">*</small></label>
+                <input
+                  id="fu-nome"
+                  class="input-inn"
+                  type="text"
+                  formControlName="nome"
+                  placeholder="Ex.: Maria Silva Souza"
+                  [class.inval]="invalido('nome')"
+                />
+                @if (invalido('nome')) {
+                  <small class="erro-campo">Informe o nome completo.</small>
+                }
+              </div>
+              <div class="campo">
+                <label class="lbl" for="fu-nasc"
+                  >Data de nascimento <small class="req">*</small></label
+                >
+                <app-date formControlName="data_nascimento" />
+                @if (invalido('data_nascimento')) {
+                  <small class="erro-campo">Informe a data de nascimento.</small>
+                }
+              </div>
+              <div class="campo">
+                <label class="lbl" for="fu-cpf">CPF <small class="req">*</small></label>
+                <input
+                  id="fu-cpf"
+                  class="input-inn"
+                  type="text"
+                  formControlName="cpf"
+                  placeholder="000.000.000-00"
+                  [class.inval]="invalido('cpf')"
+                />
+                @if (invalido('cpf')) {
+                  <small class="erro-campo">Informe o CPF.</small>
+                }
+              </div>
+            </div>
+          </section>
+
+          <!-- Função & acesso -->
+          <section class="dsec">
+            <div class="dsec-tit"><mat-icon>key</mat-icon> Função &amp; acesso</div>
+            <div class="dgrid">
+              <div class="campo full">
+                <label class="lbl" for="fu-cargo">Cargo <small class="req">*</small></label>
+                <mat-form-field
+                  appearance="outline"
+                  subscriptSizing="dynamic"
+                  class="campo-mat"
+                  [class.err]="invalido('cargo_id')"
+                >
+                  <mat-select id="fu-cargo" formControlName="cargo_id" placeholder="Selecione…">
+                    @for (c of cargos(); track c.id) {
+                      @if (c.ativo || c.id === editando()?.cargo_id) {
+                        <mat-option [value]="c.id">
+                          {{ c.nome }} — {{ nivelNome(c.nivel).toLowerCase() }}
+                        </mat-option>
+                      }
+                    }
+                  </mat-select>
+                </mat-form-field>
+                @if (invalido('cargo_id')) {
+                  <small class="erro-campo">Escolha o cargo.</small>
+                }
+                <button type="button" class="link-gerir" (click)="abrirCargos()">
+                  <mat-icon>settings</mat-icon> Gerenciar cargos
+                </button>
+              </div>
+              <div class="campo">
+                <label class="lbl" for="fu-login">Login <small class="req">*</small></label>
+                <input
+                  id="fu-login"
+                  class="input-inn"
+                  type="text"
+                  formControlName="login"
+                  placeholder="Ex.: maria.s"
+                  [class.inval]="invalido('login')"
+                />
+                @if (invalido('login')) {
+                  <small class="erro-campo">Informe o login.</small>
+                }
+              </div>
+              <div class="campo">
+                <span class="lbl">
+                  Senha
+                  @if (!editando()) {
+                    <small class="req">*</small>
+                  }
+                </span>
+                @if (editando()) {
+                  <label class="senha-toggle" [class.on]="trocaSenha()">
+                    <input type="checkbox" [checked]="trocaSenha()" (change)="alternarSenha()" />
+                    <mat-icon>{{ trocaSenha() ? 'lock_reset' : 'lock' }}</mat-icon>
+                    <span>{{ trocaSenha() ? 'Redefinindo senha' : 'Alterar senha' }}</span>
+                  </label>
+                }
+                @if (!editando() || trocaSenha()) {
+                  <div class="senha-wrap">
+                    <input
+                      id="fu-senha"
+                      class="input-inn"
+                      [type]="verSenha() ? 'text' : 'password'"
+                      formControlName="senha"
+                      [placeholder]="editando() ? 'Nova senha (mín. 8)' : 'Mínimo 8 caracteres'"
+                      autocomplete="new-password"
+                      [class.inval]="invalido('senha')"
+                    />
+                    <button
+                      type="button"
+                      class="senha-eye"
+                      [attr.aria-label]="verSenha() ? 'Ocultar senha' : 'Mostrar senha'"
+                      [title]="verSenha() ? 'Ocultar senha' : 'Mostrar senha'"
+                      (click)="verSenha.set(!verSenha())"
+                    >
+                      <mat-icon>{{ verSenha() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                    </button>
+                  </div>
+                } @else {
+                  <small class="senha-hint">A senha atual será mantida.</small>
+                }
+                @if (invalido('senha')) {
+                  <small class="erro-campo">Senha obrigatória, mínimo de 8 caracteres.</small>
+                }
+              </div>
+            </div>
+          </section>
+
+          <section class="dsec dica-sec">
+            <div class="dsec-tit"><mat-icon>lightbulb</mat-icon> Boas práticas</div>
+            <ul class="dicas">
+              <li>Login curto e sem acentos — ex.: <b>maria.s</b></li>
+              <li>Senha com pelo menos 8 caracteres, misturando letras e números</li>
+              <li>
+                <b>Recepção</b> é a função certa para quem só opera check-in, reservas e consumo
+              </li>
+            </ul>
+          </section>
+        </div>
+
+        <footer class="drawer-foot">
+          <span class="drawer-req"><small class="req">*</small> Campos obrigatórios</span>
+          <div class="drawer-foot-acoes">
+            <button class="btn-gray" type="button" (click)="fecharDrawer()">Cancelar</button>
+            <button class="btn-dark-blue" type="submit">
+              <mat-icon>save</mat-icon>
+              {{ editando() ? 'Salvar alterações' : 'Cadastrar funcionário' }}
+            </button>
+          </div>
+        </footer>
+      </form>
+    </aside>
+  </div>
+}
+
+<!-- ================= Drawer: cargos ================= -->
+@if (cargosAberto()) {
+  <div class="drawer-backdrop" (click.self)="fecharCargos()">
+    <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="titulo-cargos">
+      <header class="drawer-head">
+        <div class="drawer-head-txt">
+          <h5 id="titulo-cargos">Cargos</h5>
+          <p>Títulos da equipe — cada cargo define o nível de acesso do funcionário</p>
+        </div>
+        <button
+          type="button"
+          class="drawer-fechar"
+          (click)="fecharCargos()"
+          aria-label="Fechar painel"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        <!-- Criar / editar -->
+        <section class="dsec">
+          <div class="dsec-tit">
+            <mat-icon>{{ editandoCargo() ? 'edit' : 'add' }}</mat-icon>
+            {{ editandoCargo() ? 'Editar cargo' : 'Novo cargo' }}
+          </div>
+          <form [formGroup]="cargoForm" (ngSubmit)="salvarCargo()" autocomplete="off">
+            <div class="dgrid">
+              <div class="campo full">
+                <label class="lbl" for="cg-nome">Nome <small class="req">*</small></label>
+                <input
+                  id="cg-nome"
+                  class="input-inn"
+                  type="text"
+                  formControlName="nome"
+                  placeholder="Ex.: Camareira, Cozinheira, Manutenção"
+                  [class.inval]="invalidoCargo('nome')"
+                />
+                @if (invalidoCargo('nome')) {
+                  <small class="erro-campo">Informe o nome do cargo.</small>
+                }
+              </div>
+              <div class="campo full">
+                <label class="lbl" for="cg-desc">Descrição</label>
+                <input
+                  id="cg-desc"
+                  class="input-inn"
+                  type="text"
+                  formControlName="descricao"
+                  placeholder="Ex.: cuida da limpeza e arrumação dos quartos"
+                />
+              </div>
+              <div class="campo full">
+                <label class="lbl" for="cg-nivel"
+                  >Nível de acesso <small class="req">*</small></label
+                >
+                <mat-form-field
+                  appearance="outline"
+                  subscriptSizing="dynamic"
+                  class="campo-mat"
+                  [class.err]="invalidoCargo('nivel')"
+                >
+                  <mat-select id="cg-nivel" formControlName="nivel">
+                    <mat-option [value]="3">Recepção — opera o dia a dia</mat-option>
+                    <mat-option [value]="2">Gerente — recepção + relatórios</mat-option>
+                    <mat-option [value]="1">Administrador — acesso total</mat-option>
+                  </mat-select>
+                </mat-form-field>
+                @if (editandoCargo()?.sistema) {
+                  <small class="senha-hint">O nível de um cargo-base não pode ser alterado.</small>
+                } @else {
+                  <small class="senha-hint"
+                    >Funcionários com este cargo entram no sistema com esse nível.</small
+                  >
+                }
+              </div>
+            </div>
+            <div class="cg-acoes">
+              @if (editandoCargo()) {
+                <button class="btn-gray" type="button" (click)="cancelarCargo()">
+                  Cancelar edição
+                </button>
+              }
+              <button class="btn-dark-blue" type="submit">
+                <mat-icon>save</mat-icon> {{ editandoCargo() ? 'Salvar cargo' : 'Criar cargo' }}
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Lista -->
+        <section class="dsec">
+          <div class="dsec-tit"><mat-icon>list</mat-icon> Cargos cadastrados</div>
+          <ul class="cg-lista">
+            @for (c of cargos(); track c.id) {
+              <li class="cg-item" [class.inativo]="!c.ativo">
+                <div class="cg-info">
+                  <strong>
+                    {{ c.nome }}
+                    @if (c.sistema) {
+                      <span class="cg-sys">sistema</span>
+                    }
+                  </strong>
+                  <small>
+                    {{ nivelNome(c.nivel) }}{{ c.descricao ? ' · ' + c.descricao : '' }} ·
+                    {{ c.total_funcionarios }}
+                    {{ c.total_funcionarios === 1 ? 'pessoa' : 'pessoas' }}
+                  </small>
+                </div>
+                <div class="cg-item-acoes">
+                  <button
+                    type="button"
+                    class="st-chip"
+                    [class.off]="!c.ativo"
+                    [title]="c.ativo ? 'Clique para desativar' : 'Clique para ativar'"
+                    (click)="statusCargo(c, !c.ativo)"
+                  >
+                    {{ c.ativo ? 'Ativo' : 'Inativo' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="acao-btn"
+                    aria-label="Editar cargo"
+                    title="Editar"
+                    (click)="editarCargo(c)"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="acao-btn perigo"
+                    [disabled]="c.sistema || c.total_funcionarios > 0"
+                    aria-label="Excluir cargo"
+                    [title]="
+                      c.sistema
+                        ? 'Cargo-base do sistema não pode ser excluído'
+                        : c.total_funcionarios > 0
+                          ? 'Há funcionários com este cargo'
+                          : 'Excluir'
+                    "
+                    (click)="excluirCargo(c)"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        </section>
+      </div>
+    </aside>
+  </div>
+}

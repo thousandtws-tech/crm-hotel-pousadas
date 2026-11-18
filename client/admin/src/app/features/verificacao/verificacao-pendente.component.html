@@ -1,0 +1,45 @@
+<div class="vp">
+  <div class="vp-card">
+    <span class="vp-ic" [class.ok]="aprovada()"
+      ><mat-icon>{{ icone() }}</mat-icon></span
+    >
+    <h1 class="vp-t">{{ titulo() }}</h1>
+    <p class="vp-sub">{{ subtitulo() }}</p>
+
+    @if (v()?.url && pendente()) {
+      <button type="button" class="vp-btn" (click)="abrir()">
+        <mat-icon>open_in_new</mat-icon> Continuar verificação
+      </button>
+    } @else if (pendente() && criarDisponivel()) {
+      <button type="button" class="vp-btn" (click)="criarSessao()" [disabled]="criando()">
+        <mat-icon>verified_user</mat-icon>
+        {{ criando() ? 'Gerando link…' : 'Verificar minha identidade' }}
+      </button>
+    }
+
+    <p class="vp-status">
+      Status: <strong>{{ v()?.rotulo ?? 'Carregando…' }}</strong>
+      @if (ultimoCheck()) {
+        <span class="vp-mut">· atualizado {{ ultimoCheck() }}</span>
+      }
+    </p>
+
+    @if (recusada()) {
+      <p class="vp-aviso">
+        A verificação foi recusada ou expirou. Fale com o administrador para gerar um novo link ou
+        verificar os dados enviados.
+      </p>
+    }
+
+    <div class="vp-acoes">
+      @if (v()?.admin && v()?.bloqueado) {
+        <button type="button" class="vp-bypass" (click)="bypass()">
+          Continuar assim mesmo (administrador)
+        </button>
+      }
+      <button type="button" class="vp-sair" (click)="sair()">
+        <mat-icon>logout</mat-icon> Sair
+      </button>
+    </div>
+  </div>
+</div>

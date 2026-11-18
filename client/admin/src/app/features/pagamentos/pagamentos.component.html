@@ -1,0 +1,299 @@
+<div class="page">
+  <!-- ================= Cabeçalho ================= -->
+  <div class="pg-head">
+    <div>
+      <p class="eyebrow">Financeiro</p>
+      <h2 class="pg-titulo">Pagamentos</h2>
+      <p class="pg-sub">
+        Comprovantes emitidos no check-out e os meios de pagamento aceitos na pousada
+      </p>
+    </div>
+    <div class="pg-acoes">
+      <button
+        class="btn-tour"
+        type="button"
+        (click)="iniciarTour()"
+        aria-label="Ver tutorial da tela"
+      >
+        <mat-icon>school</mat-icon> Tutorial
+      </button>
+      <button id="tour-formas" class="btn-dark-blue" type="button" (click)="abrirFormas()">
+        <mat-icon>credit_card</mat-icon> Formas de pagamento
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= Banners ================= -->
+  <div class="pg-banners">
+    <div class="pg-banner">
+      <span class="pg-banner-ic"><mat-icon>receipt_long</mat-icon></span>
+      <div>
+        <strong>Comprovante a um clique</strong>
+        <p>
+          Todo check-out com pagamento gera um comprovante aqui — visualize, baixe o arquivo ou
+          mande para a impressora térmica da recepção.
+        </p>
+      </div>
+    </div>
+    <div class="pg-banner">
+      <span class="pg-banner-ic"><mat-icon>payments</mat-icon></span>
+      <div>
+        <strong>Meios de pagamento flexíveis</strong>
+        <p>
+          PIX, cartões, dinheiro… cadastre e ative as formas aceitas no botão
+          <b>Formas de pagamento</b>. Elas aparecem na hora de receber do hóspede.
+        </p>
+      </div>
+    </div>
+    <div class="pg-banner">
+      <span class="pg-banner-ic"><mat-icon>print</mat-icon></span>
+      <div>
+        <strong>Impressão térmica</strong>
+        <p>
+          O botão de impressora envia o comprovante direto para a térmica — sem abrir janelas nem
+          copiar texto.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Barra de números ================= -->
+  <div class="pg-resumo">
+    <div class="pg-est">
+      <span class="pg-est-num">{{ comprovantes().length }}</span>
+      <span class="pg-est-lbl"><mat-icon>receipt</mat-icon> Comprovantes</span>
+    </div>
+    <div class="pg-est">
+      <span class="pg-est-num">{{ ativas() }}</span>
+      <span class="pg-est-lbl"><mat-icon>check_circle</mat-icon> Formas ativas</span>
+    </div>
+    <div class="pg-est">
+      <span class="pg-est-num">{{ formas().length }}</span>
+      <span class="pg-est-lbl"><mat-icon>credit_card</mat-icon> Formas cadastradas</span>
+    </div>
+  </div>
+
+  <!-- ================= Tabela de comprovantes ================= -->
+  <div class="inner-card pg-card" id="tour-tabela">
+    <div class="pg-toolbar">
+      <div class="pg-busca" [class.foco]="buscaFoco()">
+        <mat-icon class="pg-busca-icone">search</mat-icon>
+        <input
+          class="pg-busca-input"
+          type="search"
+          [value]="termo()"
+          (input)="termo.set(valorDe($event))"
+          placeholder="Buscar por cliente, nº da reserva ou acomodação…"
+          aria-label="Buscar comprovante"
+          autocomplete="off"
+          (focus)="buscaFoco.set(true)"
+          (blur)="buscaFoco.set(false)"
+        />
+        @if (termo()) {
+          <button type="button" class="pg-limpar" aria-label="Limpar busca" (click)="termo.set('')">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+      <span class="pg-contagem">{{ filtrados().length }} de {{ comprovantes().length }}</span>
+    </div>
+
+    <div class="pg-tabela-wrap">
+      <table class="pg-tabela">
+        <thead>
+          <tr>
+            <th>Comprovante</th>
+            <th>Hóspede</th>
+            <th>Acomodação</th>
+            <th class="tc">Reserva</th>
+            <th class="tc">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (carregando()) {
+            @for (s of skel; track s) {
+              <tr class="skel-row">
+                <td><span class="skel sk-cod"></span></td>
+                <td>
+                  <span class="skel-cell"
+                    ><span class="skel sk-av"></span><span class="skel sk-txt"></span
+                  ></span>
+                </td>
+                <td><span class="skel sk-txt"></span></td>
+                <td><span class="skel sk-chip"></span></td>
+                <td><span class="skel sk-acoes"></span></td>
+              </tr>
+            }
+          } @else {
+            @for (c of filtrados(); track c.idreserva) {
+              <tr>
+                <td class="td-cod"><mat-icon>receipt</mat-icon> {{ codigo(c) }}</td>
+                <td>
+                  <div class="pg-cell">
+                    <span class="pg-avatar">{{ iniciais(c.cliente) }}</span>
+                    <span class="pg-cell-nome">{{ c.cliente }}</span>
+                  </div>
+                </td>
+                <td>{{ c.acomodacao }}</td>
+                <td class="tc">
+                  <span class="pg-chip">Nº {{ c.idreserva }}</span>
+                </td>
+                <td class="tc">
+                  <div class="pg-acoes-linha">
+                    <button
+                      class="acao-btn"
+                      type="button"
+                      title="Visualizar comprovante"
+                      (click)="visualizar(c)"
+                    >
+                      <mat-icon>visibility</mat-icon>
+                    </button>
+                    <button
+                      class="acao-btn"
+                      type="button"
+                      title="Baixar arquivo"
+                      (click)="baixar(c)"
+                    >
+                      <mat-icon>download</mat-icon>
+                    </button>
+                    <button
+                      class="acao-btn"
+                      type="button"
+                      title="Imprimir na térmica"
+                      [disabled]="imprimindo() === c.idreserva"
+                      (click)="imprimir(c)"
+                    >
+                      <mat-icon>{{
+                        imprimindo() === c.idreserva ? 'hourglass_top' : 'print'
+                      }}</mat-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="pg-vazio">
+                  <mat-icon>receipt_long</mat-icon>
+                  {{
+                    termo()
+                      ? 'Nenhum comprovante encontrado para a busca.'
+                      : 'Nenhum comprovante emitido ainda — eles aparecem aqui após o check-out.'
+                  }}
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Modal: Formas de pagamento ================= -->
+@if (modalFormas()) {
+  <div class="overlay" (click.self)="modalFormas.set(false)">
+    <div class="modal-inn" role="dialog" aria-modal="true" aria-label="Formas de pagamento">
+      <div class="modal-head">
+        <h5><mat-icon>credit_card</mat-icon> Formas de pagamento</h5>
+        <button class="close" type="button" (click)="modalFormas.set(false)" aria-label="Fechar">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="pg-novo">
+          <span class="pg-novo-ic"><mat-icon>add_card</mat-icon></span>
+          <div class="pg-novo-txt">
+            <strong>Nova forma de pagamento</strong>
+            <small>Ex.: PIX, Cartão de crédito, Dinheiro, Vale-refeição</small>
+          </div>
+          <input
+            class="input-inn pg-novo-input"
+            type="text"
+            placeholder="Nome da forma"
+            [value]="nova()"
+            (input)="nova.set(valorDe($event))"
+            (keyup.enter)="criar()"
+            aria-label="Nome da forma de pagamento"
+          />
+          <button class="btn-dark-blue" type="button" (click)="criar()">
+            <mat-icon>add</mat-icon> Cadastrar
+          </button>
+        </div>
+
+        <div class="pg-tabela-wrap">
+          <table class="pg-tabela">
+            <thead>
+              <tr>
+                <th class="td-id">#</th>
+                <th>Nome</th>
+                <th class="tc">Status</th>
+                <th class="tc">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of formas(); track p.id) {
+                <tr>
+                  <td class="td-id">{{ p.id }}</td>
+                  <td>
+                    @if (editando() === p.id) {
+                      <input
+                        class="input-inn pg-edit"
+                        type="text"
+                        [value]="p.nome"
+                        (keyup.enter)="salvarNome(p, $event)"
+                        (blur)="salvarNome(p, $event)"
+                        aria-label="Nome"
+                      />
+                    } @else {
+                      <span class="pg-forma-nome"><mat-icon>payments</mat-icon>{{ p.nome }}</span>
+                    }
+                  </td>
+                  <td class="tc">
+                    <button
+                      class="st-chip"
+                      type="button"
+                      [class.off]="!p.ativo"
+                      title="Clique para alternar"
+                      (click)="alternar(p)"
+                    >
+                      {{ p.ativo ? 'Ativa' : 'Inativa' }}
+                    </button>
+                  </td>
+                  <td class="tc">
+                    <div class="pg-acoes-linha">
+                      <button
+                        class="acao-btn"
+                        type="button"
+                        title="Renomear"
+                        (click)="editando.set(p.id)"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      @if (auth.isAdmin()) {
+                        <button
+                          class="acao-btn perigo"
+                          type="button"
+                          title="Excluir"
+                          aria-label="Excluir forma de pagamento"
+                          (click)="excluir(p)"
+                        >
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="pg-vazio-tab">
+                    Nenhuma forma cadastrada — crie a primeira acima.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+}

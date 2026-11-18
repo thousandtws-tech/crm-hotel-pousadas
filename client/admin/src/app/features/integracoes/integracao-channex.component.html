@@ -1,0 +1,350 @@
+<div class="pag">
+  <a class="volta" routerLink="/integracoes"><mat-icon>arrow_back</mat-icon> Integrações</a>
+
+  @if (i(); as int) {
+    <div class="cab">
+      <div>
+        <p class="eyebrow">Configurações · Integrações</p>
+        <h2 class="titulo">
+          Channex <span class="env">{{ rotuloAmbiente(int.ambiente) }}</span>
+        </h2>
+        <p class="sub">
+          Distribuição de inventário e tarifas para OTAs — reservas entram por feed + webhook.
+        </p>
+      </div>
+      <div class="cab-pills">
+        <span [class]="'pill ' + estadoDe(int.estado).pill">{{ estadoDe(int.estado).rotulo }}</span>
+        @if (opcoes()?.publicacao_pausada) {
+          <span class="pill pill-warn"><mat-icon>pause</mat-icon> Publicação pausada</span>
+        }
+      </div>
+    </div>
+
+    <!-- Credenciais -->
+    <div class="card">
+      <h3 class="card-h">Credenciais</h3>
+      <div class="dl">
+        <span class="dl-rotulo">
+          API key (user-api-key) *
+          @if (int.segredos.campos['api_key']) {
+            <span class="conf">•••••• configurada</span>
+          }
+        </span>
+        <input
+          class="input"
+          type="password"
+          [formControl]="fApiKey"
+          autocomplete="new-password"
+          [placeholder]="
+            int.segredos.campos['api_key']
+              ? 'Deixe em branco para manter'
+              : 'user-api-key da conta Channex'
+          "
+        />
+        <span class="mini">A chave define o host — conta staging usa staging.channex.io.</span>
+      </div>
+      <div class="dl">
+        <span class="dl-rotulo">
+          Webhook signing secret
+          @if (int.segredos.campos['webhook_secret']) {
+            <span class="conf">•••••• configurado</span>
+          }
+        </span>
+        <input
+          class="input"
+          type="password"
+          [formControl]="fSecret"
+          autocomplete="new-password"
+          [placeholder]="
+            int.segredos.campos['webhook_secret']
+              ? 'Deixe em branco para manter'
+              : 'Preenchido ao registrar o webhook'
+          "
+        />
+      </div>
+      <div class="acoes">
+        <button type="button" class="btn-sec" (click)="testar()" [disabled]="ocupado()">
+          <mat-icon>network_check</mat-icon> Testar conexão
+        </button>
+        <button type="button" class="btn-pri" (click)="salvar()" [disabled]="ocupado()">
+          Salvar credenciais
+        </button>
+      </div>
+      <div class="op-linha">
+        <div>
+          <strong>Integração habilitada</strong>
+          <p class="mini">
+            Desabilitada não publica ARI nem importa reservas — revisões ficam pendentes no feed.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="sw"
+          [class.on]="int.habilitado"
+          role="switch"
+          [attr.aria-checked]="int.habilitado"
+          aria-label="Integração habilitada"
+          (click)="habilitar(int)"
+          [disabled]="ocupado()"
+        >
+          <span class="sw-dot"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Propriedade + webhook -->
+    <div class="card">
+      <h3 class="card-h">Propriedade</h3>
+      @if (opcoes()?.property_id) {
+        <p class="mini">
+          Vinculada: <strong class="mono">{{ opcoes()!.property_id }}</strong>
+        </p>
+      }
+      <div class="linha">
+        <button
+          type="button"
+          class="btn-sec"
+          (click)="carregarPropriedades()"
+          [disabled]="ocupado()"
+        >
+          <mat-icon>hotel</mat-icon> Listar propriedades da conta
+        </button>
+        <button
+          type="button"
+          class="btn-sec"
+          (click)="registrarWebhook()"
+          [disabled]="ocupado() || !opcoes()?.property_id"
+        >
+          <mat-icon>webhook</mat-icon> Registrar webhook assinado
+        </button>
+      </div>
+      @for (p of propriedades(); track p.id) {
+        <div class="op-linha">
+          <div>
+            <strong>{{ p.title }}</strong>
+            <p class="mini mono">{{ p.id }}</p>
+          </div>
+          <button type="button" class="mini-btn" (click)="vincular(p.id)" [disabled]="ocupado()">
+            Vincular
+          </button>
+        </div>
+      }
+      @if (int.webhook_url) {
+        <span class="segredo-linha">
+          <input
+            class="input mono"
+            readonly
+            [value]="int.webhook_url"
+            aria-label="URL do webhook"
+          />
+          <button type="button" class="mini-btn" (click)="copiar(int.webhook_url!)">
+            <mat-icon>content_copy</mat-icon>
+          </button>
+        </span>
+      }
+    </div>
+
+    <!-- Mapeamento -->
+    @if (opcoes()?.property_id) {
+      <div class="card">
+        <h3 class="card-h">Mapeamento de acomodações</h3>
+        <p class="card-sub">
+          Cada acomodação aponta um Room Type + Rate Plan — publica ARI só dos mapeados.
+        </p>
+        <table class="tab">
+          <thead>
+            <tr>
+              <th>Acomodação</th>
+              <th>Room type</th>
+              <th>Rate plan</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of opcoes()!.acomodacoes; track a.id) {
+              <tr>
+                <td>
+                  <strong>Nº{{ a.numero }} {{ a.nome }}</strong>
+                </td>
+                @if (mapaDe(a.id); as m) {
+                  <td class="mono">{{ tituloRt(m.room_type_id) }}</td>
+                  <td class="mono">{{ tituloRp(m.rate_plan_id) }}</td>
+                  <td>
+                    <button
+                      type="button"
+                      class="mini-btn perigo"
+                      (click)="desmapear(m.id)"
+                      [disabled]="ocupado()"
+                    >
+                      Desmapear
+                    </button>
+                  </td>
+                } @else {
+                  <td colspan="2">
+                    <select
+                      class="input"
+                      [value]="selRt()[a.id] ?? ''"
+                      (change)="selRtMuda(a.id, $any($event.target).value)"
+                      aria-label="Room type"
+                    >
+                      <option value="">Room type…</option>
+                      @for (rt of opcoes()!.room_types; track rt.id) {
+                        <option [value]="rt.id">{{ rt.title }}</option>
+                      }
+                    </select>
+                    <select
+                      class="input"
+                      [value]="selRp()[a.id] ?? ''"
+                      (change)="selRpMuda(a.id, $any($event.target).value)"
+                      aria-label="Rate plan"
+                    >
+                      <option value="">Rate plan…</option>
+                      @for (rp of ratePlansDe(selRt()[a.id] ?? ''); track rp.id) {
+                        <option [value]="rp.id">{{ rp.title }}</option>
+                      }
+                    </select>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="mini-btn"
+                      (click)="mapear(a.id)"
+                      [disabled]="ocupado() || !selRt()[a.id] || !selRp()[a.id]"
+                    >
+                      Mapear
+                    </button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <!-- Sincronização -->
+    @if (opcoes()?.property_id) {
+      <div class="card">
+        <h3 class="card-h">Sincronização</h3>
+        @if (resumo(); as r) {
+          <div class="stats">
+            <span class="stat"
+              ><strong>{{ r.mapeadas }}</strong> mapeadas</span
+            >
+            <span class="stat"
+              ><strong>{{ r.outbox_pendente }}</strong> na outbox</span
+            >
+            <span class="stat"
+              ><strong>{{ r.revisoes_sem_ack }}</strong> sem ack</span
+            >
+            <span class="stat"
+              ><strong>{{ r.pendencias_abertas }}</strong> pendências</span
+            >
+          </div>
+        }
+        <div class="linha">
+          <button type="button" class="btn-sec" (click)="sincronizar()" [disabled]="ocupado()">
+            <mat-icon>sync</mat-icon> Sincronizar 90 dias
+          </button>
+          <button type="button" class="btn-sec" (click)="reconciliar()" [disabled]="ocupado()">
+            <mat-icon>restart_alt</mat-icon> Reconciliar (janela cheia + feed)
+          </button>
+          <button type="button" class="btn-sec" (click)="pausar()" [disabled]="ocupado()">
+            <mat-icon>{{ opcoes()?.publicacao_pausada ? 'play_arrow' : 'pause' }}</mat-icon>
+            {{ opcoes()?.publicacao_pausada ? 'Retomar publicação' : 'Pausar publicação' }}
+          </button>
+        </div>
+        <p class="mini">
+          Pausar não fecha vendas nas OTAs nem interrompe o recebimento — retomar reconcilia a
+          janela.
+        </p>
+      </div>
+    }
+
+    <!-- Revisões -->
+    @if (revisoes().length) {
+      <div class="card">
+        <h3 class="card-h">Revisões recebidas</h3>
+        <table class="tab">
+          <thead>
+            <tr>
+              <th>OTA</th>
+              <th>Status</th>
+              <th>Aplicação</th>
+              <th>Recebida</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of revisoes(); track r.id) {
+              <tr>
+                <td>
+                  <strong>{{ r.ota_name ?? 'OTA' }}</strong>
+                  <span class="mini block">{{ r.ota_reservation_code ?? r.booking_id }}</span>
+                </td>
+                <td>
+                  <span
+                    class="pill"
+                    [class.pill-erro]="r.status === 'cancelled'"
+                    [class.pill-warn]="r.status === 'modified'"
+                    >{{ r.status }}</span
+                  >
+                </td>
+                <td>
+                  @if (r.aplicada) {
+                    <span class="pill pill-ok"
+                      >aplicada{{ r.ack ? ' · ack' : ' · ack pendente' }}</span
+                    >
+                  } @else {
+                    <span class="pill pill-erro" [title]="r.erro ?? ''">pendente</span>
+                  }
+                </td>
+                <td class="ev-data">{{ r.recebido_em | date: 'dd/MM HH:mm' }}</td>
+                <td>
+                  @if (!r.aplicada) {
+                    <button
+                      type="button"
+                      class="mini-btn"
+                      (click)="reprocessar(r.revision_id)"
+                      [disabled]="ocupado()"
+                    >
+                      Reprocessar
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <!-- Pendências -->
+    @if (pendencias().length) {
+      <div class="card">
+        <h3 class="card-h">Pendências operacionais</h3>
+        @for (p of pendencias(); track p.id) {
+          <div class="op-linha">
+            <div>
+              <strong>{{ rotuloPendencia(p.tipo) }}</strong>
+              <p class="mini">{{ p.descricao }}</p>
+            </div>
+            <button
+              type="button"
+              class="mini-btn"
+              (click)="resolverPendencia(p.id)"
+              [disabled]="ocupado()"
+            >
+              Resolver
+            </button>
+          </div>
+        }
+      </div>
+    }
+  } @else {
+    <div class="card vazio">
+      <mat-icon>cloud_off</mat-icon>
+      <p>Carregando…</p>
+    </div>
+  }
+</div>

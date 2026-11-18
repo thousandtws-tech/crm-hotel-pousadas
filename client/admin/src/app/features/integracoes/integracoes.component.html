@@ -1,0 +1,106 @@
+<div class="pag">
+  <div class="cab">
+    <div>
+      <p class="eyebrow">Configurações</p>
+      <h2 class="titulo">Integrações</h2>
+      <p class="sub">
+        Provedores de pagamento do site e canais de comunicação — credenciais cifradas, webhooks e
+        padrões por escopo.
+      </p>
+    </div>
+  </div>
+
+  @if (carregando()) {
+    <div class="grade">
+      @for (s of skel; track s) {
+        <div class="card-prov" aria-hidden="true">
+          <span class="skel sk-t"></span>
+          <span class="skel sk-l"></span>
+          <span class="skel sk-l"></span>
+        </div>
+      }
+    </div>
+  } @else if (falhou()) {
+    <div class="inner-card vazio-card">
+      <mat-icon>cloud_off</mat-icon>
+      <p>Não foi possível carregar as integrações.</p>
+      <button type="button" class="btn-sec" (click)="carregar()">Tentar novamente</button>
+    </div>
+  } @else {
+    <div class="faixa-padrao" [class.sem]="!padraoSite()">
+      <mat-icon>{{ padraoSite() ? 'check_circle' : 'info' }}</mat-icon>
+      <div>
+        <strong>Novas cobranças do site</strong>
+        <span>{{ descricaoPadrao() }}</span>
+      </div>
+    </div>
+
+    @for (sec of secoes(); track sec.categoria) {
+      <section class="secao" [attr.aria-label]="sec.rotulo">
+        <h3 class="secao-t">{{ sec.rotulo }}</h3>
+        <div class="grade">
+          @for (g of sec.grupos; track g.provedor) {
+            <section class="card-prov">
+              <header class="prov-cab">
+                <div>
+                  <h3 class="prov-nome">{{ rotuloProvedor(g.provedor) }}</h3>
+                  <p class="prov-desc">{{ descriptorDe(g.provedor) }}</p>
+                </div>
+              </header>
+
+              <div class="prov-linhas">
+                @for (i of [g.producao, g.teste]; track $index) {
+                  @if (i) {
+                    <a
+                      class="env-linha"
+                      [routerLink]="['/integracoes', i.provedor, i.ambiente]"
+                      [attr.aria-label]="
+                        'Abrir ' + rotuloProvedor(i.provedor) + ' ' + rotuloAmbiente(i.ambiente)
+                      "
+                    >
+                      <span class="env" [class.env-teste]="i.ambiente === 'teste'">
+                        {{ rotuloAmbiente(i.ambiente) }}
+                      </span>
+
+                      <span class="env-meio">
+                        <span class="env-pills">
+                          <span [class]="'pill ' + estadoDe(i.estado).pill">
+                            {{ estadoDe(i.estado).rotulo }}
+                          </span>
+                          @if (i.provedor === 'zapi' && i.estado !== 'nao_configurada') {
+                            <span
+                              class="pill"
+                              [class.pill-ok]="sessaoConectada(i)"
+                              [class.pill-warn]="!sessaoConectada(i)"
+                            >
+                              {{ sessaoConectada(i) ? 'Conectado' : 'Aguardando pareamento' }}
+                            </span>
+                          }
+                          @if (i.padrao_site) {
+                            <span class="pill pill-gold">
+                              <mat-icon>star</mat-icon>
+                              {{ i.provedor === 'zapi' ? 'Padrão WhatsApp' : 'Padrão' }}
+                            </span>
+                          }
+                        </span>
+                        <span class="env-info">
+                          @if (i.verificacao_status === 'falha' && i.verificacao_erro) {
+                            {{ i.verificacao_erro }}
+                          } @else {
+                            {{ resumoDe(i) }}
+                          }
+                        </span>
+                      </span>
+
+                      <mat-icon class="env-seta">chevron_right</mat-icon>
+                    </a>
+                  }
+                }
+              </div>
+            </section>
+          }
+        </div>
+      </section>
+    }
+  }
+</div>

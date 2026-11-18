@@ -1,0 +1,346 @@
+<div class="page">
+  <!-- ================= Cabeçalho ================= -->
+  <div class="d-head">
+    <div>
+      <h2 class="d-titulo">Dashboard</h2>
+      <p class="d-sub">{{ hoje | date: "EEEE, d 'de' MMMM 'de' yyyy" }}</p>
+    </div>
+    <button
+      class="btn-tour"
+      type="button"
+      (click)="iniciarTour()"
+      aria-label="Ver tutorial da tela"
+    >
+      <mat-icon>school</mat-icon> Tutorial
+    </button>
+  </div>
+
+  <!-- ================= Slicer de período (estilo Power BI) ================= -->
+  <div class="d-slicer" id="tour-slicer">
+    <span class="d-slicer-lbl"><mat-icon>filter_alt</mat-icon> Período dos gráficos</span>
+    <div class="d-presets" role="group" aria-label="Períodos rápidos">
+      <button
+        type="button"
+        class="pre-btn"
+        [class.ativo]="preset() === 'd7'"
+        (click)="aplicar('d7')"
+      >
+        7 dias
+      </button>
+      <button
+        type="button"
+        class="pre-btn"
+        [class.ativo]="preset() === 'd30'"
+        (click)="aplicar('d30')"
+      >
+        30 dias
+      </button>
+      <button
+        type="button"
+        class="pre-btn"
+        [class.ativo]="preset() === 'mes'"
+        (click)="aplicar('mes')"
+      >
+        Este mês
+      </button>
+      <button
+        type="button"
+        class="pre-btn"
+        [class.ativo]="preset() === 'mesAnt'"
+        (click)="aplicar('mesAnt')"
+      >
+        Mês passado
+      </button>
+    </div>
+    <span class="d-slicer-per">
+      {{ ini() | date: 'dd/MM/yy' }} — {{ fim() | date: 'dd/MM/yy' }}
+    </span>
+  </div>
+
+  <!-- ================= Tiles de KPI ================= -->
+  @if (carregandoOps()) {
+    <div class="kpi-grid">
+      @for (s of [1, 2, 3, 4, 5, 6]; track s) {
+        <div class="skel kpi-skel"></div>
+      }
+    </div>
+  } @else if (dados(); as d) {
+    <div class="kpi-grid" id="tour-kpis">
+      <div class="kpi">
+        <div class="kpi-top">
+          <span class="kpi-lbl">Hóspedes na casa</span>
+          <mat-icon class="kpi-ic">group</mat-icon>
+        </div>
+        <span class="kpi-num">{{ d.cards.hospedes_atuais }}</span>
+        <span class="kpi-sub">em {{ d.cards.acomodacoes_ocupadas }} acomodações</span>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-top">
+          <span class="kpi-lbl">Ocupação</span>
+          <mat-icon class="kpi-ic">hotel</mat-icon>
+        </div>
+        <span class="kpi-num">{{ ocupacao() }}%</span>
+        <div class="kpi-bar" role="img" [attr.aria-label]="'Ocupação de ' + ocupacao() + '%'">
+          <i [style.width.%]="ocupacao()"></i>
+        </div>
+        <span class="kpi-sub">
+          {{ d.cards.acomodacoes_ocupadas }} de {{ d.cards.total_acomodacoes }} acomodações
+        </span>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-top">
+          <span class="kpi-lbl">Chegadas hoje</span>
+          <mat-icon class="kpi-ic">login</mat-icon>
+        </div>
+        <span class="kpi-num" [class.kpi-alerta]="d.cards.checkins_pendentes_hoje > 0">
+          {{ d.cards.checkins_pendentes_hoje }}
+        </span>
+        <span class="kpi-sub">pendentes · {{ d.cards.checkins_hoje }} já realizados</span>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-top">
+          <span class="kpi-lbl">Saídas hoje</span>
+          <mat-icon class="kpi-ic">logout</mat-icon>
+        </div>
+        <span class="kpi-num" [class.kpi-alerta]="d.cards.checkouts_pendentes_hoje > 0">
+          {{ d.cards.checkouts_pendentes_hoje }}
+        </span>
+        <span class="kpi-sub">pendentes · {{ d.cards.checkouts_hoje }} já realizadas</span>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-top">
+          <span class="kpi-lbl">Recebido</span>
+          <mat-icon class="kpi-ic">payments</mat-icon>
+        </div>
+        <span class="kpi-num kpi-din">{{ fmt(num(resumo()?.recebido)) }}</span>
+        <span class="kpi-sub">
+          faturado no período
+          @if (num(resumo()?.recebido_online) > 0) {
+            ·
+            <strong class="kpi-online"
+              >{{ fmt(num(resumo()?.recebido_online)) }} já caído online</strong
+            >
+          }
+        </span>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-top">
+          <span class="kpi-lbl">Previsto</span>
+          <mat-icon class="kpi-ic">event_available</mat-icon>
+        </div>
+        <span class="kpi-num kpi-din kpi-prev">{{ fmt(num(resumo()?.previsto)) }}</span>
+        <span class="kpi-sub">a receber no período</span>
+      </div>
+    </div>
+  }
+
+  <!-- ================= Linha de gráficos 1 ================= -->
+  <div class="d-grid d-grid-a">
+    <section class="d-card" id="tour-receita">
+      <header class="d-card-head">
+        <div>
+          <h3>Receita recebida</h3>
+          <small>Dinheiro que entrou no caixa por dia</small>
+        </div>
+        <strong class="d-card-total">{{ fmt(totalRecebido()) }}</strong>
+      </header>
+      @if (carregandoFin()) {
+        <div class="skel sk-chart"></div>
+      } @else if (serieRecebido().length) {
+        <app-echart [option]="optFluxo()" rotulo="Receita recebida por dia" />
+      } @else {
+        <p class="d-vazio"><mat-icon>show_chart</mat-icon> Sem movimentação no período.</p>
+      }
+    </section>
+
+    <section class="d-card" id="tour-ocupacao">
+      <header class="d-card-head">
+        <div>
+          <h3>Taxa de ocupação</h3>
+          <small>Quartos ocupados agora</small>
+        </div>
+      </header>
+      @if (carregandoOps()) {
+        <div class="skel sk-chart"></div>
+      } @else {
+        <app-echart [option]="optOcupacao()" rotulo="Taxa de ocupação" />
+      }
+    </section>
+  </div>
+
+  <!-- ================= Linha de gráficos 2 ================= -->
+  <div class="d-grid d-grid-b">
+    <section class="d-card">
+      <header class="d-card-head">
+        <div>
+          <h3>Novas reservas</h3>
+          <small>Criadas por dia no período</small>
+        </div>
+      </header>
+      @if (carregandoFin()) {
+        <div class="skel sk-chart"></div>
+      } @else if (serieReservas().length) {
+        <app-echart [option]="optReservas()" rotulo="Reservas criadas por dia" />
+      } @else {
+        <p class="d-vazio"><mat-icon>calendar_month</mat-icon> Nenhuma reserva no período.</p>
+      }
+    </section>
+
+    <section class="d-card">
+      <header class="d-card-head">
+        <div>
+          <h3>Receita por acomodação</h3>
+          <small>Ranking do período</small>
+        </div>
+      </header>
+      @if (carregandoFin()) {
+        <div class="skel sk-chart"></div>
+      } @else if (serieAcomodacao().length) {
+        <app-echart [option]="optAcomodacao()" rotulo="Receita por acomodação" />
+      } @else {
+        <p class="d-vazio"><mat-icon>bar_chart</mat-icon> Nada recebido no período.</p>
+      }
+    </section>
+
+    <section class="d-card">
+      <header class="d-card-head">
+        <div>
+          <h3>Formas de pagamento</h3>
+          <small>Participação no recebido</small>
+        </div>
+      </header>
+      @if (carregandoFin()) {
+        <div class="skel sk-chart"></div>
+      } @else if (seriePagamento().length) {
+        <app-echart [option]="optPagamento()" rotulo="Recebido por forma de pagamento" />
+      } @else {
+        <p class="d-vazio"><mat-icon>pie_chart</mat-icon> Nada recebido no período.</p>
+      }
+    </section>
+  </div>
+
+  <!-- ================= Operação do dia + últimas reservas ================= -->
+  @if (!carregandoOps() && dados(); as d) {
+    <div class="d-grid d-grid-c">
+      <section class="d-card" id="tour-movimento">
+        <header class="d-card-head">
+          <div>
+            <h3>Movimento de hoje</h3>
+            <small>O que a recepção precisa executar</small>
+          </div>
+        </header>
+
+        <div class="mov-sec">
+          <div class="mov-tit">
+            <mat-icon>login</mat-icon> Chegadas
+            <span class="mov-n">{{ d.checkins_pendentes.length }}</span>
+          </div>
+          <ul class="mov-lista">
+            @for (p of d.checkins_pendentes; track p.idreserva) {
+              <li>
+                <a [routerLink]="['/reservas', p.idreserva]" class="mov-item">
+                  <span class="mov-cli">{{ p.cliente_nome }}</span>
+                  <span class="mov-aco">{{ p.acomodacao_nome }}</span>
+                  <mat-icon class="mov-go">chevron_right</mat-icon>
+                </a>
+              </li>
+            } @empty {
+              <li class="mov-vazio">Todos os check-ins de hoje foram realizados.</li>
+            }
+          </ul>
+        </div>
+
+        <div class="mov-sec">
+          <div class="mov-tit">
+            <mat-icon>logout</mat-icon> Saídas
+            <span class="mov-n">{{ d.checkouts_pendentes.length }}</span>
+          </div>
+          <ul class="mov-lista">
+            @for (p of d.checkouts_pendentes; track p.idreserva) {
+              <li>
+                <a [routerLink]="['/reservas', p.idreserva]" class="mov-item">
+                  <span class="mov-cli">{{ p.cliente_nome }}</span>
+                  <span class="mov-aco">{{ p.acomodacao_nome }}</span>
+                  <mat-icon class="mov-go">chevron_right</mat-icon>
+                </a>
+              </li>
+            } @empty {
+              <li class="mov-vazio">Todos os check-outs de hoje foram realizados.</li>
+            }
+          </ul>
+        </div>
+      </section>
+
+      <section class="d-card" id="tour-reservas">
+        <header class="d-card-head">
+          <div>
+            <h3>Últimas reservas</h3>
+            <small>Mais recentes do sistema</small>
+          </div>
+          <a class="d-ver-tudo" [routerLink]="['/reservas']">
+            Ver todas <mat-icon>arrow_forward</mat-icon>
+          </a>
+        </header>
+        <div class="d-tab-wrap">
+          <table class="d-tab">
+            <thead>
+              <tr>
+                <th>Nº</th>
+                <th>Hóspede</th>
+                <th>Acomodação</th>
+                <th>Período</th>
+                <th class="tc">Situação</th>
+                <th class="tc"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of d.ultimas_reservas.slice(0, 8); track r.id) {
+                <tr>
+                  <td class="td-id">Nº {{ r.id }}</td>
+                  <td>{{ r.cliente_nome }}</td>
+                  <td>
+                    <span class="aco-chip">
+                      <i [style.background]="r.acomodacao_cor || '#1a6f8a'"></i>
+                      {{ r.acomodacao_nome }}
+                    </span>
+                  </td>
+                  <td class="td-per">
+                    {{ r.entradaprevista | date: 'dd/MM' }} →
+                    {{ r.saidaprevista | date: 'dd/MM' }}
+                  </td>
+                  <td class="tc">
+                    <span
+                      class="status-chip"
+                      [style.background]="statusCor(r.status)"
+                      [style.color]="statusTexto(r.status)"
+                    >
+                      {{ statusRotulo(r.status) }}
+                    </span>
+                  </td>
+                  <td class="tc">
+                    <a
+                      class="badge-acao bg-blue1"
+                      [routerLink]="['/reservas', r.id]"
+                      title="Abrir reserva"
+                    >
+                      <mat-icon>visibility</mat-icon>
+                    </a>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="d-vazio-tab">Nenhuma reserva recente.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  }
+</div>

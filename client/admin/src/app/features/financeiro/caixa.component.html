@@ -1,0 +1,419 @@
+<div class="page">
+  <app-fin-nav />
+
+  <div class="fin-head">
+    <div>
+      <h2 class="fin-titulo">Controle de Caixa</h2>
+      <p class="fin-sub">Turnos por operador, sangrias, suprimentos e conferência</p>
+    </div>
+    <label class="lbl gaveta">
+      Gaveta
+      <select class="inp" [formControl]="selGaveta" aria-label="Gaveta (conta caixa físico)">
+        @for (c of gavetas(); track c.id) {
+          <option [ngValue]="c.id">{{ c.nome }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  <!-- ======================= fechamento do dia ======================= -->
+  <section class="card fch">
+    <header class="card-head">
+      <h3><mat-icon>event_available</mat-icon> Fechamento do dia</h3>
+      <div class="fch-steps">
+        @for (s of [1, 2, 3]; track s) {
+          <span class="fch-step" [class.ativa]="passo() === s">{{ s }}</span>
+        }
+      </div>
+    </header>
+
+    @if (passo() === 1) {
+      <h4 class="fch-t">Pendências do dia</h4>
+      @if (fch(); as f) {
+        <p class="fch-linha">
+          Contas abertas: <b>{{ f.contas_abertas }}</b> · total R$
+          {{ f.contas_total | number: '1.2-2' }}
+        </p>
+        @if (f.checkouts_pendentes.length) {
+          <p class="fch-sub">Check-outs pendentes</p>
+          @for (c of f.checkouts_pendentes; track c.id) {
+            <div class="fch-item">
+              <span
+                >{{ c.acomodacao_nome }} · {{ c.cliente_nome }} · saída
+                {{ c.saidaprevista | date: 'dd/MM' }}</span
+              >
+              <a class="fch-link" [routerLink]="['/reservas', c.id]">abrir</a>
+            </div>
+          }
+        }
+        @if (f.no_shows.length) {
+          <p class="fch-sub">Possíveis no-shows — decisão requer PIN</p>
+          @for (n of f.no_shows; track n.id) {
+            <div class="fch-item ns">
+              <span
+                >{{ n.acomodacao_nome }} · {{ n.cliente_nome }} · entrada
+                {{ n.entradaprevista | date: 'dd/MM' }} ({{ n.dias_atraso }}d atraso)</span
+              >
+              <button class="fch-ns" type="button" (click)="pinAlvo.set(n)">No-show</button>
+            </div>
+          }
+        } @else {
+          <p class="fch-linha muted">Nenhum no-show pendente.</p>
+        }
+      } @else {
+        <p class="fch-linha muted">Carregando…</p>
+      }
+      <div class="fch-nav">
+        <button class="btn-prim" type="button" (click)="passo.set(2)">Avançar</button>
+      </div>
+    }
+
+    @if (passo() === 2) {
+      <h4 class="fch-t">Caixa</h4>
+      <p class="fch-linha">
+        Confira a conferência do turno abaixo na tela (esperado × contado por gaveta) antes de
+        confirmar.
+      </p>
+      <div class="fch-nav">
+        <button class="btn-ghost" type="button" (click)="passo.set(1)">Voltar</button>
+        <button class="btn-prim" type="button" (click)="passo.set(3)">Avançar</button>
+      </div>
+    }
+
+    @if (passo() === 3) {
+      <h4 class="fch-t">Confirmação do dia</h4>
+      @if (fch(); as f) {
+        <p class="fch-linha">
+          {{ f.contas_abertas }} conta(s) aberta(s) ·
+          {{ f.checkouts_pendentes.length }} check-out(s) pendente(s) ·
+          {{ f.no_shows.length }} no-show(s)
+        </p>
+      }
+      <p class="fch-linha muted">O relatório determinístico será enviado ao e-mail da pousada.</p>
+      <div class="fch-nav">
+        <button class="btn-ghost" type="button" (click)="passo.set(1)">Voltar</button>
+        <button
+          class="btn-prim"
+          type="button"
+          [disabled]="enviandoRel()"
+          (click)="enviarRelatorio()"
+        >
+          {{ enviandoRel() ? 'Enviando…' : 'Enviar relatório por e-mail' }}
+        </button>
+      </div>
+    }
+  </section>
+
+  @if (pinAlvo(); as alvo) {
+    <div class="ovl" (click)="pinAlvo.set(null)" (keydown.escape)="pinAlvo.set(null)">
+      <div class="dlg" role="dialog" aria-modal="true" aria-label="Autorizar no-show">
+        <h4 class="fch-t">No-show — {{ alvo.cliente_nome }}</h4>
+        <p class="fch-linha">Cancela a reserva sem reembolso. Exige o PIN gerencial.</p>
+        <label class="lbl"
+          >PIN
+          <input
+            class="inp"
+            type="password"
+            inputmode="numeric"
+            [value]="pinVal"
+            (input)="pinVal = $any($event.target).value"
+        /></label>
+        <div class="fch-nav">
+          <button class="btn-ghost" type="button" (click)="pinAlvo.set(null)">Cancelar</button>
+          <button class="btn-prim" type="button" (click)="confirmarNoShow(alvo)">Autorizar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (!gavetaSel()) {
+    <section class="card">
+      <p class="vazio">Nenhuma conta do tipo “Caixa físico” — crie em Contas financeiras.</p>
+    </section>
+  } @else {
+    <!-- ======================= estado do turno ======================= -->
+    @if (carregando()) {
+      <div class="skel sk-bloco"></div>
+    } @else if (!turno()) {
+      <!-- não há turno aberto -->
+      <section class="card">
+        <header class="card-head">
+          <h3><mat-icon>lock_open</mat-icon> Abertura de turno</h3>
+        </header>
+        <form class="ab-form" [formGroup]="abrirForm" (ngSubmit)="abrir()">
+          <label class="lbl"
+            >Fundo de troco *
+            <input
+              class="inp"
+              formControlName="saldo_inicial"
+              type="number"
+              step="0.01"
+              min="0"
+              aria-label="Fundo de troco"
+            />
+          </label>
+          <label class="lbl grow"
+            >Observação
+            <input class="inp" formControlName="observacao" aria-label="Observação de abertura" />
+          </label>
+          <button class="btn-prim" type="submit" [disabled]="abrirForm.invalid">
+            <mat-icon>lock_open</mat-icon> Abrir turno
+          </button>
+        </form>
+      </section>
+    } @else if (conferencia(); as c) {
+      <!-- painel do turno aberto -->
+      <section class="turno-info">
+        <div class="kpi">
+          <div class="kpi-item">
+            <span class="kpi-num">{{ fmt(c.fundo) }}</span>
+            <span class="kpi-lbl"><mat-icon>savings</mat-icon> Fundo</span>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-num pos">{{ fmt(c.suprimentos) }}</span>
+            <span class="kpi-lbl"><mat-icon>add_circle</mat-icon> Suprimentos</span>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-num neg">{{ fmt(c.sangrias) }}</span>
+            <span class="kpi-lbl"><mat-icon>remove_circle</mat-icon> Sangrias</span>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-num pos">{{ fmt(c.recebimentos) }}</span>
+            <span class="kpi-lbl"><mat-icon>payments</mat-icon> Recebimentos</span>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-num neg">{{ fmt(c.pagamentos) }}</span>
+            <span class="kpi-lbl"><mat-icon>money_off</mat-icon> Pagamentos</span>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-num pos">{{ fmt(c.especie) }}</span>
+            <span class="kpi-lbl"><mat-icon>point_of_sale</mat-icon> Espécie (checkout)</span>
+          </div>
+          <div class="kpi-item esperado">
+            <span class="kpi-num">{{ fmt(c.esperado) }}</span>
+            <span class="kpi-lbl"><mat-icon>calculate</mat-icon> Esperado em gaveta</span>
+          </div>
+        </div>
+        <p class="turno-meta">
+          <mat-icon>person</mat-icon> {{ c.turno.operador }} · aberto
+          {{ c.turno.aberto_em | date: 'dd/MM HH:mm' }} · {{ c.turno.conta_financeira }}
+        </p>
+      </section>
+
+      <div class="grid-2">
+        <!-- movimentos -->
+        <section class="card">
+          <header class="card-head">
+            <h3><mat-icon>sync_alt</mat-icon> Movimentos</h3>
+            <small>sangrias e suprimentos do turno</small>
+          </header>
+          <form class="mv-form" [formGroup]="movForm" (ngSubmit)="movimentar()">
+            <div class="seg" role="group" aria-label="Tipo de movimento">
+              <button
+                type="button"
+                class="seg-btn san"
+                [class.ativo]="movForm.controls.tipo.value === 'sangria'"
+                (click)="movForm.controls.tipo.setValue('sangria')"
+              >
+                <mat-icon>remove_circle</mat-icon> Sangria
+              </button>
+              <button
+                type="button"
+                class="seg-btn sup"
+                [class.ativo]="movForm.controls.tipo.value === 'suprimento'"
+                (click)="movForm.controls.tipo.setValue('suprimento')"
+              >
+                <mat-icon>add_circle</mat-icon> Suprimento
+              </button>
+            </div>
+            <input
+              class="inp val"
+              formControlName="valor"
+              type="number"
+              step="0.01"
+              min="0.01"
+              placeholder="Valor *"
+              aria-label="Valor"
+            />
+            <input
+              class="inp grow"
+              formControlName="motivo"
+              placeholder="Motivo *"
+              aria-label="Motivo"
+            />
+            <button class="btn-prim" type="submit" [disabled]="movForm.invalid">
+              <mat-icon>send</mat-icon>
+            </button>
+          </form>
+          <div class="tab-wrap">
+            <table class="tab">
+              <thead>
+                <tr>
+                  <th>Quando</th>
+                  <th>Tipo</th>
+                  <th>Motivo</th>
+                  <th>Por</th>
+                  <th class="tr">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of c.movimentos; track m.id) {
+                  <tr>
+                    <td>{{ m.criado_em | date: 'dd/MM HH:mm' }}</td>
+                    <td>
+                      <span
+                        class="tag"
+                        [class.san]="m.tipo === 'sangria'"
+                        [class.sup]="m.tipo === 'suprimento'"
+                        >{{ m.tipo }}</span
+                      >
+                    </td>
+                    <td>{{ m.motivo }}</td>
+                    <td>{{ m.funcionario }}</td>
+                    <td
+                      class="tr"
+                      [class.pos]="m.tipo === 'suprimento'"
+                      [class.neg]="m.tipo === 'sangria'"
+                    >
+                      {{ fmt(m.valor) }}
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="vazio">Nenhum movimento ainda.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- conferência + fechamento -->
+        <section class="card">
+          <header class="card-head">
+            <h3><mat-icon>fact_check</mat-icon> Conferência & fechamento</h3>
+            <small>{{ c.linhas.length }} evento(s) no período</small>
+          </header>
+          <div class="tab-wrap linhas">
+            <table class="tab">
+              <thead>
+                <tr>
+                  <th>Quando</th>
+                  <th>Evento</th>
+                  <th class="tr">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (l of c.linhas; track $index) {
+                  <tr>
+                    <td>{{ l.criado_em | date: 'dd/MM HH:mm' }}</td>
+                    <td>{{ l.descricao }}</td>
+                    <td class="tr" [class.pos]="l.sinal > 0" [class.neg]="l.sinal < 0">
+                      {{ l.sinal > 0 ? '+' : '−' }}{{ fmt(l.valor) }}
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="3" class="vazio">Nenhum recebimento/pagamento no período.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <form class="fe-form" [formGroup]="feForm" (ngSubmit)="fechar()">
+            <label class="lbl"
+              >Dinheiro contado na gaveta *
+              <input
+                class="inp"
+                formControlName="valor_contado"
+                type="number"
+                step="0.01"
+                min="0"
+                aria-label="Valor contado"
+              />
+            </label>
+            <label class="lbl grow"
+              >Observação
+              <input
+                class="inp"
+                formControlName="observacao"
+                aria-label="Observação do fechamento"
+              />
+            </label>
+            @if (prevQuebra() !== null) {
+              <span
+                class="quebra-prev"
+                [class.neg]="prevQuebra()! < 0"
+                [class.pos]="prevQuebra()! > 0"
+              >
+                {{ prevQuebra()! < 0 ? 'Quebra' : prevQuebra()! > 0 ? 'Sobra' : 'Exato' }}:
+                {{ fmt(prevQuebra()) }}
+              </span>
+            }
+            <button class="btn-prim" type="submit" [disabled]="feForm.invalid">
+              <mat-icon>lock</mat-icon> Fechar turno
+            </button>
+          </form>
+        </section>
+      </div>
+    }
+  }
+
+  <!-- ======================= histórico ======================= -->
+  <section class="card">
+    <header class="card-head">
+      <h3><mat-icon>history</mat-icon> Histórico de turnos</h3>
+      <small>{{ historico().total }} turno(s)</small>
+    </header>
+    <div class="tab-wrap">
+      <table class="tab">
+        <thead>
+          <tr>
+            <th>Abertura</th>
+            <th>Fechamento</th>
+            <th>Operador</th>
+            <th>Gaveta</th>
+            <th class="tr">Fundo</th>
+            <th class="tr">Esperado</th>
+            <th class="tr">Contado</th>
+            <th class="tr">Quebra</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of historico().items; track t.id) {
+            <tr>
+              <td>{{ t.aberto_em | date: 'dd/MM/yy HH:mm' }}</td>
+              <td>{{ t.fechado_em ? (t.fechado_em | date: 'dd/MM/yy HH:mm') : '—' }}</td>
+              <td>{{ t.operador }}</td>
+              <td>{{ t.conta_financeira }}</td>
+              <td class="tr">{{ fmt(t.saldo_inicial) }}</td>
+              <td class="tr">{{ t.valor_esperado === null ? '—' : fmt(t.valor_esperado) }}</td>
+              <td class="tr">{{ t.valor_contado === null ? '—' : fmt(t.valor_contado) }}</td>
+              <td class="tr" [class.neg]="num(t.quebra) < 0" [class.pos]="num(t.quebra) > 0">
+                {{ t.quebra === null ? '—' : fmt(t.quebra) }}
+              </td>
+              <td>
+                <span
+                  class="tag"
+                  [class.ab]="t.status === 'aberto'"
+                  [class.fe]="t.status === 'fechado'"
+                  >{{ t.status }}</span
+                >
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="9" class="vazio">Nenhum turno registrado.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (historico().total > historico().items.length) {
+      <button class="btn-ghost" (click)="maisHistorico()">
+        <mat-icon>expand_more</mat-icon> Carregar mais
+      </button>
+    }
+  </section>
+</div>

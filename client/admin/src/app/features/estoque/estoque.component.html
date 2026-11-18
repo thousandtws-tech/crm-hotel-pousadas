@@ -1,0 +1,696 @@
+<div class="page">
+  <div class="est-head">
+    <div class="est-titulo-grupo">
+      <p class="eyebrow">Suprimentos</p>
+      <div class="est-titulo-linha">
+        <h2 class="est-titulo">Estoque</h2>
+        <span class="est-contador" title="Total de itens cadastrados">
+          {{ itens().length }} {{ itens().length === 1 ? 'item' : 'itens' }}
+        </span>
+        @if (semEstoque() > 0) {
+          <span class="est-alerta" title="Itens ativos sem saldo em estoque">
+            {{ semEstoque() }} sem estoque
+          </span>
+        }
+      </div>
+    </div>
+    <div class="est-head-acoes">
+      <button
+        class="btn-tour"
+        type="button"
+        (click)="iniciarTour()"
+        aria-label="Ver tutorial da tela"
+      >
+        <mat-icon>school</mat-icon> Tutorial
+      </button>
+      <a class="btn-gray" routerLink="/insumos" aria-label="Insumos, fichas técnicas e NF-e">
+        <mat-icon>restaurant_menu</mat-icon> Insumos
+      </a>
+      <button id="tour-categorias" class="btn-gray" type="button" (click)="abrirCategorias()">
+        <mat-icon>category</mat-icon> Categorias
+      </button>
+      <button id="tour-novo" class="btn-dark-blue" type="button" (click)="abrirItem()">
+        <mat-icon>add_shopping_cart</mat-icon> Novo item
+      </button>
+    </div>
+  </div>
+
+  <div class="est-info">
+    <div class="est-info-card">
+      <span class="est-info-icone"><mat-icon>inventory_2</mat-icon></span>
+      <div class="est-info-txt">
+        <strong>Entradas e saídas</strong>
+        <p>
+          Na aba <b>Entrada</b> você soma produtos ao estoque; na aba <b>Saída</b> você retira e
+          informa o motivo.
+        </p>
+      </div>
+    </div>
+    <div class="est-info-card">
+      <span class="est-info-icone"><mat-icon>history</mat-icon></span>
+      <div class="est-info-txt">
+        <strong>Movimentações registradas</strong>
+        <p>
+          Toda entrada e saída fica gravada com data, quantidade e o funcionário responsável — nada
+          se perde.
+        </p>
+      </div>
+    </div>
+    <div class="est-info-card">
+      <span class="est-info-icone"><mat-icon>print</mat-icon></span>
+      <div class="est-info-txt">
+        <strong>Impressora por categoria</strong>
+        <p>
+          Em <b>Categorias</b> você escolhe para qual impressora sai o ticket de produção de cada
+          grupo.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="inner-card est-card">
+    <div class="est-toolbar">
+      <div id="tour-busca" class="est-busca" [class.foco]="buscaFoco()">
+        <mat-icon class="est-busca-icone">search</mat-icon>
+        <input
+          class="est-busca-input"
+          type="search"
+          [formControl]="busca"
+          placeholder="Buscar por item ou categoria…"
+          aria-label="Buscar item"
+          autocomplete="off"
+          (focus)="buscaFoco.set(true)"
+          (blur)="buscaFoco.set(false)"
+        />
+        @if (termo()) {
+          <button
+            type="button"
+            class="est-limpar"
+            aria-label="Limpar busca"
+            (click)="busca.setValue('')"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+      <button
+        id="tour-ativos"
+        type="button"
+        class="est-toggle"
+        [class.on]="apenasAtivos()"
+        role="switch"
+        [attr.aria-checked]="apenasAtivos()"
+        (click)="apenasAtivos.set(!apenasAtivos())"
+      >
+        <span class="est-trilho"><span class="est-bolinha"></span></span>
+        Somente ativos
+      </button>
+    </div>
+
+    <div id="tour-abas">
+      <mat-tab-group>
+        <!-- ============================== ITENS ============================== -->
+        <mat-tab label="Itens">
+          <div class="est-tabela-wrap" id="tour-tabela">
+            <table class="est-tabela">
+              <thead>
+                <tr>
+                  <th class="est-th-nome">Item</th>
+                  <th>Categoria</th>
+                  <th class="tr">Quantidade</th>
+                  <th class="tr">Preço unitário</th>
+                  <th class="tc">Status</th>
+                  <th class="tc">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                @if (carregando()) {
+                  @for (s of skel; track s) {
+                    <tr class="skel-row">
+                      <td>
+                        <span class="skel skel-icone"></span><span class="skel skel-nome"></span>
+                      </td>
+                      <td><span class="skel skel-txt"></span></td>
+                      <td><span class="skel skel-txt"></span></td>
+                      <td><span class="skel skel-txt"></span></td>
+                      <td class="tc"><span class="skel skel-chip"></span></td>
+                      <td class="tc"><span class="skel skel-acoes"></span></td>
+                    </tr>
+                  }
+                } @else {
+                  @for (i of filtrados(); track i.id) {
+                    <tr class="est-row">
+                      <td>
+                        <div class="est-cell">
+                          <span class="est-item-icone"><mat-icon>inventory_2</mat-icon></span>
+                          <span class="est-cell-txt">
+                            <strong>{{ i.nome }}</strong>
+                            <small>#{{ i.id }}</small>
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="est-tipo">{{ categoriaNome(i.idcategoria) }}</span>
+                      </td>
+                      <td class="tr">
+                        <span class="est-qtd" [class.zero]="i.quantidade === 0">
+                          {{ i.quantidade }}
+                        </span>
+                        @if (i.quantidade === 0 && i.ativo) {
+                          <span class="est-tag-zero">sem estoque</span>
+                        }
+                      </td>
+                      <td class="tr">
+                        @if (i.valor_unitario !== null) {
+                          <span class="est-valor"
+                            >R$ {{ num(i.valor_unitario) | number: '1.2-2' }}</span
+                          >
+                        } @else {
+                          <span class="muted">—</span>
+                        }
+                      </td>
+                      <td class="tc">
+                        <button
+                          type="button"
+                          class="st-chip"
+                          [class.off]="!i.ativo"
+                          [title]="i.ativo ? 'Clique para desativar' : 'Clique para ativar'"
+                          (click)="statusItem(i, !i.ativo)"
+                        >
+                          {{ i.ativo ? 'Ativo' : 'Inativo' }}
+                        </button>
+                      </td>
+                      <td class="tc est-acoes">
+                        <button
+                          type="button"
+                          class="acao-btn"
+                          title="Imprimir etiqueta"
+                          aria-label="Imprimir etiqueta"
+                          (click)="imprimirEtiqueta(i)"
+                        >
+                          <mat-icon>sell</mat-icon>
+                        </button>
+                        <button
+                          type="button"
+                          class="acao-btn"
+                          title="Editar"
+                          aria-label="Editar item"
+                          (click)="abrirItem(i)"
+                        >
+                          <mat-icon>edit</mat-icon>
+                        </button>
+                        <button
+                          type="button"
+                          class="acao-btn perigo"
+                          title="Excluir"
+                          aria-label="Excluir item"
+                          (click)="excluirItem(i)"
+                        >
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="6" class="est-vazio">
+                        <mat-icon>inventory_2</mat-icon>
+                        <p>
+                          {{
+                            termo() || apenasAtivos()
+                              ? 'Nenhum item encontrado para esses filtros.'
+                              : 'Nenhum item cadastrado ainda.'
+                          }}
+                        </p>
+                        @if (!termo() && !apenasAtivos()) {
+                          <button class="btn-dark-blue" type="button" (click)="abrirItem()">
+                            <mat-icon>add_shopping_cart</mat-icon> Cadastrar o primeiro item
+                          </button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-tab>
+
+        <!-- ========================= ADICIONAR ENTRADA ======================= -->
+        <mat-tab label="Entrada">
+          <form (submit)="$event.preventDefault(); salvarEntrada()">
+            <p class="aba-dica">
+              <mat-icon>add_circle</mat-icon>
+              Digite quanto vai <b>entrar</b> de cada item — a coluna “Futuro” mostra como o estoque
+              vai ficar.
+            </p>
+            <div class="est-tabela-wrap">
+              <table class="est-tabela">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Categoria</th>
+                    <th class="tr">Atual</th>
+                    <th class="tr">Adicionar</th>
+                    <th class="tr">Futuro</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (i of filtradosAtivos(); track i.id) {
+                    <tr class="est-row" [class.marcada]="(entradaAdd()[i.id] ?? 0) > 0">
+                      <td>
+                        <strong class="est-item-nome">{{ i.nome }}</strong>
+                      </td>
+                      <td>
+                        <span class="est-tipo">{{ categoriaNome(i.idcategoria) }}</span>
+                      </td>
+                      <td class="tr">
+                        <span class="est-qtd">{{ i.quantidade }}</span>
+                      </td>
+                      <td class="tr">
+                        <input
+                          class="input-inn num"
+                          type="number"
+                          min="1"
+                          [value]="entradaAdd()[i.id] ?? ''"
+                          (input)="setEntrada(i.id, $event)"
+                          aria-label="Adicionar quantidade"
+                          placeholder="0"
+                        />
+                      </td>
+                      <td class="tr">
+                        <span class="est-futuro" [class.sobe]="(entradaAdd()[i.id] ?? 0) > 0">
+                          {{ i.quantidade + (entradaAdd()[i.id] ?? 0) }}
+                        </span>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="5" class="est-vazio">
+                        <mat-icon>inventory_2</mat-icon>
+                        <p>Nenhum item ativo{{ termo() ? ' para essa busca' : '' }}.</p>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="mov-resumo">
+              <div class="mov-resumo-txt">
+                <mat-icon>add_circle</mat-icon>
+                @if (entradasPendentes().itens === 0) {
+                  <span>Digite a quantidade nos itens acima para dar entrada.</span>
+                } @else {
+                  <span>
+                    <b>{{ entradasPendentes().itens }}</b>
+                    {{ entradasPendentes().itens === 1 ? ' item' : ' itens' }}
+                    — total de
+                    <b>{{ entradasPendentes().total }}</b>
+                    {{ entradasPendentes().total === 1 ? ' unidade' : ' unidades' }}
+                    para entrar
+                  </span>
+                }
+              </div>
+              <button
+                class="btn-dark-blue mov-btn"
+                type="submit"
+                [disabled]="entradasPendentes().itens === 0"
+              >
+                <mat-icon>add_circle</mat-icon> Registrar entrada
+              </button>
+            </div>
+          </form>
+        </mat-tab>
+
+        <!-- ========================== ADICIONAR SAÍDA ======================== -->
+        <mat-tab label="Saída">
+          <form (submit)="$event.preventDefault(); salvarSaida()">
+            <p class="aba-dica">
+              <mat-icon>remove_circle</mat-icon>
+              Digite quanto vai <b>sair</b> de cada item e o motivo (consumo, perda, limpeza…).
+            </p>
+            <div class="est-tabela-wrap">
+              <table class="est-tabela">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Categoria</th>
+                    <th class="tr">Atual</th>
+                    <th class="tr">Retirar</th>
+                    <th class="tr">Futuro</th>
+                    <th>Motivo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (i of filtradosComSaldo(); track i.id) {
+                    <tr class="est-row" [class.marcada]="(saidaAdd()[i.id] ?? 0) > 0">
+                      <td>
+                        <strong class="est-item-nome">{{ i.nome }}</strong>
+                      </td>
+                      <td>
+                        <span class="est-tipo">{{ categoriaNome(i.idcategoria) }}</span>
+                      </td>
+                      <td class="tr">
+                        <span class="est-qtd">{{ i.quantidade }}</span>
+                      </td>
+                      <td class="tr">
+                        <input
+                          class="input-inn num"
+                          type="number"
+                          min="1"
+                          [max]="i.quantidade"
+                          [value]="saidaAdd()[i.id] ?? ''"
+                          (input)="setSaida(i.id, $event)"
+                          aria-label="Retirar quantidade"
+                          placeholder="0"
+                        />
+                      </td>
+                      <td class="tr">
+                        <span class="est-futuro" [class.desce]="(saidaAdd()[i.id] ?? 0) > 0">
+                          {{ i.quantidade - (saidaAdd()[i.id] ?? 0) }}
+                        </span>
+                      </td>
+                      <td>
+                        <input
+                          class="input-inn motivo"
+                          type="text"
+                          [value]="saidaMotivo()[i.id] ?? ''"
+                          (input)="setMotivo(i.id, $event)"
+                          aria-label="Motivo da saída"
+                          placeholder="Ex.: consumo do bar"
+                        />
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="6" class="est-vazio">
+                        <mat-icon>inventory_2</mat-icon>
+                        <p>Nenhum item com saldo{{ termo() ? ' para essa busca' : '' }}.</p>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="mov-resumo">
+              <div class="mov-resumo-txt">
+                <mat-icon>remove_circle</mat-icon>
+                @if (saidasPendentes().itens === 0) {
+                  <span>Digite a quantidade nos itens acima para dar saída.</span>
+                } @else {
+                  <span>
+                    <b>{{ saidasPendentes().itens }}</b>
+                    {{ saidasPendentes().itens === 1 ? ' item' : ' itens' }}
+                    — total de
+                    <b>{{ saidasPendentes().total }}</b>
+                    {{ saidasPendentes().total === 1 ? ' unidade' : ' unidades' }}
+                    para sair
+                  </span>
+                }
+              </div>
+              <button
+                class="btn-dark-blue mov-btn"
+                type="submit"
+                [disabled]="saidasPendentes().itens === 0"
+              >
+                <mat-icon>remove_circle</mat-icon> Registrar saída
+              </button>
+            </div>
+          </form>
+        </mat-tab>
+
+        <!-- ========================== MOVIMENTAÇÕES ========================== -->
+        <mat-tab label="Movimentações">
+          <div class="est-tabela-wrap">
+            <table class="est-tabela">
+              <thead>
+                <tr>
+                  <th>Quando</th>
+                  <th>Item</th>
+                  <th class="tc">Tipo</th>
+                  <th class="tr">Qtd</th>
+                  <th>Funcionário</th>
+                  <th>Motivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of movimentos(); track m.id) {
+                  <tr class="est-row">
+                    <td class="est-quando">{{ m.criado_em | date: 'dd/MM/yy HH:mm' }}</td>
+                    <td>
+                      <strong class="est-item-nome">{{ m.item_nome }}</strong>
+                    </td>
+                    <td class="tc">
+                      <span class="st-chip" [class.off]="m.tipo === 'saida'">
+                        {{ m.tipo === 'entrada' ? '↙ Entrada' : '↗ Saída' }}
+                      </span>
+                    </td>
+                    <td class="tr">
+                      <span class="est-qtd">{{ m.quantidade }}</span>
+                    </td>
+                    <td>{{ m.funcionario ?? '—' }}</td>
+                    <td class="est-motivo">{{ m.motivo || '—' }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="est-vazio">
+                      <mat-icon>history</mat-icon>
+                      <p>Nenhuma movimentação registrada ainda.</p>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Drawer Item (cadastrar/editar) ============ -->
+@if (drawerAberto()) {
+  <div class="drawer-backdrop" (click.self)="fecharDrawer()">
+    <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="titulo-drawer">
+      <header class="drawer-head">
+        <div class="drawer-head-txt">
+          <h5 id="titulo-drawer">{{ editandoItem() ? 'Editar item' : 'Novo item' }}</h5>
+          <p>
+            {{ editandoItem() ? 'Atualize os dados do item' : 'Cadastre um produto do estoque' }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="drawer-fechar"
+          (click)="fecharDrawer()"
+          aria-label="Fechar painel"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+
+      <form [formGroup]="formItem" (ngSubmit)="salvarItem()" autocomplete="off" class="drawer-form">
+        <div class="drawer-body">
+          <section class="dsec">
+            <div class="dsec-tit"><mat-icon>inventory_2</mat-icon> Dados do item</div>
+            <div class="dgrid">
+              <div class="campo full">
+                <label class="lbl" for="it-nome">Nome <small class="req">*</small></label>
+                <input
+                  id="it-nome"
+                  class="input-inn"
+                  type="text"
+                  formControlName="nome"
+                  placeholder="Ex.: Água mineral 500ml"
+                  [class.inval]="invalido('nome')"
+                />
+                @if (invalido('nome')) {
+                  <small class="erro-campo">Informe o nome do item.</small>
+                }
+              </div>
+              <div class="campo">
+                <label class="lbl" for="it-cat">Categoria</label>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-mat">
+                  <mat-select id="it-cat" formControlName="idcategoria" placeholder="Sem categoria">
+                    <mat-option [value]="null">Sem categoria</mat-option>
+                    @for (c of categorias(); track c.id) {
+                      @if (c.ativo || c.id === editandoItem()?.idcategoria) {
+                        <mat-option [value]="c.id">{{ c.nome }}</mat-option>
+                      }
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="campo">
+                <label class="lbl" for="it-valor">Valor unitário</label>
+                <div class="input-group-inn">
+                  <span class="addon">R$</span>
+                  <input
+                    id="it-valor"
+                    class="input-inn"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    formControlName="valor_unitario"
+                    placeholder="Ex.: 3,50"
+                  />
+                </div>
+              </div>
+              @if (!editandoItem()) {
+                <div class="campo">
+                  <label class="lbl" for="it-qtd">Quantidade inicial</label>
+                  <input
+                    id="it-qtd"
+                    class="input-inn"
+                    type="number"
+                    min="0"
+                    formControlName="quantidade_inicial"
+                    placeholder="Ex.: 50"
+                  />
+                </div>
+              }
+              <div class="campo">
+                <label class="lbl" for="it-un">Unidade</label>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="campo-mat">
+                  <mat-select id="it-un" formControlName="unidade">
+                    @for (u of UNIDADES; track u) {
+                      <mat-option [value]="u">{{ u }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="campo">
+                <label class="lbl" for="it-min">Estoque mínimo</label>
+                <input
+                  id="it-min"
+                  class="input-inn"
+                  type="number"
+                  min="0"
+                  formControlName="estoque_minimo"
+                  placeholder="0 = sem alerta"
+                />
+              </div>
+              <div class="campo full">
+                <label class="chk-insumo">
+                  <input type="checkbox" formControlName="eh_insumo" />
+                  É insumo (não aparece para venda direta no PDV — usado em ficha técnica)
+                </label>
+              </div>
+            </div>
+            @if (editandoItem()) {
+              <p class="dsec-dica" style="margin-top: 10px">
+                Para alterar a quantidade, use as abas <b>Entrada</b> e <b>Saída</b> — assim a
+                movimentação fica registrada.
+              </p>
+            }
+          </section>
+        </div>
+
+        <footer class="drawer-foot">
+          <span class="drawer-req"><small class="req">*</small> Campos obrigatórios</span>
+          <div class="drawer-foot-acoes">
+            <button class="btn-gray" type="button" (click)="fecharDrawer()">Cancelar</button>
+            <button class="btn-dark-blue" type="submit">
+              <mat-icon>save</mat-icon>
+              {{ editandoItem() ? 'Salvar alterações' : 'Cadastrar item' }}
+            </button>
+          </div>
+        </footer>
+      </form>
+    </aside>
+  </div>
+}
+
+<!-- ============ Modal Categorias ============ -->
+@if (modal() === 'categorias') {
+  <div class="overlay" (click.self)="fecharModal()">
+    <div class="modal-inn modal-md" role="dialog" aria-modal="true" aria-labelledby="titulo-cat">
+      <div class="modal-head">
+        <h5 id="titulo-cat">Categorias do estoque</h5>
+        <button type="button" class="close" (click)="fecharModal()" aria-label="Fechar">
+          &times;
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-dica">
+          As categorias agrupam os itens e definem para qual
+          <b>impressora</b> sai o ticket de produção.
+        </p>
+        <form
+          class="input-group-inn"
+          style="margin-bottom: 12px"
+          (submit)="$event.preventDefault(); criarCategoriaModal()"
+        >
+          <input
+            class="input-inn"
+            type="text"
+            [formControl]="novaCategoria"
+            placeholder="Nova categoria"
+            aria-label="Nome da categoria"
+          />
+          <button class="btn-dark-blue" type="submit" [disabled]="novaCategoria.invalid">
+            Adicionar
+          </button>
+        </form>
+        <table class="plain bordered">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nome</th>
+              <th>Impressora (setor)</th>
+              <th class="tc">Status</th>
+              <th class="tc">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of categorias(); track c.id) {
+              <tr>
+                <td>{{ c.id }}</td>
+                <td>{{ c.nome }}</td>
+                <td>
+                  <mat-select
+                    class="mat-sel mat-sel-sm"
+                    [value]="c.impressora_id"
+                    (selectionChange)="rotearCategoria(c, $event.value)"
+                    aria-label="Impressora do setor"
+                    placeholder="— sem ticket —"
+                  >
+                    <mat-option [value]="null">— sem ticket —</mat-option>
+                    @for (p of impressoras(); track p.id) {
+                      <mat-option [value]="p.id">{{ p.nome }} ({{ p.setor }})</mat-option>
+                    }
+                  </mat-select>
+                </td>
+                <td class="tc">
+                  <button
+                    type="button"
+                    class="st-chip"
+                    [class.off]="!c.ativo"
+                    [title]="c.ativo ? 'Clique para desativar' : 'Clique para ativar'"
+                    (click)="statusCategoria(c, !c.ativo)"
+                  >
+                    {{ c.ativo ? 'Ativo' : 'Inativo' }}
+                  </button>
+                </td>
+                <td class="tc">
+                  <button
+                    type="button"
+                    class="acao-btn perigo"
+                    title="Excluir"
+                    aria-label="Excluir categoria"
+                    (click)="excluirCategoria(c)"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="muted tc">Nenhuma categoria.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+}

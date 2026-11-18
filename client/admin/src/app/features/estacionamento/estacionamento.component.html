@@ -1,0 +1,229 @@
+<div class="page">
+  <div class="est-head">
+    <div class="est-titulo-grupo">
+      <p class="eyebrow">Cadastro</p>
+      <div class="est-titulo-linha">
+        <h2 class="est-titulo">Estacionamento</h2>
+        <span class="est-contador" title="Total de vagas e quantas estão livres">
+          {{ vagas().length }} {{ vagas().length === 1 ? 'vaga' : 'vagas' }} · {{ livres() }}
+          {{ livres() === 1 ? 'livre' : 'livres' }}
+        </span>
+      </div>
+    </div>
+    <div class="est-head-acoes">
+      <button
+        class="btn-tour"
+        type="button"
+        (click)="iniciarTour()"
+        aria-label="Ver tutorial da tela"
+      >
+        <mat-icon>school</mat-icon> Tutorial
+      </button>
+    </div>
+  </div>
+
+  <div class="est-info">
+    <div class="est-info-card">
+      <span class="est-info-icone"><mat-icon>local_parking</mat-icon></span>
+      <div class="est-info-txt">
+        <strong>Uma vaga por acomodação</strong>
+        <p>Vincule cada vaga a uma acomodação para saber qual quarto está usando aquela vaga.</p>
+      </div>
+    </div>
+    <div class="est-info-card">
+      <span class="est-info-icone"><mat-icon>link</mat-icon></span>
+      <div class="est-info-txt">
+        <strong>Vínculo rápido</strong>
+        <p>No seletor da linha você troca o dono da vaga na hora — ou deixa como <b>Livre</b>.</p>
+      </div>
+    </div>
+    <div class="est-info-card">
+      <span class="est-info-icone"><mat-icon>toggle_on</mat-icon></span>
+      <div class="est-info-txt">
+        <strong>Desative em vez de excluir</strong>
+        <p>
+          Vagas inativas não aparecem na hora da reserva. Prefira desativar no selo “Status” a
+          excluir.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="inner-card est-card">
+    <!-- Cadastro rápido -->
+    <form
+      id="tour-form"
+      class="est-form"
+      (submit)="$event.preventDefault(); criar()"
+      autocomplete="off"
+    >
+      <span class="est-form-icone"><mat-icon>local_parking</mat-icon></span>
+      <div class="est-form-txt">
+        <strong>Nova vaga</strong>
+        <small>Digite o número da vaga física e cadastre — depois vincule na lista.</small>
+      </div>
+      <input
+        id="numero-vaga"
+        class="input-inn est-num"
+        type="number"
+        min="1"
+        required
+        [formControl]="numero"
+        placeholder="Nº da vaga (ex.: 12)"
+        title="Número da vaga"
+        aria-label="Número da vaga"
+      />
+      <button class="btn-dark-blue" type="submit" [disabled]="numero.invalid">
+        <mat-icon>add</mat-icon> Cadastrar
+      </button>
+    </form>
+
+    <div class="est-toolbar">
+      <div id="tour-busca" class="est-busca" [class.foco]="buscaFoco()">
+        <mat-icon class="est-busca-icone">search</mat-icon>
+        <input
+          class="est-busca-input"
+          type="search"
+          [formControl]="busca"
+          placeholder="Buscar por número ou acomodação… (dica: “livre”)"
+          aria-label="Buscar vaga"
+          autocomplete="off"
+          (focus)="buscaFoco.set(true)"
+          (blur)="buscaFoco.set(false)"
+        />
+        @if (termo()) {
+          <button
+            type="button"
+            class="est-limpar"
+            aria-label="Limpar busca"
+            (click)="busca.setValue('')"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+      <button
+        id="tour-ativas"
+        type="button"
+        class="est-toggle"
+        [class.on]="apenasAtivas()"
+        role="switch"
+        [attr.aria-checked]="apenasAtivas()"
+        (click)="apenasAtivas.set(!apenasAtivas())"
+      >
+        <span class="est-trilho"><span class="est-bolinha"></span></span>
+        Somente ativas
+      </button>
+    </div>
+
+    <div id="tour-tabela" class="est-tabela-wrap">
+      <table class="est-tabela">
+        <thead>
+          <tr>
+            <th class="est-th-vaga">Vaga</th>
+            <th>Acomodação vinculada</th>
+            <th class="tc">Status</th>
+            @if (auth.isAdmin()) {
+              <th class="tc">Ações</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @if (carregando()) {
+            @for (s of skel; track s) {
+              <tr class="skel-row">
+                <td>
+                  <span class="skel skel-icone"></span>
+                  <span class="skel skel-nome"></span>
+                </td>
+                <td><span class="skel skel-sel"></span></td>
+                <td class="tc"><span class="skel skel-chip"></span></td>
+                @if (auth.isAdmin()) {
+                  <td class="tc"><span class="skel skel-acoes"></span></td>
+                }
+              </tr>
+            }
+          } @else {
+            @for (v of vagasFiltradas(); track v.id) {
+              <tr class="est-row">
+                <td>
+                  <div class="est-cell">
+                    <span class="est-vaga-icone"><mat-icon>local_parking</mat-icon></span>
+                    <span class="est-cell-txt">
+                      <strong>Vaga {{ v.numero }}</strong>
+                      <small>#{{ v.id }}</small>
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <div class="est-vinc">
+                    <span
+                      class="est-dot"
+                      [class.on]="v.idacomodacao"
+                      [title]="v.idacomodacao ? 'Vinculada' : 'Livre'"
+                    ></span>
+                    <mat-select
+                      class="mat-sel est-sel"
+                      [class.vago]="!v.idacomodacao"
+                      [value]="v.idacomodacao"
+                      (selectionChange)="vincular(v, $event.value)"
+                      aria-label="Acomodação vinculada"
+                      placeholder="Livre"
+                    >
+                      <mat-option [value]="null">Livre</mat-option>
+                      @for (a of acomodacoes(); track a.id) {
+                        <mat-option [value]="a.id">{{ a.nome }} ({{ a.numero }})</mat-option>
+                      }
+                    </mat-select>
+                  </div>
+                </td>
+                <td class="tc">
+                  <button
+                    type="button"
+                    class="st-chip"
+                    [class.off]="!v.ativo"
+                    [title]="v.ativo ? 'Clique para desativar' : 'Clique para ativar'"
+                    (click)="status(v, !v.ativo)"
+                  >
+                    {{ v.ativo ? 'Ativo' : 'Inativo' }}
+                  </button>
+                </td>
+                @if (auth.isAdmin()) {
+                  <td class="tc">
+                    <button
+                      type="button"
+                      class="acao-btn perigo"
+                      title="Excluir vaga"
+                      aria-label="Excluir vaga"
+                      (click)="remover(v)"
+                    >
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="auth.isAdmin() ? 4 : 3" class="est-vazio">
+                  <mat-icon>local_parking</mat-icon>
+                  <p>
+                    {{
+                      termo() || apenasAtivas()
+                        ? 'Nenhuma vaga encontrada para esses filtros.'
+                        : 'Nenhuma vaga cadastrada ainda.'
+                    }}
+                  </p>
+                  @if (!termo() && !apenasAtivas()) {
+                    <p class="est-vazio-dica">
+                      Use o campo <b>Nova vaga</b> acima para cadastrar a primeira.
+                    </p>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

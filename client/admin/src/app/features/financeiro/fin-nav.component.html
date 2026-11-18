@@ -1,0 +1,13 @@
+<nav class="fin-nav" aria-label="Seções do financeiro">
+  @for (item of itens; track item.rota) {
+    <a
+      [routerLink]="item.rota"
+      routerLinkActive="ativo"
+      [routerLinkActiveOptions]="{ exact: item.exato }"
+      class="fin-nav-link"
+    >
+      <mat-icon>{{ item.icone }}</mat-icon>
+      <span>{{ item.rotulo }}</span>
+    </a>
+  }
+</nav>

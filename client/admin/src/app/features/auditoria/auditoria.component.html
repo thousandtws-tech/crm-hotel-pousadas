@@ -1,0 +1,103 @@
+<div class="page">
+  <div class="aud-head">
+    <div>
+      <p class="eyebrow">Configurações</p>
+      <h2 class="aud-titulo">Auditoria</h2>
+      <p class="aud-sub">Registro das ações feitas no sistema — quem fez, quando e o que mudou</p>
+    </div>
+    <span class="aud-total">{{ total() }} registro{{ total() === 1 ? '' : 's' }}</span>
+  </div>
+
+  <div class="inner-card aud-card">
+    <div class="aud-filtros">
+      <label class="aud-f">
+        <span>Tabela</span>
+        <input
+          class="aud-input"
+          type="text"
+          [formControl]="fTabela"
+          placeholder="reserva, cliente…"
+          aria-label="Filtrar por tabela"
+        />
+      </label>
+      <label class="aud-f">
+        <span>Ação</span>
+        <input
+          class="aud-input"
+          type="text"
+          [formControl]="fAcao"
+          placeholder="checkin, edição…"
+          aria-label="Filtrar por ação"
+        />
+      </label>
+      <label class="aud-f">
+        <span>Desde</span>
+        <app-date [formControl]="fDesde" />
+      </label>
+      <label class="aud-f">
+        <span>Até</span>
+        <app-date [formControl]="fAte" />
+      </label>
+      <button class="btn-dark-blue aud-filtrar" type="button" (click)="recarregar()">
+        <mat-icon>filter_alt</mat-icon> Filtrar
+      </button>
+    </div>
+
+    <div class="aud-lista" id="tour-lista">
+      @if (carregando()) {
+        @for (s of skel; track s) {
+          <div class="aud-item">
+            <div class="aud-linha">
+              <span class="skel sk-acao"></span>
+              <span class="skel sk-alvo"></span>
+              <span class="skel sk-autor"></span>
+              <span class="skel sk-data"></span>
+            </div>
+          </div>
+        }
+      } @else {
+        @for (l of items(); track l.id) {
+          <div class="aud-item" [class.aberto]="aberto() === l.id">
+            <button
+              type="button"
+              class="aud-linha"
+              (click)="alternar(l.id)"
+              [attr.aria-expanded]="aberto() === l.id"
+            >
+              <span class="aud-acao">{{ l.acao }}</span>
+              <span class="aud-alvo">{{ l.tabela ?? '—' }} · #{{ l.idtabela ?? '—' }}</span>
+              <span class="aud-autor">{{ l.funcionario_nome ?? 'sistema' }}</span>
+              <span class="aud-data">{{ l.criado_em | date: 'dd/MM/yyyy HH:mm:ss' }}</span>
+              <mat-icon class="aud-seta">expand_more</mat-icon>
+            </button>
+            @if (aberto() === l.id) {
+              <div class="aud-detalhe">
+                @if (l.obs) {
+                  <p class="aud-obs">{{ l.obs }}</p>
+                }
+                @if (l.dados) {
+                  <pre class="aud-dados">{{ l.dados | json }}</pre>
+                }
+                @if (!l.obs && !l.dados) {
+                  <p class="aud-obs mut">Sem detalhes adicionais.</p>
+                }
+              </div>
+            }
+          </div>
+        } @empty {
+          <div class="aud-vazio">
+            <mat-icon>history</mat-icon>
+            Nenhum registro encontrado para os filtros aplicados.
+          </div>
+        }
+      }
+    </div>
+
+    <mat-paginator
+      [length]="total()"
+      [pageSize]="50"
+      [pageIndex]="pagina() - 1"
+      (page)="mudouPagina($event)"
+    />
+  </div>
+</div>

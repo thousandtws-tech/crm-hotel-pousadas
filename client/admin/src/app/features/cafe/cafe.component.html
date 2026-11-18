@@ -1,0 +1,223 @@
+<div class="page cafe">
+  <header class="cafe-head">
+    <div>
+      <p class="eyebrow">Operação</p>
+      <h2 class="titulo">Café da Manhã</h2>
+      <p class="sub">Encontre a reserva e registre a presença no café.</p>
+    </div>
+    <div class="dia-box">
+      <span class="lbl">Data do café</span>
+      <div class="dia-nav" role="group" aria-label="Navegar dia">
+        <button type="button" class="nav-dia" (click)="mudarDia(-1)" aria-label="Dia anterior">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <div class="dia-input">
+          <app-date [value]="dia()" (alterar)="definirDia($event)" rotulo="Data do quadro" />
+        </div>
+        <button type="button" class="nav-dia" (click)="mudarDia(1)" aria-label="Próximo dia">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+      @if (!ehHoje()) {
+        <button type="button" class="hoje" (click)="hoje()">Voltar para hoje</button>
+      }
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <div>
+        <span class="stat-l">Reservas na casa</span>
+        <p>
+          <strong>{{ quadro().length }}</strong>
+          <small>{{ quadro().length === 1 ? 'reserva' : 'reservas' }}</small>
+        </p>
+      </div>
+      <span class="stat-ico"><mat-icon>king_bed</mat-icon></span>
+    </div>
+    <div class="stat">
+      <div>
+        <span class="stat-l">Reservas presentes</span>
+        <p>
+          <strong>{{ presentes() }}</strong>
+          <small>{{ presentes() === 1 ? 'reserva' : 'reservas' }}</small>
+        </p>
+      </div>
+      <span class="stat-ico"><mat-icon>check_circle</mat-icon></span>
+    </div>
+    <div class="stat">
+      <div>
+        <span class="stat-l">Pessoas servidas</span>
+        <p>
+          <strong>{{ pessoasServidas() }}</strong>
+          <small>{{ pessoasServidas() === 1 ? 'pessoa' : 'pessoas' }}</small>
+        </p>
+      </div>
+      <span class="stat-ico"><mat-icon>groups</mat-icon></span>
+    </div>
+  </div>
+
+  <div class="sec-head">
+    <h3>Presença no café</h3>
+    <span
+      >{{ aguardando() }}
+      {{ aguardando() === 1 ? 'reserva aguardando' : 'reservas aguardando' }}</span
+    >
+  </div>
+
+  <section class="quadro-card">
+    <header class="q-head">
+      <div class="q-busca">
+        <span class="lbl">Buscar reserva</span>
+        <input
+          class="inp"
+          placeholder="Quarto ou nome do hóspede"
+          [value]="busca()"
+          (input)="busca.set($any($event.target).value)"
+          aria-label="Buscar por quarto ou hóspede"
+        />
+      </div>
+      <div class="seg" role="group" aria-label="Filtrar presença">
+        @for (f of filtros; track f.v) {
+          <button
+            type="button"
+            class="seg-btn"
+            [class.ativo]="filtro() === f.v"
+            (click)="filtro.set(f.v)"
+          >
+            {{ f.rotulo }} <b>{{ contagemFiltro(f.v) }}</b>
+          </button>
+        }
+      </div>
+    </header>
+
+    @if (carregando()) {
+      <div class="q-vazio"><mat-icon>hourglass_top</mat-icon>Carregando…</div>
+    } @else if (quadro().length === 0) {
+      <div class="q-vazio">
+        <mat-icon>king_bed</mat-icon> Nenhuma reserva em estadia em {{ diaFormatado() }}.
+      </div>
+    } @else {
+      <div class="q-tab" role="table" aria-label="Presença por reserva">
+        <div class="q-th" role="row">
+          <span role="columnheader">Quarto / Hóspede</span>
+          <span role="columnheader">Pessoas</span>
+          <span role="columnheader">Presença</span>
+          <span role="columnheader">Ação</span>
+        </div>
+        @for (r of quadroFiltrado(); track r.idreserva) {
+          <div class="q-tr" role="row">
+            <div class="q-hospede">
+              <span class="q-tile">
+                <small>{{ r.quarto_numero ? 'Quarto' : 'Acomodação' }}</small>
+                <b>{{ r.quarto_numero ?? r.acomodacao_nome }}</b>
+              </span>
+              <span class="q-nome">
+                <strong>{{ r.cliente_nome }}</strong>
+                <small
+                  >Reserva de {{ r.quantidade_hospedes }}
+                  {{ r.quantidade_hospedes === 1 ? 'hóspede' : 'hóspedes' }}</small
+                >
+              </span>
+            </div>
+            <div class="q-pessoas">
+              {{ r.quantidade_hospedes }}
+              {{ r.quantidade_hospedes === 1 ? 'hóspede' : 'hóspedes' }}
+            </div>
+            <div class="q-presenca">
+              @if (r.presenca_id !== null) {
+                <span class="pill ok">
+                  {{ r.presenca_quantidade }}/{{ r.quantidade_hospedes }} ·
+                  {{ hora(r.presenca_em!) }}
+                </span>
+              } @else {
+                <span class="pill aguarda">Aguardando</span>
+              }
+            </div>
+            <div class="q-acao">
+              @if (r.presenca_id === null) {
+                @if (escolhendo() === r.idreserva) {
+                  <div class="stepper" role="group" aria-label="Quantas pessoas">
+                    <div class="stepper-linha">
+                      <button
+                        type="button"
+                        class="passo"
+                        (click)="passo(-1, r)"
+                        [disabled]="qtd() <= 1"
+                        aria-label="Menos uma pessoa"
+                      >
+                        <mat-icon>remove</mat-icon>
+                      </button>
+                      <span class="qtd" aria-live="polite">{{ qtd() }}</span>
+                      <button
+                        type="button"
+                        class="passo"
+                        (click)="passo(1, r)"
+                        [disabled]="qtd() >= r.quantidade_hospedes"
+                        aria-label="Mais uma pessoa"
+                      >
+                        <mat-icon>add</mat-icon>
+                      </button>
+                    </div>
+                    <div class="stepper-acoes">
+                      <button
+                        type="button"
+                        class="confirmar"
+                        [disabled]="ocupando()"
+                        (click)="confirmar(r)"
+                      >
+                        <mat-icon>check</mat-icon>Confirmar
+                      </button>
+                      <button
+                        type="button"
+                        class="fechar"
+                        (click)="escolhendo.set(0)"
+                        aria-label="Cancelar"
+                      >
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                } @else {
+                  <button type="button" class="btn-marcar" (click)="abrir(r)">
+                    Marcar presença
+                  </button>
+                  <small class="q-nota"
+                    >Para esta reserva · {{ r.quantidade_hospedes }}
+                    {{ r.quantidade_hospedes === 1 ? 'hóspede' : 'hóspedes' }}</small
+                  >
+                }
+              } @else {
+                <div class="presente-info">
+                  <small class="quem"
+                    ><mat-icon>badge</mat-icon> {{ r.registrado_por_nome ?? '—' }}</small
+                  >
+                  <button
+                    type="button"
+                    class="btn-undo"
+                    [disabled]="ocupando()"
+                    (click)="desmarcar(r)"
+                    aria-label="Desmarcar presença"
+                  >
+                    <mat-icon>undo</mat-icon>Desfazer
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        } @empty {
+          <div class="q-vazio">Nenhuma reserva neste filtro.</div>
+        }
+      </div>
+      <footer class="q-foot">
+        <span
+          >Exibindo {{ quadroFiltrado().length }} de {{ quadro().length }}
+          {{ quadro().length === 1 ? 'reserva' : 'reservas' }}</span
+        >
+        <span class="q-nota-i"
+          ><mat-icon>info</mat-icon> Reservas e pessoas são contabilizadas separadamente.</span
+        >
+      </footer>
+    }
+  </section>
+</div>

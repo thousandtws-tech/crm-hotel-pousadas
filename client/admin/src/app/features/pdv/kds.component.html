@@ -1,0 +1,229 @@
+<div class="page kds" [class.kds-offline]="!rt.online()">
+  <header class="kds-head">
+    <div>
+      <p class="eyebrow">Operação</p>
+      <h2 class="titulo">Cozinha</h2>
+      <p class="sub">Do primeiro preparo à retirada, cada pedido no seu lugar.</p>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <strong>{{ colunaDe('pendente').tickets.length }}</strong> <span>A fazer</span>
+      </div>
+      <div class="stat">
+        <strong>{{ colunaDe('em_preparo').tickets.length }}</strong> <span>Em preparo</span>
+      </div>
+      <div class="stat prontos">
+        <strong>{{ colunaDe('pronto').tickets.length }}</strong> <span>Prontos</span>
+      </div>
+    </div>
+  </header>
+
+  @if (ticketsTotal() === 0 && !carregando()) {
+    <div class="banner">
+      <mat-icon>info</mat-icon>
+      <div>
+        <strong>Fila vazia</strong>
+        <p>
+          Acompanhe os novos pedidos por aqui. O som está
+          {{ somAtivo() ? 'ativado' : 'desativado' }}.
+        </p>
+      </div>
+    </div>
+  }
+
+  <div class="controles">
+    <div class="seg" role="group" aria-label="Filtrar por etapa">
+      @for (f of filtrosStatus; track f.v) {
+        <button
+          type="button"
+          class="seg-btn"
+          [class.ativo]="filtroStatus() === f.v"
+          (click)="filtroStatus.set(f.v)"
+        >
+          {{ f.rotulo }}
+        </button>
+      }
+    </div>
+    <div class="controles-d">
+      <select
+        class="sel"
+        [value]="filtroCategoria()"
+        (change)="filtroCategoria.set($any($event.target).value)"
+        aria-label="Filtrar por categoria"
+      >
+        <option value="todas">Todas as categorias</option>
+        @for (c of categorias(); track c) {
+          <option [value]="c">{{ c }}</option>
+        }
+      </select>
+      <button
+        type="button"
+        class="btn-som"
+        [class.on]="somAtivo()"
+        (click)="alternarSom()"
+        [attr.aria-pressed]="somAtivo()"
+      >
+        <mat-icon>{{ somAtivo() ? 'volume_up' : 'volume_off' }}</mat-icon>
+        Som {{ somAtivo() ? 'ativado' : 'desativado' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="resumo">
+    <span
+      >{{ ticketsTotal() }} {{ ticketsTotal() === 1 ? 'pedido' : 'pedidos' }} · {{ itensTotal() }}
+      {{ itensTotal() === 1 ? 'item' : 'itens' }}</span
+    >
+  </div>
+
+  @if (carregando() && ticketsTotal() === 0) {
+    <div class="quadro-vazio">
+      <mat-icon>hourglass_top</mat-icon>
+      <p>Carregando pedidos…</p>
+    </div>
+  } @else if (ticketsTotal() === 0) {
+    <div class="quadro-vazio">
+      <span class="qv-ico"><mat-icon>done_all</mat-icon></span>
+      <div class="qv-card">
+        <strong>Fila vazia — nenhum pedido aguardando.</strong>
+        <p>
+          Novos pedidos de mesa, quarto ou balcão aparecerão em "A fazer". Mantenha este painel
+          aberto para acompanhar a fila.
+        </p>
+      </div>
+      <p class="qv-nota">
+        <mat-icon>{{ somAtivo() ? 'volume_up' : 'volume_off' }}</mat-icon>
+        Som
+        {{
+          somAtivo()
+            ? 'ativado — novos pedidos tocarão um aviso'
+            : 'desativado. Ative no controle acima para ouvir novos pedidos'
+        }}.
+      </p>
+    </div>
+  } @else {
+    <div class="board">
+      @for (col of colunasVisiveis(); track col.status) {
+        <section class="coluna" [class]="'col-' + col.status">
+          <header class="col-head">
+            <div class="col-id">
+              <mat-icon>{{ col.icone }}</mat-icon>
+              <h3>{{ col.rotulo }}</h3>
+            </div>
+            <span class="col-count">{{ col.tickets.length }}</span>
+          </header>
+          <p class="col-ajuda">{{ col.ajuda }}</p>
+
+          <div class="col-cards">
+            @for (t of col.tickets; track t.idcomanda) {
+              <article class="ticket" [class.atraso]="col.status === 'pendente' && t.minutos >= 15">
+                <header class="t-ref">
+                  <span>Comanda Nº{{ t.idcomanda }}</span>
+                  <span>{{ t.itens.length }} {{ t.itens.length === 1 ? 'item' : 'itens' }}</span>
+                </header>
+                <div class="t-dest">
+                  <mat-icon>{{ t.icone }}</mat-icon>
+                  <strong>{{ t.destino }}</strong>
+                </div>
+                <p class="t-tempo">
+                  <mat-icon>schedule</mat-icon>
+                  {{ t.recebido | date: 'HH:mm' }} · há {{ t.minutos }} min no painel
+                </p>
+
+                @if (col.status === 'pendente' && t.minutos >= 15) {
+                  <p class="t-alerta">
+                    <mat-icon>schedule</mat-icon>
+                    Espera prolongada · {{ t.minutos }} min sem iniciar
+                  </p>
+                } @else if (col.status === 'em_preparo') {
+                  <p class="t-pill prep">Em preparo há {{ t.minutos }} min</p>
+                } @else if (col.status === 'pronto') {
+                  <p class="t-pill pronto">Pronto há {{ t.minutos }} min</p>
+                }
+
+                <ul class="t-itens">
+                  @for (i of t.itens; track i.id) {
+                    <li>
+                      <span class="t-qtd">{{ i.quantidade }}×</span>
+                      <span class="t-item">
+                        <strong>{{ i.item_nome }}</strong>
+                        @if (i.categoria_nome) {
+                          <small>{{ i.categoria_nome }}</small>
+                        }
+                      </span>
+                      @if (col.status !== 'pendente') {
+                        <button
+                          type="button"
+                          class="t-undo"
+                          [disabled]="ocupando().has(i.id)"
+                          (click)="retornar(i)"
+                          [attr.aria-label]="'Devolver ' + i.item_nome"
+                          title="Devolver à etapa anterior"
+                        >
+                          <mat-icon>undo</mat-icon>
+                        </button>
+                      }
+                    </li>
+                  }
+                </ul>
+
+                @if (t.garcom || t.cliente) {
+                  <p class="t-meta">
+                    @if (t.garcom) {
+                      <span><mat-icon>room_service</mat-icon>{{ t.garcom }}</span>
+                    }
+                    @if (t.cliente) {
+                      <span><mat-icon>person</mat-icon>{{ t.cliente }}</span>
+                    }
+                  </p>
+                }
+
+                @switch (col.status) {
+                  @case ('pendente') {
+                    <button
+                      type="button"
+                      class="t-acao prim"
+                      [disabled]="ocupandoTicket(t)"
+                      (click)="acaoTicket(t, 'preparar')"
+                    >
+                      Iniciar preparo
+                    </button>
+                  }
+                  @case ('em_preparo') {
+                    <button
+                      type="button"
+                      class="t-acao prim"
+                      [disabled]="ocupandoTicket(t)"
+                      (click)="acaoTicket(t, 'pronto')"
+                    >
+                      Marcar como pronto
+                    </button>
+                  }
+                  @case ('pronto') {
+                    <p class="t-nota">
+                      Aguardando o atendimento retirar. Confirme apenas após a retirada.
+                    </p>
+                    <button
+                      type="button"
+                      class="t-acao ghost"
+                      [disabled]="ocupandoTicket(t)"
+                      (click)="acaoTicket(t, 'entregar')"
+                    >
+                      Confirmar retirada
+                    </button>
+                  }
+                }
+              </article>
+            } @empty {
+              <div class="col-vazia">Nenhum pedido nesta etapa.</div>
+            }
+          </div>
+        </section>
+      }
+    </div>
+    <p class="rodape-nota">
+      <mat-icon>flag</mat-icon>
+      Mais antigos primeiro em cada etapa. O tempo do pedido conta desde o recebimento.
+    </p>
+  }
+</div>

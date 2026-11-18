@@ -1,0 +1,675 @@
+<div class="page">
+  <div class="cli-head">
+    <div class="cli-titulo-grupo">
+      <p class="eyebrow">Cadastro</p>
+      <div class="cli-titulo-linha">
+        <h2 class="cli-titulo">Clientes</h2>
+        <span class="cli-contador" title="Total de clientes cadastrados">
+          {{ total() }} {{ total() === 1 ? 'hóspede' : 'hóspedes' }}
+        </span>
+      </div>
+    </div>
+    <div class="cli-head-acoes">
+      <button
+        class="btn-tour"
+        type="button"
+        (click)="iniciarTour()"
+        aria-label="Ver tutorial da tela"
+      >
+        <mat-icon>school</mat-icon> Tutorial
+      </button>
+      <button
+        class="btn-gray"
+        type="button"
+        [matMenuTriggerFor]="menuRel"
+        [disabled]="exportando()"
+      >
+        <mat-icon>description</mat-icon> Relatório
+        <mat-icon class="rel-seta">expand_more</mat-icon>
+      </button>
+      <mat-menu #menuRel="matMenu" class="menu-rel">
+        <button mat-menu-item (click)="exportar('pdf')" id="tour-rel-pdf">
+          <mat-icon class="rel-ic">picture_as_pdf</mat-icon>
+          <span>PDF <small>documento formatado</small></span>
+        </button>
+        <button mat-menu-item (click)="exportar('xlsx')">
+          <mat-icon class="rel-ic">table_view</mat-icon>
+          <span>Excel <small>planilha .xlsx</small></span>
+        </button>
+        <button mat-menu-item (click)="exportar('doc')">
+          <mat-icon class="rel-ic">article</mat-icon>
+          <span>Word <small>documento .doc</small></span>
+        </button>
+        <mat-divider />
+        <button mat-menu-item (click)="exportar('email')">
+          <mat-icon class="rel-ic">mail</mat-icon>
+          <span>E-mail <small>abre seu app de e-mail</small></span>
+        </button>
+        <button mat-menu-item (click)="exportar('whats')">
+          <mat-icon class="rel-ic">chat</mat-icon>
+          <span>WhatsApp <small>resumo formatado</small></span>
+        </button>
+      </mat-menu>
+      <button id="tour-novo" class="btn-dark-blue" type="button" (click)="abrirForm()">
+        <mat-icon>person_add</mat-icon> Cadastrar Cliente
+      </button>
+    </div>
+  </div>
+
+  <div class="cli-info">
+    <div class="cli-info-card">
+      <span class="cli-info-icone"><mat-icon>badge</mat-icon></span>
+      <div class="cli-info-txt">
+        <strong>Cadastro completo</strong>
+        <p>
+          Nome, CPF, contatos, endereço, foto e ficha FNRH de cada hóspede reunidos em um só lugar.
+        </p>
+      </div>
+    </div>
+    <div class="cli-info-card">
+      <span class="cli-info-icone"><mat-icon>public</mat-icon></span>
+      <div class="cli-info-txt">
+        <strong>Hóspedes vindos do site</strong>
+        <p>
+          Quem reserva pelo site entra aqui automaticamente com o selo “Via site” — sem precisar
+          digitar nada.
+        </p>
+      </div>
+    </div>
+    <div class="cli-info-card">
+      <span class="cli-info-icone"><mat-icon>shield</mat-icon></span>
+      <div class="cli-info-txt">
+        <strong>Exclusão protegida</strong>
+        <p>
+          Clientes com reservas ou FNRH não podem ser excluídos. Nesse caso, basta desativar no selo
+          “Status”.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="inner-card cli-card">
+    <div class="cli-toolbar">
+      <div id="tour-busca" class="cli-busca" [class.foco]="buscaFoco()">
+        <mat-icon class="cli-busca-icone">search</mat-icon>
+        <input
+          class="cli-busca-input"
+          type="search"
+          [formControl]="busca"
+          placeholder="Buscar por nome, CPF ou e-mail…"
+          aria-label="Buscar cliente"
+          autocomplete="off"
+          role="combobox"
+          [attr.aria-expanded]="sugestaoAberta()"
+          aria-controls="sug-lista"
+          [attr.aria-activedescendant]="sugestaoIdx() >= 0 ? 'sug-' + sugestaoIdx() : null"
+          (focus)="buscaFoco.set(true); reabrirSugestoes()"
+          (blur)="fecharSugestoes(); buscaFoco.set(false)"
+          (keydown)="teclaBusca($event)"
+        />
+        @if (busca.value) {
+          <button
+            type="button"
+            class="cli-limpar"
+            aria-label="Limpar busca"
+            (click)="limparBusca()"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+
+        @if (sugestaoAberta()) {
+          <div class="sug-dropdown" id="sug-lista" role="listbox">
+            @if (buscandoSug()) {
+              @for (s of [1, 2, 3]; track s) {
+                <div class="sug-item sug-skel">
+                  <span class="skel skel-avatar"></span>
+                  <span class="skel skel-nome" style="margin-left: 0"></span>
+                </div>
+              }
+            } @else if (!sugestoes().length) {
+              <div class="sug-vazio">
+                <mat-icon>search_off</mat-icon>
+                <span>Nenhum cliente para “{{ busca.value }}”</span>
+              </div>
+            } @else {
+              <div class="sug-titulo">Clientes</div>
+              @for (s of sugestoes(); track s.id; let i = $index) {
+                <button
+                  type="button"
+                  role="option"
+                  id="sug-{{ i }}"
+                  class="sug-item"
+                  [class.sel]="i === sugestaoIdx()"
+                  [attr.aria-selected]="i === sugestaoIdx()"
+                  (mousedown)="$event.preventDefault()"
+                  (click)="selecionarSugestao(s)"
+                >
+                  <span class="avatar-sm sug-avatar">
+                    @if (fotos().get(s.id); as url) {
+                      <img [src]="url" alt="" />
+                    } @else {
+                      <span class="avatar-iniciais">{{ iniciais(s.nome) }}</span>
+                    }
+                  </span>
+                  <span class="sug-txt">
+                    <strong>
+                      {{ partes(s.nome).antes }}<mark>{{ partes(s.nome).meio }}</mark
+                      >{{ partes(s.nome).depois }}
+                    </strong>
+                    <small>{{ s.email || '—' }}</small>
+                  </span>
+                  <span class="sug-cpf mono">
+                    @if (cpfSite(s.cpf)) {
+                      Via site
+                    } @else {
+                      {{ s.cpf }}
+                    }
+                  </span>
+                  <mat-icon class="sug-go">arrow_forward</mat-icon>
+                </button>
+              }
+              <div class="sug-foot">
+                <span>{{ totalSug() }} resultado(s)</span>
+                <span class="sug-dica">↑↓ navegar · Enter abrir · Esc fechar</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+      <button
+        id="tour-ativos"
+        type="button"
+        class="cli-toggle"
+        [class.on]="apenasAtivos()"
+        role="switch"
+        [attr.aria-checked]="apenasAtivos()"
+        (click)="toggleAtivos(!apenasAtivos())"
+      >
+        <span class="cli-trilho"><span class="cli-bolinha"></span></span>
+        Somente ativos
+      </button>
+    </div>
+
+    <div id="tour-tabela" class="cli-tabela-wrap">
+      <table class="cli-tabela">
+        <thead>
+          <tr>
+            <th class="cli-th-nome">Cliente</th>
+            <th>CPF</th>
+            <th>Nascimento</th>
+            <th>Telefone</th>
+            <th class="tc">Status</th>
+            <th class="tc">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (carregando()) {
+            @for (s of skel; track s) {
+              <tr class="skel-row">
+                <td><span class="skel skel-avatar"></span><span class="skel skel-nome"></span></td>
+                <td><span class="skel skel-txt"></span></td>
+                <td><span class="skel skel-txt"></span></td>
+                <td><span class="skel skel-txt"></span></td>
+                <td class="tc"><span class="skel skel-chip"></span></td>
+                <td class="tc"><span class="skel skel-acoes"></span></td>
+              </tr>
+            }
+          } @else {
+            @for (c of items(); track c.id) {
+              <tr class="cli-row">
+                <td>
+                  <div class="cli-cell">
+                    <span class="avatar-sm">
+                      @if (fotos().get(c.id); as url) {
+                        <img [src]="url" alt="" />
+                      } @else {
+                        <span class="avatar-iniciais">{{ iniciais(c.nome) }}</span>
+                      }
+                    </span>
+                    <span class="cli-cell-txt">
+                      <strong>{{ c.nome }}</strong>
+                      <small>{{ c.email || '—' }}</small>
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  @if (cpfSite(c.cpf)) {
+                    <span class="tag-site" title="Cadastro feito pelo site">
+                      <mat-icon>public</mat-icon> Via site
+                    </span>
+                  } @else {
+                    <span class="mono">{{ c.cpf }}</span>
+                  }
+                </td>
+                <td>{{ c.data_nascimento | date: 'dd/MM/yyyy' }}</td>
+                <td>{{ c.telefone || '—' }}</td>
+                <td class="tc">
+                  <button
+                    type="button"
+                    class="st-chip"
+                    [class.off]="!c.ativo"
+                    [title]="c.ativo ? 'Clique para desativar' : 'Clique para ativar'"
+                    (click)="toggleStatus(c, !c.ativo)"
+                  >
+                    {{ c.ativo ? 'Ativo' : 'Inativo' }}
+                  </button>
+                </td>
+                <td class="tc cli-acoes">
+                  <button
+                    type="button"
+                    class="acao-btn"
+                    title="Editar"
+                    aria-label="Editar cliente"
+                    (click)="abrirForm(c)"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="acao-btn"
+                    title="Documentos e fichas FNRH"
+                    aria-label="Documentos e fichas FNRH"
+                    (click)="docsCliente.set(c)"
+                  >
+                    <mat-icon>badge</mat-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="acao-btn"
+                    title="Anonimizar dados (LGPD — direito de eliminação)"
+                    aria-label="Anonimizar dados do cliente"
+                    (click)="anonimizar(c)"
+                  >
+                    <mat-icon>privacy_tip</mat-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="acao-btn perigo"
+                    title="Excluir"
+                    aria-label="Excluir cliente"
+                    (click)="excluir(c)"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="cli-vazio">
+                  <mat-icon>group_off</mat-icon>
+                  <p>
+                    {{
+                      busca.value
+                        ? 'Nenhum cliente encontrado para "' + busca.value + '".'
+                        : 'Nenhum cliente cadastrado ainda.'
+                    }}
+                  </p>
+                  @if (!busca.value) {
+                    <button class="btn-dark-blue" type="button" (click)="abrirForm()">
+                      <mat-icon>person_add</mat-icon> Cadastrar o primeiro cliente
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <mat-paginator
+      id="tour-pag"
+      [length]="total()"
+      [pageSize]="20"
+      [pageIndex]="pagina() - 1"
+      (page)="mudouPagina($event)"
+    />
+  </div>
+</div>
+
+<!-- ============ Drawer Cliente (cadastrar/editar) ============ -->
+@if (modalAberto()) {
+  <div class="drawer-backdrop" (click.self)="fecharModal()">
+    <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="titulo-drawer">
+      <header class="drawer-head">
+        <div class="drawer-head-txt">
+          <h5 id="titulo-drawer">{{ editando() ? 'Editar cliente' : 'Novo cliente' }}</h5>
+          <p>
+            {{
+              editando()
+                ? 'Atualize os dados do hóspede'
+                : 'Preencha os dados para cadastrar o hóspede'
+            }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="drawer-fechar"
+          (click)="fecharModal()"
+          aria-label="Fechar painel"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+
+      <form [formGroup]="form" (ngSubmit)="salvar()" autocomplete="off" class="drawer-form">
+        <div class="drawer-body">
+          <!-- Foto -->
+          <section class="dsec">
+            <div class="foto-linha">
+              <div class="avatar-lg">
+                @if (fotoPreview(); as url) {
+                  <img [src]="url" alt="Foto do cliente" />
+                } @else {
+                  <mat-icon>person</mat-icon>
+                }
+              </div>
+              <div class="foto-acoes">
+                <button type="button" class="btn-dark-blue btn-foto" (click)="capturando.set(true)">
+                  <mat-icon>photo_camera</mat-icon> Tirar foto
+                </button>
+                <button type="button" class="btn-gray btn-foto" (click)="arq.click()">
+                  <mat-icon>upload</mat-icon> Arquivo
+                </button>
+                @if (fotoPreview() || editando()?.tem_foto) {
+                  <button type="button" class="btn-gray btn-foto" (click)="removerFoto()">
+                    <mat-icon>delete</mat-icon> Remover
+                  </button>
+                }
+              </div>
+              <input #arq type="file" accept="image/*" hidden (change)="arquivoFoto($event)" />
+            </div>
+          </section>
+
+          <!-- Dados do hóspede -->
+          <section class="dsec">
+            <div class="dsec-tit"><mat-icon>person</mat-icon> Dados do hóspede</div>
+            <div class="dgrid">
+              <div class="campo full">
+                <label class="lbl" for="cli-nome">Nome completo <small class="req">*</small></label>
+                <input
+                  id="cli-nome"
+                  class="input-inn"
+                  type="text"
+                  formControlName="nome"
+                  placeholder="Ex.: Maria da Silva"
+                  [class.inval]="invalido('nome')"
+                />
+                @if (invalido('nome')) {
+                  <small class="erro-campo">Informe o nome completo.</small>
+                }
+              </div>
+              <div class="campo">
+                <label class="lbl" for="cli-cpf">CPF <small class="req">*</small></label>
+                <input
+                  id="cli-cpf"
+                  class="input-inn"
+                  type="text"
+                  inputmode="numeric"
+                  formControlName="cpf"
+                  placeholder="000.000.000-00"
+                  (input)="mascaraCpf($event)"
+                  [class.inval]="invalido('cpf')"
+                />
+                @if (invalido('cpf')) {
+                  <small class="erro-campo">Informe o CPF.</small>
+                }
+              </div>
+              <div class="campo">
+                <span class="lbl" id="lbl-nasc"
+                  >Data de nascimento <small class="req">*</small></span
+                >
+                <app-date formControlName="data_nascimento" aria-labelledby="lbl-nasc" />
+                @if (invalido('data_nascimento')) {
+                  <small class="erro-campo">Informe a data de nascimento.</small>
+                }
+              </div>
+            </div>
+          </section>
+
+          <!-- Contato -->
+          <section class="dsec">
+            <div class="dsec-tit"><mat-icon>call</mat-icon> Contato</div>
+            <div class="dgrid">
+              <div class="campo">
+                <label class="lbl" for="cli-email">E-mail</label>
+                <input
+                  id="cli-email"
+                  class="input-inn"
+                  type="email"
+                  formControlName="email"
+                  placeholder="hospede@email.com"
+                />
+              </div>
+              <div class="campo">
+                <label class="lbl" for="cli-fone">Telefone</label>
+                <div class="fone-wrap">
+                  @if (ddiAtual(); as ddi) {
+                    <span class="ddi" [title]="'DDI ' + ddi">{{ ddi }}</span>
+                  }
+                  <input
+                    id="cli-fone"
+                    class="input-inn"
+                    type="tel"
+                    inputmode="tel"
+                    [class.com-ddi]="!!ddiAtual()"
+                    formControlName="telefone"
+                    placeholder="(00) 00000-0000"
+                    (input)="mascaraTelefone($event)"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- FNRH / endereço -->
+          <section class="dsec">
+            <div class="dsec-tit"><mat-icon>badge</mat-icon> Endereço &amp; FNRH</div>
+            <p class="dsec-sub">Usados na ficha nacional de registro de hóspedes.</p>
+            <div class="dgrid">
+              <div class="campo">
+                <label class="lbl" for="cli-nacio">Nacionalidade</label>
+                <div class="nac-sel">
+                  <input
+                    id="cli-nacio"
+                    class="input-inn"
+                    type="text"
+                    formControlName="nacionalidade"
+                    placeholder="Brasileira"
+                    autocomplete="off"
+                    role="combobox"
+                    [attr.aria-expanded]="nacAberto() && nacFiltradas().length > 0"
+                    aria-controls="nac-lista"
+                    [attr.aria-activedescendant]="nacIdx() >= 0 ? 'nac-' + nacIdx() : null"
+                    (focus)="abrirNac()"
+                    (input)="abrirNac()"
+                    (keydown)="teclaNac($event)"
+                  />
+                  @if (nacAberto() && nacFiltradas().length) {
+                    <div class="pais-fechar" (click)="nacAberto.set(false)"></div>
+                    <div
+                      class="pais-drop"
+                      id="nac-lista"
+                      role="listbox"
+                      aria-label="Nacionalidades"
+                    >
+                      <div class="pais-lista">
+                        @for (n of nacFiltradas(); track n; let i = $index) {
+                          <button
+                            type="button"
+                            role="option"
+                            id="nac-{{ i }}"
+                            class="pais-item"
+                            [class.sel]="i === nacIdx() || n === form.controls.nacionalidade.value"
+                            [attr.aria-selected]="i === nacIdx()"
+                            (mousedown)="$event.preventDefault()"
+                            (click)="selecionarNac(n)"
+                          >
+                            <span>{{ n }}</span>
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+              <div class="campo">
+                <label class="lbl" for="cli-natu">Naturalidade</label>
+                <input
+                  id="cli-natu"
+                  class="input-inn"
+                  type="text"
+                  formControlName="naturalidade"
+                  placeholder="Cidade de origem"
+                />
+              </div>
+              <div class="campo full">
+                <label class="lbl" for="cli-prof">Profissão</label>
+                <input id="cli-prof" class="input-inn" type="text" formControlName="profissao" />
+              </div>
+              <div class="campo">
+                <label class="lbl" for="cli-cep">CEP</label>
+                <div class="cep-wrap">
+                  <input
+                    id="cli-cep"
+                    class="input-inn"
+                    type="text"
+                    inputmode="numeric"
+                    formControlName="cep"
+                    placeholder="00000-000"
+                    (input)="mascaraCep($event)"
+                  />
+                  @if (cepBuscando()) {
+                    <mat-icon class="cep-spin" aria-hidden="true">sync</mat-icon>
+                  }
+                </div>
+                @if (cepErro()) {
+                  <small class="cep-erro">CEP não encontrado — preencha manualmente.</small>
+                }
+              </div>
+              <div class="campo">
+                <label class="lbl" id="lbl-pais">País</label>
+                <div class="pais-sel">
+                  <button
+                    type="button"
+                    class="pais-btn"
+                    aria-labelledby="lbl-pais"
+                    [attr.aria-expanded]="paisAberto()"
+                    (click)="togglePais()"
+                  >
+                    @if (paisSelecionado(); as p) {
+                      <img
+                        class="flag"
+                        [src]="bandeira(p.cca2)"
+                        [srcset]="bandeira(p.cca2, 80) + ' 2x'"
+                        alt=""
+                      />
+                    }
+                    <span class="pais-btn-txt">{{ form.controls.pais.value || 'Selecione' }}</span>
+                    <mat-icon>expand_more</mat-icon>
+                  </button>
+                  @if (paisAberto()) {
+                    <div class="pais-fechar" (click)="paisAberto.set(false)"></div>
+                    <div class="pais-drop" role="listbox" aria-label="Países">
+                      <div class="pais-busca-wrap">
+                        <mat-icon>search</mat-icon>
+                        <input
+                          type="search"
+                          [formControl]="paisBusca"
+                          placeholder="Buscar país…"
+                          aria-label="Buscar país"
+                        />
+                      </div>
+                      <div class="pais-lista">
+                        @for (p of paisesFiltrados(); track p.cca2) {
+                          <button
+                            type="button"
+                            role="option"
+                            class="pais-item"
+                            [class.sel]="p.nome === form.controls.pais.value"
+                            [attr.aria-selected]="p.nome === form.controls.pais.value"
+                            (click)="selecionarPais(p)"
+                          >
+                            <img class="flag" [src]="bandeira(p.cca2)" alt="" loading="lazy" />
+                            <span>{{ p.nome }}</span>
+                          </button>
+                        } @empty {
+                          <span class="pais-vazio">
+                            {{ paises().length ? 'Nenhum país encontrado' : 'Carregando…' }}
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+              <div class="campo full">
+                <label class="lbl" for="cli-logr">Logradouro</label>
+                <input
+                  id="cli-logr"
+                  class="input-inn"
+                  type="text"
+                  formControlName="logradouro"
+                  placeholder="Rua, avenida…"
+                />
+              </div>
+              <div class="campo">
+                <label class="lbl" for="cli-num">Número</label>
+                <input id="cli-num" class="input-inn" type="text" formControlName="numero" />
+              </div>
+              <div class="campo">
+                <label class="lbl" for="cli-compl">Complemento</label>
+                <input
+                  id="cli-compl"
+                  class="input-inn"
+                  type="text"
+                  formControlName="complemento"
+                  placeholder="Apto, bloco…"
+                />
+              </div>
+              <div class="campo">
+                <label class="lbl" for="cli-bairro">Bairro</label>
+                <input id="cli-bairro" class="input-inn" type="text" formControlName="bairro" />
+              </div>
+              <div class="campo">
+                <label class="lbl" for="cli-cidade">Cidade</label>
+                <input id="cli-cidade" class="input-inn" type="text" formControlName="cidade" />
+              </div>
+              <div class="campo">
+                <label class="lbl" for="cli-uf">Estado</label>
+                <input
+                  id="cli-uf"
+                  class="input-inn"
+                  type="text"
+                  formControlName="estado"
+                  placeholder="UF"
+                  maxlength="2"
+                />
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <footer class="drawer-foot">
+          <span class="drawer-req"><small class="req">*</small> Campos obrigatórios</span>
+          <div class="drawer-foot-acoes">
+            <button class="btn-gray" type="button" (click)="fecharModal()">Cancelar</button>
+            <button class="btn-dark-blue" type="submit">
+              <mat-icon>save</mat-icon>
+              {{ editando() ? 'Salvar alterações' : 'Cadastrar cliente' }}
+            </button>
+          </div>
+        </footer>
+      </form>
+    </aside>
+  </div>
+}
+
+@if (capturando()) {
+  <app-foto-capture (confirmada)="fotoCapturada($event)" (cancelada)="capturando.set(false)" />
+}
+
+@if (docsCliente(); as c) {
+  <app-documentos-modal [cliente]="c" (fechou)="docsCliente.set(null)" />
+}

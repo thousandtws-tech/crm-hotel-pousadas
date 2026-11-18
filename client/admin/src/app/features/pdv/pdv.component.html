@@ -1,0 +1,999 @@
+<div class="page">
+  <header class="pdv-head">
+    <div>
+      <p class="eyebrow">Operação</p>
+      <h2 class="titulo">PDV &amp; Comandas</h2>
+      <p class="sub">Mesas, quartos e balcão. Tudo para atender sem complicar.</p>
+    </div>
+  </header>
+  <nav class="abas" aria-label="Seções do PDV">
+    @for (a of abas; track a.id) {
+      <button type="button" class="aba" [class.ativa]="aba() === a.id" (click)="mudarAba(a.id)">
+        <mat-icon>{{ a.icone }}</mat-icon> {{ a.rotulo }}
+      </button>
+    }
+  </nav>
+
+  <!-- =========================================== aba: mesas · workspace -->
+  @if (aba() === 'mesas') {
+    @if (!comanda()) {
+      <!-- ============ VISÃO SALÃO — grade de atendimentos ============ -->
+      <div class="salao">
+        <div class="salao-tools card0">
+          <div class="seg3" role="group" aria-label="Tipo de atendimento">
+            @for (t of tiposAtend; track t.id) {
+              <button
+                type="button"
+                class="seg3-btn"
+                [class.ativo]="tipoAtend() === t.id"
+                (click)="tipoAtend.set(t.id)"
+              >
+                {{ t.rotulo }}
+              </button>
+            }
+          </div>
+          <div class="salao-busca">
+            <mat-icon>search</mat-icon>
+            <input
+              class="salao-inp"
+              type="search"
+              placeholder="Mesa, quarto ou comanda"
+              [value]="buscaAtend()"
+              (input)="buscaAtend.set($any($event.target).value)"
+              aria-label="Buscar mesa, quarto ou comanda"
+              autocomplete="off"
+            />
+          </div>
+          @if (tipoAtend() !== 'balcao') {
+            <select
+              class="inp sm"
+              [value]="filtroLista()"
+              aria-label="Filtrar atendimentos"
+              (change)="filtroLista.set($any($event.target).value)"
+            >
+              <option value="todas">
+                {{ tipoAtend() === 'mesa' ? 'Todas as mesas' : 'Todos os quartos' }}
+              </option>
+              <option value="livre">
+                {{ tipoAtend() === 'mesa' ? 'Livres' : 'Sem comanda' }}
+              </option>
+              <option value="ocupada">Com consumo</option>
+            </select>
+          }
+          @if (tipoAtend() === 'mesa') {
+            <button type="button" class="btn-mini-cta" (click)="novaMesa.set(!novaMesa())">
+              <mat-icon>add</mat-icon> Nova mesa
+            </button>
+          }
+        </div>
+
+        @if (novaMesa() && tipoAtend() === 'mesa') {
+          <form class="mini-form salao-mesa-form" [formGroup]="mesaForm" (ngSubmit)="criarMesa()">
+            <input
+              class="inp"
+              formControlName="numero"
+              placeholder="Número/nome *"
+              aria-label="Número da mesa"
+            />
+            <input
+              class="inp n"
+              formControlName="lugares"
+              type="number"
+              min="1"
+              placeholder="Lugares"
+              aria-label="Lugares"
+            />
+            <button class="btn-prim" type="submit" [disabled]="mesaForm.invalid">
+              <mat-icon>check</mat-icon> Criar mesa
+            </button>
+          </form>
+        }
+
+        <!-- abertura rápida — tocou num atendimento livre -->
+        @if (selecao(); as sel) {
+          <form class="quick" [formGroup]="abrirForm" (ngSubmit)="abrirComanda()">
+            <p class="quick-t">
+              <mat-icon>receipt</mat-icon>
+              {{
+                sel.tipo === 'mesa'
+                  ? 'Abrir comanda — Mesa ' + sel.rotulo
+                  : sel.tipo === 'quarto'
+                    ? 'Abrir comanda — Quarto ' + sel.rotulo
+                    : 'Nova comanda de balcão'
+              }}
+            </p>
+            @if (sel.tipo === 'balcao') {
+              <input
+                class="inp"
+                formControlName="rotulo"
+                placeholder="Rótulo * — ex.: Delivery"
+                aria-label="Rótulo da comanda"
+              />
+            }
+            <label class="lbl"
+              >Garçom
+              <select class="inp" formControlName="idgarcom" aria-label="Garçom responsável">
+                <option [ngValue]="null">—</option>
+                @for (g of garconsAtivos(); track g.idfuncionario) {
+                  <option [ngValue]="g.idfuncionario">
+                    {{ g.funcionario_nome }} ({{ g.percentual }}%)
+                  </option>
+                }
+              </select>
+            </label>
+            <div class="quick-acoes">
+              <button type="button" class="btn-gray" (click)="limparSelecao()">Voltar</button>
+              <button class="btn-prim" type="submit" [disabled]="!abrirValido() || salvando()">
+                <mat-icon>receipt</mat-icon> Abrir
+              </button>
+            </div>
+          </form>
+        }
+
+        <!-- grade de tiles -->
+        @if (tipoAtend() === 'mesa') {
+          <div class="tiles" role="list" aria-label="Mesas">
+            @for (m of mesasVisiveis(); track m.id) {
+              <div
+                class="tile"
+                role="listitem"
+                [class.ocupada]="m.idcomanda !== null"
+                [class.sel]="selecionada(m.idcomanda, m.id)"
+              >
+                <button
+                  type="button"
+                  class="tile-main"
+                  (click)="clicarMesa(m)"
+                  [attr.aria-label]="
+                    'Mesa ' + m.numero + (m.idcomanda !== null ? ' — com consumo' : ' — livre')
+                  "
+                >
+                  <span class="tile-num">{{ m.numero }}</span>
+                  <span class="tile-meta"> <mat-icon>event_seat</mat-icon> {{ m.lugares }} </span>
+                  <span class="tile-status">{{
+                    m.idcomanda === null ? 'Livre' : 'Com consumo'
+                  }}</span>
+                  <span class="tile-val">{{
+                    m.idcomanda === null ? '' : fmt(m.total_aberto)
+                  }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="mesa-toggle"
+                  (click)="toggleMesa(m)"
+                  [disabled]="m.idcomanda !== null"
+                  [attr.aria-label]="'Desativar mesa ' + m.numero"
+                  [title]="
+                    m.idcomanda !== null
+                      ? 'Feche a comanda antes de desativar a mesa.'
+                      : 'Desativar mesa'
+                  "
+                >
+                  <mat-icon>power_settings_new</mat-icon>
+                </button>
+              </div>
+            } @empty {
+              <p class="vazio tile-vazio">Nenhuma mesa encontrada.</p>
+            }
+          </div>
+          @if (mesasInativas().length) {
+            <details class="inativas">
+              <summary>Mesas inativas ({{ mesasInativas().length }})</summary>
+              <div class="tiles">
+                @for (m of mesasInativas(); track m.id) {
+                  <div class="tile inativa">
+                    <span class="tile-main">
+                      <span class="tile-num">{{ m.numero }}</span>
+                      <span class="tile-meta"><mat-icon>event_seat</mat-icon> {{ m.lugares }}</span>
+                      <span class="tile-status">Inativa</span>
+                    </span>
+                    <button
+                      type="button"
+                      class="mesa-toggle on"
+                      (click)="toggleMesa(m)"
+                      [attr.aria-label]="'Reativar mesa ' + m.numero"
+                      title="Reativar mesa"
+                    >
+                      <mat-icon>power_settings_new</mat-icon>
+                    </button>
+                  </div>
+                }
+              </div>
+            </details>
+          }
+        }
+
+        @if (tipoAtend() === 'quarto') {
+          <div class="tiles" role="list" aria-label="Quartos em estadia">
+            @for (r of quartosVisiveis(); track r.idquarto) {
+              @if (comandaDoQuarto(r.quarto_numero); as cq) {
+                <button
+                  type="button"
+                  class="tile ocupada"
+                  [class.sel]="cq.id === comanda()?.id"
+                  (click)="clicarQuarto(r)"
+                  [attr.aria-label]="'Quarto ' + r.quarto_numero + ' — com consumo'"
+                >
+                  <span class="tile-num">{{ r.quarto_numero }}</span>
+                  <span class="tile-meta tile-nome">{{ r.cliente_nome }}</span>
+                  <span class="tile-status">Com consumo</span>
+                  <span class="tile-val">{{ fmt(cq.total_itens) }}</span>
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="tile"
+                  [class.sel]="selecao()?.tipo === 'quarto' && selecao()?.id === r.idquarto"
+                  (click)="clicarQuarto(r)"
+                  [attr.aria-label]="'Quarto ' + r.quarto_numero + ' — em estadia'"
+                >
+                  <span class="tile-num">{{ r.quarto_numero }}</span>
+                  <span class="tile-meta tile-nome">{{ r.cliente_nome }}</span>
+                  <span class="tile-status">Em estadia</span>
+                  <span class="tile-val"></span>
+                </button>
+              }
+            } @empty {
+              <p class="vazio tile-vazio">Nenhum quarto em estadia.</p>
+            }
+          </div>
+        }
+
+        @if (tipoAtend() === 'balcao') {
+          <div class="tiles" role="list" aria-label="Comandas de balcão">
+            <button type="button" class="tile novo" (click)="novoBalcao()">
+              <mat-icon>add</mat-icon>
+              <span>Nova comanda<br />de balcão</span>
+            </button>
+            @for (c of balcaoVisiveis(); track c.id) {
+              <button
+                type="button"
+                class="tile ocupada"
+                [class.sel]="comanda()?.id === c.id"
+                (click)="abrirDetalhe(c.id)"
+                [attr.aria-label]="rotulo(c)"
+              >
+                <span class="tile-num"><mat-icon>storefront</mat-icon></span>
+                <span class="tile-meta tile-nome">{{ rotulo(c) }}</span>
+                <span class="tile-status">Aberta</span>
+                <span class="tile-val">{{ fmt(c.total_itens) }}</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- ============ VISÃO PEDIDO — catálogo + comanda ============ -->
+      <div class="atend">
+        <button type="button" class="cc-voltar voltar-salao" (click)="fecharDetalhe()">
+          <mat-icon>arrow_back</mat-icon> Voltar ao salão
+        </button>
+
+        <!-- ---------- catálogo ---------- -->
+        <section class="cat-col" aria-label="Adicionar produtos">
+          <header class="cat-head">
+            <div>
+              <h3>Adicionar produtos</h3>
+              <p class="cat-sub">
+                {{
+                  comanda()
+                    ? 'Inclua itens na comanda ' + rotulo(comanda()!) + '.'
+                    : 'Selecione um atendimento para lançar itens.'
+                }}
+              </p>
+            </div>
+            <span class="pill-gold">Catálogo</span>
+          </header>
+
+          @if (comanda(); as com) {
+            @if (com.status === 'aberta') {
+              <label class="lbl" for="busca-prod">Buscar produto</label>
+              <input
+                class="inp"
+                id="busca-prod"
+                type="search"
+                placeholder="Digite o nome ou código do produto"
+                [value]="buscaProd()"
+                (input)="buscaProd.set($any($event.target).value)"
+                aria-label="Buscar produto"
+              />
+
+              <div class="cats" role="group" aria-label="Categorias">
+                <button
+                  type="button"
+                  class="cat-pill"
+                  [class.ativo]="catProd() === null"
+                  (click)="catProd.set(null)"
+                >
+                  Todos
+                </button>
+                @for (c of categorias(); track c) {
+                  <button
+                    type="button"
+                    class="cat-pill"
+                    [class.ativo]="catProd() === c"
+                    (click)="catProd.set(c)"
+                  >
+                    {{ c }}
+                  </button>
+                }
+              </div>
+
+              <div class="produtos">
+                @for (i of itensFiltrados(); track i.id) {
+                  <div class="prod">
+                    <div class="prod-desc">
+                      <strong>{{ i.nome }}</strong>
+                      <small
+                        >{{ i.categoria_nome ?? 'Sem categoria' }} · est. {{ i.quantidade }}</small
+                      >
+                    </div>
+                    <div class="prod-rod">
+                      <span class="prod-preco">{{ fmt(i.valor_unitario) }}</span>
+                      <button
+                        type="button"
+                        class="btn-add"
+                        [disabled]="salvando() || num(i.quantidade) < 1"
+                        (click)="adicionarProduto(i)"
+                        [attr.aria-label]="'Adicionar ' + i.nome"
+                      >
+                        <mat-icon>add</mat-icon> Adicionar
+                      </button>
+                    </div>
+                  </div>
+                } @empty {
+                  <p class="vazio">Nenhum produto encontrado.</p>
+                }
+              </div>
+
+              <div class="info-card">
+                <mat-icon>info</mat-icon>
+                <div>
+                  <strong>Baixa automática no estoque</strong>
+                  <p>Os itens lançados na comanda atualizam o estoque.</p>
+                </div>
+              </div>
+            } @else {
+              <div class="sem-atend">
+                <mat-icon>lock</mat-icon>
+                <p>Comanda {{ com.status }} — itens não podem ser alterados.</p>
+              </div>
+            }
+          }
+        </section>
+
+        <!-- ---------- comanda ---------- -->
+        <aside class="com-card card0" aria-label="Comanda">
+          @if (comanda(); as com) {
+            <header class="cc-head">
+              <div>
+                <span class="eyebrow sm">{{ eyebrowComanda(com) }}</span>
+                <h3>
+                  {{ rotulo(com) }} <small>Nº {{ com.id }}</small>
+                </h3>
+              </div>
+              <span class="chip" [class]="'chip-' + com.status">{{
+                rotuloStatus(com.status)
+              }}</span>
+            </header>
+
+            <div class="cc-meta">
+              @if (com.garcom_nome) {
+                <span><mat-icon>person</mat-icon> {{ com.garcom_nome }}</span>
+              }
+              @if (com.cliente_nome) {
+                <span><mat-icon>hotel</mat-icon> {{ com.cliente_nome }}</span>
+              }
+              <span
+                ><mat-icon>schedule</mat-icon> aberta
+                {{ com.aberto_em | date: 'dd/MM HH:mm' }}</span
+              >
+            </div>
+
+            <div class="cc-pedido">
+              <header class="cc-ped-head">
+                <h4>Pedido</h4>
+                <span>{{ itens().length }} {{ itens().length === 1 ? 'item' : 'itens' }}</span>
+              </header>
+
+              <div class="cc-consumo">
+                <div>
+                  <strong>Consumo registrado</strong>
+                  <span class="cc-total-sm">{{ fmt(com.total_itens) }}</span>
+                </div>
+                <p>Valor acumulado dos itens lançados nesta comanda.</p>
+              </div>
+
+              <ul class="cc-itens">
+                @for (i of itens(); track i.id) {
+                  <li [class.cancelado]="i.status === 'cancelado'">
+                    <span class="cc-qtd">{{ i.quantidade }}×</span>
+                    <span class="cc-item">
+                      <strong>{{ i.item_nome }}</strong>
+                      <small>
+                        {{ fmt(i.valor_total) }}
+                        <span class="chip" [class]="'chip-' + i.status">{{
+                          rotuloItem(i.status)
+                        }}</span>
+                      </small>
+                    </span>
+                    @if (com.status === 'aberta' && i.status !== 'cancelado') {
+                      <span class="cc-acoes">
+                        @if (i.status !== 'entregue') {
+                          <button
+                            type="button"
+                            class="btn-mini ok"
+                            (click)="entregarItem(i.id)"
+                            aria-label="Marcar entregue"
+                            title="Marcar entregue"
+                          >
+                            <mat-icon>check</mat-icon>
+                          </button>
+                        }
+                        <button
+                          type="button"
+                          class="btn-mini dan"
+                          (click)="iniciarCancelamento('item', i.id)"
+                          aria-label="Cancelar item"
+                          title="Cancelar e devolver ao estoque"
+                        >
+                          <mat-icon>undo</mat-icon>
+                        </button>
+                      </span>
+                    }
+                  </li>
+                } @empty {
+                  <li class="cc-vazio">
+                    <mat-icon>list_alt</mat-icon>
+                    <strong>Nenhum item lançado</strong>
+                    <span
+                      >Use "Adicionar" no catálogo ao lado. Confira os itens antes de lançar.</span
+                    >
+                  </li>
+                }
+              </ul>
+            </div>
+
+            <footer class="cc-foot">
+              <div class="cc-total">
+                <div><strong>Total da comanda</strong><small>Consumo registrado</small></div>
+                <span class="cc-total-vl">{{ fmt(com.total_itens) }}</span>
+              </div>
+              @if (com.status === 'aberta') {
+                <button
+                  type="button"
+                  class="btn-outline block"
+                  (click)="fechando.set(true)"
+                  [disabled]="itens().length === 0"
+                >
+                  <mat-icon>point_of_sale</mat-icon> Revisar fechamento
+                </button>
+                <p class="cc-nota">Confira a comanda antes de seguir para o pagamento.</p>
+                <button
+                  type="button"
+                  class="btn-ghost-danger block"
+                  (click)="iniciarCancelamento('comanda')"
+                  [disabled]="salvando()"
+                >
+                  Cancelar comanda
+                </button>
+                <button type="button" class="cc-voltar" (click)="fecharDetalhe()">
+                  <mat-icon>arrow_back</mat-icon> Voltar ao salão
+                </button>
+              } @else {
+                <button type="button" class="btn-gray block" (click)="fecharDetalhe()">
+                  <mat-icon>arrow_back</mat-icon> Voltar
+                </button>
+              }
+            </footer>
+          }
+        </aside>
+      </div>
+    }
+  }
+
+  <!-- ============ modal · fechamento ============ -->
+  @if (fechando()) {
+    @if (comanda(); as com) {
+      <div class="overlay" (click.self)="fechando.set(false)">
+        <div class="modal-inn" role="dialog" aria-modal="true" aria-labelledby="fechar-tit">
+          <div class="modal-head">
+            <h5 id="fechar-tit">
+              <mat-icon>point_of_sale</mat-icon> Fechamento — {{ rotulo(com) }}
+            </h5>
+            <button type="button" class="close" (click)="fechando.set(false)" aria-label="Fechar">
+              &times;
+            </button>
+          </div>
+          <form class="modal-body" [formGroup]="fecharForm" (ngSubmit)="fecharComanda()">
+            <div class="seg" role="group" aria-label="Modo de fechamento">
+              <button
+                type="button"
+                class="seg-btn"
+                [class.ativo]="modo() === 'pagar'"
+                (click)="setModo('pagar')"
+              >
+                <mat-icon>payments</mat-icon> Pagar agora
+              </button>
+              @if (com.idreserva) {
+                <button
+                  type="button"
+                  class="seg-btn"
+                  [class.ativo]="modo() === 'faturar'"
+                  (click)="setModo('faturar')"
+                >
+                  <mat-icon>hotel</mat-icon> Faturar ao quarto
+                </button>
+              }
+            </div>
+            <div class="fechar-grid">
+              @if (modo() === 'pagar') {
+                <label class="lbl"
+                  >Conta *
+                  <select
+                    class="inp"
+                    formControlName="idconta_financeira"
+                    aria-label="Conta financeira"
+                  >
+                    <option [ngValue]="null" disabled>Selecione…</option>
+                    @for (c of contas(); track c.id) {
+                      <option [ngValue]="c.id">{{ c.nome }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="lbl"
+                  >Forma de pagamento *
+                  <select
+                    class="inp"
+                    formControlName="idforma_pagamento"
+                    aria-label="Forma de pagamento"
+                  >
+                    <option [ngValue]="null" disabled>Selecione…</option>
+                    @for (f of formas(); track f.id) {
+                      <option [ngValue]="f.id">{{ f.nome }}</option>
+                    }
+                  </select>
+                </label>
+              }
+              <label class="lbl"
+                >Desconto
+                <input
+                  class="inp"
+                  formControlName="desconto"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  aria-label="Desconto"
+                />
+              </label>
+            </div>
+            <p class="fechar-total">
+              Subtotal {{ fmt(com.total_itens) }}
+              @if (num(fecharForm.controls.desconto.value) > 0) {
+                − desconto {{ fmt(fecharForm.controls.desconto.value) }}
+              }
+              =
+              <strong>{{
+                fmt(num(com.total_itens) - num(fecharForm.controls.desconto.value))
+              }}</strong>
+            </p>
+            <div class="fechar-acoes">
+              <button type="button" class="btn-gray" #modalVoltar (click)="fechando.set(false)">
+                Voltar
+              </button>
+              <button type="submit" class="btn-prim" [disabled]="!fecharValido() || salvando()">
+                <mat-icon>check_circle</mat-icon>
+                {{ modo() === 'pagar' ? 'Confirmar pagamento' : 'Faturar' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- ============ modal · cancelamento ============ -->
+  @if (cancelando(); as tipo) {
+    <div class="overlay" (click.self)="cancelando.set(null)">
+      <div class="modal-inn" role="alertdialog" aria-modal="true" aria-labelledby="cancel-tit">
+        <div class="modal-head">
+          <h5 id="cancel-tit">
+            <mat-icon>cancel</mat-icon> Cancelar
+            {{ tipo === 'item' ? 'item' : 'comanda inteira' }}
+          </h5>
+          <button type="button" class="close" (click)="cancelando.set(null)" aria-label="Fechar">
+            &times;
+          </button>
+        </div>
+        <form class="modal-body" [formGroup]="cancelForm" (ngSubmit)="confirmarCancelamento()">
+          <p class="cancel-aviso">
+            <mat-icon>info</mat-icon>
+            {{
+              tipo === 'item'
+                ? 'A quantidade volta ao estoque.'
+                : 'Todos os itens voltam ao estoque.'
+            }}
+          </p>
+          <input
+            class="inp"
+            formControlName="motivo"
+            placeholder="Motivo do cancelamento *"
+            aria-label="Motivo do cancelamento"
+          />
+          <div class="fechar-acoes">
+            <button type="button" class="btn-gray" #modalVoltar (click)="cancelando.set(null)">
+              Voltar
+            </button>
+            <button type="submit" class="btn-danger" [disabled]="cancelForm.invalid || salvando()">
+              <mat-icon>cancel</mat-icon> Confirmar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- ================================================== aba: comandas -->
+  @if (aba() === 'comandas') {
+    <section class="card">
+      <header class="card-head">
+        <h3><mat-icon>receipt_long</mat-icon> Comandas</h3>
+        <div class="filtros">
+          <select class="inp sm" [formControl]="filtroStatus" aria-label="Filtrar por status">
+            <option value="aberta">Abertas</option>
+            <option value="fechada">Fechadas</option>
+            <option value="cancelada">Canceladas</option>
+            <option [ngValue]="null">Todas</option>
+          </select>
+          <button type="button" class="btn-mini-cta" (click)="abrindo.set(!abrindo())">
+            <mat-icon>add</mat-icon> Nova comanda
+          </button>
+        </div>
+      </header>
+
+      @if (abrindo()) {
+        <form class="ab-form" [formGroup]="abrirForm" (ngSubmit)="abrirComanda()">
+          <div class="seg" role="group" aria-label="Tipo da comanda">
+            @for (t of tipos; track t.id) {
+              <button
+                type="button"
+                class="seg-btn"
+                [class.ativo]="abrirForm.controls.tipo.value === t.id"
+                (click)="setTipo(t.id)"
+              >
+                <mat-icon>{{ t.icone }}</mat-icon> {{ t.rotulo }}
+              </button>
+            }
+          </div>
+          <div class="ab-campos">
+            @if (abrirForm.controls.tipo.value === 'mesa') {
+              <label class="lbl"
+                >Mesa *
+                <select class="inp" formControlName="idmesa" aria-label="Mesa">
+                  <option [ngValue]="null" disabled>Selecione…</option>
+                  @for (m of mesasLivres(); track m.id) {
+                    <option [ngValue]="m.id">Mesa {{ m.numero }} ({{ m.lugares }} lug.)</option>
+                  }
+                </select>
+              </label>
+            }
+            @if (abrirForm.controls.tipo.value === 'quarto') {
+              <label class="lbl grow"
+                >Quarto (reserva em estadia) *
+                <select
+                  class="inp"
+                  formControlName="idquarto"
+                  aria-label="Quarto com reserva em estadia"
+                >
+                  <option [ngValue]="null" disabled>Selecione…</option>
+                  @for (r of reservasEstadia(); track r.id) {
+                    <option [ngValue]="r.idquarto">
+                      Quarto {{ r.quarto_numero }} — {{ r.cliente_nome }}
+                    </option>
+                  }
+                </select>
+              </label>
+            }
+            @if (abrirForm.controls.tipo.value === 'balcao') {
+              <label class="lbl grow"
+                >Rótulo *
+                <input
+                  class="inp"
+                  formControlName="rotulo"
+                  placeholder="Ex.: Cliente balcão, Delivery…"
+                  aria-label="Rótulo da comanda"
+                />
+              </label>
+            }
+            <label class="lbl"
+              >Garçom
+              <select class="inp" formControlName="idgarcom" aria-label="Garçom responsável">
+                <option [ngValue]="null">—</option>
+                @for (g of garconsAtivos(); track g.idfuncionario) {
+                  <option [ngValue]="g.idfuncionario">
+                    {{ g.funcionario_nome }} ({{ g.percentual }}%)
+                  </option>
+                }
+              </select>
+            </label>
+            <button class="btn-prim" type="submit" [disabled]="!abrirValido() || salvando()">
+              <mat-icon>receipt</mat-icon> Abrir
+            </button>
+          </div>
+        </form>
+      }
+
+      <div class="tab-wrap">
+        <table class="tab">
+          <thead>
+            <tr>
+              <th>Nº</th>
+              <th>Comanda</th>
+              <th>Garçom</th>
+              <th>Abertura</th>
+              <th class="r">Itens</th>
+              <th class="r">Total</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of comandas(); track c.id) {
+              <tr class="linha-comanda" (click)="abrirDetalhe(c.id)">
+                <td>{{ c.id }}</td>
+                <td>
+                  {{ rotulo(c) }}
+                  @if (c.cliente_nome) {
+                    <small class="cat"> · {{ c.cliente_nome }}</small>
+                  }
+                </td>
+                <td>{{ c.garcom_nome ?? '—' }}</td>
+                <td>{{ c.aberto_em | date: 'dd/MM HH:mm' }}</td>
+                <td class="r">{{ c.itens_pendentes }}</td>
+                <td class="r">{{ fmt(c.status === 'fechada' ? c.total : c.total_itens) }}</td>
+                <td>
+                  <span class="chip" [class]="'chip-' + c.status">{{ c.status }}</span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="vazio">Nenhuma comanda encontrada.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (comandasTotal() > POR_PAGINA) {
+        <footer class="pag">
+          <button
+            type="button"
+            class="btn-mini-cta"
+            [disabled]="comandasPage() <= 1"
+            (click)="paginarComandas(comandasPage() - 1)"
+          >
+            <mat-icon>chevron_left</mat-icon> Anterior
+          </button>
+          <span
+            >{{ comandasPage() }} / {{ comandasTotalPaginas() }} —
+            {{ comandasTotal() }} comandas</span
+          >
+          <button
+            type="button"
+            class="btn-mini-cta"
+            [disabled]="comandasPage() >= comandasTotalPaginas()"
+            (click)="paginarComandas(comandasPage() + 1)"
+          >
+            Próxima <mat-icon>chevron_right</mat-icon>
+          </button>
+        </footer>
+      }
+    </section>
+  }
+
+  <!-- ==================================================== aba: garçons -->
+  @if (aba() === 'garcons') {
+    <section class="card">
+      <header class="card-head">
+        <h3><mat-icon>room_service</mat-icon> Garçons &amp; comissão</h3>
+        <small>percentual aplicado sobre o total da comanda fechada</small>
+      </header>
+      <form class="mini-form" [formGroup]="garcomForm" (ngSubmit)="salvarGarcom()">
+        <select class="inp grow" formControlName="idfuncionario" aria-label="Funcionário">
+          <option [ngValue]="null" disabled>Funcionário *</option>
+          @for (f of funcionarios(); track f.id) {
+            <option [ngValue]="f.id">{{ f.nome }}</option>
+          }
+        </select>
+        <input
+          class="inp n"
+          formControlName="percentual"
+          type="number"
+          step="0.5"
+          min="0"
+          max="100"
+          placeholder="% comissão"
+          aria-label="Percentual de comissão"
+        />
+        <button class="btn-prim" type="submit" [disabled]="garcomForm.invalid">
+          <mat-icon>save</mat-icon>
+        </button>
+      </form>
+      <div class="tab-wrap">
+        <table class="tab">
+          <thead>
+            <tr>
+              <th>Garçom</th>
+              <th class="r">Comissão</th>
+              <th>Status</th>
+              <th class="r">Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (g of garcons(); track g.id) {
+              <tr [class.linha-cancelada]="!g.ativo">
+                <td>{{ g.funcionario_nome }}</td>
+                <td class="r">{{ g.percentual }}%</td>
+                <td>
+                  <span class="chip" [class]="g.ativo ? 'chip-entregue' : 'chip-cancelado'">
+                    {{ g.ativo ? 'ativo' : 'inativo' }}
+                  </span>
+                </td>
+                <td class="r">
+                  <button
+                    type="button"
+                    class="btn-mini"
+                    [class.ok]="!g.ativo"
+                    [class.dan]="g.ativo"
+                    (click)="toggleGarcom(g)"
+                    [attr.aria-label]="
+                      (g.ativo ? 'Desativar' : 'Reativar') + ' ' + g.funcionario_nome
+                    "
+                    [title]="g.ativo ? 'Desativar garçom' : 'Reativar garçom'"
+                  >
+                    <mat-icon>power_settings_new</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="vazio">Cadastre o primeiro garçom acima.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <header class="card-head">
+        <h3><mat-icon>account_balance_wallet</mat-icon> Comissões</h3>
+      </header>
+
+      <div class="kpi">
+        @for (r of resumoComissoes(); track r.idgarcom) {
+          <div class="kpi-item">
+            <span class="kpi-num neg">{{ fmt(r.valor_pendente) }}</span>
+            <span class="kpi-lbl"><mat-icon>person</mat-icon> {{ r.garcom_nome }} — pendente</span>
+            <small class="pago">pago: {{ fmt(r.valor_pago) }}</small>
+          </div>
+        } @empty {
+          <p class="vazio">Nenhuma comissão provisionada ainda.</p>
+        }
+      </div>
+
+      <div class="tab-wrap">
+        <table class="tab">
+          <thead>
+            <tr>
+              <th>Garçom</th>
+              <th>Comanda</th>
+              <th class="r">%</th>
+              <th class="r">Base</th>
+              <th class="r">Valor</th>
+              <th>Status</th>
+              <th class="r">Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of comissoes(); track c.id) {
+              <tr>
+                <td>{{ c.garcom_nome }}</td>
+                <td>{{ c.comanda_descricao }}</td>
+                <td class="r">{{ c.percentual }}%</td>
+                <td class="r">{{ fmt(c.base) }}</td>
+                <td class="r">{{ fmt(c.valor) }}</td>
+                <td>
+                  <span
+                    class="chip"
+                    [class]="'chip-' + (c.status === 'paga' ? 'entregue' : 'pendente')"
+                    >{{ c.status }}</span
+                  >
+                </td>
+                <td class="r">
+                  @if (c.status === 'pendente') {
+                    <button
+                      type="button"
+                      class="btn-mini ok"
+                      (click)="iniciarPagamento(c.id)"
+                      aria-label="Pagar comissão"
+                      title="Pagar comissão"
+                    >
+                      <mat-icon>payments</mat-icon>
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="vazio">Sem comissões no período.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (comissoesTotal() > POR_PAGINA) {
+        <footer class="pag">
+          <button
+            type="button"
+            class="btn-mini-cta"
+            [disabled]="comissoesPage() <= 1"
+            (click)="paginarComissoes(comissoesPage() - 1)"
+          >
+            <mat-icon>chevron_left</mat-icon> Anterior
+          </button>
+          <span
+            >{{ comissoesPage() }} / {{ comissoesTotalPaginas() }} —
+            {{ comissoesTotal() }} comissões</span
+          >
+          <button
+            type="button"
+            class="btn-mini-cta"
+            [disabled]="comissoesPage() >= comissoesTotalPaginas()"
+            (click)="paginarComissoes(comissoesPage() + 1)"
+          >
+            Próxima <mat-icon>chevron_right</mat-icon>
+          </button>
+        </footer>
+      }
+
+      @if (pagando(); as pid) {
+        <form class="fechar" [formGroup]="pagarForm" (ngSubmit)="pagarComissao(pid)">
+          <h4><mat-icon>payments</mat-icon> Pagar comissão Nº{{ pid }}</h4>
+          <div class="fechar-grid">
+            <label class="lbl"
+              >Conta de origem *
+              <select
+                class="inp"
+                formControlName="idconta_financeira"
+                aria-label="Conta financeira"
+              >
+                <option [ngValue]="null" disabled>Selecione…</option>
+                @for (c of contas(); track c.id) {
+                  <option [ngValue]="c.id">{{ c.nome }}</option>
+                }
+              </select>
+            </label>
+            <label class="lbl"
+              >Forma de pagamento
+              <select
+                class="inp"
+                formControlName="idforma_pagamento"
+                aria-label="Forma de pagamento"
+              >
+                <option [ngValue]="null">—</option>
+                @for (f of formas(); track f.id) {
+                  <option [ngValue]="f.id">{{ f.nome }}</option>
+                }
+              </select>
+            </label>
+          </div>
+          <div class="fechar-acoes">
+            <button type="button" class="btn-gray" (click)="pagando.set(null)">Voltar</button>
+            <button type="submit" class="btn-prim" [disabled]="pagarForm.invalid || salvando()">
+              <mat-icon>check_circle</mat-icon> Confirmar pagamento
+            </button>
+          </div>
+        </form>
+      }
+    </section>
+  }
+</div>
