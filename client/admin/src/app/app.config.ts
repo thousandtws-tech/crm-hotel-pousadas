@@ -7,7 +7,6 @@ import {
 } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
-  PreloadAllModules,
   provideRouter,
   withComponentInputBinding,
   withInMemoryScrolling,
@@ -22,6 +21,7 @@ import { routes } from './app.routes';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { PaginatorIntlPtBr } from '@core/services/paginator-intl';
 import { ChunkReloadErrorHandler } from '@core/services/chunk-reload.error-handler';
+import { PreloadService } from '@core/services/preload.service';
 
 registerLocaleData(localePt);
 
@@ -30,7 +30,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(
       routes,
-      withPreloading(PreloadAllModules),
+      withPreloading(PreloadService),
       withComponentInputBinding(),
       withInMemoryScrolling({ scrollPositionRestoration: 'enabled' }),
     ),

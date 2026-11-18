@@ -1,8 +1,6 @@
 // Lógica e estado de integracao-didit — separada da camada de UI (integracao-didit.component.ts).
 // O componente herda os membros; templates e comportamento não mudam.
-import { DestroyRef, OnInit, inject, signal, Directive } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { effect, inject, input, signal, Directive } from '@angular/core';
 import { FormControl, FormBuilder } from '@angular/forms';
 import { IntegracoesApi } from '@core/api/integracoes.api';
 import { VerificacaoApi } from '@core/api/verificacao.api';
@@ -16,16 +14,17 @@ import {
 } from './integracoes.const';
 
 @Directive()
-export abstract class IntegracaoDiditStore implements OnInit {
-  private readonly route = inject(ActivatedRoute);
-  private readonly destroyRef = inject(DestroyRef);
+export abstract class IntegracaoDiditStore {
   private readonly api = inject(IntegracoesApi);
   private readonly verificacao = inject(VerificacaoApi);
   private readonly notify = inject(NotifyService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly i = signal<M.IntegracaoView | null>(null);
-  protected readonly ambiente = signal<M.AmbienteIntegracao>('producao');
+  /** `:ambiente` da rota, normalizado — via withComponentInputBinding. */
+  readonly ambiente = input<M.AmbienteIntegracao, string>('producao', {
+    transform: (v) => (v === 'teste' ? 'teste' : 'producao'),
+  });
   protected readonly carregando = signal(true);
   protected readonly salvando = signal(false);
   protected readonly salvandoCfg = signal(false);
@@ -47,9 +46,9 @@ export abstract class IntegracaoDiditStore implements OnInit {
     return ROTULO_AMBIENTE[this.ambiente()];
   }
 
-  ngOnInit(): void {
-    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p) => {
-      this.ambiente.set(p.get('ambiente') === 'teste' ? 'teste' : 'producao');
+  constructor() {
+    effect(() => {
+      this.ambiente();
       this.carregar();
     });
   }

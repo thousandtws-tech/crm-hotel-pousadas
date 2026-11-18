@@ -1,10 +1,8 @@
 // Lógica e estado de integracao-zapi — separada da camada de UI (integracao-zapi.component.ts).
 // O componente herda os membros; templates e comportamento não mudam.
 import { HttpErrorResponse } from '@angular/common/http';
-import { DestroyRef, OnInit, computed, inject, signal, Directive } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { OnInit, computed, effect, inject, input, signal, Directive } from '@angular/core';
 import { FormBuilder, FormControl } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
 import { IntegracoesApi } from '@core/api/integracoes.api';
 import { ConfirmService } from '@core/services/confirm.service';
 import { NotifyService } from '@core/services/notify.service';
@@ -29,14 +27,13 @@ import {
  */
 @Directive()
 export abstract class IntegracaoZapiStore implements OnInit {
-  private readonly route = inject(ActivatedRoute);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(IntegracoesApi);
   private readonly notify = inject(NotifyService);
   private readonly confirm = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
 
-  protected readonly ambiente = signal<M.AmbienteIntegracao>('producao');
+  /** `:ambiente` da rota — via withComponentInputBinding. Só 'producao' é válido. */
+  readonly ambiente = input<M.AmbienteIntegracao>('producao');
   protected readonly i = signal<M.IntegracaoView | null>(null);
   protected readonly eventos = signal<M.EventoIntegracaoView[]>([]);
   protected readonly carregando = signal(true);
@@ -81,20 +78,22 @@ export abstract class IntegracaoZapiStore implements OnInit {
 
   protected readonly sessaoConectada = computed(() => this.sessao()?.conectado === true);
 
-  ngOnInit(): void {
-    for (const c of this.campos) {
-      this.controles[c.nome] = this.fb.nonNullable.control('');
-    }
-    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p) => {
+  constructor() {
+    effect(() => {
       // Z-API só existe em produção — qualquer outro ambiente é rota inválida.
-      if (p.get('ambiente') !== 'producao') {
+      if (this.ambiente() !== 'producao') {
         this.carregando.set(false);
         this.falhou.set(true);
         return;
       }
-      this.ambiente.set('producao');
       this.carregar();
     });
+  }
+
+  ngOnInit(): void {
+    for (const c of this.campos) {
+      this.controles[c.nome] = this.fb.nonNullable.control('');
+    }
   }
 
   /** Controle reativo do segredo — vazio = manter valor atual. */

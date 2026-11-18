@@ -1,10 +1,8 @@
 // Lógica e estado de integracao-spedy — separada da camada de UI (integracao-spedy.component.ts).
 // O componente herda os membros; templates e comportamento não mudam.
 import { HttpErrorResponse } from '@angular/common/http';
-import { DestroyRef, OnInit, inject, signal, Directive } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { effect, inject, input, signal, Directive } from '@angular/core';
 import { FormBuilder, FormControl } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
 import { IntegracoesApi } from '@core/api/integracoes.api';
 import { NotifyService } from '@core/services/notify.service';
 import * as M from '@core/models';
@@ -42,15 +40,16 @@ function cfg(i: M.IntegracaoView | null): SpedyCfg {
  * em produção — a tela alerta explicitamente antes de salvar.
  */
 @Directive()
-export abstract class IntegracaoSpedyStore implements OnInit {
+export abstract class IntegracaoSpedyStore {
   private readonly api = inject(IntegracoesApi);
   private readonly notify = inject(NotifyService);
-  private readonly route = inject(ActivatedRoute);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(FormBuilder);
 
   protected readonly i = signal<M.IntegracaoView | null>(null);
-  protected readonly ambiente = signal<M.AmbienteIntegracao>('producao');
+  /** `:ambiente` da rota, normalizado — via withComponentInputBinding. */
+  readonly ambiente = input<M.AmbienteIntegracao, string>('producao', {
+    transform: (v) => (v === 'teste' ? 'teste' : 'producao'),
+  });
   protected readonly carregando = signal(true);
   protected readonly falhou = signal(false);
   protected readonly eventos = signal<M.EventoIntegracaoView[]>([]);
@@ -84,10 +83,9 @@ export abstract class IntegracaoSpedyStore implements OnInit {
   protected readonly fDescricao = this.fb.nonNullable.control('');
   private readonly controles: Record<string, FormControl<string>> = {};
 
-  ngOnInit(): void {
-    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p) => {
-      const a = p.get('ambiente') === 'teste' ? 'teste' : 'producao';
-      this.ambiente.set(a);
+  constructor() {
+    effect(() => {
+      this.ambiente();
       for (const c of this.campos) this.controle(c.nome);
       this.carregar();
     });

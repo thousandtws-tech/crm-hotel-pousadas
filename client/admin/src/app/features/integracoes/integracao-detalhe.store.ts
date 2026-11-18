@@ -1,10 +1,8 @@
 // Lógica e estado de integracao-detalhe — separada da camada de UI (integracao-detalhe.component.ts).
 // O componente herda os membros; templates e comportamento não mudam.
 import { HttpErrorResponse } from '@angular/common/http';
-import { DestroyRef, OnInit, computed, inject, signal, Directive } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { computed, effect, inject, input, signal, Directive } from '@angular/core';
 import { FormBuilder, FormControl } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
 import { IntegracoesApi } from '@core/api/integracoes.api';
 import { NotifyService } from '@core/services/notify.service';
 import * as M from '@core/models';
@@ -26,15 +24,14 @@ const AMBIENTES: M.AmbienteIntegracao[] = ['producao', 'teste'];
  * Segredos nunca são exibidos — só o estado configurado/não-configurado.
  */
 @Directive()
-export abstract class IntegracaoDetalheStore implements OnInit {
-  private readonly route = inject(ActivatedRoute);
-  private readonly destroyRef = inject(DestroyRef);
+export abstract class IntegracaoDetalheStore {
   private readonly api = inject(IntegracoesApi);
   private readonly notify = inject(NotifyService);
   private readonly fb = inject(FormBuilder);
 
-  protected readonly provedor = signal<M.ProvedorPagamento>('stripe');
-  protected readonly ambiente = signal<M.AmbienteIntegracao>('producao');
+  /** `:provedor` e `:ambiente` da rota — via withComponentInputBinding. */
+  readonly provedor = input<M.ProvedorPagamento>('stripe');
+  readonly ambiente = input<M.AmbienteIntegracao>('producao');
   protected readonly i = signal<M.IntegracaoView | null>(null);
   protected readonly eventos = signal<M.EventoIntegracaoView[]>([]);
   protected readonly carregando = signal(true);
@@ -61,17 +58,15 @@ export abstract class IntegracaoDetalheStore implements OnInit {
   protected readonly rotuloAmbiente = rotuloAmbiente;
   protected readonly estadoDe = estadoDe;
 
-  ngOnInit(): void {
-    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p) => {
-      const provedor = p.get('provedor') as M.ProvedorPagamento;
-      const ambiente = p.get('ambiente') as M.AmbienteIntegracao;
+  constructor() {
+    effect(() => {
+      const provedor = this.provedor();
+      const ambiente = this.ambiente();
       if (!PROVEDORES.includes(provedor) || !AMBIENTES.includes(ambiente)) {
         this.carregando.set(false);
         this.falhou.set(true);
         return;
       }
-      this.provedor.set(provedor);
-      this.ambiente.set(ambiente);
       for (const c of CAMPOS_POR_PROVEDOR[provedor]) {
         this.controles[c.nome] = this.fb.nonNullable.control('');
       }

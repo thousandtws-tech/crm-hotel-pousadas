@@ -28,16 +28,19 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
         path: 'dashboard',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },
       {
         path: 'recepcao',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/recepcao/recepcao.component').then((m) => m.RecepcaoComponent),
       },
       {
         path: 'reservas',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/reservas/reservas.component').then((m) => m.ReservasComponent),
       },
@@ -53,6 +56,7 @@ export const routes: Routes = [
       },
       {
         path: 'reservas/:id',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/reservas/reserva-detail.component').then(
             (m) => m.ReservaDetailComponent,
@@ -60,11 +64,13 @@ export const routes: Routes = [
       },
       {
         path: 'clientes',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/clientes/clientes.component').then((m) => m.ClientesComponent),
       },
       {
         path: 'acomodacoes',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/acomodacoes/acomodacoes.component').then(
             (m) => m.AcomodacoesComponent,
@@ -104,14 +110,17 @@ export const routes: Routes = [
       },
       {
         path: 'pdv',
+        data: { preload: true },
         loadComponent: () => import('./features/pdv/pdv.component').then((m) => m.PdvComponent),
       },
       {
         path: 'cozinha',
+        data: { preload: true },
         loadComponent: () => import('./features/pdv/kds.component').then((m) => m.KdsComponent),
       },
       {
         path: 'cafe',
+        data: { preload: true },
         loadComponent: () => import('./features/cafe/cafe.component').then((m) => m.CafeComponent),
       },
       {

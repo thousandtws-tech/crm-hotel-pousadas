@@ -1,9 +1,7 @@
 // Lógica e estado de integracao-channex — separada da camada de UI (integracao-channex.component.ts).
 // O componente herda os membros; templates e comportamento não mudam.
-import { DestroyRef, OnInit, inject, signal, Directive } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { effect, inject, input, signal, Directive } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
 import { IntegracoesApi } from '@core/api/integracoes.api';
 import { NotifyService } from '@core/services/notify.service';
 import * as M from '@core/models';
@@ -16,14 +14,13 @@ import { estadoDe, rotuloAmbiente } from './integracoes.const';
  * (revisões + pendências operacionais).
  */
 @Directive()
-export abstract class IntegracaoChannexStore implements OnInit {
-  private readonly route = inject(ActivatedRoute);
-  private readonly destroyRef = inject(DestroyRef);
+export abstract class IntegracaoChannexStore {
   private readonly api = inject(IntegracoesApi);
   private readonly notify = inject(NotifyService);
   private readonly fb = inject(FormBuilder);
 
-  protected readonly ambiente = signal<M.AmbienteIntegracao>('producao');
+  /** `:ambiente` da rota — via withComponentInputBinding. */
+  readonly ambiente = input<M.AmbienteIntegracao>('producao');
   protected readonly i = signal<M.IntegracaoView | null>(null);
   protected readonly opcoes = signal<M.DistOpcoes | null>(null);
   protected readonly propriedades = signal<M.ChannexPropriedade[]>([]);
@@ -40,9 +37,9 @@ export abstract class IntegracaoChannexStore implements OnInit {
   protected readonly rotuloAmbiente = rotuloAmbiente;
   protected readonly estadoDe = estadoDe;
 
-  ngOnInit(): void {
-    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p) => {
-      this.ambiente.set((p.get('ambiente') as M.AmbienteIntegracao) ?? 'producao');
+  constructor() {
+    effect(() => {
+      this.ambiente();
       this.carregar();
     });
   }
