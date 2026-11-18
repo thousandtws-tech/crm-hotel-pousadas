@@ -48,8 +48,4 @@ jobs:
           # rsa/libsqlite3-sys: deps opcionais do sqlx (mysql/sqlite off) — nao compilam.
           # quick-xml 0.38: DoS em XML nao-confiavel; so lemos respostas S3/STS
           # via TLS e nao usamos NsReader. Preso por aws-creds 0.39, sem bump.
-          ignore: |
-            RUSTSEC-2023-0071
-            RUSTSEC-2026-0459
-            RUSTSEC-2026-0194
-            RUSTSEC-2026-0195
+          ignore: RUSTSEC-2023-0071 RUSTSEC-2026-0459 RUSTSEC-2026-0194 RUSTSEC-2026-0195
