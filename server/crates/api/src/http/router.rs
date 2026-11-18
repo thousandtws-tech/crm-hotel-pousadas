@@ -31,6 +31,7 @@ async fn readyz(State(s): State<AppState>) -> (axum::http::StatusCode, Json<serd
     }
 }
 
+
 fn cors_layer(origins: &[String]) -> CorsLayer {
     if origins.iter().any(|o| o == "*") {
         return CorsLayer::permissive();
@@ -49,7 +50,11 @@ fn cors_layer(origins: &[String]) -> CorsLayer {
             axum::http::Method::DELETE,
             axum::http::Method::OPTIONS,
         ])
-        .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE])
+        .allow_headers([
+            header::AUTHORIZATION,
+            header::CONTENT_TYPE,
+            axum::http::HeaderName::from_static("x-retry"),
+        ])
         .max_age(Duration::from_secs(3600))
 }
 
