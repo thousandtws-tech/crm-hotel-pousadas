@@ -114,7 +114,11 @@
       @if (carregando()) {
         <div class="skel sk-chart"></div>
       } @else if (serieRecebido().length) {
-        <app-echart [option]="optFluxo()" rotulo="Receita recebida por dia" />
+        @defer (on viewport) {
+          <app-echart [option]="optFluxo()" rotulo="Receita recebida por dia" />
+        } @placeholder {
+          <div class="chart-ph"></div>
+        }
       } @else {
         <p class="fin-vazio"><mat-icon>show_chart</mat-icon> Sem movimentação no período.</p>
       }
@@ -130,7 +134,11 @@
       @if (carregando()) {
         <div class="skel sk-chart"></div>
       } @else if (temComposicao()) {
-        <app-echart [option]="optComposicao()" rotulo="Composição da receita" />
+        @defer (on viewport) {
+          <app-echart [option]="optComposicao()" rotulo="Composição da receita" />
+        } @placeholder {
+          <div class="chart-ph"></div>
+        }
       } @else {
         <p class="fin-vazio"><mat-icon>pie_chart</mat-icon> Nada recebido no período.</p>
       }
@@ -146,7 +154,11 @@
       @if (carregando()) {
         <div class="skel sk-chart"></div>
       } @else if (seriePagamento().length) {
-        <app-echart [option]="optPagamento()" rotulo="Recebido por forma de pagamento" />
+        @defer (on viewport) {
+          <app-echart [option]="optPagamento()" rotulo="Recebido por forma de pagamento" />
+        } @placeholder {
+          <div class="chart-ph"></div>
+        }
       } @else {
         <p class="fin-vazio"><mat-icon>credit_card</mat-icon> Sem pagamentos no período.</p>
       }
@@ -162,7 +174,11 @@
       @if (carregando()) {
         <div class="skel sk-chart"></div>
       } @else if (serieAcomodacao().length) {
-        <app-echart [option]="optAcomodacao()" rotulo="Receita por acomodação" />
+        @defer (on viewport) {
+          <app-echart [option]="optAcomodacao()" rotulo="Receita por acomodação" />
+        } @placeholder {
+          <div class="chart-ph"></div>
+        }
       } @else {
         <p class="fin-vazio"><mat-icon>hotel</mat-icon> Sem reservas faturadas.</p>
       }
@@ -179,7 +195,11 @@
       @if (carregando()) {
         <div class="skel sk-chart"></div>
       } @else if (serieVendas().length) {
-        <app-echart [option]="optVendas()" rotulo="Vendas por dia" />
+        @defer (on viewport) {
+          <app-echart [option]="optVendas()" rotulo="Vendas por dia" />
+        } @placeholder {
+          <div class="chart-ph"></div>
+        }
       } @else {
         <p class="fin-vazio"><mat-icon>shopping_bag</mat-icon> Sem vendas no período.</p>
       }
@@ -195,7 +215,11 @@
       @if (carregando()) {
         <div class="skel sk-chart"></div>
       } @else if (itensVendidos().length) {
-        <app-echart [option]="optItens()" rotulo="Itens mais vendidos" />
+        @defer (on viewport) {
+          <app-echart [option]="optItens()" rotulo="Itens mais vendidos" />
+        } @placeholder {
+          <div class="chart-ph"></div>
+        }
       } @else {
         <p class="fin-vazio"><mat-icon>inventory_2</mat-icon> Nenhum item vendido.</p>
       }

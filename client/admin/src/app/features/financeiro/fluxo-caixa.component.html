@@ -51,7 +51,11 @@
         <h3>Movimento diário</h3>
         <small>Barras: entradas × saídas — linha: saldo acumulado</small>
       </header>
-      <app-echart [option]="chartOption()" rotulo="Fluxo de caixa por dia" />
+      @defer (on viewport) {
+        <app-echart [option]="chartOption()" rotulo="Fluxo de caixa por dia" />
+      } @placeholder {
+        <div class="chart-ph"></div>
+      }
     </section>
 
     <section class="card">

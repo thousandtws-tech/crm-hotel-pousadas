@@ -358,3 +358,8 @@
 .badge-acao:hover {
   filter: brightness(0.9);
 }
+
+/* placeholder do @defer — mesma altura do chart p/ evitar CLS */
+.chart-ph {
+  min-height: 230px;
+}

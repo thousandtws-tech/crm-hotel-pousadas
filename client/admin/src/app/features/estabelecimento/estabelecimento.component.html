@@ -635,7 +635,13 @@
       <div class="modal-body">
         <div class="logo-box" [class.vazia]="!logoPreview()">
           @if (logoPreview()) {
-            <img class="logo-img" [src]="logoPreview()" alt="Logo do estabelecimento" />
+            <img
+              loading="lazy"
+              decoding="async"
+              class="logo-img"
+              [src]="logoPreview()"
+              alt="Logo do estabelecimento"
+            />
           } @else {
             <div class="logo-vazia">
               <mat-icon>add_photo_alternate</mat-icon>

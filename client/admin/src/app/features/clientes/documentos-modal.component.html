@@ -57,7 +57,7 @@
                         title="Ampliar scan"
                         (click)="ampliado.set(url)"
                       >
-                        <img [src]="url" alt="Scan do documento" />
+                        <img loading="lazy" decoding="async" [src]="url" alt="Scan do documento" />
                       </button>
                     } @else if (d.tem_scan) {
                       <mat-icon class="scan-loading">hourglass_top</mat-icon>
@@ -255,7 +255,7 @@
       >
         &times;
       </button>
-      <img [src]="url" alt="Scan do documento ampliado" />
+      <img loading="lazy" decoding="async" [src]="url" alt="Scan do documento ampliado" />
     </div>
   </div>
 }

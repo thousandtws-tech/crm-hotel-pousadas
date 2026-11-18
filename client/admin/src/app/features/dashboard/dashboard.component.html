@@ -152,7 +152,11 @@
       @if (carregandoFin()) {
         <div class="skel sk-chart"></div>
       } @else if (serieRecebido().length) {
-        <app-echart [option]="optFluxo()" rotulo="Receita recebida por dia" />
+        @defer (on viewport) {
+          <app-echart [option]="optFluxo()" rotulo="Receita recebida por dia" />
+        } @placeholder {
+          <div class="skel sk-chart"></div>
+        }
       } @else {
         <p class="d-vazio"><mat-icon>show_chart</mat-icon> Sem movimentação no período.</p>
       }
@@ -168,7 +172,11 @@
       @if (carregandoOps()) {
         <div class="skel sk-chart"></div>
       } @else {
-        <app-echart [option]="optOcupacao()" rotulo="Taxa de ocupação" />
+        @defer (on viewport) {
+          <app-echart [option]="optOcupacao()" rotulo="Taxa de ocupação" />
+        } @placeholder {
+          <div class="skel sk-chart"></div>
+        }
       }
     </section>
   </div>
@@ -185,7 +193,11 @@
       @if (carregandoFin()) {
         <div class="skel sk-chart"></div>
       } @else if (serieReservas().length) {
-        <app-echart [option]="optReservas()" rotulo="Reservas criadas por dia" />
+        @defer (on viewport) {
+          <app-echart [option]="optReservas()" rotulo="Reservas criadas por dia" />
+        } @placeholder {
+          <div class="skel sk-chart"></div>
+        }
       } @else {
         <p class="d-vazio"><mat-icon>calendar_month</mat-icon> Nenhuma reserva no período.</p>
       }
@@ -201,7 +213,11 @@
       @if (carregandoFin()) {
         <div class="skel sk-chart"></div>
       } @else if (serieAcomodacao().length) {
-        <app-echart [option]="optAcomodacao()" rotulo="Receita por acomodação" />
+        @defer (on viewport) {
+          <app-echart [option]="optAcomodacao()" rotulo="Receita por acomodação" />
+        } @placeholder {
+          <div class="skel sk-chart"></div>
+        }
       } @else {
         <p class="d-vazio"><mat-icon>bar_chart</mat-icon> Nada recebido no período.</p>
       }
@@ -217,7 +233,11 @@
       @if (carregandoFin()) {
         <div class="skel sk-chart"></div>
       } @else if (seriePagamento().length) {
-        <app-echart [option]="optPagamento()" rotulo="Recebido por forma de pagamento" />
+        @defer (on viewport) {
+          <app-echart [option]="optPagamento()" rotulo="Recebido por forma de pagamento" />
+        } @placeholder {
+          <div class="skel sk-chart"></div>
+        }
       } @else {
         <p class="d-vazio"><mat-icon>pie_chart</mat-icon> Nada recebido no período.</p>
       }

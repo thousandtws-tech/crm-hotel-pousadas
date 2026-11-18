@@ -29,7 +29,9 @@
           <small class="muted">Posicione o documento dentro da moldura.</small>
         }
         @if (estado() === 'capturada' && preview()) {
-          <div class="frame"><img [src]="preview()" alt="Prévia da captura" /></div>
+          <div class="frame">
+            <img loading="lazy" decoding="async" [src]="preview()" alt="Prévia da captura" />
+          </div>
         }
       }
     </div>

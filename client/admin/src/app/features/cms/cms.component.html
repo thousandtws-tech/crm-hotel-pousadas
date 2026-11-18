@@ -168,7 +168,13 @@
                   <tr [class.inativo-row]="!a.ativo">
                     <td>
                       @if (thumbs()[a.id]) {
-                        <img [src]="thumbs()[a.id]" alt="Capa de {{ a.nome }}" class="capa-thumb" />
+                        <img
+                          loading="lazy"
+                          decoding="async"
+                          [src]="thumbs()[a.id]"
+                          alt="Capa de {{ a.nome }}"
+                          class="capa-thumb"
+                        />
                       } @else {
                         <div class="capa-vazia" title="Sem foto de capa">
                           <mat-icon>image</mat-icon>
@@ -500,7 +506,13 @@
           </a>
         </div>
         <div class="settings-card wg-card-grid">
-          <img class="wg-qr" alt="QR code para o motor de reservas" [src]="qrSrc()" />
+          <img
+            loading="lazy"
+            decoding="async"
+            class="wg-qr"
+            alt="QR code para o motor de reservas"
+            [src]="qrSrc()"
+          />
           <div class="wg-url-box">
             <label class="field">
               <span class="field-lbl">Endereço público do motor</span>
@@ -855,6 +867,8 @@
                     @if (m.tipo === 'foto') {
                       <img
                         [src]="midiaUrl(m.id)"
+                        loading="lazy"
+                        decoding="async"
                         [alt]="m.capa ? 'Foto de capa' : 'Foto ' + (i + 1)"
                         title="Clique para ampliar"
                         (click)="abrirPreview(i)"
@@ -976,6 +990,8 @@
       <figure class="lb-midia" (click)="$event.stopPropagation()">
         @if (p.tipo === 'foto') {
           <img
+            loading="lazy"
+            decoding="async"
             [src]="midiaUrl(p.id)"
             [alt]="p.capa ? 'Foto de capa do quarto' : 'Foto da galeria'"
           />

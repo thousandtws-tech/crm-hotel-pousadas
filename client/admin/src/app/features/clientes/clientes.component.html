@@ -147,7 +147,7 @@
                 >
                   <span class="avatar-sm sug-avatar">
                     @if (fotos().get(s.id); as url) {
-                      <img [src]="url" alt="" />
+                      <img loading="lazy" decoding="async" [src]="url" alt="" />
                     } @else {
                       <span class="avatar-iniciais">{{ iniciais(s.nome) }}</span>
                     }
@@ -222,7 +222,7 @@
                   <div class="cli-cell">
                     <span class="avatar-sm">
                       @if (fotos().get(c.id); as url) {
-                        <img [src]="url" alt="" />
+                        <img loading="lazy" decoding="async" [src]="url" alt="" />
                       } @else {
                         <span class="avatar-iniciais">{{ iniciais(c.nome) }}</span>
                       }
@@ -360,7 +360,7 @@
             <div class="foto-linha">
               <div class="avatar-lg">
                 @if (fotoPreview(); as url) {
-                  <img [src]="url" alt="Foto do cliente" />
+                  <img loading="lazy" decoding="async" [src]="url" alt="Foto do cliente" />
                 } @else {
                   <mat-icon>person</mat-icon>
                 }
@@ -561,6 +561,8 @@
                     @if (paisSelecionado(); as p) {
                       <img
                         class="flag"
+                        loading="lazy"
+                        decoding="async"
                         [src]="bandeira(p.cca2)"
                         [srcset]="bandeira(p.cca2, 80) + ' 2x'"
                         alt=""
@@ -591,7 +593,13 @@
                             [attr.aria-selected]="p.nome === form.controls.pais.value"
                             (click)="selecionarPais(p)"
                           >
-                            <img class="flag" [src]="bandeira(p.cca2)" alt="" loading="lazy" />
+                            <img
+                              loading="lazy"
+                              decoding="async"
+                              class="flag"
+                              [src]="bandeira(p.cca2)"
+                              alt=""
+                            />
                             <span>{{ p.nome }}</span>
                           </button>
                         } @empty {

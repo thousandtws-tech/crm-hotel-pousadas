@@ -5,6 +5,9 @@
 }
 .inner-card {
   margin-top: 1rem;
+  /* pula layout/paint de seções fora da viewport — detalhe é página longa */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
 }
 .inner-card-header h4 {
   display: flex;
