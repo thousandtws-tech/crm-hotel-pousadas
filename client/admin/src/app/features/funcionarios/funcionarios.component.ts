@@ -695,7 +695,7 @@ export class FuncionariosComponent implements OnInit {
   protected readonly auth = inject(AuthStore);
 
   /** Última verificação de identidade por funcionário (produção). */
-  protected readonly verificacoes = signal(new Map<number, M.VerificacaoListItem>());
+  protected readonly verificacoes = signal(new Map<number, M.VerificacaoIdentidade>());
   /** Link gerado para envio manual — exibido num modal com copiar. */
   protected readonly linkVerificacao = signal<{ url: string; nome: string } | null>(null);
   protected readonly gerandoLink = signal(0);
@@ -782,8 +782,12 @@ export class FuncionariosComponent implements OnInit {
     // configurada (a coluna mostra "—" para todo mundo).
     this.verificacaoApi.listar('producao').subscribe({
       next: (p) => {
-        const mapa = new Map<number, M.VerificacaoListItem>();
-        for (const v of p.items) if (!mapa.has(v.funcionario_id)) mapa.set(v.funcionario_id, v);
+        const mapa = new Map<number, M.VerificacaoIdentidade>();
+        for (const v of p.items) {
+          if (!mapa.has(v.verificacao.funcionario_id)) {
+            mapa.set(v.verificacao.funcionario_id, v.verificacao);
+          }
+        }
         this.verificacoes.set(mapa);
       },
       error: () => this.verificacoes.set(new Map()),

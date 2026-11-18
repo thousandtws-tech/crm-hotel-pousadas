@@ -237,11 +237,9 @@ export interface VerificacaoFuncionarioStatus {
   atualizado_em?: string;
 }
 
-export interface VerificacaoListItem {
+export interface VerificacaoIdentidade {
   id: string;
   funcionario_id: number;
-  funcionario_nome: string;
-  funcionario_nivel: number;
   session_id: string;
   url: string;
   status: StatusVerificacao;
@@ -249,4 +247,10 @@ export interface VerificacaoListItem {
   decidido_em: string | null;
   criado_em: string;
   atualizado_em: string;
+}
+
+export interface VerificacaoListItem {
+  funcionario_nome: string;
+  funcionario_nivel: number;
+  verificacao: VerificacaoIdentidade;
 }

@@ -47,7 +47,7 @@ export class VerificacaoApi extends ApiHttp {
 
   /** Puxa a decisão remota — atualiza o status se mudou. */
   sincronizar(id: string) {
-    return this.post<M.VerificacaoListItem>(`/verificacao/${id}/sincronizar`, {});
+    return this.post<M.VerificacaoIdentidade>(`/verificacao/${id}/sincronizar`, {});
   }
 
   /** Configura workflow/callback e o portão de login (admin). */
