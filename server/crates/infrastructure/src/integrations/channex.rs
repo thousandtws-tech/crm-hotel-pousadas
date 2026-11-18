@@ -558,4 +558,62 @@ mod tests {
         assert_eq!(rev.property_id, "prop-real");
         assert_eq!(rev.rooms.len(), 1);
     }
+
+    #[test]
+    fn revision_parse_feed_shape_real() {
+        // Forma real do /feed: inserted_at SEM offset + campos extras
+        // (agent, services, raw_message…) que o struct ignora.
+        let v = serde_json::json!({
+            "type": "booking_revision",
+            "id": "rev-feed",
+            "attributes": {
+                "id": "rev-feed",
+                "property_id": "prop-x",
+                "booking_id": "b-3",
+                "status": "modified",
+                "services": [],
+                "agent": null,
+                "unique_id": "u-1",
+                "inserted_at": "2026-11-18T03:46:43.466334",
+                "channel_id": null,
+                "ota_reservation_code": "teste",
+                "system_id": null,
+                "ota_name": "Offline",
+                "rooms": [{
+                    "booking_room_id": "br-1",
+                    "checkin_date": "2026-11-18",
+                    "checkout_date": "2026-12-12",
+                    "is_cancelled": false,
+                    "ota_unique_id": null,
+                    "room_type_id": "rt-1",
+                    "rate_plan_id": "rp-1",
+                    "amount": 0,
+                    "days": {"2026-11-18": 100}
+                }],
+                "customer": {"name": "Dev", "mail": "d@x.io"},
+                "arrival_date": "2026-11-18",
+                "arrival_hour": "03:00",
+                "departure_date": "2026-12-12",
+                "deposits": [],
+                "ota_commission": "0.00",
+                "occupancy": {"adults": 1, "children": 1, "infants": 1, "ages": [10]},
+                "guarantee": null,
+                "secondary_ota": null,
+                "acknowledge_status": "pending",
+                "raw_message": "{…}",
+                "is_crs_revision": true
+            },
+            "relationships": {"data": {"property": {"id": "prop-x", "type": "property"}}}
+        });
+        let rev = ChannexCliente::revisao_de(&v).unwrap();
+        assert_eq!(rev.property_id, "prop-x");
+        assert_eq!(rev.status, "modified");
+        assert_eq!(
+            rev.inserted_at.unwrap().timestamp(),
+            chrono::DateTime::parse_from_rfc3339("2026-11-18T03:46:43.466334Z")
+                .unwrap()
+                .timestamp()
+        );
+        assert_eq!(rev.rooms[0].days["2026-11-18"].to_string(), "100");
+    }
 }

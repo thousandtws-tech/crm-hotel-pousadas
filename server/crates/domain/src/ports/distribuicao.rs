@@ -8,6 +8,7 @@ use crate::entities::{
 use crate::error::DomainError;
 use async_trait::async_trait;
 use chrono::NaiveDate;
+use serde::Deserialize;
 use std::collections::BTreeMap;
 
 // ---------------------------------------------------------------------------
@@ -113,6 +114,23 @@ pub struct MetaAri {
     pub warnings: Vec<serde_json::Value>,
 }
 
+/// `inserted_at` da Channex chega sem offset ("2026-11-18T03:46:43.466334")
+/// em parte dos endpoints e com RFC3339 em outros — aceita os dois,
+/// assumindo UTC quando ingênuo.
+fn de_dt_flexivel<'de, D>(d: D) -> Result<Option<chrono::DateTime<chrono::Utc>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s: Option<String> = Option::deserialize(d)?;
+    let Some(s) = s else { return Ok(None) };
+    if let Ok(dt) = s.parse::<chrono::DateTime<chrono::Utc>>() {
+        return Ok(Some(dt));
+    }
+    chrono::NaiveDateTime::parse_from_str(&s, "%Y-%m-%dT%H:%M:%S%.f")
+        .map(|n| Some(n.and_utc()))
+        .map_err(serde::de::Error::custom)
+}
+
 /// Revisão de booking crua — `attributes` do JSON:API, sem `rooms` ainda
 /// desserializados (cada room vira uma reserva local).
 #[derive(Debug, Clone, serde::Deserialize)]
@@ -136,6 +154,7 @@ pub struct RevisaoRemota {
     pub notes: Option<String>,
     pub payment_collect: Option<String>,
     pub payment_type: Option<String>,
+    #[serde(default, deserialize_with = "de_dt_flexivel")]
     pub inserted_at: Option<chrono::DateTime<chrono::Utc>>,
     /// Payload integral — gravado antes do ACK (PII some depois).
     #[serde(skip)]
