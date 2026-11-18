@@ -97,6 +97,37 @@ L4  Cópia externa (fora do Railway)             → sobrevive à perda da conta
   cenários (dado corrompido, tabela dropada), mas um desastre de
   conta/projeto apaga banco *e* backups juntos — por isso a L4 existe.
 
+### Ativação (IaC) — `.railway/railway.ts`, serviço `inteligencia-artificial`
+
+Sem segredo copiado à mão — tudo referência entre serviços:
+
+| Var | Valor declarado |
+|---|---|
+| `BACKUP_DATABASE_URL` | `postgresql://${{Postgres.*}}?sslmode=disable` (rede privada) |
+| `MARIA_S3_ENDPOINT` | `http://${{Bucket.MINIO_PRIVATE_HOST}}:${{Bucket.MINIO_PRIVATE_PORT}}` |
+| `MARIA_S3_ACCESS_KEY` / `MARIA_S3_SECRET_KEY` | `${{Bucket.MINIO_ROOT_USER}}` / `${{Bucket.MINIO_ROOT_PASSWORD}}` |
+| `MARIA_S3_BUCKET` | `backups` (criado sozinho na 1ª execução — `_garantir_bucket`) |
+| `MARIA_BACKUP_ENABLED` | `true` |
+| `MARIA_BACKUP_INTERVAL_H` / `MARIA_BACKUP_RETAIN` / `MARIA_S3_PREFIX` / `MARIA_S3_REGION` | `preserve()` — tuning livre no dashboard |
+
+### Gatilho manual e status (novo — `POST /backup/*`, só admin)
+
+```bash
+# conferir gates sem disparar nada (bucket, endpoint, retain, dsn setada)
+curl -H "Authorization: Bearer <JWT admin>" $MARIA_URL/backup/status
+
+# dump do Postgres → s3://backups/backups/pg/ AGORA (fora da janela)
+curl -X POST -H "Authorization: Bearer <JWT admin>" $MARIA_URL/backup/pg
+
+# export do store MARIA + data/ → s3://backups/maria/<dia>/ AGORA
+curl -X POST -H "Authorization: Bearer <JWT admin>" $MARIA_URL/backup/dados
+```
+
+Respostas: `200` + stats (`chave`, `bytes`, `podados`) ou `503` com o
+motivo (`backup pg desabilitado`, falha de upload). 401/403 = JWT
+ausente ou não-admin. É o caminho para **validar credenciais MinIO sem
+esperar a janela das 04:00 UTC** — primeiro passo do drill de ativação.
+
 ---
 
 ## 3. Procedimento de dump (manual, sob demanda)

@@ -47,6 +47,30 @@ def _client():
     return boto3.client("s3", **kw)
 
 
+def _garantir_bucket(client, bucket: str, region: str) -> None:
+    """Cria o bucket se não existir — MinIO não auto-cria.
+
+    Best-effort idempotente: head_bucket ok → nada a fazer; falhou →
+    create_bucket; create falhou (permissão, corrida) → deixa o
+    put_object levantar o erro real em vez de mascarar aqui.
+    """
+    try:
+        client.head_bucket(Bucket=bucket)
+        return
+    except Exception:
+        pass
+    try:
+        kw: dict[str, Any] = {}
+        if region and region != "us-east-1":
+            kw["CreateBucketConfiguration"] = {
+                "LocationConstraint": region}
+        client.create_bucket(Bucket=bucket, **kw)
+        log.info("bucket %s criado", bucket)
+    except Exception as exc:
+        log.warning("create_bucket %s falhou (%s) — "
+                    "upload decide", bucket, type(exc).__name__)
+
+
 def _arquivos_data() -> list[Path]:
     """Arquivos persistidos locais (backend json + sqlite + rotações)."""
     d = Path("data")
@@ -119,6 +143,7 @@ async def backup_agora(store=None,
     def _sync() -> dict[str, Any]:
         client = client_factory()
         bucket, raiz = s.maria_s3_bucket, s.maria_s3_prefix.rstrip("/")
+        _garantir_bucket(client, bucket, s.maria_s3_region)
         n = _upload(client, bucket, f"{raiz}/{dia}",
                     {k: v.encode("utf-8") for k, v in dumps.items()})
         n += _upload(client, bucket, f"{raiz}/{dia}", {

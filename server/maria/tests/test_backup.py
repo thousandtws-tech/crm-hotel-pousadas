@@ -11,8 +11,17 @@ from app.infra.storage import JsonStore
 class FakeS3:
     """Simula boto3.client("s3") — guarda objetos num dict."""
 
-    def __init__(self):
+    def __init__(self, bucket_existe: bool = True):
         self.objetos: dict[str, bytes] = {}
+        self.buckets = {"existente"} if bucket_existe else set()
+
+    def head_bucket(self, Bucket):
+        if Bucket not in self.buckets:
+            from botocore.exceptions import ClientError
+            raise ClientError({"Error": {"Code": "404"}}, "HeadBucket")
+
+    def create_bucket(self, Bucket, **_kw):
+        self.buckets.add(Bucket)
 
     def put_object(self, Bucket, Key, Body):
         self.objetos[Key] = Body
@@ -86,3 +95,26 @@ async def test_backup_poda_prefixos_antigos(s3_env, tmp_path):
     assert r["ok"]
     assert not any(k.startswith("maria/2020-01-01/") for k in fake.objetos)
     assert any(k.startswith("maria/2020-01-03/") for k in fake.objetos)
+
+
+def test_garantir_bucket_cria_quando_ausente():
+    fake = FakeS3(bucket_existe=False)
+    backup._garantir_bucket(fake, "novo", "us-east-1")
+    assert "novo" in fake.buckets
+
+
+def test_garantir_bucket_nao_recria_existente():
+    fake = FakeS3(bucket_existe=False)
+    fake.buckets.add("ja-existe")
+    backup._garantir_bucket(fake, "ja-existe", "sa-east-1")
+    assert fake.buckets == {"ja-existe"}          # sem churn
+
+
+def test_garantir_bucket_engole_falha_de_criacao():
+    class S3Rijido:
+        def head_bucket(self, Bucket):
+            raise PermissionError("sem acesso")
+        def create_bucket(self, Bucket, **kw):
+            raise PermissionError("sem acesso")
+    # não levanta — put_object decidirá com o erro real
+    backup._garantir_bucket(S3Rijido(), "x", "us-east-1")

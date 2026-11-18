@@ -26,6 +26,7 @@ from typing import Any
 from ..config import get_settings
 from ..telemetry.metrics import Uso
 from .backup import _client as _s3_client
+from .backup import _garantir_bucket
 
 log = logging.getLogger("maria.backup.pg")
 
@@ -109,6 +110,8 @@ async def backup_pg_agora(client_factory: Callable = _s3_client) -> dict[str, An
 
         def _sync() -> dict[str, Any]:
             client = client_factory()
+            _garantir_bucket(client, s.maria_s3_bucket,
+                             s.maria_s3_region)
             client.put_object(Bucket=s.maria_s3_bucket, Key=chave,
                               Body=gzip.compress(bruto))
             podados = _podar(client, s.maria_s3_bucket, _RAIZ,
