@@ -41,11 +41,8 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
       - run: cargo test --workspace
-      - uses: rustsec/audit-check@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          working-directory: server
-          # rsa/libsqlite3-sys: deps opcionais do sqlx (mysql/sqlite off) — nao compilam.
-          # quick-xml 0.38: DoS em XML nao-confiavel; so lemos respostas S3/STS
-          # via TLS e nao usamos NsReader. Preso por aws-creds 0.39, sem bump.
-          ignore: RUSTSEC-2023-0071 RUSTSEC-2026-0459 RUSTSEC-2026-0194 RUSTSEC-2026-0195
+      # rustsec/audit-check@v2 quebra no input 'ignore' (Unexpected end of
+      # JSON input). Rodamos cargo audit direto — ele le os ignores
+      # justificados em server/.cargo/audit.toml.
+      - uses: taiki-e/install-action@cargo-audit
+      - run: cargo audit
