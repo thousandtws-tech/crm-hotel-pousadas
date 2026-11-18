@@ -345,24 +345,35 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                     }
                   </div>
                   <div class="campo">
-                    <label class="lbl" for="fu-senha">
+                    <span class="lbl">
                       Senha
                       @if (!editando()) { <small class="req">*</small> }
-                    </label>
-                    @if (editando() && !trocaSenha()) {
-                      <label class="check-senha">
-                        <input type="checkbox" (change)="alternarSenha()" />
-                        Alterar senha atual
+                    </span>
+                    @if (editando()) {
+                      <label class="senha-toggle" [class.on]="trocaSenha()">
+                        <input type="checkbox" [checked]="trocaSenha()" (change)="alternarSenha()" />
+                        <mat-icon>{{ trocaSenha() ? 'lock_reset' : 'lock' }}</mat-icon>
+                        <span>{{ trocaSenha() ? 'Redefinindo senha' : 'Alterar senha' }}</span>
                       </label>
                     }
-                    <input
-                      id="fu-senha" class="input-inn" type="password"
-                      formControlName="senha"
-                      [placeholder]="editando() ? 'Nova senha (mín. 8)' : 'Mínimo 8 caracteres'"
-                      autocomplete="new-password"
-                      [disabled]="!!editando() && !trocaSenha()"
-                      [class.inval]="invalido('senha')"
-                    />
+                    @if (!editando() || trocaSenha()) {
+                      <div class="senha-wrap">
+                        <input
+                          id="fu-senha" class="input-inn" [type]="verSenha() ? 'text' : 'password'"
+                          formControlName="senha"
+                          [placeholder]="editando() ? 'Nova senha (mín. 8)' : 'Mínimo 8 caracteres'"
+                          autocomplete="new-password"
+                          [class.inval]="invalido('senha')"
+                        />
+                        <button type="button" class="senha-eye"
+                          [attr.aria-label]="verSenha() ? 'Ocultar senha' : 'Mostrar senha'"
+                          [title]="verSenha() ? 'Ocultar senha' : 'Mostrar senha'"
+                          (click)="verSenha.set(!verSenha())"
+                        ><mat-icon>{{ verSenha() ? 'visibility_off' : 'visibility' }}</mat-icon></button>
+                      </div>
+                    } @else {
+                      <small class="senha-hint">A senha atual será mantida.</small>
+                    }
                     @if (invalido('senha')) {
                       <small class="erro-campo">Senha obrigatória, mínimo de 8 caracteres.</small>
                     }
@@ -655,12 +666,27 @@ import { DateInputComponent } from '@shared/components/date-input.component';
     .campo .req, .drawer-req .req { color: #dc3545; }
     .erro-campo { color: #dc3545; font-size: 0.74rem; font-weight: 500; }
     .input-inn.inval { border-color: #dc3545; box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.12); }
-    .check-senha {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 0.78rem; color: #40525d; font-weight: 500; margin-bottom: 6px;
-      cursor: pointer;
+    .senha-toggle {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.78rem; color: #40525d; font-weight: 600;
+      padding: 7px 10px; border: 1px solid #d7e0e6; border-radius: 8px;
+      background: #f7fafc; width: fit-content; cursor: pointer;
+      transition: border-color .15s, color .15s, background .15s;
     }
-    .check-senha input { accent-color: #054054; }
+    .senha-toggle:hover { border-color: #4B95AB; color: #054054; }
+    .senha-toggle.on { border-color: #054054; background: #eef6f8; color: #054054; }
+    .senha-toggle input { accent-color: #054054; margin: 0; }
+    .senha-toggle mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .senha-wrap { position: relative; }
+    .senha-wrap .input-inn { width: 100%; padding-right: 38px; }
+    .senha-eye {
+      position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: #8aa0ac; cursor: pointer;
+      padding: 5px; display: inline-flex; border-radius: 6px;
+    }
+    .senha-eye:hover { color: #054054; background: #eef4f6; }
+    .senha-eye mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    .senha-hint { font-size: 0.74rem; color: #8a99a4; }
     .dica-sec { background: #f4f8fa; }
     .dicas { margin: 0; padding-left: 18px; font-size: 0.8rem; color: #536b73; line-height: 1.7; }
     .drawer-foot {
@@ -706,6 +732,7 @@ export class FuncionariosComponent implements OnInit {
   protected readonly pagina = signal(0);
   protected readonly editando = signal<Funcionario | null>(null);
   protected readonly trocaSenha = signal(false);
+  protected readonly verSenha = signal(false);
   protected readonly drawerAberto = signal(false);
   protected readonly tentou = signal(false);
   protected readonly termo = signal('');
@@ -910,6 +937,7 @@ export class FuncionariosComponent implements OnInit {
   abrirNovo(): void {
     this.editando.set(null);
     this.trocaSenha.set(false);
+    this.verSenha.set(false);
     this.tentou.set(false);
     this.form.controls.senha.enable();
     this.form.controls.senha.setValidators([Validators.required, Validators.minLength(8)]);
@@ -922,6 +950,7 @@ export class FuncionariosComponent implements OnInit {
   abrirEdicao(f: Funcionario): void {
     this.editando.set(f);
     this.trocaSenha.set(false);
+    this.verSenha.set(false);
     this.tentou.set(false);
     this.form.controls.senha.disable();
     this.form.controls.senha.setValidators([Validators.minLength(8)]);
