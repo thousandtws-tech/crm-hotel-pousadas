@@ -1,8 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { provideRouter } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { IntegracaoView } from '@core/models/integracoes.models';
 import { ConfirmService } from '@core/services/confirm.service';
@@ -57,15 +56,7 @@ describe('IntegracaoZapiComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [IntegracaoZapiComponent],
-      providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        provideRouter([]),
-        {
-          provide: ActivatedRoute,
-          useValue: { paramMap: of(convertToParamMap({ ambiente: 'producao' })) },
-        },
-      ],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     });
     mock = TestBed.inject(HttpTestingController);
   });
@@ -172,6 +163,19 @@ describe('IntegracaoZapiComponent', () => {
     await fixture.whenStable();
 
     expect(el.textContent).toContain('Mensagem enviada');
+  });
+
+  it('rejeita ambiente != producao sem chamar a API', async () => {
+    const fixture = TestBed.createComponent(IntegracaoZapiComponent);
+    // Z-API só existe em produção — rota com outro ambiente é inválida.
+    fixture.componentRef.setInput('ambiente', 'teste');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    mock.expectNone(DETALHE);
+    expect(fixture.nativeElement.textContent).toContain(
+      'Não foi possível carregar esta integração.',
+    );
   });
 
   it('pede confirmação antes de desconectar a sessão', async () => {
