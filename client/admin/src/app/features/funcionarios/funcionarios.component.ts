@@ -187,7 +187,8 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                     </td>
                     <td class="tc">
                       <span class="v-pill" [class]="verificacaoDe(f.id).cls"
-                        [title]="'Verificação de identidade (KYC)'">
+                        [title]="verificacaoDe(f.id).titulo">
+                        <mat-icon class="v-pill-ic">{{ verificacaoDe(f.id).icone }}</mat-icon>
                         {{ verificacaoDe(f.id).rotulo }}
                       </span>
                       <button
@@ -557,8 +558,10 @@ import { DateInputComponent } from '@shared/components/date-input.component';
     .acao-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .acao-btn.v-link { color: #4B95AB; }
 
-    .v-pill { display: inline-block; padding: 3px 10px; border-radius: 999px;
+    .v-pill { display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 999px;
       font-size: 11px; font-weight: 700; vertical-align: middle; }
+    .v-pill-ic { font-size: 14px; width: 14px; height: 14px; line-height: 14px; }
     .v-ok { background: #e6f4ea; color: #1e7d32; }
     .v-warn { background: #fff7e0; color: #8a5a00; }
     .v-erro { background: #fdecea; color: #b3261e; }
@@ -787,23 +790,46 @@ export class FuncionariosComponent implements OnInit {
     });
   }
 
-  /** Rótulo + classe do badge de identidade. */
-  verificacaoDe(id: number): { rotulo: string; cls: string } {
+  /** Rótulo + selo + classe do badge de identidade. */
+  verificacaoDe(id: number): { rotulo: string; cls: string; icone: string; titulo: string } {
     const v = this.verificacoes().get(id);
-    if (!v) return { rotulo: '—', cls: 'v-off' };
+    if (!v) {
+      return {
+        rotulo: '—', cls: 'v-off', icone: 'person_outline',
+        titulo: 'Sem verificação de identidade — gere um link pelo ícone ao lado',
+      };
+    }
+    const quando = v.decidido_em
+      ? ` em ${new Date(v.decidido_em).toLocaleDateString('pt-BR')}`
+      : '';
     switch (v.status) {
       case 'aprovada':
-        return { rotulo: 'Verificado', cls: 'v-ok' };
+        return {
+          rotulo: 'Verificado', cls: 'v-ok', icone: 'verified',
+          titulo: `Identidade verificada via Didit${quando}`,
+        };
       case 'recusada':
-        return { rotulo: 'Recusada', cls: 'v-erro' };
+        return {
+          rotulo: 'Recusada', cls: 'v-erro', icone: 'cancel',
+          titulo: `Verificação recusada${quando} — gere um novo link`,
+        };
       case 'em_revisao':
-        return { rotulo: 'Em revisão', cls: 'v-warn' };
+        return {
+          rotulo: 'Em revisão', cls: 'v-warn', icone: 'pending_actions',
+          titulo: 'Verificação em revisão manual pela Didit',
+        };
       case 'expirada':
       case 'abandonada':
       case 'kyc_expirada':
-        return { rotulo: 'Expirada', cls: 'v-off' };
+        return {
+          rotulo: 'Expirada', cls: 'v-off', icone: 'schedule',
+          titulo: 'Verificação expirada — gere um novo link',
+        };
       default:
-        return { rotulo: 'Pendente', cls: 'v-warn' };
+        return {
+          rotulo: 'Pendente', cls: 'v-warn', icone: 'hourglass_empty',
+          titulo: 'Aguardando o funcionário concluir a verificação',
+        };
     }
   }
 
