@@ -179,7 +179,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                     </td>
                     <td class="td-cpf">{{ f.cpf || '—' }}</td>
                     <td class="tc">
-                      <span class="fn-nivel" [class]="'n' + f.nivel" [title]="nivelNome(f.nivel)">
+                      <span class="fn-nivel n{{ f.nivel }}" [title]="nivelNome(f.nivel)">
                         <mat-icon>{{ nivelIcone(f.nivel) }}</mat-icon>
                         {{ cargoNome(f) }}
                       </span>
