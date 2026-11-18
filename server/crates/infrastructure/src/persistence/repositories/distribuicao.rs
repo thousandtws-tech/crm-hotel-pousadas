@@ -40,7 +40,7 @@ impl DistribuicaoRepository for PgDistribuicaoRepository {
         idintegracao: i64,
     ) -> Result<Vec<MapaDistribuicaoView>, DomainError> {
         sqlx::query_as::<_, MapaDistribuicaoView>(
-            "SELECT m.id, m.idacomodacao, a.nome AS acomodacao, a.numero,
+            "SELECT m.id, m.idacomodacao, a.nome AS acomodacao, a.numero::text AS numero,
                     m.room_type_id, m.rate_plan_id, m.ativo, m.atualizado_em
              FROM distribuicao_mapa m
              JOIN acomodacao a ON a.id = m.idacomodacao
