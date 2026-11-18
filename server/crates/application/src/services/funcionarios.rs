@@ -3,6 +3,7 @@
 use crate::actor::Ator;
 use crate::dto::{FuncionarioInput, FuncionarioUpdate, RegistroInput};
 use crate::error::AppResult;
+use crate::services::CargosService;
 use clarituz_domain::entities::{Funcionario, NovoLog};
 use clarituz_domain::ports::{
     AtualizaFuncionario, FuncionarioRepository, NovoFuncionario, PasswordHasher,
@@ -15,11 +16,20 @@ use std::sync::Arc;
 pub struct FuncionarioService {
     repo: Arc<dyn FuncionarioRepository>,
     hasher: Arc<dyn PasswordHasher>,
+    cargos: Arc<CargosService>,
 }
 
 impl FuncionarioService {
-    pub fn new(repo: Arc<dyn FuncionarioRepository>, hasher: Arc<dyn PasswordHasher>) -> Self {
-        Self { repo, hasher }
+    pub fn new(
+        repo: Arc<dyn FuncionarioRepository>,
+        hasher: Arc<dyn PasswordHasher>,
+        cargos: Arc<CargosService>,
+    ) -> Self {
+        Self {
+            repo,
+            hasher,
+            cargos,
+        }
     }
 
     pub async fn buscar(&self, id: i64) -> AppResult<Funcionario> {
@@ -52,9 +62,10 @@ impl FuncionarioService {
         if input.senha.len() < 8 {
             return Err(DomainError::validacao("Senha deve ter ao menos 8 caracteres.").into());
         }
-        if input.nivel < 1 {
+        if input.cargo_id.is_none() && input.nivel < 1 {
             return Err(DomainError::validacao("Nível de acesso inválido.").into());
         }
+        let (cargo_id, nivel) = self.cargos.resolver(input.cargo_id, input.nivel).await?;
         let cpf = match input
             .cpf
             .as_deref()
@@ -74,12 +85,13 @@ impl FuncionarioService {
             senha_hash: self.hasher.hash(&input.senha)?,
             cpf,
             data_nascimento: input.data_nascimento,
-            nivel: input.nivel,
+            nivel,
+            cargo_id,
             ativo: true,
         };
         let log = ator.log(
             "cadastro",
-            format!("Cadastrou o funcionário '{login}' (nível {})", input.nivel),
+            format!("Cadastrou o funcionário '{login}' (nível {nivel})"),
             "funcionario",
             0,
             None,
@@ -103,6 +115,7 @@ impl FuncionarioService {
         if self.repo.login_em_uso(&login, 0).await? {
             return Err(DomainError::conflito(format!("Login {login} em uso.")).into());
         }
+        let (cargo_id, nivel) = self.cargos.resolver(None, 1).await?;
 
         let novo = NovoFuncionario {
             nome: nome.to_string(),
@@ -110,7 +123,8 @@ impl FuncionarioService {
             senha_hash: self.hasher.hash(&input.senha)?,
             cpf: None,
             data_nascimento: None,
-            nivel: 1,
+            nivel,
+            cargo_id,
             ativo: true,
         };
         let log = NovoLog {
@@ -166,6 +180,23 @@ impl FuncionarioService {
             None => None,
         };
 
+        // Troca de cargo rebaixa/promove o acesso — o nível derivado do cargo
+        // vence um `nivel` solto enviado junto no payload. `nivel` legado sem
+        // cargo cai no cargo-base correspondente, mantendo os dois em sincronia.
+        let (cargo_id, nivel) = match input.cargo_id {
+            Some(cid) => {
+                let (cid, n) = self.cargos.resolver(Some(cid), 0).await?;
+                (Some(cid), Some(n))
+            }
+            None => match input.nivel {
+                Some(n) => {
+                    let (cid, n) = self.cargos.resolver(None, n).await?;
+                    (Some(cid), Some(n))
+                }
+                None => (None, None),
+            },
+        };
+
         let dados = AtualizaFuncionario {
             nome: input
                 .nome
@@ -174,7 +205,8 @@ impl FuncionarioService {
             login,
             cpf,
             data_nascimento: input.data_nascimento,
-            nivel: input.nivel,
+            nivel,
+            cargo_id,
             senha_hash,
             version: input.version,
         };

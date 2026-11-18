@@ -4,11 +4,13 @@ use super::audit;
 use crate::persistence::db::{map_db_err, map_del_err};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use clarituz_domain::entities::{Cliente, ClienteDocumento, Funcionario, NovoLog, SessaoRefresh};
+use clarituz_domain::entities::{
+    Cargo, Cliente, ClienteDocumento, Funcionario, NovoLog, SessaoRefresh,
+};
 use clarituz_domain::ports::{
-    AtualizaFuncionario, ClienteRepository, DocumentoRepository, FiltroCliente,
-    FuncionarioRepository, LogAcessoRepository, NovoCliente, NovoClienteSite, NovoDocumento,
-    NovoFuncionario, SessaoRepository,
+    AtualizaCargo, AtualizaFuncionario, CargoRepository, ClienteRepository, DocumentoRepository,
+    FiltroCliente, FuncionarioRepository, LogAcessoRepository, NovoCargo, NovoCliente,
+    NovoClienteSite, NovoDocumento, NovoFuncionario, SessaoRepository,
 };
 use clarituz_domain::DomainError;
 use clarituz_shared::{Page, PageParams};
@@ -31,7 +33,7 @@ impl PgFuncionarioRepository {
 }
 
 const FUNCIONARIO_COLS: &str =
-    "id, nome, login, senha_hash, cpf, data_nascimento, nivel, financeiro, ativo, version, criado_em, atualizado_em";
+    "id, nome, login, senha_hash, cpf, data_nascimento, nivel, cargo_id, financeiro, ativo, version, criado_em, atualizado_em";
 
 #[async_trait]
 impl FuncionarioRepository for PgFuncionarioRepository {
@@ -98,8 +100,8 @@ impl FuncionarioRepository for PgFuncionarioRepository {
         let mut tx = self.pool.begin().await.map_err(map_db_err)?;
 
         let f = sqlx::query_as::<_, Funcionario>(&format!(
-            "INSERT INTO funcionario (nome, login, senha_hash, cpf, data_nascimento, nivel, ativo)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
+            "INSERT INTO funcionario (nome, login, senha_hash, cpf, data_nascimento, nivel, cargo_id, ativo)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              RETURNING {FUNCIONARIO_COLS}"
         ))
         .bind(&novo.nome)
@@ -108,6 +110,7 @@ impl FuncionarioRepository for PgFuncionarioRepository {
         .bind(&novo.cpf)
         .bind(novo.data_nascimento)
         .bind(novo.nivel)
+        .bind(novo.cargo_id)
         .bind(novo.ativo)
         .fetch_one(&mut *tx)
         .await
@@ -137,6 +140,7 @@ impl FuncionarioRepository for PgFuncionarioRepository {
                 data_nascimento = COALESCE($5, data_nascimento),
                 nivel = COALESCE($6, nivel),
                 senha_hash = COALESCE($7, senha_hash),
+                cargo_id = COALESCE($9, cargo_id),
                 atualizado_em = now()
              WHERE id = $1 AND ($8::bigint IS NULL OR version = $8)
              RETURNING {FUNCIONARIO_COLS}"
@@ -149,6 +153,7 @@ impl FuncionarioRepository for PgFuncionarioRepository {
         .bind(d.nivel)
         .bind(&d.senha_hash)
         .bind(d.version)
+        .bind(d.cargo_id)
         .fetch_optional(&mut *tx)
         .await
         .map_err(map_db_err)?
@@ -209,6 +214,123 @@ impl FuncionarioRepository for PgFuncionarioRepository {
         }
         audit::gravar(&mut *tx, &log).await?;
         tx.commit().await.map_err(map_db_err)?;
+        Ok(())
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Cargos
+// ---------------------------------------------------------------------------
+
+#[derive(Clone)]
+pub struct PgCargoRepository {
+    pool: PgPool,
+}
+
+impl PgCargoRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+const CARGO_COLS: &str = "id, nome, descricao, nivel, ativo, sistema, criado_em, atualizado_em";
+
+#[async_trait]
+impl CargoRepository for PgCargoRepository {
+    async fn buscar(&self, id: i64) -> Result<Option<Cargo>, DomainError> {
+        sqlx::query_as::<_, Cargo>(&format!(
+            "SELECT {CARGO_COLS}, 0::bigint AS total_funcionarios FROM cargo WHERE id = $1"
+        ))
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn buscar_por_nivel(&self, nivel: i16) -> Result<Option<Cargo>, DomainError> {
+        sqlx::query_as::<_, Cargo>(&format!(
+            "SELECT {CARGO_COLS}, 0::bigint AS total_funcionarios FROM cargo
+             WHERE nivel = $1 AND ativo ORDER BY sistema DESC, id LIMIT 1"
+        ))
+        .bind(nivel)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn listar(&self, apenas_ativos: bool) -> Result<Vec<Cargo>, DomainError> {
+        let filtro = if apenas_ativos { "WHERE c.ativo" } else { "" };
+        sqlx::query_as::<_, Cargo>(&format!(
+            "SELECT {CARGO_COLS},
+                    (SELECT count(*) FROM funcionario f WHERE f.cargo_id = c.id) AS total_funcionarios
+             FROM cargo c {filtro}
+             ORDER BY c.nivel, c.nome"
+        ))
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn nome_em_uso(&self, nome: &str, exceto_id: i64) -> Result<bool, DomainError> {
+        sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM cargo WHERE lower(nome) = lower($1) AND id != $2)",
+        )
+        .bind(nome)
+        .bind(exceto_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn criar(&self, novo: &NovoCargo) -> Result<Cargo, DomainError> {
+        sqlx::query_as::<_, Cargo>(&format!(
+            "INSERT INTO cargo (nome, descricao, nivel) VALUES ($1, $2, $3)
+             RETURNING {CARGO_COLS}, 0::bigint AS total_funcionarios"
+        ))
+        .bind(&novo.nome)
+        .bind(&novo.descricao)
+        .bind(novo.nivel)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn atualizar(&self, id: i64, d: &AtualizaCargo) -> Result<Cargo, DomainError> {
+        sqlx::query_as::<_, Cargo>(&format!(
+            "UPDATE cargo SET
+                nome = COALESCE($2, nome),
+                descricao = COALESCE($3, descricao),
+                nivel = COALESCE($4, nivel),
+                ativo = COALESCE($5, ativo),
+                atualizado_em = now()
+             WHERE id = $1
+             RETURNING {CARGO_COLS}, 0::bigint AS total_funcionarios"
+        ))
+        .bind(id)
+        .bind(&d.nome)
+        .bind(&d.descricao)
+        .bind(d.nivel)
+        .bind(d.ativo)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)?
+        .ok_or_else(|| DomainError::nao_encontrado("Cargo não encontrado."))
+    }
+
+    async fn remover(&self, id: i64) -> Result<(), DomainError> {
+        let r = sqlx::query("DELETE FROM cargo WHERE id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| {
+                map_del_err(
+                    e,
+                    "Cargo possui funcionários vinculados — desative-o ou realoque-os.",
+                )
+            })?;
+        if r.rows_affected() == 0 {
+            return Err(DomainError::nao_encontrado("Cargo não encontrado."));
+        }
         Ok(())
     }
 }

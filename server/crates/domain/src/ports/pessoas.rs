@@ -1,6 +1,6 @@
 //! Ports do contexto de pessoas: funcionários, autenticação, clientes.
 
-use crate::entities::{Cliente, ClienteDocumento, Funcionario, NovoLog, SessaoRefresh};
+use crate::entities::{Cargo, Cliente, ClienteDocumento, Funcionario, NovoLog, SessaoRefresh};
 use crate::error::DomainError;
 use async_trait::async_trait;
 use chrono::{DateTime, NaiveDate, Utc};
@@ -19,6 +19,7 @@ pub struct NovoFuncionario {
     pub cpf: Option<String>,
     pub data_nascimento: Option<NaiveDate>,
     pub nivel: i16,
+    pub cargo_id: i64,
     /// `false` no auto-cadastro: a conta fica pendente até um admin ativar.
     pub ativo: bool,
 }
@@ -30,6 +31,7 @@ pub struct AtualizaFuncionario {
     pub cpf: Option<String>,
     pub data_nascimento: Option<NaiveDate>,
     pub nivel: Option<i16>,
+    pub cargo_id: Option<i64>,
     /// `Some(hash)` redefine a senha.
     pub senha_hash: Option<String>,
     /// Concorrência otimista: `Some(v)` exige `version = v` no UPDATE —
@@ -64,6 +66,40 @@ pub trait FuncionarioRepository: Send + Sync {
     /// Remove em definitivo (sessões, acessos e leituras de notificação
     /// junto) — falha (409) se houver histórico de ações/reservas.
     async fn remover(&self, id: i64, log: NovoLog) -> Result<(), DomainError>;
+}
+
+// ---------------------------------------------------------------------------
+// Cargos — título + nível de acesso
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone)]
+pub struct NovoCargo {
+    pub nome: String,
+    pub descricao: Option<String>,
+    pub nivel: i16,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct AtualizaCargo {
+    pub nome: Option<String>,
+    pub descricao: Option<String>,
+    pub nivel: Option<i16>,
+    pub ativo: Option<bool>,
+}
+
+#[async_trait]
+pub trait CargoRepository: Send + Sync {
+    async fn buscar(&self, id: i64) -> Result<Option<Cargo>, DomainError>;
+    /// Cargo ativo cujo `nivel` corresponde — usado para mapear o nível
+    /// legado do auto-cadastro (admin) no cargo-base.
+    async fn buscar_por_nivel(&self, nivel: i16) -> Result<Option<Cargo>, DomainError>;
+    /// Lista com a contagem de funcionários vinculados (`total_funcionarios`).
+    async fn listar(&self, apenas_ativos: bool) -> Result<Vec<Cargo>, DomainError>;
+    async fn nome_em_uso(&self, nome: &str, exceto_id: i64) -> Result<bool, DomainError>;
+    async fn criar(&self, novo: &NovoCargo) -> Result<Cargo, DomainError>;
+    async fn atualizar(&self, id: i64, dados: &AtualizaCargo) -> Result<Cargo, DomainError>;
+    /// Remove em definitivo — falha (409) se houver funcionário vinculado.
+    async fn remover(&self, id: i64) -> Result<(), DomainError>;
 }
 
 #[async_trait]

@@ -50,7 +50,7 @@ pub use financeiro::{
 };
 pub use fiscal::{integration_id, FiscalDocumento, FiscalEvento, StatusFiscal};
 pub use frigobar::{Frigobar, ItemFrigobar};
-pub use funcionario::{Funcionario, LogAcesso, SessaoRefresh};
+pub use funcionario::{Cargo, Funcionario, LogAcesso, SessaoRefresh};
 pub use impressora::{ImpressaoJob, Impressora, ImpressoraDescoberta};
 pub use integracao::{
     AmbienteIntegracao, Integracao, ProvedorIntegracao, StatusIntegracao, StatusVerificacao,

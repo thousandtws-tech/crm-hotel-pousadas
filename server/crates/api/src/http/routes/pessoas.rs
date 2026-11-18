@@ -375,3 +375,54 @@ pub async fn remover_funcionario(
     s.services.funcionarios.remover(&ator, id).await?;
     Ok(StatusCode::NO_CONTENT)
 }
+
+// ---------------------------------------------------------------------------
+// cargos — título + nível de acesso dos funcionários
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+pub struct CargosQuery {
+    #[serde(default)]
+    pub apenas_ativos: bool,
+}
+
+/// `GET /cargos` — autenticado: alimenta o select do formulário de
+/// funcionário e a tela de gerenciamento (admin).
+pub async fn listar_cargos(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Query(q): Query<CargosQuery>,
+) -> Result<Json<Vec<clarituz_domain::entities::Cargo>>, AppError> {
+    Ok(Json(s.services.cargos.listar(q.apenas_ativos).await?))
+}
+
+/// `POST /cargos` — cria cargo (admin).
+pub async fn criar_cargo(
+    State(s): State<AppState>,
+    ator: Ator,
+    Json(body): Json<clarituz_application::services::cargos::CargoInput>,
+) -> Result<(StatusCode, Json<clarituz_domain::entities::Cargo>), AppError> {
+    let c = s.services.cargos.criar(&ator, body).await?;
+    Ok((StatusCode::CREATED, Json(c)))
+}
+
+/// `PUT /cargos/{id}` — edita cargo (admin). Cargos-base não mudam de nível.
+pub async fn atualizar_cargo(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+    Json(body): Json<clarituz_application::services::cargos::CargoUpdate>,
+) -> Result<Json<clarituz_domain::entities::Cargo>, AppError> {
+    Ok(Json(s.services.cargos.atualizar(&ator, id, body).await?))
+}
+
+/// `DELETE /cargos/{id}` — remove cargo (admin). Vedado para cargos-base;
+/// 409 quando há funcionários vinculados.
+pub async fn remover_cargo(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<StatusCode, AppError> {
+    s.services.cargos.remover(&ator, id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}

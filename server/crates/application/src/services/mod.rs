@@ -8,6 +8,7 @@ pub mod auth;
 pub mod busca;
 pub mod cafe;
 pub mod caixa;
+pub mod cargos;
 pub mod clientes;
 pub mod cms;
 pub mod compras;
@@ -48,6 +49,7 @@ pub use auth::AuthService;
 pub use busca::BuscaService;
 pub use cafe::CafeService;
 pub use caixa::CaixaService;
+pub use cargos::CargosService;
 pub use clientes::ClienteService;
 pub use cms::CmsService;
 pub use compras::ComprasService;
@@ -99,6 +101,7 @@ pub struct Services {
     pub pagamentos: Arc<PagamentoService>,
     pub pagamentos_online: Arc<PagamentosOnlineService>,
     pub funcionarios: Arc<FuncionarioService>,
+    pub cargos: Arc<CargosService>,
     pub estabelecimento: Arc<EstabelecimentoService>,
     pub impressoras: Arc<ImpressoraService>,
     /// `None` sem `INTEGRACOES_MASTER_KEY` — rotas respondem 503

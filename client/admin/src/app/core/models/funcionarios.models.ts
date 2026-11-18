@@ -26,10 +26,39 @@ export interface Funcionario {
   cpf: string | null;
   data_nascimento: string | null;
   nivel: number;
+  /** Cargo (título) vinculado — `nivel` é o acesso derivado dele. */
+  cargo_id: number;
   ativo: boolean;
   version: number;
   criado_em: string;
   atualizado_em: string;
+}
+
+/** Cargo — título do funcionário vinculado a um nível de acesso. */
+export interface Cargo {
+  id: number;
+  nome: string;
+  descricao: string | null;
+  nivel: number;
+  ativo: boolean;
+  /** Cargos-base (Administrador/Gerente/Recepção): não removíveis, nível travado. */
+  sistema: boolean;
+  total_funcionarios: number;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface CargoInput {
+  nome: string;
+  descricao?: string | null;
+  nivel: number;
+}
+
+export interface CargoUpdate {
+  nome?: string;
+  descricao?: string | null;
+  nivel?: number;
+  ativo?: boolean;
 }
 
 export interface FuncionarioInput {
@@ -38,7 +67,7 @@ export interface FuncionarioInput {
   senha: string;
   cpf?: string | null;
   data_nascimento?: string | null;
-  nivel: number;
+  cargo_id: number;
 }
 
 /** Auto-cadastro pela tela de login — cria conta de administrador. */
@@ -54,7 +83,8 @@ export interface FuncionarioUpdate {
   senha?: string;
   cpf?: string | null;
   data_nascimento?: string | null;
-  nivel?: number;
+  /** Troca de cargo — redefine `nivel` a partir dele no backend. */
+  cargo_id?: number;
   /** Concorrência otimista — enviar a version lida no GET. */
   version?: number;
 }

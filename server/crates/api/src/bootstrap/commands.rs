@@ -1,5 +1,7 @@
 use clarituz_domain::entities::NovoLog;
-use clarituz_domain::ports::{FuncionarioRepository, NovoFuncionario, PasswordHasher};
+use clarituz_domain::ports::{
+    CargoRepository, FuncionarioRepository, NovoFuncionario, PasswordHasher,
+};
 use clarituz_infrastructure::{repositories, Argon2Hasher};
 
 pub async fn create_admin(
@@ -14,9 +16,14 @@ pub async fn create_admin(
     }
     let hasher = Argon2Hasher::new();
     let repo = repositories::PgFuncionarioRepository::new(pool.clone());
+    let cargos = repositories::PgCargoRepository::new(pool.clone());
     if repo.login_em_uso(login, 0).await? {
         return Err(format!("login '{login}' já existe").into());
     }
+    let cargo = cargos
+        .buscar_por_nivel(nivel)
+        .await?
+        .ok_or("nenhum cargo ativo para o nível informado — rode as migrations")?;
     let f = repo
         .criar(
             &NovoFuncionario {
@@ -26,6 +33,7 @@ pub async fn create_admin(
                 cpf: None,
                 data_nascimento: None,
                 nivel,
+                cargo_id: cargo.id,
                 ativo: true,
             },
             NovoLog {

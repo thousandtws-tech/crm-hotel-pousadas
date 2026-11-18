@@ -6,9 +6,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { FuncionariosApi } from '@core/api/funcionarios.api';
+import { CargosApi } from '@core/api/cargos.api';
 import { VerificacaoApi } from '@core/api/verificacao.api';
 import * as M from '@core/models';
-import { Funcionario, FuncionarioInput, FuncionarioUpdate } from '@core/models/funcionarios.models';
+import {
+  Cargo,
+  Funcionario,
+  FuncionarioInput,
+  FuncionarioUpdate,
+} from '@core/models/funcionarios.models';
 import { Confirm } from '@core/services/confirm.service';
 import { Notify } from '@core/services/notify.service';
 import { Realtime } from '@core/services/realtime.service';
@@ -42,6 +48,9 @@ import { DateInputComponent } from '@shared/components/date-input.component';
           <a class="btn-tour" routerLink="/auditoria">
             <mat-icon>history</mat-icon> Auditoria
           </a>
+          <button class="btn-tour" type="button" (click)="abrirCargos()" id="tour-cargos">
+            <mat-icon>work</mat-icon> Cargos
+          </button>
           <button class="btn-tour" type="button" (click)="iniciarTour()" aria-label="Ver tutorial da tela">
             <mat-icon>school</mat-icon> Tutorial
           </button>
@@ -170,9 +179,9 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                     </td>
                     <td class="td-cpf">{{ f.cpf || '—' }}</td>
                     <td class="tc">
-                      <span class="fn-nivel" [class]="'n' + f.nivel">
+                      <span class="fn-nivel" [class]="'n' + f.nivel" [title]="nivelNome(f.nivel)">
                         <mat-icon>{{ nivelIcone(f.nivel) }}</mat-icon>
-                        {{ nivelNome(f.nivel) }}
+                        {{ cargoNome(f) }}
                       </span>
                     </td>
                     <td class="tc">
@@ -316,22 +325,29 @@ import { DateInputComponent } from '@shared/components/date-input.component';
                 <div class="dsec-tit"><mat-icon>key</mat-icon> Função &amp; acesso</div>
                 <div class="dgrid">
                   <div class="campo full">
-                    <label class="lbl" for="fu-nivel">Função <small class="req">*</small></label>
+                    <label class="lbl" for="fu-cargo">Cargo <small class="req">*</small></label>
                     <mat-form-field
                       appearance="outline"
                       subscriptSizing="dynamic"
                       class="campo-mat"
-                      [class.err]="invalido('nivel')"
+                      [class.err]="invalido('cargo_id')"
                     >
-                      <mat-select id="fu-nivel" formControlName="nivel" placeholder="Selecione…">
-                        <mat-option [value]="3">Recepção — opera o dia a dia</mat-option>
-                        <mat-option [value]="2">Gerente — recepção + relatórios</mat-option>
-                        <mat-option [value]="1">Administrador — acesso total</mat-option>
+                      <mat-select id="fu-cargo" formControlName="cargo_id" placeholder="Selecione…">
+                        @for (c of cargos(); track c.id) {
+                          @if (c.ativo || c.id === editando()?.cargo_id) {
+                            <mat-option [value]="c.id">
+                              {{ c.nome }} — {{ nivelNome(c.nivel).toLowerCase() }}
+                            </mat-option>
+                          }
+                        }
                       </mat-select>
                     </mat-form-field>
-                    @if (invalido('nivel')) {
-                      <small class="erro-campo">Escolha a função.</small>
+                    @if (invalido('cargo_id')) {
+                      <small class="erro-campo">Escolha o cargo.</small>
                     }
+                    <button type="button" class="link-gerir" (click)="abrirCargos()">
+                      <mat-icon>settings</mat-icon> Gerenciar cargos
+                    </button>
                   </div>
                   <div class="campo">
                     <label class="lbl" for="fu-login">Login <small class="req">*</small></label>
@@ -401,6 +417,126 @@ import { DateInputComponent } from '@shared/components/date-input.component';
               </div>
             </footer>
           </form>
+        </aside>
+      </div>
+    }
+
+    <!-- ================= Drawer: cargos ================= -->
+    @if (cargosAberto()) {
+      <div class="drawer-backdrop" (click.self)="fecharCargos()">
+        <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="titulo-cargos">
+          <header class="drawer-head">
+            <div class="drawer-head-txt">
+              <h5 id="titulo-cargos">Cargos</h5>
+              <p>Títulos da equipe — cada cargo define o nível de acesso do funcionário</p>
+            </div>
+            <button type="button" class="drawer-fechar" (click)="fecharCargos()" aria-label="Fechar painel">
+              <mat-icon>close</mat-icon>
+            </button>
+          </header>
+
+          <div class="drawer-body">
+            <!-- Criar / editar -->
+            <section class="dsec">
+              <div class="dsec-tit">
+                <mat-icon>{{ editandoCargo() ? 'edit' : 'add' }}</mat-icon>
+                {{ editandoCargo() ? 'Editar cargo' : 'Novo cargo' }}
+              </div>
+              <form [formGroup]="cargoForm" (ngSubmit)="salvarCargo()" autocomplete="off">
+                <div class="dgrid">
+                  <div class="campo full">
+                    <label class="lbl" for="cg-nome">Nome <small class="req">*</small></label>
+                    <input
+                      id="cg-nome" class="input-inn" type="text"
+                      formControlName="nome" placeholder="Ex.: Camareira, Cozinheira, Manutenção"
+                      [class.inval]="invalidoCargo('nome')"
+                    />
+                    @if (invalidoCargo('nome')) {
+                      <small class="erro-campo">Informe o nome do cargo.</small>
+                    }
+                  </div>
+                  <div class="campo full">
+                    <label class="lbl" for="cg-desc">Descrição</label>
+                    <input
+                      id="cg-desc" class="input-inn" type="text"
+                      formControlName="descricao"
+                      placeholder="Ex.: cuida da limpeza e arrumação dos quartos"
+                    />
+                  </div>
+                  <div class="campo full">
+                    <label class="lbl" for="cg-nivel">Nível de acesso <small class="req">*</small></label>
+                    <mat-form-field
+                      appearance="outline"
+                      subscriptSizing="dynamic"
+                      class="campo-mat"
+                      [class.err]="invalidoCargo('nivel')"
+                    >
+                      <mat-select id="cg-nivel" formControlName="nivel">
+                        <mat-option [value]="3">Recepção — opera o dia a dia</mat-option>
+                        <mat-option [value]="2">Gerente — recepção + relatórios</mat-option>
+                        <mat-option [value]="1">Administrador — acesso total</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                    @if (editandoCargo()?.sistema) {
+                      <small class="senha-hint">O nível de um cargo-base não pode ser alterado.</small>
+                    } @else {
+                      <small class="senha-hint">Funcionários com este cargo entram no sistema com esse nível.</small>
+                    }
+                  </div>
+                </div>
+                <div class="cg-acoes">
+                  @if (editandoCargo()) {
+                    <button class="btn-gray" type="button" (click)="cancelarCargo()">Cancelar edição</button>
+                  }
+                  <button class="btn-dark-blue" type="submit">
+                    <mat-icon>save</mat-icon> {{ editandoCargo() ? 'Salvar cargo' : 'Criar cargo' }}
+                  </button>
+                </div>
+              </form>
+            </section>
+
+            <!-- Lista -->
+            <section class="dsec">
+              <div class="dsec-tit"><mat-icon>list</mat-icon> Cargos cadastrados</div>
+              <ul class="cg-lista">
+                @for (c of cargos(); track c.id) {
+                  <li class="cg-item" [class.inativo]="!c.ativo">
+                    <div class="cg-info">
+                      <strong>
+                        {{ c.nome }}
+                        @if (c.sistema) {
+                          <span class="cg-sys">sistema</span>
+                        }
+                      </strong>
+                      <small>
+                        {{ nivelNome(c.nivel) }}{{ c.descricao ? ' · ' + c.descricao : '' }}
+                        · {{ c.total_funcionarios }} {{ c.total_funcionarios === 1 ? 'pessoa' : 'pessoas' }}
+                      </small>
+                    </div>
+                    <div class="cg-item-acoes">
+                      <button
+                        type="button" class="st-chip" [class.off]="!c.ativo"
+                        [title]="c.ativo ? 'Clique para desativar' : 'Clique para ativar'"
+                        (click)="statusCargo(c, !c.ativo)"
+                      >{{ c.ativo ? 'Ativo' : 'Inativo' }}</button>
+                      <button
+                        type="button" class="acao-btn"
+                        aria-label="Editar cargo" title="Editar"
+                        (click)="editarCargo(c)"
+                      ><mat-icon>edit</mat-icon></button>
+                      <button
+                        type="button" class="acao-btn perigo"
+                        [disabled]="c.sistema || c.total_funcionarios > 0"
+                        aria-label="Excluir cargo"
+                        [title]="c.sistema ? 'Cargo-base do sistema não pode ser excluído' : (c.total_funcionarios > 0 ? 'Há funcionários com este cargo' : 'Excluir')"
+                        (click)="excluirCargo(c)"
+                      ><mat-icon>delete</mat-icon></button>
+                    </div>
+                  </li>
+                }
+              </ul>
+            </section>
+          </div>
         </aside>
       </div>
     }
@@ -689,6 +825,44 @@ import { DateInputComponent } from '@shared/components/date-input.component';
     .senha-hint { font-size: 0.74rem; color: #8a99a4; }
     .dica-sec { background: #f4f8fa; }
     .dicas { margin: 0; padding-left: 18px; font-size: 0.8rem; color: #536b73; line-height: 1.7; }
+    .link-gerir {
+      align-self: flex-start;
+      display: inline-flex; align-items: center; gap: 4px;
+      border: none; background: none; padding: 0; margin-top: 2px;
+      font-size: 0.76rem; font-weight: 600; color: #4B95AB;
+      font-family: inherit; cursor: pointer;
+    }
+    .link-gerir:hover { color: #054054; text-decoration: underline; }
+    .link-gerir mat-icon { font-size: 15px; width: 15px; height: 15px; }
+
+    /* ---------- cargos ---------- */
+    .cg-acoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+    .cg-acoes .btn-dark-blue, .cg-acoes .btn-gray {
+      display: inline-flex; align-items: center; gap: 6px; padding: 0.45rem 0.9rem;
+    }
+    .cg-acoes mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .cg-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+    .cg-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 10px 4px; border-bottom: 1px solid #eef2f5;
+    }
+    .cg-item:last-child { border-bottom: none; }
+    .cg-item.inativo .cg-info { opacity: 0.55; }
+    .cg-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .cg-info strong {
+      font-size: 0.88rem; color: #054054; font-weight: 700;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .cg-sys {
+      background: #eef4f6; color: #054054;
+      font-size: 0.62rem; font-weight: 700; padding: 1px 7px; border-radius: 999px;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .cg-info small {
+      font-size: 0.74rem; color: #8a99a4;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .cg-item-acoes { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
     .drawer-foot {
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; padding: 13px 22px;
@@ -712,6 +886,7 @@ import { DateInputComponent } from '@shared/components/date-input.component';
 })
 export class FuncionariosComponent implements OnInit {
   private readonly funcionariosApi = inject(FuncionariosApi);
+  private readonly cargosApi = inject(CargosApi);
   private readonly verificacaoApi = inject(VerificacaoApi);
   private readonly notify = inject(Notify);
   private readonly confirm = inject(Confirm);
@@ -739,14 +914,33 @@ export class FuncionariosComponent implements OnInit {
   protected readonly buscaFoco = signal(false);
   protected readonly skel = [0, 1, 2, 3, 4];
 
+  /** Cargos disponíveis — alimenta o select do formulário e a tela de gestão. */
+  protected readonly cargos = signal<Cargo[]>([]);
+  protected readonly cargosAberto = signal(false);
+  protected readonly editandoCargo = signal<Cargo | null>(null);
+  protected readonly tentouCargo = signal(false);
+
   /** Formulário único — criar e editar usam o mesmo drawer. */
   protected readonly form = this.fb.nonNullable.group({
     nome: ['', Validators.required],
     data_nascimento: ['', Validators.required],
     cpf: ['', Validators.required],
-    nivel: [3, Validators.required],
+    cargo_id: [0, [Validators.required, Validators.min(1)]],
     login: ['', Validators.required],
     senha: ['', [Validators.required, Validators.minLength(8)]],
+  });
+
+  /** Formulário do cargo no drawer de gestão. */
+  protected readonly cargoForm = this.fb.nonNullable.group({
+    nome: ['', Validators.required],
+    descricao: [''],
+    nivel: [3, Validators.required],
+  });
+
+  private readonly cargosPorId = computed(() => {
+    const mapa = new Map<number, Cargo>();
+    for (const c of this.cargos()) mapa.set(c.id, c);
+    return mapa;
   });
 
   protected readonly ativos = computed(() => this.items().filter((f) => f.ativo).length);
@@ -783,14 +977,28 @@ export class FuncionariosComponent implements OnInit {
         this.carregar();
       }
     });
+    let ultimoCargo = -1;
+    effect(() => {
+      const v = this.rt.mudanca('cargo');
+      if (ultimoCargo < 0) {
+        ultimoCargo = v;
+        return;
+      }
+      if (v !== ultimoCargo) {
+        ultimoCargo = v;
+        this.carregarCargos();
+      }
+    });
   }
 
   ngOnInit(): void {
     this.carregar();
+    this.carregarCargos();
   }
 
   onEsc(): void {
-    if (this.drawerAberto()) this.fecharDrawer();
+    if (this.cargosAberto()) this.fecharCargos();
+    else if (this.drawerAberto()) this.fecharDrawer();
   }
 
   carregar(): void {
@@ -819,6 +1027,18 @@ export class FuncionariosComponent implements OnInit {
       },
       error: () => this.verificacoes.set(new Map()),
     });
+  }
+
+  carregarCargos(): void {
+    this.cargosApi.listar().subscribe({
+      next: (cs) => this.cargos.set(cs),
+      error: (e) => this.notify.erro(e),
+    });
+  }
+
+  /** Título do cargo do funcionário; cai no nível quando não veio da lista. */
+  cargoNome(f: Funcionario): string {
+    return this.cargosPorId().get(f.cargo_id)?.nome ?? this.nivelNome(f.nivel);
   }
 
   /** Rótulo + selo + classe do badge de identidade. */
@@ -942,7 +1162,15 @@ export class FuncionariosComponent implements OnInit {
     this.form.controls.senha.enable();
     this.form.controls.senha.setValidators([Validators.required, Validators.minLength(8)]);
     this.form.controls.senha.updateValueAndValidity();
-    this.form.reset({ nome: '', data_nascimento: '', cpf: '', nivel: 3, login: '', senha: '' });
+    this.form.reset({
+      nome: '',
+      data_nascimento: '',
+      cpf: '',
+      cargo_id: this.cargos().find((c) => c.sistema && c.nivel === 3)?.id
+        ?? this.cargos().find((c) => c.ativo)?.id ?? 0,
+      login: '',
+      senha: '',
+    });
     this.drawerAberto.set(true);
     setTimeout(() => document.getElementById('fu-nome')?.focus(), 250);
   }
@@ -959,7 +1187,7 @@ export class FuncionariosComponent implements OnInit {
       nome: f.nome,
       data_nascimento: f.data_nascimento ?? '',
       cpf: f.cpf ?? '',
-      nivel: f.nivel,
+      cargo_id: f.cargo_id,
       login: f.login,
       senha: '',
     });
@@ -1006,7 +1234,7 @@ export class FuncionariosComponent implements OnInit {
         senha: v.senha,
         cpf: v.cpf || null,
         data_nascimento: v.data_nascimento || null,
-        nivel: v.nivel,
+        cargo_id: v.cargo_id,
       };
       this.funcionariosApi.criarFuncionario(input).subscribe({
         next: () => {
@@ -1022,7 +1250,7 @@ export class FuncionariosComponent implements OnInit {
         login: v.login,
         cpf: v.cpf || null,
         data_nascimento: v.data_nascimento || null,
-        nivel: v.nivel,
+        cargo_id: v.cargo_id,
         version: f.version,
       };
       if (v.senha) input.senha = v.senha;
@@ -1035,6 +1263,101 @@ export class FuncionariosComponent implements OnInit {
         error: (e) => this.notify.erro(e),
       });
     }
+  }
+
+  // ---------- gestão de cargos ----------
+
+  abrirCargos(): void {
+    this.cancelarCargo();
+    this.cargosAberto.set(true);
+  }
+
+  fecharCargos(): void {
+    this.cargosAberto.set(false);
+    this.cancelarCargo();
+  }
+
+  invalidoCargo(campo: string): boolean {
+    const c = this.cargoForm.get(campo);
+    return !!c && c.invalid && (c.touched || this.tentouCargo());
+  }
+
+  editarCargo(c: Cargo): void {
+    this.editandoCargo.set(c);
+    this.tentouCargo.set(false);
+    this.cargoForm.reset({ nome: c.nome, descricao: c.descricao ?? '', nivel: c.nivel });
+    // Cargo-base: nível travado (o backend recusa mudança).
+    if (c.sistema) this.cargoForm.controls.nivel.disable();
+    else this.cargoForm.controls.nivel.enable();
+    setTimeout(() => document.getElementById('cg-nome')?.focus(), 150);
+  }
+
+  cancelarCargo(): void {
+    this.editandoCargo.set(null);
+    this.tentouCargo.set(false);
+    this.cargoForm.controls.nivel.enable();
+    this.cargoForm.reset({ nome: '', descricao: '', nivel: 3 });
+  }
+
+  salvarCargo(): void {
+    this.tentouCargo.set(true);
+    if (this.cargoForm.invalid) return;
+    const v = this.cargoForm.getRawValue();
+    const editando = this.editandoCargo();
+    const descricao = v.descricao.trim() || null;
+
+    if (!editando) {
+      this.cargosApi
+        .criar({ nome: v.nome.trim(), descricao, nivel: v.nivel })
+        .subscribe({
+          next: () => {
+            this.notify.ok('Cargo criado.');
+            this.cancelarCargo();
+            this.carregarCargos();
+          },
+          error: (e) => this.notify.erro(e),
+        });
+      return;
+    }
+
+    // Cargo-base: o select fica desabilitado — não envia `nivel` (o backend
+    // recusa mudança). Demais campos seguem o formulário.
+    this.cargosApi
+      .atualizar(editando.id, {
+        nome: v.nome.trim(),
+        descricao,
+        ...(editando.sistema ? {} : { nivel: v.nivel }),
+      })
+      .subscribe({
+        next: () => {
+          this.notify.ok('Cargo salvo.');
+          this.cancelarCargo();
+          this.carregarCargos();
+        },
+        error: (e) => this.notify.erro(e),
+      });
+  }
+
+  statusCargo(c: Cargo, ativo: boolean): void {
+    this.cargosApi.atualizar(c.id, { ativo }).subscribe({
+      next: () => this.carregarCargos(),
+      error: (e) => this.notify.erro(e),
+    });
+  }
+
+  async excluirCargo(c: Cargo): Promise<void> {
+    const ok = await this.confirm.perguntar(
+      `Excluir o cargo ${c.nome}? Funcionários com este cargo impedem a exclusão.`,
+      { titulo: 'Excluir cargo', confirmar: 'Excluir' },
+    );
+    if (!ok) return;
+    this.cargosApi.excluir(c.id).subscribe({
+      next: () => {
+        this.notify.ok('Cargo excluído.');
+        this.carregarCargos();
+      },
+      error: (e) => this.notify.erro(e),
+    });
   }
 
   /** Tour guiado da tela (driver.js) — abre o drawer no meio do caminho. */
@@ -1094,7 +1417,7 @@ export class FuncionariosComponent implements OnInit {
           title: 'Cadastro em 2 etapas',
           description:
             '<b>Dados pessoais</b> (nome, nascimento, CPF) e <b>Função & ' +
-            'acesso</b> (nível, login e senha). Na edição, a senha só muda se ' +
+            'acesso</b> (cargo, login e senha). Na edição, a senha só muda se ' +
             'você marcar "Alterar senha atual".',
           side: 'left',
         },

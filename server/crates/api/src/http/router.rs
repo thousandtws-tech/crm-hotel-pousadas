@@ -129,6 +129,14 @@ pub fn build(state: AppState) -> Router {
             patch(routes::pessoas::status_funcionario),
         )
         .route(
+            "/cargos",
+            get(routes::pessoas::listar_cargos).post(routes::pessoas::criar_cargo),
+        )
+        .route(
+            "/cargos/{id}",
+            put(routes::pessoas::atualizar_cargo).delete(routes::pessoas::remover_cargo),
+        )
+        .route(
             "/tipos-acomodacao",
             get(routes::catalogo::listar_tipos).post(routes::catalogo::criar_tipo),
         )

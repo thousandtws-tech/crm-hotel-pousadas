@@ -50,8 +50,8 @@ pub use operadora::PgOperadoraRepository;
 pub use pagamento::PgPagamentoRepository;
 pub use pdv::PgPdvRepository;
 pub use pessoas::{
-    PgClienteRepository, PgDocumentoRepository, PgFuncionarioRepository, PgLogAcessoRepository,
-    PgSessaoRepository,
+    PgCargoRepository, PgClienteRepository, PgDocumentoRepository, PgFuncionarioRepository,
+    PgLogAcessoRepository, PgSessaoRepository,
 };
 pub use preditivo::PgPreditivoRepository;
 pub use reserva::PgReservaRepository;

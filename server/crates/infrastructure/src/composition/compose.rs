@@ -29,6 +29,9 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
     let acessos = Arc::new(PgLogAcessoRepository::new(pool.clone()));
     let logs = Arc::new(PgLogRepository::new(pool.clone()));
     let hasher: Arc<dyn PasswordHasher> = Arc::new(Argon2Hasher::new());
+    let cargos = Arc::new(CargosService::new(Arc::new(PgCargoRepository::new(
+        pool.clone(),
+    ))));
     let issuer: Arc<dyn TokenIssuer> = Arc::new(JwtIssuer::new(&settings.jwt_secret));
 
     let auth = Arc::new(AuthService::new(
@@ -322,7 +325,12 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             PgEstacionamentoRepository::new(pool.clone()),
         ))),
         pagamentos: Arc::new(PagamentoService::new(pag_repo)),
-        funcionarios: Arc::new(FuncionarioService::new(funcionarios, hasher)),
+        funcionarios: Arc::new(FuncionarioService::new(
+            funcionarios,
+            hasher,
+            cargos.clone(),
+        )),
+        cargos,
         estabelecimento: Arc::new(EstabelecimentoService::new(Arc::new(
             PgEstabelecimentoRepository::new(pool.clone()),
         ))),
