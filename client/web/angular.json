@@ -25,6 +25,8 @@
             "outputMode": "server",
             "security": {
               "allowedHosts": [
+                "espiritodomar.com.br",
+                "www.espiritodomar.com.br",
                 "pousadaespiritodomar.com.br",
                 "www.pousadaespiritodomar.com.br",
                 "localhost",
