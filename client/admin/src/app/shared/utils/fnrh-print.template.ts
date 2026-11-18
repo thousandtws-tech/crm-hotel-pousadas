@@ -33,7 +33,7 @@ export function fnrhHtml(v: FnrhView): string {
     .join('');
 
   return preencher(HTML, {
-    CSS,
+    ESTILOS: `<style>${CSS}</style>`,
     TITULO_ABA: v.tituloAba,
     FICHA: v.ficha,
     RESERVA: v.reserva,
