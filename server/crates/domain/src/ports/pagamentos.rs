@@ -65,6 +65,9 @@ pub struct PagamentoView {
     pub cliente_nome: String,
     pub acomodacao_nome: String,
     pub reembolsado_centavos: i64,
+    /// Último motivo de recusa registrado na trilha (`status_detail` do
+    /// provedor) — "Recusado" sozinho não explica nada pra recepção.
+    pub motivo: Option<String>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -170,6 +173,11 @@ pub struct ConsultaPagamento {
     pub id_provedor: Option<String>,
     /// Método liquidado ('card', 'pix', …) quando disponível.
     pub metodo: Option<String>,
+    /// Motivo do provedor em recusa/falha — `status_detail` MP
+    /// (`cc_rejected_high_risk`…), `payment_response.message` PagBank,
+    /// `last_payment_error.message` Stripe. Vai para a auditoria —
+    /// sem ele, "Recusado" na tela é um beco sem saída pra recepção.
+    pub status_detail: Option<String>,
 }
 
 #[async_trait]

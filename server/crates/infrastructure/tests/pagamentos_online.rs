@@ -52,6 +52,7 @@ impl PaymentGateway for FakeGateway {
             referencia: None,
             id_provedor: Some(ref_id.to_string()),
             metodo: Some("card".into()),
+            status_detail: None,
         })
     }
 

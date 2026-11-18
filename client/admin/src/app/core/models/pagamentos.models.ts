@@ -31,6 +31,7 @@ export interface PagOnlineResumo {
   cliente_nome: string;
   acomodacao_nome: string;
   reembolsado_centavos: number;
+  motivo: string | null;
 }
 
 export interface ResumoFinanceiroOnline {

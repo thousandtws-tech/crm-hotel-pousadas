@@ -115,6 +115,17 @@ struct PiResp {
     metadata: std::collections::HashMap<String, String>,
     #[serde(default)]
     payment_method_types: Vec<String>,
+    /// Recusa do emissor/rede — `decline_code` é o motivo fino.
+    #[serde(default)]
+    last_payment_error: Option<PiErro>,
+}
+
+#[derive(Deserialize)]
+struct PiErro {
+    #[serde(default)]
+    message: Option<String>,
+    #[serde(default)]
+    decline_code: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -230,6 +241,12 @@ impl PaymentGateway for StripeGateway {
             referencia: pi.metadata.get("idpagamento").cloned(),
             id_provedor: Some(pi_id.to_string()),
             metodo: pi.payment_method_types.first().cloned(),
+            status_detail: pi
+                .last_payment_error
+                .and_then(|e| match (e.decline_code, e.message) {
+                    (Some(d), Some(m)) => Some(format!("{d}: {m}")),
+                    (d, m) => d.or(m),
+                }),
         })
     }
 

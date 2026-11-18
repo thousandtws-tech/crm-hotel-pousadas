@@ -536,7 +536,11 @@ impl PagamentoRepository for PgPagamentoRepository {
                     a.nome AS acomodacao_nome,
                     COALESCE((SELECT SUM(rb.valor_centavos)::bigint FROM pagamento_reembolso rb
                         WHERE rb.idpagamento = p.id AND rb.status = 'concluido'), 0)
-                        AS reembolsado_centavos
+                        AS reembolsado_centavos,
+                    (SELECT pa.dados->>'motivo' FROM pagamento_auditoria pa
+                        WHERE pa.idpagamento = p.id AND pa.acao = 'falhou'
+                          AND pa.dados->>'motivo' IS NOT NULL
+                        ORDER BY pa.id DESC LIMIT 1) AS motivo
              {base} ORDER BY p.criado_em DESC
              LIMIT {} OFFSET {}",
             page.limit(),

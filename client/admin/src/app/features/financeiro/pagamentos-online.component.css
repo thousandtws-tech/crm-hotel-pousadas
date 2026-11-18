@@ -189,3 +189,12 @@ th {
   background: #fff;
   cursor: pointer;
 }
+.motivo {
+  margin-top: 3px;
+  font-size: 0.72rem;
+  color: #b02a37;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -99,6 +99,9 @@
               <td>{{ brl(p.valor_centavos) }}</td>
               <td>
                 <span class="st st-{{ p.status }}">{{ rotStatus(p.status) }}</span>
+                @if (p.motivo) {
+                  <div class="motivo" [title]="p.motivo">{{ p.motivo }}</div>
+                }
               </td>
               <td>{{ p.paid_em || p.criado_em | date: 'dd/MM/yy HH:mm' }}</td>
               <td>

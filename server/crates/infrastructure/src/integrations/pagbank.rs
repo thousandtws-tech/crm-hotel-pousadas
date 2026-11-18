@@ -178,6 +178,16 @@ struct ChargeResp {
     status: String,
     #[serde(default)]
     payment_method: Option<MetodoResp>,
+    /// Recusa PagBank — `payment_response.message` é o motivo legível
+    /// ("Saldo insuficiente", "Transação não autorizada", …).
+    #[serde(default)]
+    payment_response: Option<RespPagamento>,
+}
+
+#[derive(Deserialize)]
+struct RespPagamento {
+    #[serde(default)]
+    message: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -282,6 +292,7 @@ impl PaymentGateway for PagBankGateway {
                 referencia: None,
                 id_provedor: Some(charge.id.clone()),
                 metodo: charge.payment_method.map(|m| m.tipo.to_lowercase()),
+                status_detail: charge.payment_response.and_then(|r| r.message),
             });
         }
         let ordem: OrdemResp = self.get("orders.get", &format!("/orders/{ref_id}")).await?;
@@ -313,6 +324,7 @@ impl PaymentGateway for PagBankGateway {
             referencia: ordem.reference_id,
             id_provedor,
             metodo,
+            status_detail: None,
         })
     }
 

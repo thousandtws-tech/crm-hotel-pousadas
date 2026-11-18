@@ -587,7 +587,10 @@ impl PagamentosOnlineService {
                             ator_tipo,
                             ator_id: None,
                             acao: "falhou",
-                            dados: Some(json!({"status": format!("{:?}", consulta.status)})),
+                            dados: Some(json!({
+                                "status": format!("{:?}", consulta.status),
+                                "motivo": consulta.status_detail,
+                            })),
                         },
                     )
                     .await?;

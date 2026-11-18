@@ -199,6 +199,10 @@ struct PaymentResp {
     external_reference: Option<String>,
     #[serde(default)]
     payment_method_id: Option<String>,
+    /// Motivo fino do MP — `cc_rejected_high_risk`,
+    /// `cc_rejected_insufficient_amount`, `rejected_by_bank`, …
+    #[serde(default)]
+    status_detail: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -341,6 +345,7 @@ impl PaymentGateway for MercadoPagoGateway {
                         referencia: p.external_reference,
                         id_provedor: Some(p.id.to_string()),
                         metodo: p.payment_method_id,
+                        status_detail: p.status_detail,
                     })
                 }
                 // 4xx = payment_id não existe → tenta external_reference.
@@ -361,12 +366,14 @@ impl PaymentGateway for MercadoPagoGateway {
                 referencia: p.external_reference.clone(),
                 id_provedor: Some(p.id.to_string()),
                 metodo: p.payment_method_id.clone(),
+                status_detail: p.status_detail.clone(),
             },
             None => ConsultaPagamento {
                 status: StatusPi::Processando,
                 referencia: Some(ref_id.to_string()),
                 id_provedor: None,
                 metodo: None,
+                status_detail: None,
             },
         })
     }
