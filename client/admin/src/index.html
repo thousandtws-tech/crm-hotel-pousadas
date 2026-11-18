@@ -5,6 +5,12 @@
     <title>CRM | Pousada Espirito do Mar</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Sistema interno de gestão da Pousada Espírito do Mar — reservas, recepção, PDV e financeiro."
+    />
+    <!-- Backoffice autenticado — não deve aparecer em buscadores. -->
+    <meta name="robots" content="noindex, nofollow" />
     <link rel="icon" type="image/svg+xml" href="emblem.svg" />
     <link rel="alternate icon" type="image/png" href="icons/favicon-32-v2.png" />
     <link rel="alternate icon" type="image/x-icon" href="favicon.ico" />
@@ -17,14 +23,30 @@
     <link rel="apple-touch-icon" href="icons/apple-touch-icon-v2.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Fontes carregam assíncronas (media=print troca p/ all no onload) —
+         não bloqueiam o primeiro paint. Fallback em noscript. -->
     <link
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500..700&family=Manrope:wght@400..800&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
     />
     <link
       href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500..700&family=Manrope:wght@400..800&display=swap"
+        rel="stylesheet"
+      />
+      <link
+        href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
   </head>
   <body>
     <app-root></app-root>
