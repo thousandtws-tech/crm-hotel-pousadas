@@ -90,4 +90,74 @@ export class IntegracoesApi extends ApiHttp {
   spedyConfigurarWebhook(ambiente: M.AmbienteIntegracao) {
     return this.post<{ webhook_url: string }>(`/integracoes/spedy/${ambiente}/webhook`, {});
   }
+
+  // -- Channex (distribuição) ---------------------------------------------
+
+  distPropriedades(ambiente: M.AmbienteIntegracao) {
+    return this.get<{ data: M.ChannexPropriedade[] }>(`/distribuicao/${ambiente}/propriedades`);
+  }
+
+  distVincular(ambiente: M.AmbienteIntegracao, property_id: string) {
+    return this.post<null>(`/distribuicao/${ambiente}/propriedade`, { property_id });
+  }
+
+  distOpcoes(ambiente: M.AmbienteIntegracao) {
+    return this.get<{ data: M.DistOpcoes }>(`/distribuicao/${ambiente}/opcoes`);
+  }
+
+  distMapear(
+    ambiente: M.AmbienteIntegracao,
+    idacomodacao: number,
+    room_type_id: string,
+    rate_plan_id: string,
+  ) {
+    return this.post<null>(`/distribuicao/${ambiente}/mapeamentos`, {
+      idacomodacao,
+      room_type_id,
+      rate_plan_id,
+    });
+  }
+
+  distDesmapear(ambiente: M.AmbienteIntegracao, id: number) {
+    return this.delete<null>(`/distribuicao/${ambiente}/mapeamentos/${id}`);
+  }
+
+  distSincronizar(ambiente: M.AmbienteIntegracao, inicio: string, fim: string) {
+    return this.post<{ enfileirados: number }>(`/distribuicao/${ambiente}/sincronizar`, {
+      inicio,
+      fim,
+    });
+  }
+
+  distReconciliar(ambiente: M.AmbienteIntegracao) {
+    return this.post<{ enfileirados: number }>(`/distribuicao/${ambiente}/reconciliar`, {});
+  }
+
+  distPausar(ambiente: M.AmbienteIntegracao, pausada: boolean) {
+    return this.post<null>(`/distribuicao/${ambiente}/publicacao`, { pausada });
+  }
+
+  distRevisoes(ambiente: M.AmbienteIntegracao) {
+    return this.get<{ data: M.DistRevisao[] }>(`/distribuicao/${ambiente}/revisoes`);
+  }
+
+  distPendencias(ambiente: M.AmbienteIntegracao) {
+    return this.get<{ data: M.DistPendencia[] }>(`/distribuicao/${ambiente}/pendencias`);
+  }
+
+  distResolverPendencia(ambiente: M.AmbienteIntegracao, id: number) {
+    return this.post<null>(`/distribuicao/${ambiente}/pendencias/${id}/resolver`, {});
+  }
+
+  distReprocessar(ambiente: M.AmbienteIntegracao, revision_id: string) {
+    return this.post<null>(`/distribuicao/${ambiente}/revisoes/${revision_id}/reprocessar`, {});
+  }
+
+  distResumo(ambiente: M.AmbienteIntegracao) {
+    return this.get<{ data: M.DistResumo }>(`/distribuicao/${ambiente}/resumo`);
+  }
+
+  distRegistrarWebhook(ambiente: M.AmbienteIntegracao) {
+    return this.post<{ webhook_url: string }>(`/distribuicao/${ambiente}/webhook`, {});
+  }
 }

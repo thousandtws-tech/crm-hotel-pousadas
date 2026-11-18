@@ -7,6 +7,7 @@
 
 mod atendimento;
 mod comunicacao;
+mod distribuicao;
 mod fiscal;
 mod metricas;
 mod pagamentos;
@@ -23,6 +24,7 @@ pub fn spawn_all(state: &AppState, stripe_ativo: bool) {
     comunicacao::spawn_lembretes(state);
     comunicacao::spawn_zapi_eventos(state);
     fiscal::spawn(state);
+    distribuicao::spawn(state);
     atendimento::spawn(state);
     rotinas::spawn(state);
     metricas::spawn(state.pool.clone(), state.eventos.clone());

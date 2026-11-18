@@ -9,6 +9,14 @@ pub enum AppError {
     Domain(#[from] DomainError),
 }
 
+/// Erros do provedor de distribuição sobem como regra de negócio —
+/// classificação (retry/pendência) já aconteceu dentro do serviço.
+impl From<clarituz_domain::ports::ErroDistribuicao> for AppError {
+    fn from(e: clarituz_domain::ports::ErroDistribuicao) -> Self {
+        DomainError::from(e).into()
+    }
+}
+
 impl AppError {
     /// Referência ao erro de domínio encapsulado.
     pub fn domain(&self) -> &DomainError {

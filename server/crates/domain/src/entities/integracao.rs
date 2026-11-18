@@ -11,6 +11,7 @@ pub enum ProvedorIntegracao {
     Zapi,
     Spedy,
     Didit,
+    Channex,
 }
 
 impl ProvedorIntegracao {
@@ -22,6 +23,7 @@ impl ProvedorIntegracao {
             Self::Zapi => "zapi",
             Self::Spedy => "spedy",
             Self::Didit => "didit",
+            Self::Channex => "channex",
         }
     }
 
@@ -33,6 +35,7 @@ impl ProvedorIntegracao {
             "zapi" => Some(Self::Zapi),
             "spedy" => Some(Self::Spedy),
             "didit" => Some(Self::Didit),
+            "channex" => Some(Self::Channex),
             _ => None,
         }
     }
@@ -42,6 +45,7 @@ impl ProvedorIntegracao {
             Self::Zapi => "comunicacao",
             Self::Spedy => "fiscal",
             Self::Didit => "seguranca",
+            Self::Channex => "distribuicao",
             _ => "pagamento",
         }
     }

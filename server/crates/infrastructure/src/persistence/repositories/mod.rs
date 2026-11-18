@@ -9,6 +9,7 @@ pub mod cms;
 pub mod compras;
 pub mod comunicacao;
 pub mod contrato;
+pub mod distribuicao;
 pub mod estoque;
 pub mod fiscal;
 pub mod impressora;
@@ -40,6 +41,7 @@ pub use comunicacao::{
     PgPreReservaRepository, PgPushRepository,
 };
 pub use contrato::PgContratoRepository;
+pub use distribuicao::PgDistribuicaoRepository;
 pub use estoque::PgEstoqueRepository;
 pub use fiscal::PgFiscalRepository;
 pub use impressora::PgImpressoraRepository;

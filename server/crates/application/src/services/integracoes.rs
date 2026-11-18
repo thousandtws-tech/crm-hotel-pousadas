@@ -25,6 +25,9 @@ fn campos_permitidos(provedor: ProvedorIntegracao) -> &'static [&'static str] {
         ProvedorIntegracao::Spedy => &["api_key", "webhook_secret"],
         // Didit: sk_test_/sk_live_ (x-api-key) + secret_shared_key do webhook.
         ProvedorIntegracao::Didit => &["api_key", "webhook_secret"],
+        // Channex: user-api-key + signing secret do webhook HMAC
+        // (x-hmac-signature-256) — capturado ao criar a signing key.
+        ProvedorIntegracao::Channex => &["api_key", "webhook_secret"],
     }
 }
 
@@ -65,6 +68,16 @@ fn config_permitida(provedor: ProvedorIntegracao) -> &'static [&'static str] {
             "webhook_registrado",
             "webhook_destino_id",
         ],
+        // Channex: propriedade remota vinculada, webhook e o estado de
+        // publicação — credencial nunca em config.
+        ProvedorIntegracao::Channex => &[
+            "property_id",
+            "property_title",
+            "webhook_registrado",
+            "webhook_id",
+            "webhook_signing_key_id",
+            "publicacao_pausada",
+        ],
         _ => &[],
     }
 }
@@ -79,6 +92,7 @@ fn escopo_padrao(provedor: ProvedorIntegracao) -> &'static str {
         ProvedorIntegracao::Zapi => "whatsapp",
         ProvedorIntegracao::Spedy => "fiscal",
         ProvedorIntegracao::Didit => "verificacao",
+        ProvedorIntegracao::Channex => "distribuicao",
         _ => ESCOPO_PAGAMENTOS_SITE,
     }
 }
@@ -113,6 +127,13 @@ fn capabilities_padrao(provedor: ProvedorIntegracao) -> serde_json::Value {
             "kyc": true, "sessao_hospedada": true, "webhook_assinado": true,
             "sincronizacao": true, "verificacao_login": true,
         }),
+        ProvedorIntegracao::Channex => serde_json::json!({
+            "ari": ["availability", "restrictions"],
+            "revisoes": ["new", "modified", "cancelled"],
+            "feed": true, "webhook_assinado": true, "ack": true,
+            "canal_iframe": true, "reconciliacao": true,
+            "rate_limit_por_propriedade": {"availability": 10, "restrictions": 10},
+        }),
     }
 }
 
@@ -127,6 +148,8 @@ pub struct IntegracoesService {
     fiscal: Option<Arc<crate::services::fiscal::FiscalService>>,
     /// Serviço de verificação (Didit) — teste de conexão delega ao provedor.
     verificacao: Option<Arc<crate::services::verificacao::VerificacaoService>>,
+    /// Distribuição (Channex) — teste de conexão delega à leitura remota.
+    distribuicao: Option<Arc<crate::services::channex::ChannexService>>,
     pagamentos: Arc<dyn clarituz_domain::ports::PagamentoRepository>,
     stripe_env_ativo: bool,
 }
@@ -147,6 +170,7 @@ impl IntegracoesService {
         com_eventos: Option<Arc<dyn ComunicacaoEventoRepository>>,
         fiscal: Option<Arc<crate::services::fiscal::FiscalService>>,
         verificacao: Option<Arc<crate::services::verificacao::VerificacaoService>>,
+        distribuicao: Option<Arc<crate::services::channex::ChannexService>>,
         pagamentos: Arc<dyn clarituz_domain::ports::PagamentoRepository>,
         stripe_env_ativo: bool,
     ) -> Self {
@@ -158,6 +182,7 @@ impl IntegracoesService {
             com_eventos,
             fiscal,
             verificacao,
+            distribuicao,
             pagamentos,
             stripe_env_ativo,
         }
@@ -543,6 +568,46 @@ impl IntegracoesService {
                 nome_conta: conta,
                 mensagem: match status {
                     StatusVerificacao::Ok => "Conexão verificada — conta Didit autenticada.".into(),
+                    _ => erro
+                        .clone()
+                        .unwrap_or_else(|| "Falha na verificação.".into()),
+                },
+            });
+        }
+
+        // Channex: teste = leitura autenticada das propriedades — sem
+        // efeito lateral, mesmo com a integração desabilitada.
+        if provedor == ProvedorIntegracao::Channex {
+            let resultado = match self.distribuicao.as_ref() {
+                Some(d) => match d.testar(ambiente).await {
+                    Ok(rotulo) => (StatusVerificacao::Ok, None, Some(rotulo)),
+                    Err(e) => (StatusVerificacao::Falha, Some(e.to_string()), None),
+                },
+                None => (
+                    StatusVerificacao::Falha,
+                    Some("Serviço de distribuição indisponível.".into()),
+                    None,
+                ),
+            };
+            let (status, erro, conta) = resultado;
+            let caps = capabilities_padrao(provedor);
+            self.repo
+                .registrar_verificacao(
+                    i.id,
+                    i.versao,
+                    status,
+                    erro.as_deref(),
+                    conta.as_deref(),
+                    &caps,
+                )
+                .await?;
+            return Ok(TesteConexaoOutput {
+                verificacao_status: status.as_str().into(),
+                nome_conta: conta,
+                mensagem: match status {
+                    StatusVerificacao::Ok => {
+                        "Conexão verificada — conta Channex autenticada.".into()
+                    }
                     _ => erro
                         .clone()
                         .unwrap_or_else(|| "Falha na verificação.".into()),

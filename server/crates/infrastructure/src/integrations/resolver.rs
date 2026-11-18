@@ -17,7 +17,9 @@ fn campo_chave(provedor: ProvedorIntegracao) -> &'static str {
         ProvedorIntegracao::Stripe => "secret_key",
         ProvedorIntegracao::Pagbank | ProvedorIntegracao::Mercadopago => "access_token",
         ProvedorIntegracao::Zapi => "webhook_segredo",
-        ProvedorIntegracao::Spedy | ProvedorIntegracao::Didit => "api_key",
+        ProvedorIntegracao::Spedy | ProvedorIntegracao::Didit | ProvedorIntegracao::Channex => {
+            "api_key"
+        }
     }
 }
 
@@ -66,7 +68,7 @@ impl PgGatewayResolver {
     ) -> Result<Arc<dyn PaymentGateway>, DomainError> {
         if matches!(
             provedor,
-            ProvedorIntegracao::Zapi | ProvedorIntegracao::Spedy
+            ProvedorIntegracao::Zapi | ProvedorIntegracao::Spedy | ProvedorIntegracao::Channex
         ) {
             return Err(DomainError::regra(
                 "provedor sem gateway de pagamento — use o resolver da categoria",
@@ -85,9 +87,10 @@ impl PgGatewayResolver {
             ProvedorIntegracao::Stripe => Arc::new(StripeGateway::new(segredo)),
             ProvedorIntegracao::Pagbank => Arc::new(PagBankGateway::new(segredo, ambiente)),
             ProvedorIntegracao::Mercadopago => Arc::new(MercadoPagoGateway::new(segredo)),
-            ProvedorIntegracao::Zapi | ProvedorIntegracao::Spedy | ProvedorIntegracao::Didit => {
-                unreachable!()
-            }
+            ProvedorIntegracao::Zapi
+            | ProvedorIntegracao::Spedy
+            | ProvedorIntegracao::Didit
+            | ProvedorIntegracao::Channex => unreachable!(),
         };
         Ok(gw)
     }

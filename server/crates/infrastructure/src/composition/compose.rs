@@ -157,6 +157,27 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         com_resolver.clone(),
     ));
 
+    // Distribuição (Channex) — antes do ReservaService: mutações de
+    // estoque (reserva/bloqueio) enfileiram outbox via `dist`.
+    let distribuicao_svc = vault.as_ref().map(|v| {
+        let factory: clarituz_application::services::channex::ChannexFactory =
+            Arc::new(|api_key, amb| {
+                Arc::new(crate::integrations::channex::ChannexCliente::new(
+                    api_key, amb,
+                )) as Arc<dyn clarituz_domain::ports::ProvedorDistribuicao>
+            });
+        Arc::new(clarituz_application::services::ChannexService::new(
+            Arc::new(PgDistribuicaoRepository::new(pool.clone()))
+                as Arc<dyn clarituz_domain::ports::DistribuicaoRepository>,
+            integracoes_repo.clone() as Arc<dyn clarituz_domain::ports::IntegracaoRepository>,
+            reserva_repo.clone(),
+            acom_repo.clone(),
+            clientes_repo.clone(),
+            v.clone(),
+            factory,
+        ))
+    });
+
     let reservas_svc = Arc::new(ReservaService::new(ReservaDeps {
         reservas: reserva_repo.clone(),
         acomodacoes: acom_repo.clone(),
@@ -173,6 +194,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         fila: fila_envio_repo.clone(),
         contratos: Arc::new(PgContratoRepository::new(pool.clone())),
         hold_minutos: settings.hold_minutos,
+        dist: distribuicao_svc.clone(),
     }));
     let pagamentos_online_svc = Arc::new(PagamentosOnlineService::new(
         pag_online_repo.clone(),
@@ -233,6 +255,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
                 as Arc<dyn clarituz_domain::ports::ComunicacaoEventoRepository>),
             fiscal_svc.clone(),
             verificacao_svc.clone(),
+            distribuicao_svc.clone(),
             pag_online_repo as Arc<dyn clarituz_domain::ports::PagamentoRepository>,
             settings.stripe_secret_key.is_some(),
         ))
@@ -385,6 +408,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         zapi: zapi_svc,
         fiscal: fiscal_svc,
         verificacao: verificacao_svc,
+        distribuicao: distribuicao_svc,
         preditivo: Arc::new(PreditivoService::new(Arc::new(PgPreditivoRepository::new(
             pool.clone(),
         )))),

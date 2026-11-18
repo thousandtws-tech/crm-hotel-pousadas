@@ -60,6 +60,8 @@ pub struct ReservaDeps {
     pub contratos: Arc<dyn ContratoRepository>,
     /// Minutos do hold de pagamento nas reservas criadas pelo site.
     pub hold_minutos: i64,
+    /// Distribuição (Channex) — notifica mudança de estoque pós-commit.
+    pub dist: Option<Arc<crate::services::channex::ChannexService>>,
 }
 
 pub struct ReservaService {
@@ -78,6 +80,7 @@ pub struct ReservaService {
     fila: Arc<dyn FilaEnvioRepository>,
     contratos: Arc<dyn ContratoRepository>,
     hold_minutos: i64,
+    dist: Option<Arc<crate::services::channex::ChannexService>>,
 }
 
 impl ReservaService {
@@ -98,6 +101,21 @@ impl ReservaService {
             fila: d.fila,
             contratos: d.contratos,
             hold_minutos: d.hold_minutos,
+            dist: d.dist,
+        }
+    }
+
+    /// Enfileira a mudança de estoque na outbox da distribuição —
+    /// melhor esforço pós-commit; falha nunca desfaz a reserva.
+    async fn notificar_distribuicao(
+        &self,
+        idacomodacao: i64,
+        ini: chrono::NaiveDate,
+        fim: chrono::NaiveDate,
+        motivo: &str,
+    ) {
+        if let Some(d) = &self.dist {
+            d.notificar_estoque(idacomodacao, ini, fim, motivo).await;
         }
     }
 
@@ -657,6 +675,13 @@ impl ReservaService {
         );
 
         let reserva = self.reservas.criar(&nova, log).await?;
+        self.notificar_distribuicao(
+            nova.idacomodacao,
+            nova.periodo.entrada,
+            nova.periodo.saida,
+            "reserva_criada",
+        )
+        .await;
         self.eventos.avisar(
             Aviso::novo(
                 TipoAviso::Info,
@@ -819,6 +844,13 @@ impl ReservaService {
 
         match self.reservas.criar(&nova, log).await {
             Ok(reserva) => {
+                self.notificar_distribuicao(
+                    nova.idacomodacao,
+                    nova.periodo.entrada,
+                    nova.periodo.saida,
+                    "reserva_site",
+                )
+                .await;
                 // CDC/LGPD — aceite com IP; consentimento de marketing separado.
                 self.lgpd
                     .marcar_termos(reserva.id, ip.unwrap_or("desconhecido"))
@@ -1122,6 +1154,13 @@ impl ReservaService {
             .reservas
             .cancelar(id, motivo, Some(ator.id), log)
             .await?;
+        self.notificar_distribuicao(
+            reserva.idacomodacao,
+            reserva.entradaprevista,
+            reserva.saidaprevista,
+            "reserva_cancelada",
+        )
+        .await;
         self.eventos.avisar(
             Aviso::novo(
                 TipoAviso::Alerta,
@@ -1642,10 +1681,13 @@ impl ReservaService {
             return Err(DomainError::validacao("Informe o motivo do bloqueio.").into());
         }
         PeriodoEstadia::new(inicio, fim)?;
-        Ok(self
+        let bloqueio = self
             .reservas
             .bloqueio_criar(idacomodacao, inicio, fim, motivo, ator.id)
-            .await?)
+            .await?;
+        self.notificar_distribuicao(idacomodacao, inicio, fim, "bloqueio_criado")
+            .await;
+        Ok(bloqueio)
     }
 
     pub async fn bloqueios(&self) -> AppResult<Vec<Bloqueio>> {
@@ -1653,7 +1695,15 @@ impl ReservaService {
     }
 
     pub async fn desbloquear(&self, _ator: &Ator, id: i64) -> AppResult<()> {
-        Ok(self.reservas.bloqueio_remover(id).await?)
+        // Intervalo do bloqueio precisa sair da janela — a remoção devolve o bloqueio.
+        let bloqueios = self.reservas.bloqueio_listar().await?;
+        let b = bloqueios.iter().find(|b| b.id == id).cloned();
+        self.reservas.bloqueio_remover(id).await?;
+        if let Some(b) = b {
+            self.notificar_distribuicao(b.idacomodacao, b.inicio, b.fim, "bloqueio_removido")
+                .await;
+        }
+        Ok(())
     }
 
     // -- grupos / eventos -----------------------------------------------------

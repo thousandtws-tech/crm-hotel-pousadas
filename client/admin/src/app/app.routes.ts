@@ -241,6 +241,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'integracoes/channex/:ambiente',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/integracoes/integracao-channex.component').then(
+            (m) => m.IntegracaoChannexComponent,
+          ),
+      },
+      {
         path: 'integracoes/zapi/:ambiente',
         canActivate: [adminGuard],
         loadComponent: () =>

@@ -9,6 +9,7 @@ pub mod busca;
 pub mod cafe;
 pub mod caixa;
 pub mod cargos;
+pub mod channex;
 pub mod clientes;
 pub mod cms;
 pub mod compras;
@@ -50,6 +51,7 @@ pub use busca::BuscaService;
 pub use cafe::CafeService;
 pub use caixa::CaixaService;
 pub use cargos::CargosService;
+pub use channex::ChannexService;
 pub use clientes::ClienteService;
 pub use cms::CmsService;
 pub use compras::ComprasService;
@@ -135,6 +137,8 @@ pub struct Services {
     pub fiscal: Option<Arc<FiscalService>>,
     /// Verificação Didit — `None` sem o cofre (api_key cifrada no vault).
     pub verificacao: Option<Arc<VerificacaoService>>,
+    /// Distribuição Channex — `None` sem o cofre (api_key cifrada no vault).
+    pub distribuicao: Option<Arc<ChannexService>>,
 }
 pub use fiscal::FiscalService;
 pub use verificacao::VerificacaoService;

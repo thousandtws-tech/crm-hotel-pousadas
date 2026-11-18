@@ -5,6 +5,7 @@ pub mod catalogo;
 pub mod cms;
 pub mod compras;
 pub mod comunicacao;
+pub mod distribuicao;
 pub mod estoque;
 pub mod fiscal;
 pub mod impressoras;

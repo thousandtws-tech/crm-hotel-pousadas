@@ -4,7 +4,14 @@
 // Categorias: 'pagamento' (Stripe/PagBank/Mercado Pago ×2 ambientes) e
 // 'comunicacao' (Z-API/WhatsApp — só producao).
 
-export type ProvedorIntegracao = 'stripe' | 'pagbank' | 'mercadopago' | 'zapi' | 'spedy' | 'didit';
+export type ProvedorIntegracao =
+  | 'stripe'
+  | 'pagbank'
+  | 'mercadopago'
+  | 'zapi'
+  | 'spedy'
+  | 'didit'
+  | 'channex';
 
 /** @deprecated Alias legado — prefira `ProvedorIntegracao`. */
 export type ProvedorPagamento = ProvedorIntegracao;
@@ -12,7 +19,12 @@ export type ProvedorPagamento = ProvedorIntegracao;
 export type AmbienteIntegracao = 'producao' | 'teste';
 
 /** Grupo operacional do catálogo — vem sempre preenchida pela API. */
-export type CategoriaIntegracao = 'pagamento' | 'comunicacao' | 'fiscal' | 'seguranca';
+export type CategoriaIntegracao =
+  | 'pagamento'
+  | 'comunicacao'
+  | 'fiscal'
+  | 'seguranca'
+  | 'distribuicao';
 
 export type EstadoIntegracao =
   'ativa' | 'pendente' | 'falha' | 'desativada' | 'gerenciado_pelo_ambiente' | 'nao_configurada';
@@ -253,4 +265,101 @@ export interface VerificacaoListItem {
   funcionario_nome: string;
   funcionario_nivel: number;
   verificacao: VerificacaoIdentidade;
+}
+
+// ---------------------------------------------------------------------------
+// Channex (categoria 'distribuicao') — channel manager PMS → OTAs.
+// ---------------------------------------------------------------------------
+
+export interface ChannexPropriedade {
+  id: string;
+  title: string;
+  currency: string | null;
+  timezone: string | null;
+}
+
+export interface ChannexRoomType {
+  id: string;
+  property_id: string;
+  title: string;
+  occupancy: number;
+  count_of_rooms: number | null;
+}
+
+export interface ChannexRatePlan {
+  id: string;
+  property_id: string;
+  room_type_id: string;
+  title: string;
+  currency: string | null;
+}
+
+export interface DistAcomodacao {
+  id: number;
+  nome: string;
+  numero: number;
+  capacidade: number;
+  valor: string;
+}
+
+export interface DistMapa {
+  id: number;
+  idacomodacao: number;
+  acomodacao: string;
+  numero: string | null;
+  room_type_id: string;
+  rate_plan_id: string;
+  ativo: boolean;
+  atualizado_em: string;
+}
+
+export interface DistOpcoes {
+  room_types: ChannexRoomType[];
+  rate_plans: ChannexRatePlan[];
+  acomodacoes: DistAcomodacao[];
+  mapeamentos: DistMapa[];
+  property_id: string | null;
+  publicacao_pausada: boolean;
+}
+
+export interface DistRevisao {
+  id: number;
+  revision_id: string;
+  booking_id: string | null;
+  ota_name: string | null;
+  ota_reservation_code: string | null;
+  status: string;
+  inserted_at: string | null;
+  aplicada: boolean;
+  ack: boolean;
+  erro: string | null;
+  recebido_em: string;
+}
+
+export interface DistPendencia {
+  id: number;
+  tipo: string;
+  descricao: string;
+  revision_id: string | null;
+  resolvida: boolean;
+  criado_em: string;
+}
+
+export interface DistEnvio {
+  id: number;
+  tipo: string;
+  task_ids: unknown;
+  warnings: unknown;
+  criado_em: string;
+}
+
+export interface DistResumo {
+  mapeadas: number;
+  sem_mapeamento: number;
+  revisoes_pendentes: number;
+  revisoes_sem_ack: number;
+  pendencias_abertas: number;
+  outbox_pendente: number;
+  ultima_revisao_em: string | null;
+  ultimo_envio_em: string | null;
 }

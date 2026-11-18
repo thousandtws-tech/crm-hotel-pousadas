@@ -1143,6 +1143,12 @@ pub fn build(state: AppState) -> Router {
             "/api/v1/webhooks/didit/{ambiente}",
             post(routes::verificacao::webhook_didit),
         )
+        // webhook Channex — x-hmac-timestamp + x-hmac-signature-256
+        // (hex, CSV p/ rotação) sobre `{ts}.{corpo cru}`.
+        .route(
+            "/api/v1/webhooks/channex/{ambiente}",
+            post(routes::distribuicao::webhook_channex),
+        )
         // Inná Concierge — chat do hóspede no portal, escopo = token opaco.
         .route(
             "/api/v1/publico/concierge/{token}",
@@ -1193,7 +1199,7 @@ pub fn build(state: AppState) -> Router {
                 async move { handle.render() }
             }),
         )
-        .nest("/api/v1", api)
+        .nest("/api/v1", api.merge(routes::distribuicao::rotas()))
         .layer(
             TraceLayer::new_for_http().make_span_with(|req: &axum::extract::Request| {
                 tracing::info_span!(

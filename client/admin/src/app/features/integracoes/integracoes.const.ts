@@ -10,7 +10,15 @@ import type {
   ZapiSessao,
 } from '@core/models/integracoes.models';
 
-export const ORDEM_PROVEDOR: ProvedorIntegracao[] = ['stripe', 'pagbank', 'mercadopago', 'zapi', 'spedy', 'didit'];
+export const ORDEM_PROVEDOR: ProvedorIntegracao[] = [
+  'stripe',
+  'pagbank',
+  'mercadopago',
+  'zapi',
+  'spedy',
+  'didit',
+  'channex',
+];
 export const ORDEM_AMBIENTE: AmbienteIntegracao[] = ['producao', 'teste'];
 
 export const ROTULO_PROVEDOR: Record<ProvedorIntegracao, string> = {
@@ -20,6 +28,7 @@ export const ROTULO_PROVEDOR: Record<ProvedorIntegracao, string> = {
   zapi: 'Z-API',
   spedy: 'Spedy',
   didit: 'Didit',
+  channex: 'Channex',
 };
 
 export const ROTULO_AMBIENTE: Record<AmbienteIntegracao, string> = {
@@ -28,13 +37,20 @@ export const ROTULO_AMBIENTE: Record<AmbienteIntegracao, string> = {
 };
 
 /** Agrupamento do catálogo — pagamentos primeiro, comunicação depois. */
-export const ORDEM_CATEGORIA: CategoriaIntegracao[] = ['pagamento', 'comunicacao', 'fiscal', 'seguranca'];
+export const ORDEM_CATEGORIA: CategoriaIntegracao[] = [
+  'pagamento',
+  'comunicacao',
+  'fiscal',
+  'seguranca',
+  'distribuicao',
+];
 
 export const ROTULO_CATEGORIA: Record<CategoriaIntegracao, string> = {
   pagamento: 'Pagamentos',
   comunicacao: 'Comunicação',
   fiscal: 'Fiscal',
   seguranca: 'Segurança',
+  distribuicao: 'Distribuição',
 };
 
 /** Categoria estática por provedor — igual à regra do backend. */
@@ -45,6 +61,7 @@ export const CATEGORIA_PROVEDOR: Record<ProvedorIntegracao, CategoriaIntegracao>
   zapi: 'comunicacao',
   spedy: 'fiscal',
   didit: 'seguranca',
+  channex: 'distribuicao',
 };
 
 /** estado → rótulo + variante de pill (semântica, sem cor arbitrária). */
@@ -197,6 +214,23 @@ export const CAMPOS_POR_PROVEDOR: Record<ProvedorIntegracao, CampoCredencial[]> 
       segredo: true,
       dica: 'Formato whsec_… — obrigatório para receber eventos de status',
       placeholder: 'whsec_…',
+    },
+  ],
+  // Channex: user-api-key da conta (Settings → API access). O
+  // `webhook_secret` é capturado ao registrar o webhook assinado.
+  channex: [
+    {
+      nome: 'api_key',
+      rotulo: 'API key (user-api-key)',
+      segredo: true,
+      obrigatorio: true,
+      dica: 'Chave da conta Channex — a chave define se o host é staging ou produção',
+    },
+    {
+      nome: 'webhook_secret',
+      rotulo: 'Webhook signing secret',
+      segredo: true,
+      dica: 'Segredo da signing key — capturado ao registrar o webhook',
     },
   ],
 };
