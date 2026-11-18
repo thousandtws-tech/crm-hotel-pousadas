@@ -5,8 +5,8 @@ import { OnInit, computed, inject, signal, Directive } from '@angular/core';
 import { FormBuilder, FormControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { IntegracoesApi } from '@core/api/integracoes.api';
-import { Confirm } from '@core/services/confirm.service';
-import { Notify } from '@core/services/notify.service';
+import { ConfirmService } from '@core/services/confirm.service';
+import { NotifyService } from '@core/services/notify.service';
 import * as M from '@core/models';
 import {
   CAMPOS_POR_PROVEDOR,
@@ -30,8 +30,8 @@ import {
 export abstract class IntegracaoZapiStore implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(IntegracoesApi);
-  private readonly notify = inject(Notify);
-  private readonly confirm = inject(Confirm);
+  private readonly notify = inject(NotifyService);
+  private readonly confirm = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly ambiente = signal<M.AmbienteIntegracao>('producao');
@@ -367,7 +367,7 @@ export abstract class IntegracaoZapiStore implements OnInit {
     return ROTULO_EVENTO[status]?.pill ?? 'pill-off';
   }
 
-  /** Mesma extração do Notify.erro — para exibir a falha dentro da área do QR. */
+  /** Mesma extração do NotifyService.erro — para exibir a falha dentro da área do QR. */
   private mensagemErro(e: unknown): string {
     if (e instanceof HttpErrorResponse) {
       const body = e.error as { erro?: { mensagem?: string } } | undefined;

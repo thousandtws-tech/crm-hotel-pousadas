@@ -3,7 +3,7 @@ import { Component, output } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import { DateInputComponent } from '@shared/components/date-input/date-input.component';
 import { of } from 'rxjs';
 import { NovaReservaDialogStore } from './nova-reserva-dialog.store';

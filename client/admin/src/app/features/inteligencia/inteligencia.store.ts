@@ -2,7 +2,7 @@
 // O componente herda os membros; templates e comportamento não mudam.
 import { OnInit, inject, signal, Directive } from '@angular/core';
 import { InteligenciaApi } from '@core/api/inteligencia.api';
-import { Notify } from '@core/services/notify.service';
+import { NotifyService } from '@core/services/notify.service';
 import {
   IaEscalaDia,
   IaEstoquePrev,
@@ -28,7 +28,7 @@ const CLASSE_ROTULO: Record<string, string> = {
 @Directive()
 export abstract class InteligenciaStore implements OnInit {
   private readonly inteligenciaApi = inject(InteligenciaApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
 
   readonly aba = signal<Aba>('visao');
   readonly resumo = signal<IaResumo | null>(null);

@@ -3,7 +3,7 @@
 import { OnInit, inject, signal, computed, Directive } from '@angular/core';
 import { ComunicacaoApi } from '@core/api/comunicacao.api';
 import { AuthStore } from '@core/services/auth.store';
-import { Notify } from '@core/services/notify.service';
+import { NotifyService } from '@core/services/notify.service';
 import { environment } from '../../../environments/environment';
 import {
   Atendimento,
@@ -24,7 +24,7 @@ const PAPEL_ROTULO: Record<number, string> = { 1: 'Admin', 2: 'Gerente', 3: 'Tod
 @Directive()
 export abstract class ComunicacaoStore implements OnInit {
   private readonly comunicacaoApi = inject(ComunicacaoApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
   private readonly auth = inject(AuthStore);
 
   protected readonly aba = signal<Aba>('avaliacoes');

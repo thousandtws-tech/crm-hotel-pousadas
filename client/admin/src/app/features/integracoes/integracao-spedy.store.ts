@@ -5,7 +5,7 @@ import { OnInit, inject, signal, Directive } from '@angular/core';
 import { FormBuilder, FormControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { IntegracoesApi } from '@core/api/integracoes.api';
-import { Notify } from '@core/services/notify.service';
+import { NotifyService } from '@core/services/notify.service';
 import * as M from '@core/models';
 import { CAMPOS_POR_PROVEDOR, ROTULO_EVENTO, CampoCredencial, estadoDe } from './integracoes.const';
 
@@ -43,7 +43,7 @@ function cfg(i: M.IntegracaoView | null): SpedyCfg {
 @Directive()
 export abstract class IntegracaoSpedyStore implements OnInit {
   private readonly api = inject(IntegracoesApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
 

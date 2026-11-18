@@ -6,7 +6,7 @@ import { FormBuilder, FormControl, Validators } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { AcomodacoesApi } from '@core/api/acomodacoes.api';
 import { EstacionamentoApi } from '@core/api/estacionamento.api';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import {
   Acomodacao,
   AcomodacaoInput,
@@ -16,17 +16,17 @@ import {
 } from '@core/models/catalogo.models';
 import { TarifaHistorico } from '@core/models/comercial.models';
 import { VagaEstacionamento } from '@core/models/estacionamento.models';
-import { Notify } from '@core/services/notify.service';
-import { Confirm } from '@core/services/confirm.service';
-import { Realtime } from '@core/services/realtime.service';
+import { NotifyService } from '@core/services/notify.service';
+import { ConfirmService } from '@core/services/confirm.service';
+import { RealtimeService } from '@core/services/realtime.service';
 import { AuthStore } from '@core/services/auth.store';
-import { TourGuiado } from '@core/services/tour.service';
+import { TourService } from '@core/services/tour.service';
 
 type Modal = 'tipos' | 'quarto' | null;
 
 @Directive()
 export abstract class AcomodacoesStore implements OnInit {
-  private readonly rt = inject(Realtime);
+  private readonly rt = inject(RealtimeService);
 
   constructor() {
     let ultimo = -1;
@@ -48,9 +48,9 @@ export abstract class AcomodacoesStore implements OnInit {
   }
   private readonly acomodacoesApi = inject(AcomodacoesApi);
   private readonly estacionamentoApi = inject(EstacionamentoApi);
-  private readonly notify = inject(Notify);
-  private readonly tour = inject(TourGuiado);
-  private readonly confirm = inject(Confirm);
+  private readonly notify = inject(NotifyService);
+  private readonly tour = inject(TourService);
+  private readonly confirm = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
   protected readonly auth = inject(AuthStore);
 

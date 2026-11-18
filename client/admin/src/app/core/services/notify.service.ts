@@ -12,7 +12,7 @@ export interface ToastMsg {
 }
 
 @Service()
-export class Notify {
+export class NotifyService {
   readonly toasts = signal<readonly ToastMsg[]>([]);
   private seq = 0;
 

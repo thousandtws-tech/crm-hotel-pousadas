@@ -2,7 +2,7 @@
 // O componente herda os membros; templates e comportamento não mudam.
 import { OnInit, computed, inject, signal, Directive } from '@angular/core';
 import { IntegracoesApi } from '@core/api/integracoes.api';
-import { Notify } from '@core/services/notify.service';
+import { NotifyService } from '@core/services/notify.service';
 import * as M from '@core/models';
 import {
   CAMPOS_POR_PROVEDOR,
@@ -49,7 +49,7 @@ const DESCRITOR_PROVEDOR: Record<M.ProvedorIntegracao, string> = {
 @Directive()
 export abstract class IntegracoesStore implements OnInit {
   private readonly api = inject(IntegracoesApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
 
   protected readonly integracoes = signal<M.IntegracaoView[]>([]);
   protected readonly carregando = signal(true);

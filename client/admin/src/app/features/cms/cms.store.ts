@@ -6,12 +6,12 @@ import { firstValueFrom } from 'rxjs';
 import { AcomodacoesApi } from '@core/api/acomodacoes.api';
 import { CmsApi } from '@core/api/cms.api';
 import { ReservasApi } from '@core/api/reservas.api';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import { AuthStore } from '@core/services/auth.store';
-import { Confirm } from '@core/services/confirm.service';
-import { Notify } from '@core/services/notify.service';
-import { Realtime } from '@core/services/realtime.service';
-import { TourGuiado } from '@core/services/tour.service';
+import { ConfirmService } from '@core/services/confirm.service';
+import { NotifyService } from '@core/services/notify.service';
+import { RealtimeService } from '@core/services/realtime.service';
+import { TourService } from '@core/services/tour.service';
 import * as M from '@core/models';
 import type { Signal } from '@angular/core';
 
@@ -58,10 +58,10 @@ export abstract class CmsStore implements OnInit {
   private readonly acomodacoesApi = inject(AcomodacoesApi);
   private readonly cmsApi = inject(CmsApi);
   private readonly reservasApi = inject(ReservasApi);
-  private readonly notify = inject(Notify);
-  private readonly confirm = inject(Confirm);
-  private readonly tour = inject(TourGuiado);
-  protected readonly rt = inject(Realtime);
+  private readonly notify = inject(NotifyService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly tour = inject(TourService);
+  protected readonly rt = inject(RealtimeService);
   private readonly fb = inject(FormBuilder);
   protected readonly auth = inject(AuthStore);
 

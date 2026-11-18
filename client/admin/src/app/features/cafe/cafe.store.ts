@@ -2,17 +2,17 @@
 // O componente herda os membros; templates e comportamento não mudam.
 import { OnDestroy, OnInit, computed, effect, inject, signal, Directive } from '@angular/core';
 import { CafeApi } from '@core/api/cafe.api';
-import { Realtime } from '../../core/services/realtime.service';
-import { Notify } from '../../core/services/notify.service';
+import { RealtimeService } from '../../core/services/realtime.service';
+import { NotifyService } from '../../core/services/notify.service';
 import { CafeQuadroItem } from '@core/models/cafe.models';
 
 type FiltroPresenca = 'todas' | 'aguardando' | 'presentes';
 
 @Directive()
 export abstract class CafeStore implements OnInit, OnDestroy {
-  protected readonly rt = inject(Realtime);
+  protected readonly rt = inject(RealtimeService);
   private readonly cafeApi = inject(CafeApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
 
   readonly quadro = signal<CafeQuadroItem[]>([]);
   readonly carregando = signal(true);

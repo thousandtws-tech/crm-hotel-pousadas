@@ -9,12 +9,12 @@ import { Service, effect, inject, signal } from '@angular/core';
 import { NotificacoesApi } from '@core/api/notificacoes.api';
 import { Notificacao } from '@core/models/notificacoes.models';
 import { AuthStore } from './auth.store';
-import { Realtime } from './realtime.service';
+import { RealtimeService } from './realtime.service';
 
 @Service()
-export class Notificacoes {
+export class NotificacoesService {
   private readonly notificacoesApi = inject(NotificacoesApi);
-  private readonly rt = inject(Realtime);
+  private readonly rt = inject(RealtimeService);
   private readonly auth = inject(AuthStore);
 
   /** Badge do sino — não-lidas. */

@@ -2,8 +2,8 @@
 // O componente herda os membros; templates e comportamento não mudam.
 import { OnInit, computed, inject, signal, Directive } from '@angular/core';
 import { FiscalApi } from '@core/api/fiscal.api';
-import { Confirm } from '@core/services/confirm.service';
-import { Notify } from '@core/services/notify.service';
+import { ConfirmService } from '@core/services/confirm.service';
+import { NotifyService } from '@core/services/notify.service';
 import * as M from '@core/models';
 import type { InputSignal, Signal } from '@angular/core';
 
@@ -29,8 +29,8 @@ export abstract class ReservaFiscalStore implements OnInit {
   /** Id da reserva — obrigatório. */
 
   private readonly api = inject(FiscalApi);
-  private readonly notify = inject(Notify);
-  private readonly confirm = inject(Confirm);
+  private readonly notify = inject(NotifyService);
+  private readonly confirm = inject(ConfirmService);
 
   protected readonly docs = signal<M.FiscalDocumento[]>([]);
   protected readonly previa = signal<M.PreparaNfse | null>(null);

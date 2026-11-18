@@ -17,7 +17,7 @@ interface ConfirmReq {
 }
 
 @Service()
-export class Confirm {
+export class ConfirmService {
   private readonly estado = signal<ConfirmReq | null>(null);
   readonly atual = this.estado.asReadonly();
 

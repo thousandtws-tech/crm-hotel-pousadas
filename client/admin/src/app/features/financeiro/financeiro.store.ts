@@ -6,7 +6,7 @@ import { debounceTime } from 'rxjs';
 import { RelatoriosApi } from '@core/api/relatorios.api';
 import { ReservasApi } from '@core/api/reservas.api';
 import { STATUS_RESERVA } from '@core/models/reservas.models';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import {
   ItemMaisVendido,
   PontoSerie,
@@ -14,9 +14,9 @@ import {
   VendaItem,
 } from '@core/models/relatorios.models';
 import { ReservaResumo } from '@core/models/reservas.models';
-import { Notify } from '@core/services/notify.service';
-import { Realtime } from '@core/services/realtime.service';
-import { TourGuiado } from '@core/services/tour.service';
+import { NotifyService } from '@core/services/notify.service';
+import { RealtimeService } from '@core/services/realtime.service';
+import { TourService } from '@core/services/tour.service';
 import { EChartOption } from '@shared/components/echart/echart.component';
 
 type Preset = 'mes' | 'mesAnt' | 'd30' | 'ano' | 'custom';
@@ -73,9 +73,9 @@ function ttItem(fmtExtra: (p: { name: string; value: number; dataIndex: number }
 export abstract class FinanceiroStore implements OnInit {
   private readonly relatoriosApi = inject(RelatoriosApi);
   private readonly reservasApi = inject(ReservasApi);
-  private readonly notify = inject(Notify);
-  private readonly rt = inject(Realtime);
-  private readonly tour = inject(TourGuiado);
+  private readonly notify = inject(NotifyService);
+  private readonly rt = inject(RealtimeService);
+  private readonly tour = inject(TourService);
 
   protected readonly num = num;
   protected readonly fmt = (v: number) => BRL.format(v);

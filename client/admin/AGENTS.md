@@ -68,7 +68,12 @@ src/app/
 │   │                   injetam HttpClient diretamente.
 │   ├── models/         contratos da API por domínio — <dominio>.models.ts,
 │   │                   TypeScript puro (sem Angular/HTTP). index.ts re-exporta.
-│   ├── services/       auth.store, realtime (Phoenix), notify, maria, notificacoes
+│   ├── services/       sufixo por papel — `x.store.ts` guarda estado
+│   │                   (AuthStore, igual às stores de features); `x.service.ts`
+│   │                   executa ações e a classe leva sufixo `Service`
+│   │                   (NotifyService, RealtimeService, ConfirmService,
+│   │                   NotificacoesService, TourService, ExportacaoService,
+│   │                   MariaService). `x.utils.ts` para helpers puros.
 │   ├── guards/         authGuard, guestGuard, adminGuard
 │   ├── interceptors/   authInterceptor (Bearer + single-flight refresh em 401)
 │   └── config/

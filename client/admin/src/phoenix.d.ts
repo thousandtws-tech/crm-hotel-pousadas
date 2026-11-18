@@ -1,5 +1,5 @@
 // Tipagens mínimas do cliente oficial `phoenix` (JS puro, sem .d.ts).
-// Cobre apenas a superfície usada pelo Realtime service.
+// Cobre apenas a superfície usada pelo RealtimeService.
 
 declare module 'phoenix' {
   export interface SocketOptions {
@@ -51,8 +51,6 @@ declare module 'phoenix' {
     onJoin(callback: PresenceOnJoinLeave): void;
     onLeave(callback: PresenceOnJoinLeave): void;
     onSync(callback: () => void): void;
-    list<T = Record<string, unknown>>(
-      by?: (key: string, presence: T) => unknown,
-    ): unknown[];
+    list<T = Record<string, unknown>>(by?: (key: string, presence: T) => unknown): unknown[];
   }
 }

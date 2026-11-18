@@ -3,7 +3,7 @@ import { Component, ElementRef, viewChild } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import { PdvStore } from './pdv.store';
 
 @Component({

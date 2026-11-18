@@ -7,15 +7,15 @@ import { AcomodacoesApi } from '@core/api/acomodacoes.api';
 import { EstacionamentoApi } from '@core/api/estacionamento.api';
 import { Acomodacao } from '@core/models/catalogo.models';
 import { VagaEstacionamento } from '@core/models/estacionamento.models';
-import { Confirm } from '@core/services/confirm.service';
-import { Notify } from '@core/services/notify.service';
-import { Realtime } from '@core/services/realtime.service';
+import { ConfirmService } from '@core/services/confirm.service';
+import { NotifyService } from '@core/services/notify.service';
+import { RealtimeService } from '@core/services/realtime.service';
 import { AuthStore } from '@core/services/auth.store';
-import { TourGuiado } from '@core/services/tour.service';
+import { TourService } from '@core/services/tour.service';
 
 @Directive()
 export abstract class EstacionamentoStore implements OnInit {
-  private readonly rt = inject(Realtime);
+  private readonly rt = inject(RealtimeService);
 
   constructor() {
     let ultimo = -1;
@@ -36,9 +36,9 @@ export abstract class EstacionamentoStore implements OnInit {
   }
   private readonly acomodacoesApi = inject(AcomodacoesApi);
   private readonly estacionamentoApi = inject(EstacionamentoApi);
-  private readonly notify = inject(Notify);
-  private readonly tour = inject(TourGuiado);
-  private readonly confirm = inject(Confirm);
+  private readonly notify = inject(NotifyService);
+  private readonly tour = inject(TourService);
+  private readonly confirm = inject(ConfirmService);
   protected readonly auth = inject(AuthStore);
 
   protected readonly vagas = signal<VagaEstacionamento[]>([]);

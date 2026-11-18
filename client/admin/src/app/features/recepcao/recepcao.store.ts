@@ -3,8 +3,8 @@
 import { OnInit, computed, effect, inject, signal, Directive } from '@angular/core';
 import { ReservasApi } from '@core/api/reservas.api';
 import { MapaQuarto, ReservaResumo } from '@core/models/reservas.models';
-import { Notify } from '@core/services/notify.service';
-import { Realtime } from '@core/services/realtime.service';
+import { NotifyService } from '@core/services/notify.service';
+import { RealtimeService } from '@core/services/realtime.service';
 
 const DIA_MS = 86_400_000;
 
@@ -12,8 +12,8 @@ const DIA_MS = 86_400_000;
 @Directive()
 export abstract class RecepcaoStore implements OnInit {
   private readonly reservasApi = inject(ReservasApi);
-  private readonly notify = inject(Notify);
-  protected readonly rt = inject(Realtime);
+  private readonly notify = inject(NotifyService);
+  protected readonly rt = inject(RealtimeService);
 
   protected readonly hoje = new Date();
   protected readonly chegadas = signal<ReservaResumo[]>([]);

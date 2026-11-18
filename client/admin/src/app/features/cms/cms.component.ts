@@ -4,7 +4,7 @@ import { DecimalPipe } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import * as M from '@core/models';
 import { CmsStore } from './cms.store';
 

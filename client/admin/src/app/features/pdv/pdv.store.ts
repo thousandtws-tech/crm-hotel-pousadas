@@ -8,7 +8,7 @@ import { FuncionariosApi } from '@core/api/funcionarios.api';
 import { PagamentosApi } from '@core/api/pagamentos.api';
 import { PdvApi } from '@core/api/pdv.api';
 import { ReservasApi } from '@core/api/reservas.api';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import { Page } from '@core/models/comum.models';
 import { ContaFinanceira } from '@core/models/financeiro.models';
 import { Funcionario } from '@core/models/funcionarios.models';
@@ -23,7 +23,7 @@ import {
   MesaView,
 } from '@core/models/pdv.models';
 import { ReservaResumo } from '@core/models/reservas.models';
-import { Notify } from '@core/services/notify.service';
+import { NotifyService } from '@core/services/notify.service';
 import type { Signal } from '@angular/core';
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -47,7 +47,7 @@ export abstract class PdvStore implements OnInit {
   private readonly pagamentosApi = inject(PagamentosApi);
   private readonly pdvApi = inject(PdvApi);
   private readonly reservasApi = inject(ReservasApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
 
   readonly num = num;
   readonly fmt = fmt;

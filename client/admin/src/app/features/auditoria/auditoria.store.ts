@@ -5,14 +5,14 @@ import { FormBuilder } from '@angular/forms';
 import { PageEvent } from '@angular/material/paginator';
 import { RelatoriosApi } from '@core/api/relatorios.api';
 import { RegistroLog } from '@core/models/relatorios.models';
-import { Notify } from '@core/services/notify.service';
-import { Realtime } from '@core/services/realtime.service';
+import { NotifyService } from '@core/services/notify.service';
+import { RealtimeService } from '@core/services/realtime.service';
 
 @Directive()
 export abstract class AuditoriaStore implements OnInit {
-  private readonly rt = inject(Realtime);
+  private readonly rt = inject(RealtimeService);
   private readonly relatoriosApi = inject(RelatoriosApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly items = signal<RegistroLog[]>([]);

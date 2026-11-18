@@ -19,11 +19,11 @@ import { ClientesApi } from '@core/api/clientes.api';
 import { GeoApi } from '@core/api/geo.api';
 import { Cliente, ClienteInput } from '@core/models/clientes.models';
 import { NACIONALIDADES, PaisGeo } from '@core/models/geo.models';
-import { Confirm } from '@core/services/confirm.service';
+import { ConfirmService } from '@core/services/confirm.service';
 import { ExportacaoService, RelatorioCfg } from '@core/services/exportacao.service';
-import { Notify } from '@core/services/notify.service';
-import { Realtime } from '@core/services/realtime.service';
-import { TourGuiado } from '@core/services/tour.service';
+import { NotifyService } from '@core/services/notify.service';
+import { RealtimeService } from '@core/services/realtime.service';
+import { TourService } from '@core/services/tour.service';
 
 /** Recorte quadrado máximo usado também para normalizar uploads de arquivo. */
 const LADO_FOTO = 640;
@@ -37,7 +37,7 @@ function normPais(s: string | null | undefined): string {
 
 @Directive()
 export abstract class ClientesStore implements OnInit, OnDestroy {
-  private readonly rt = inject(Realtime);
+  private readonly rt = inject(RealtimeService);
 
   constructor() {
     let ultimo = -1;
@@ -55,9 +55,9 @@ export abstract class ClientesStore implements OnInit, OnDestroy {
   }
   private readonly clientesApi = inject(ClientesApi);
   private readonly exp = inject(ExportacaoService);
-  private readonly notify = inject(Notify);
-  private readonly tour = inject(TourGuiado);
-  private readonly confirm = inject(Confirm);
+  private readonly notify = inject(NotifyService);
+  private readonly tour = inject(TourService);
+  private readonly confirm = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
 

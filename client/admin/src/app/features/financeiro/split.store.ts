@@ -3,14 +3,14 @@
 import { computed, inject, signal, OnInit, Directive } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { FinanceiroApi } from '@core/api/financeiro.api';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import {
   SplitEventoView,
   SplitResumo,
   TributoApuracao,
   TributoConfig,
 } from '@core/models/financeiro.models';
-import { Notify } from '@core/services/notify.service';
+import { NotifyService } from '@core/services/notify.service';
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmt = (v: string | number | null | undefined) => BRL.format(num(v));
@@ -25,7 +25,7 @@ function isoLocal(d: Date): string {
 @Directive()
 export abstract class FinSplitStore implements OnInit {
   private readonly financeiroApi = inject(FinanceiroApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
 
   readonly fmt = fmt;
   readonly num = num;

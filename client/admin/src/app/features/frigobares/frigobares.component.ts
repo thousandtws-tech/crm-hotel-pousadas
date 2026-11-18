@@ -5,7 +5,7 @@ import { DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import { Frigobar } from '@core/models/frigobares.models';
 import { FrigobaresStore } from './frigobares.store';
 

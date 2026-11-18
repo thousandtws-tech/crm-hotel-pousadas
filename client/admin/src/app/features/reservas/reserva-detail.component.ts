@@ -5,7 +5,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import { DateInputComponent } from '@shared/components/date-input/date-input.component';
 import { imprimirFnrh } from '@shared/utils/fnrh-print';
 import { ReservaFiscalComponent } from './reserva-fiscal.component';

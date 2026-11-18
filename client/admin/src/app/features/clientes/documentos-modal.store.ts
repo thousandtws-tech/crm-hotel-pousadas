@@ -12,8 +12,8 @@ import {
   TipoDocumento,
 } from '@core/models/clientes.models';
 import { Fnrh } from '@core/models/reservas.models';
-import { Notify } from '@core/services/notify.service';
-import { Confirm } from '@core/services/confirm.service';
+import { NotifyService } from '@core/services/notify.service';
+import { ConfirmService } from '@core/services/confirm.service';
 import { imprimirFnrh } from '@shared/utils/fnrh-print';
 import type { InputSignal, OutputEmitterRef, Signal } from '@angular/core';
 
@@ -97,9 +97,9 @@ export abstract class DocumentosModalStore implements OnInit, OnDestroy {
   declare protected readonly fechou: OutputEmitterRef<void>;
 
   private readonly clientesApi = inject(ClientesApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
   private readonly fb = inject(FormBuilder);
-  private readonly confirm = inject(Confirm);
+  private readonly confirm = inject(ConfirmService);
 
   protected readonly tipos = TIPOS;
   protected readonly docs = signal<ClienteDocumento[]>([]);

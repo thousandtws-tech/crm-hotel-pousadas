@@ -4,14 +4,14 @@ import { inject, signal, OnInit, Directive } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { ClientesApi } from '@core/api/clientes.api';
 import { ReservasApi } from '@core/api/reservas.api';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import { Cliente } from '@core/models/clientes.models';
 import {
   AcomodacaoDisponivel,
   DisponibilidadeResponse,
   ReservaInput,
 } from '@core/models/reservas.models';
-import { Notify } from '@core/services/notify.service';
+import { NotifyService } from '@core/services/notify.service';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { of } from 'rxjs';
 import type { OutputEmitterRef } from '@angular/core';
@@ -24,7 +24,7 @@ export abstract class NovaReservaDialogStore implements OnInit {
 
   private readonly clientesApi = inject(ClientesApi);
   private readonly reservasApi = inject(ReservasApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly clientes = signal<Cliente[]>([]);

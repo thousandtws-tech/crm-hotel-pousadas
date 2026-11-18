@@ -5,10 +5,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder } from '@angular/forms';
 import { EstabelecimentoApi } from '@core/api/estabelecimento.api';
 import { ImpressorasApi } from '@core/api/impressoras.api';
-import { Confirm } from '@core/services/confirm.service';
-import { Notify } from '@core/services/notify.service';
-import { Realtime } from '@core/services/realtime.service';
-import { TourGuiado } from '@core/services/tour.service';
+import { ConfirmService } from '@core/services/confirm.service';
+import { NotifyService } from '@core/services/notify.service';
+import { RealtimeService } from '@core/services/realtime.service';
+import { TourService } from '@core/services/tour.service';
 import * as M from '@core/models';
 
 const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao'];
@@ -19,11 +19,11 @@ const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao
 export abstract class EstabelecimentoStore implements OnInit {
   private readonly estabelecimentoApi = inject(EstabelecimentoApi);
   private readonly impressorasApi = inject(ImpressorasApi);
-  private readonly notify = inject(Notify);
-  private readonly confirm = inject(Confirm);
-  private readonly rt = inject(Realtime);
+  private readonly notify = inject(NotifyService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly rt = inject(RealtimeService);
   private readonly fb = inject(FormBuilder);
-  private readonly tour = inject(TourGuiado);
+  private readonly tour = inject(TourService);
 
   protected readonly salvando = signal(false);
   protected readonly enviando = signal(false);

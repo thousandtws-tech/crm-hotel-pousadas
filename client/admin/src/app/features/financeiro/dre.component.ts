@@ -7,7 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { provideNativeDateAdapter } from '@angular/material/core';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import { FinNavComponent } from './fin-nav.component';
 import { FinDreStore } from './dre.store';
 

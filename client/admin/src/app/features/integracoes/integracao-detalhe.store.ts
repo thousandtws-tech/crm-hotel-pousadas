@@ -5,7 +5,7 @@ import { OnInit, computed, inject, signal, Directive } from '@angular/core';
 import { FormBuilder, FormControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { IntegracoesApi } from '@core/api/integracoes.api';
-import { Notify } from '@core/services/notify.service';
+import { NotifyService } from '@core/services/notify.service';
 import * as M from '@core/models';
 import {
   CAMPOS_POR_PROVEDOR,
@@ -28,7 +28,7 @@ const AMBIENTES: M.AmbienteIntegracao[] = ['producao', 'teste'];
 export abstract class IntegracaoDetalheStore implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(IntegracoesApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly provedor = signal<M.ProvedorPagamento>('stripe');

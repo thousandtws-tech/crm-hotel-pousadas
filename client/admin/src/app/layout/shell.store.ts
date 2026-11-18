@@ -3,8 +3,8 @@
 import { computed, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { IsActiveMatchOptions, NavigationEnd, Router } from '@angular/router';
 import { AuthStore } from '@core/services/auth.store';
-import { Realtime } from '@core/services/realtime.service';
-import { Notificacoes } from '@core/services/notificacoes.service';
+import { RealtimeService } from '@core/services/realtime.service';
+import { NotificacoesService } from '@core/services/notificacoes.service';
 import { Notificacao } from '@core/models/notificacoes.models';
 import { filter } from 'rxjs';
 import { Directive } from '@angular/core';
@@ -121,8 +121,8 @@ const NAV: NavItem[] = [
 @Directive()
 export abstract class ShellStore implements OnInit, OnDestroy {
   protected readonly auth = inject(AuthStore);
-  protected readonly rt = inject(Realtime);
-  protected readonly notifs = inject(Notificacoes);
+  protected readonly rt = inject(RealtimeService);
+  protected readonly notifs = inject(NotificacoesService);
   private readonly router = inject(Router);
   protected readonly aberta = signal(window.innerWidth > 768);
 

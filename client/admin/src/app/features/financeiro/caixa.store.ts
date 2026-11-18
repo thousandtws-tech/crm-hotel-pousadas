@@ -5,7 +5,7 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { CaixaApi } from '@core/api/caixa.api';
 import { FinanceiroApi } from '@core/api/financeiro.api';
 import { ReservasApi } from '@core/api/reservas.api';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import {
   ConferenciaCaixa,
   PendenciaReserva,
@@ -14,7 +14,7 @@ import {
   TurnoView,
 } from '@core/models/caixa.models';
 import { ContaFinanceira } from '@core/models/financeiro.models';
-import { Notify } from '@core/services/notify.service';
+import { NotifyService } from '@core/services/notify.service';
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmt = (v: string | number | null | undefined) => BRL.format(num(v));
@@ -24,7 +24,7 @@ export abstract class FinCaixaStore implements OnInit {
   private readonly caixaApi = inject(CaixaApi);
   private readonly financeiroApi = inject(FinanceiroApi);
   private readonly reservasApi = inject(ReservasApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
 
   readonly fmt = fmt;
   readonly num = num;

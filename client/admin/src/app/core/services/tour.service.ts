@@ -10,7 +10,7 @@ import type { Driver, DriveStep } from 'driver.js';
  * quando o usuário abre o primeiro tour; não pesa no bundle inicial.
  */
 @Service()
-export class TourGuiado {
+export class TourService {
   private instancia: Driver | null = null;
   private lib: Promise<typeof import('driver.js')> | null = null;
 

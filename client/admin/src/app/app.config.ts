@@ -15,7 +15,7 @@ import localePt from '@angular/common/locales/pt';
 import { routes } from './app.routes';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { PaginatorIntlPtBr } from '@core/services/paginator-intl';
-import { ChunkReloadErrorHandler } from '@core/chunk-reload.error-handler';
+import { ChunkReloadErrorHandler } from '@core/services/chunk-reload.error-handler';
 
 registerLocaleData(localePt);
 

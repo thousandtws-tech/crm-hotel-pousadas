@@ -3,7 +3,7 @@ import { Component } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import { FinNavComponent } from './fin-nav.component';
 import { RouterLink } from '@angular/router';
 import { DecimalPipe } from '@angular/common';

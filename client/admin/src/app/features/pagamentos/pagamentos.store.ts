@@ -4,10 +4,10 @@ import { computed, inject, signal, OnInit, effect, Directive } from '@angular/co
 import { ImpressorasApi } from '@core/api/impressoras.api';
 import { PagamentosApi } from '@core/api/pagamentos.api';
 import { ComprovanteResumo, FormaPagamento } from '@core/models/pagamentos.models';
-import { Confirm } from '@core/services/confirm.service';
-import { Notify } from '@core/services/notify.service';
-import { Realtime } from '@core/services/realtime.service';
-import { TourGuiado } from '@core/services/tour.service';
+import { ConfirmService } from '@core/services/confirm.service';
+import { NotifyService } from '@core/services/notify.service';
+import { RealtimeService } from '@core/services/realtime.service';
+import { TourService } from '@core/services/tour.service';
 import { AuthStore } from '@core/services/auth.store';
 
 // Central de pagamentos: comprovantes emitidos + formas de pagamento aceitas.
@@ -15,10 +15,10 @@ import { AuthStore } from '@core/services/auth.store';
 export abstract class PagamentosStore implements OnInit {
   private readonly impressorasApi = inject(ImpressorasApi);
   private readonly pagamentosApi = inject(PagamentosApi);
-  private readonly notify = inject(Notify);
-  private readonly confirm = inject(Confirm);
-  private readonly rt = inject(Realtime);
-  private readonly tour = inject(TourGuiado);
+  private readonly notify = inject(NotifyService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly rt = inject(RealtimeService);
+  private readonly tour = inject(TourService);
   protected readonly auth = inject(AuthStore);
 
   protected readonly comprovantes = signal<ComprovanteResumo[]>([]);

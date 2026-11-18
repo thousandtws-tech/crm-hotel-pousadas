@@ -16,7 +16,7 @@ import { firstValueFrom } from 'rxjs';
 import type { Socket, Channel } from 'phoenix';
 import { environment } from '../../../environments/environment';
 import { AuthStore } from './auth.store';
-import { Notify } from './notify.service';
+import { NotifyService } from './notify.service';
 
 export interface Delta {
   tabela: string;
@@ -33,14 +33,14 @@ export interface Aviso {
 }
 
 @Service()
-export class Realtime {
+export class RealtimeService {
   private readonly auth = inject(AuthStore);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
 
   /** true enquanto o socket está aberto — indicador "ao vivo" no shell. */
   readonly online = signal(false);
 
-  /** Último aviso recebido — o sino (`Notificacoes`) assina via effect(). */
+  /** Último aviso recebido — o sino (`NotificacoesService`) assina via effect(). */
   readonly ultimoAviso = signal<Aviso | null>(null);
   readonly avisoSeq = signal(0);
 

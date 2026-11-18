@@ -7,15 +7,15 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { PageEvent } from '@angular/material/paginator';
 import { AcomodacoesApi } from '@core/api/acomodacoes.api';
 import { ReservasApi } from '@core/api/reservas.api';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import { Acomodacao, Grupo, GrupoUnidadeView } from '@core/models/catalogo.models';
 import { StatusReserva } from '@core/models/comum.models';
 import { Bloqueio, MapaQuarto, ReservaResumo } from '@core/models/reservas.models';
-import { Confirm } from '@core/services/confirm.service';
-import { Notify } from '@core/services/notify.service';
-import { Realtime } from '@core/services/realtime.service';
+import { ConfirmService } from '@core/services/confirm.service';
+import { NotifyService } from '@core/services/notify.service';
+import { RealtimeService } from '@core/services/realtime.service';
 import { AuthStore } from '@core/services/auth.store';
-import { TourGuiado } from '@core/services/tour.service';
+import { TourService } from '@core/services/tour.service';
 
 const DIA_MS = 86_400_000;
 /** Largura de cada coluna-dia no mapa de ocupação. */
@@ -29,12 +29,12 @@ type Visao = 'lista' | 'cal' | 'mapa' | 'grupos';
 @Directive()
 export abstract class ReservasStore implements OnInit {
   protected readonly JANELA_DIAS = JANELA_DIAS;
-  protected readonly rt = inject(Realtime);
+  protected readonly rt = inject(RealtimeService);
   private readonly acomodacoesApi = inject(AcomodacoesApi);
   private readonly reservasApi = inject(ReservasApi);
-  private readonly notify = inject(Notify);
-  private readonly confirm = inject(Confirm);
-  private readonly tour = inject(TourGuiado);
+  private readonly notify = inject(NotifyService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly tour = inject(TourService);
   private readonly fb = inject(FormBuilder);
   protected readonly auth = inject(AuthStore);
 

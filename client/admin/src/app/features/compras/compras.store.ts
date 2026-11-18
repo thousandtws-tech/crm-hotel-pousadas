@@ -13,9 +13,9 @@ import {
 import { ItemEstoque } from '@core/models/estoque.models';
 import { ComprasApi } from '@core/api/compras.api';
 import { EstoqueApi } from '@core/api/estoque.api';
-import { Confirm } from '../../core/services/confirm.service';
-import { Notify } from '../../core/services/notify.service';
-import { Realtime } from '../../core/services/realtime.service';
+import { ConfirmService } from '../../core/services/confirm.service';
+import { NotifyService } from '../../core/services/notify.service';
+import { RealtimeService } from '../../core/services/realtime.service';
 
 const STATUS_LABEL: Record<string, string> = {
   pendente: 'Pendente',
@@ -42,9 +42,9 @@ interface LinhaPedido {
 export abstract class ComprasStore {
   private readonly comprasApi = inject(ComprasApi);
   private readonly estoqueApi = inject(EstoqueApi);
-  private readonly nt = inject(Notify);
-  private readonly rt = inject(Realtime);
-  private readonly confirm = inject(Confirm);
+  private readonly nt = inject(NotifyService);
+  private readonly rt = inject(RealtimeService);
+  private readonly confirm = inject(ConfirmService);
 
   private uidSeq = 0;
 

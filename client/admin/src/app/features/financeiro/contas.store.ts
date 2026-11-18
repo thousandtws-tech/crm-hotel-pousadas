@@ -4,7 +4,7 @@ import { computed, inject, signal, OnInit, Directive } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { FinanceiroApi } from '@core/api/financeiro.api';
 import { PagamentosApi } from '@core/api/pagamentos.api';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import {
   BaixaView,
   ContaFinanceira,
@@ -14,7 +14,7 @@ import {
   TipoLancamento,
 } from '@core/models/financeiro.models';
 import { FormaPagamento } from '@core/models/pagamentos.models';
-import { Notify } from '@core/services/notify.service';
+import { NotifyService } from '@core/services/notify.service';
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmt = (v: string | number | null | undefined) => BRL.format(num(v));
@@ -38,7 +38,7 @@ function hojeIso(): string {
 export abstract class FinContasStore implements OnInit {
   private readonly financeiroApi = inject(FinanceiroApi);
   private readonly pagamentosApi = inject(PagamentosApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
 
   readonly STATUS = STATUS;
   readonly fmt = fmt;

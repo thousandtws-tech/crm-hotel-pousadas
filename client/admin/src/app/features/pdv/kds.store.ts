@@ -2,8 +2,8 @@
 // O componente herda os membros; templates e comportamento não mudam.
 import { OnDestroy, OnInit, computed, effect, inject, signal, Directive } from '@angular/core';
 import { PdvApi } from '@core/api/pdv.api';
-import { Realtime } from '../../core/services/realtime.service';
-import { Notify } from '../../core/services/notify.service';
+import { RealtimeService } from '../../core/services/realtime.service';
+import { NotifyService } from '../../core/services/notify.service';
 import { FilaItemView, PdvItemStatus } from '@core/models/pdv.models';
 
 interface Ticket {
@@ -29,9 +29,9 @@ type FiltroStatus = 'todos' | PdvItemStatus;
 
 @Directive()
 export abstract class KdsStore implements OnInit, OnDestroy {
-  protected readonly rt = inject(Realtime);
+  protected readonly rt = inject(RealtimeService);
   private readonly pdvApi = inject(PdvApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
 
   readonly fila = signal<FilaItemView[]>([]);
   readonly carregando = signal(true);

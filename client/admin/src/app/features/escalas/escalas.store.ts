@@ -3,7 +3,7 @@
 import { OnInit, inject, signal, Directive } from '@angular/core';
 import { FuncionariosApi } from '@core/api/funcionarios.api';
 import { OperacaoApi } from '@core/api/operacao.api';
-import { Notify } from '@core/services/notify.service';
+import { NotifyService } from '@core/services/notify.service';
 import {
   CltViolacao,
   EscalaTurno,
@@ -27,7 +27,7 @@ const REGRA_ROTULO: Record<string, string> = {
 export abstract class EscalasStore implements OnInit {
   private readonly funcionariosApi = inject(FuncionariosApi);
   private readonly operacaoApi = inject(OperacaoApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
 
   protected readonly aba = signal<Aba>('grade');
   protected readonly turnos = signal<EscalaTurno[]>([]);

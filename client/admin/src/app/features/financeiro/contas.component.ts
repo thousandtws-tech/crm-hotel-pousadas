@@ -4,7 +4,7 @@ import { DatePipe } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DateInputComponent } from '@shared/components/date-input/date-input.component';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import { FinNavComponent } from './fin-nav.component';
 import { FinContasStore } from './contas.store';
 

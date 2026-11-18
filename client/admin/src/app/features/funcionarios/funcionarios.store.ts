@@ -13,11 +13,11 @@ import {
   FuncionarioInput,
   FuncionarioUpdate,
 } from '@core/models/funcionarios.models';
-import { Confirm } from '@core/services/confirm.service';
-import { Notify } from '@core/services/notify.service';
-import { Realtime } from '@core/services/realtime.service';
+import { ConfirmService } from '@core/services/confirm.service';
+import { NotifyService } from '@core/services/notify.service';
+import { RealtimeService } from '@core/services/realtime.service';
 import { AuthStore } from '@core/services/auth.store';
-import { TourGuiado } from '@core/services/tour.service';
+import { TourService } from '@core/services/tour.service';
 
 // Gestão da equipe: contas de acesso ao sistema (Recepção / Gerente / Administrador).
 @Directive()
@@ -25,11 +25,11 @@ export abstract class FuncionariosStore implements OnInit {
   private readonly funcionariosApi = inject(FuncionariosApi);
   private readonly cargosApi = inject(CargosApi);
   private readonly verificacaoApi = inject(VerificacaoApi);
-  private readonly notify = inject(Notify);
-  private readonly confirm = inject(Confirm);
-  private readonly rt = inject(Realtime);
+  private readonly notify = inject(NotifyService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly rt = inject(RealtimeService);
   private readonly fb = inject(FormBuilder);
-  private readonly tour = inject(TourGuiado);
+  private readonly tour = inject(TourService);
   protected readonly auth = inject(AuthStore);
 
   /** Última verificação de identidade por funcionário (produção). */

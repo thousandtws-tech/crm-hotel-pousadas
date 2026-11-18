@@ -4,7 +4,7 @@ import { OnDestroy, OnInit, computed, inject, signal, Directive } from '@angular
 import { Router } from '@angular/router';
 import { VerificacaoApi } from '@core/api/verificacao.api';
 import { AuthStore } from '@core/services/auth.store';
-import { Notify } from '@core/services/notify.service';
+import { NotifyService } from '@core/services/notify.service';
 import { invalidarCacheVerificacao, marcarBypassAdmin } from '@core/guards/verificacao.guard';
 import type { MinhaVerificacao, StatusVerificacao } from '@core/models';
 
@@ -15,7 +15,7 @@ export abstract class VerificacaoPendenteStore implements OnInit, OnDestroy {
   private readonly api = inject(VerificacaoApi);
   private readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
 
   protected readonly v = signal<MinhaVerificacao | null>(null);
   protected readonly criando = signal(false);

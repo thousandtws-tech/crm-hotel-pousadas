@@ -9,7 +9,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { provideNativeDateAdapter } from '@angular/material/core';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import { NovaReservaDialogComponent } from './nova-reserva-dialog.component';
 import { ReservasStore } from './reservas.store';
 

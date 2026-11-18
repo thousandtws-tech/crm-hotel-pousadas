@@ -5,7 +5,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import { Quarto } from '@core/models/catalogo.models';
 import { AcomodacoesStore } from './acomodacoes.store';
 

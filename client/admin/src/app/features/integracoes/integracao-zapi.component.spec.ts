@@ -5,7 +5,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { IntegracaoView } from '@core/models/integracoes.models';
-import { Confirm } from '@core/services/confirm.service';
+import { ConfirmService } from '@core/services/confirm.service';
 import { IntegracaoZapiComponent } from './integracao-zapi.component';
 
 const API = environment.apiUrl;
@@ -180,7 +180,7 @@ describe('IntegracaoZapiComponent', () => {
     const el = fixture.nativeElement as HTMLElement;
     await carrega(fixture);
 
-    const confirm = TestBed.inject(Confirm);
+    const confirm = TestBed.inject(ConfirmService);
     const pergunta = vi.spyOn(confirm, 'perguntar').mockResolvedValue(false);
 
     botao(el, 'Desconectar sessão')?.click();
@@ -196,7 +196,7 @@ describe('IntegracaoZapiComponent', () => {
     const el = fixture.nativeElement as HTMLElement;
     await carrega(fixture);
 
-    const confirm = TestBed.inject(Confirm);
+    const confirm = TestBed.inject(ConfirmService);
     vi.spyOn(confirm, 'perguntar').mockResolvedValue(true);
 
     botao(el, 'Desconectar sessão')?.click();

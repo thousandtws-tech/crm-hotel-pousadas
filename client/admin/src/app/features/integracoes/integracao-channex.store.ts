@@ -4,7 +4,7 @@ import { OnInit, inject, signal, Directive } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { IntegracoesApi } from '@core/api/integracoes.api';
-import { Notify } from '@core/services/notify.service';
+import { NotifyService } from '@core/services/notify.service';
 import * as M from '@core/models';
 import { estadoDe, rotuloAmbiente } from './integracoes.const';
 
@@ -18,7 +18,7 @@ import { estadoDe, rotuloAmbiente } from './integracoes.const';
 export abstract class IntegracaoChannexStore implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(IntegracoesApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly ambiente = signal<M.AmbienteIntegracao>('producao');

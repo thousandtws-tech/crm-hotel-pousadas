@@ -12,7 +12,7 @@ import { ReservasApi } from '@core/api/reservas.api';
 import { ComunicacaoApi } from '@core/api/comunicacao.api';
 import { ItemFila } from '@core/models/comunicacao.models';
 import { STATUS_RESERVA } from '@core/models/reservas.models';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import { TIPOS_DOCUMENTO, TipoDocumento } from '@core/models/clientes.models';
 import { ItemFrigobarView } from '@core/models/frigobares.models';
 import { FormaPagamento } from '@core/models/pagamentos.models';
@@ -23,8 +23,8 @@ import {
   ItemConsumido,
   ReservaDetalhe,
 } from '@core/models/reservas.models';
-import { Notify } from '@core/services/notify.service';
-import { Realtime } from '@core/services/realtime.service';
+import { NotifyService } from '@core/services/notify.service';
+import { RealtimeService } from '@core/services/realtime.service';
 import { AuthStore } from '@core/services/auth.store';
 import { imprimirFnrh } from '@shared/utils/fnrh-print';
 import { switchMap } from 'rxjs';
@@ -66,7 +66,7 @@ interface AdicionalLinha {
 
 @Directive()
 export abstract class ReservaDetailStore implements OnInit {
-  private readonly rt = inject(Realtime);
+  private readonly rt = inject(RealtimeService);
 
   constructor() {
     let ultimo = -1;
@@ -98,7 +98,7 @@ export abstract class ReservaDetailStore implements OnInit {
   private readonly relatoriosApi = inject(RelatoriosApi);
   private readonly reservasApi = inject(ReservasApi);
   private readonly comunicacaoApi = inject(ComunicacaoApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
   private readonly route = inject(ActivatedRoute);
   protected readonly auth = inject(AuthStore);
   private readonly fb = inject(FormBuilder);

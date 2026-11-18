@@ -3,7 +3,7 @@
 import { OnInit, inject, signal, Directive } from '@angular/core';
 import { PagamentosApi } from '@core/api/pagamentos.api';
 import { AuthStore } from '@core/services/auth.store';
-import { Notify } from '@core/services/notify.service';
+import { NotifyService } from '@core/services/notify.service';
 import {
   PagOnlineResumo,
   ReceitaAcomodacao,
@@ -16,7 +16,7 @@ import {
 @Directive()
 export abstract class FinPagamentosOnlineStore implements OnInit {
   private readonly pagamentosApi = inject(PagamentosApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
   readonly auth = inject(AuthStore);
 
   protected readonly resumo = signal<ResumoFinanceiroOnline | null>(null);

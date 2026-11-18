@@ -4,9 +4,9 @@ import { computed, inject, signal, OnInit, effect, Directive } from '@angular/co
 import { RelatoriosApi } from '@core/api/relatorios.api';
 import type { StatusReserva } from '@core/models/comum.models';
 import { DashboardResponse, PontoSerie, ResumoFinanceiro } from '@core/models/relatorios.models';
-import { Notify } from '@core/services/notify.service';
-import { Realtime } from '@core/services/realtime.service';
-import { TourGuiado } from '@core/services/tour.service';
+import { NotifyService } from '@core/services/notify.service';
+import { RealtimeService } from '@core/services/realtime.service';
+import { TourService } from '@core/services/tour.service';
 import { EChartOption } from '@shared/components/echart/echart.component';
 
 type Preset = 'd7' | 'd30' | 'mes' | 'mesAnt';
@@ -83,10 +83,10 @@ function ttItem(fmtExtra: (p: { name: string; value: number }) => string) {
 
 @Directive()
 export abstract class DashboardStore implements OnInit {
-  private readonly rt = inject(Realtime);
+  private readonly rt = inject(RealtimeService);
   private readonly relatoriosApi = inject(RelatoriosApi);
-  private readonly notify = inject(Notify);
-  private readonly tour = inject(TourGuiado);
+  private readonly notify = inject(NotifyService);
+  private readonly tour = inject(TourService);
 
   protected readonly hoje = new Date();
   protected readonly carregandoOps = signal(true);

@@ -7,7 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import { Impressora } from '@core/models/estabelecimento.models';
 import { EstoqueStore } from './estoque.store';
 

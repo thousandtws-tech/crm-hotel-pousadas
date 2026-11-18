@@ -3,7 +3,7 @@
 import { OnInit, computed, inject, signal, Directive } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { OperadorasApi } from '@core/api/operadoras.api';
-import { Notify } from '@core/services/notify.service';
+import { NotifyService } from '@core/services/notify.service';
 import * as M from '@core/models';
 
 /**
@@ -14,7 +14,7 @@ import * as M from '@core/models';
 @Directive()
 export abstract class OperadorasStore implements OnInit {
   private readonly operadorasApi = inject(OperadorasApi);
-  private readonly notify = inject(Notify);
+  private readonly notify = inject(NotifyService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly operadoras = signal<M.Operadora[]>([]);

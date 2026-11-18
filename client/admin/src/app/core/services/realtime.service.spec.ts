@@ -2,8 +2,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { Realtime } from './realtime.service';
-import { Notify } from './notify.service';
+import { RealtimeService } from './realtime.service';
+import { NotifyService } from './notify.service';
 
 // ---- fakes do módulo `phoenix` (import dinâmico no serviço) ----
 type Callback = (payload?: unknown) => void;
@@ -54,7 +54,10 @@ class FakeSocket {
   private openCb: Callback | null = null;
   private closeCb: Callback | null = null;
 
-  constructor(readonly endPoint: string, readonly opts: unknown) {
+  constructor(
+    readonly endPoint: string,
+    readonly opts: unknown,
+  ) {
     FakeSocket.instances.push(this);
   }
   connect(): void {
@@ -89,8 +92,8 @@ class FakeSocket {
 
 vi.mock('phoenix', () => ({ Socket: FakeSocket, Channel: FakeChannel }));
 
-describe('Realtime — lifecycle e deltas', () => {
-  let rt: Realtime;
+describe('RealtimeService — lifecycle e deltas', () => {
+  let rt: RealtimeService;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -103,12 +106,12 @@ describe('Realtime — lifecycle e deltas', () => {
         provideHttpClientTesting(),
         { provide: Router, useValue: { navigateByUrl: vi.fn() } },
         {
-          provide: Notify,
+          provide: NotifyService,
           useValue: { ok: vi.fn(), aviso: vi.fn(), erro: vi.fn() },
         },
       ],
     });
-    rt = TestBed.inject(Realtime);
+    rt = TestBed.inject(RealtimeService);
   });
 
   afterEach(() => {

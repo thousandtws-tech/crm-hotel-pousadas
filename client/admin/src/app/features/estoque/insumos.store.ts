@@ -3,9 +3,9 @@
 import { computed, effect, inject, signal, OnInit, Directive } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { EstoqueApi } from '@core/api/estoque.api';
-import { num } from '@core/utils/num';
-import { Realtime } from '@core/services/realtime.service';
-import { Notify } from '@core/services/notify.service';
+import { num } from '@core/utils/num.utils';
+import { RealtimeService } from '@core/services/realtime.service';
+import { NotifyService } from '@core/services/notify.service';
 import {
   ConversaoUnidade,
   EstoqueBaixoView,
@@ -31,8 +31,8 @@ interface LinhaNfe {
 @Directive()
 export abstract class InsumosStore implements OnInit {
   private readonly estoqueApi = inject(EstoqueApi);
-  private readonly notify = inject(Notify);
-  protected readonly rt = inject(Realtime);
+  private readonly notify = inject(NotifyService);
+  protected readonly rt = inject(RealtimeService);
 
   protected readonly fmt = fmt;
   protected readonly num = num;
@@ -90,7 +90,7 @@ export abstract class InsumosStore implements OnInit {
   );
 
   constructor() {
-    // Realtime: deltas de estoque/ficha/conversao recarregam o painel
+    // RealtimeService: deltas de estoque/ficha/conversao recarregam o painel
     effect(() => {
       this.rt.delta('estoque');
       this.rt.delta('ficha_tecnica');

@@ -5,7 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, Validators } from '@angular/forms';
 import { EstoqueApi } from '@core/api/estoque.api';
 import { ImpressorasApi } from '@core/api/impressoras.api';
-import { num } from '@core/utils/num';
+import { num } from '@core/utils/num.utils';
 import { Impressora } from '@core/models/estabelecimento.models';
 import {
   CategoriaEstoque,
@@ -14,16 +14,16 @@ import {
   MovimentacaoInput,
   MovimentoView,
 } from '@core/models/estoque.models';
-import { Notify } from '@core/services/notify.service';
-import { Confirm } from '@core/services/confirm.service';
-import { Realtime } from '@core/services/realtime.service';
-import { TourGuiado } from '@core/services/tour.service';
+import { NotifyService } from '@core/services/notify.service';
+import { ConfirmService } from '@core/services/confirm.service';
+import { RealtimeService } from '@core/services/realtime.service';
+import { TourService } from '@core/services/tour.service';
 
 // -- página ---------------------------------------------------------------------------
 
 @Directive()
 export abstract class EstoqueStore implements OnInit {
-  private readonly rt = inject(Realtime);
+  private readonly rt = inject(RealtimeService);
 
   constructor() {
     let ultimo = -1;
@@ -44,9 +44,9 @@ export abstract class EstoqueStore implements OnInit {
   }
   private readonly estoqueApi = inject(EstoqueApi);
   private readonly impressorasApi = inject(ImpressorasApi);
-  private readonly notify = inject(Notify);
-  private readonly tour = inject(TourGuiado);
-  private readonly confirm = inject(Confirm);
+  private readonly notify = inject(NotifyService);
+  private readonly tour = inject(TourService);
+  private readonly confirm = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly modal = signal<'categorias' | null>(null);
