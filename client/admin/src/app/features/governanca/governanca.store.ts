@@ -1,7 +1,6 @@
 // Lógica e estado de governanca — separada da camada de UI (governanca.component.ts).
 // O componente herda os membros; templates e comportamento não mudam.
 import { OnInit, inject, signal, Directive } from '@angular/core';
-import { FuncionariosApi } from '@core/api/funcionarios.api';
 import { OperacaoApi } from '@core/api/operacao.api';
 import { NotifyService } from '@core/services/notify.service';
 import {
@@ -25,7 +24,6 @@ const TIPO_ROTULO: Record<string, string> = {
 /** Governança — tarefas do dia, previsão de demanda e lavanderia/enxoval. */
 @Directive()
 export abstract class GovernancaStore implements OnInit {
-  private readonly funcionariosApi = inject(FuncionariosApi);
   private readonly operacaoApi = inject(OperacaoApi);
   private readonly notify = inject(NotifyService);
 
@@ -38,28 +36,29 @@ export abstract class GovernancaStore implements OnInit {
   protected readonly funcionarios = signal<{ id: number; nome: string }[]>([]);
   protected readonly modalLote = signal(false);
   protected readonly modalMov = signal(false);
-  protected dataQuadro = new Date().toISOString().slice(0, 10);
+  // Data local (não UTC): toISOString vira o dia às 21h no horário de Brasília.
+  protected dataQuadro = GovernancaStore.hojeLocal();
   protected novoLote = { fornecedor: '', qtd_itens: 0, custo: 0 };
   protected novaMov = { tipo_item: '', quantidade: 1, origem: 'estoque', destino: 'lavanderia' };
   protected readonly tipoRotulo = TIPO_ROTULO;
 
+  private static hojeLocal(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  // 1 request consolidada — backend resolve as 6 leituras em paralelo.
   ngOnInit(): void {
-    this.carregarQuadro();
-    this.operacaoApi
-      .govPrevisao()
-      .subscribe({ next: (p) => this.previsao.set(p), error: () => undefined });
-    this.operacaoApi
-      .lavLotes()
-      .subscribe({ next: (l) => this.lotes.set(l), error: () => undefined });
-    this.operacaoApi
-      .enxovalMovs()
-      .subscribe({ next: (m) => this.movs.set(m), error: () => undefined });
-    this.operacaoApi
-      .enxovalSaldo()
-      .subscribe({ next: (s) => this.saldoEnxoval.set(s), error: () => undefined });
-    this.funcionariosApi.listarFuncionarios(1, 100, true).subscribe({
-      next: (p) => this.funcionarios.set(p.items.map((f) => ({ id: f.id, nome: f.nome }))),
-      error: () => undefined,
+    this.operacaoApi.painelGovernanca(this.dataQuadro).subscribe({
+      next: (p) => {
+        this.tarefas.set(p.tarefas);
+        this.previsao.set(p.previsao);
+        this.lotes.set(p.lotes);
+        this.movs.set(p.movs_enxoval);
+        this.saldoEnxoval.set(p.saldo_enxoval);
+        this.funcionarios.set(p.funcionarios.map((f) => ({ id: f.id, nome: f.nome })));
+      },
+      error: () => this.notify.erroMsg('Falha ao carregar governança.'),
     });
   }
 

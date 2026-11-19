@@ -561,6 +561,14 @@ pub fn build(state: AppState) -> Router {
         )
         .route("/manutencao/pmoc/itens", get(routes::operacao::pmoc_itens))
         .route(
+            "/manutencao/painel",
+            get(routes::operacao::painel_manutencao),
+        )
+        .route(
+            "/governanca/painel",
+            get(routes::operacao::painel_governanca),
+        )
+        .route(
             "/governanca/tarefas",
             get(routes::operacao::gov_quadro).post(routes::operacao::gov_criar),
         )
@@ -603,6 +611,7 @@ pub fn build(state: AppState) -> Router {
             "/escalas/turnos/{id}",
             delete(routes::operacao::turno_remover).put(routes::operacao::turno_editar),
         )
+        .route("/escalas/painel", get(routes::operacao::painel_escalas))
         .route("/escalas/clt/validar", get(routes::operacao::clt_validar))
         .route(
             "/escalas/clt/corrigir",

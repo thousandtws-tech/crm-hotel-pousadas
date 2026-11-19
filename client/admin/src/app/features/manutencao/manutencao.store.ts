@@ -52,11 +52,15 @@ export abstract class ManutencaoStore implements OnInit {
   } = { titulo: '', idquarto: null, local: '', prioridade: 'media', descricao: '' };
   protected pmocForm = { nome: '', crea: '', art: '', obs: '' };
 
+  // 1 request consolidada — ordens + checklist PMOC juntos.
   ngOnInit(): void {
-    this.carregar();
-    this.operacaoApi
-      .pmocItens()
-      .subscribe({ next: (i) => this.itensPmoc.set(i), error: () => undefined });
+    this.operacaoApi.painelManutencao(this.filtroStatus() || undefined).subscribe({
+      next: (p) => {
+        this.ordens.set(p.ordens);
+        this.itensPmoc.set(p.pmoc_itens);
+      },
+      error: () => this.notify.erroMsg('Falha ao carregar ordens.'),
+    });
   }
 
   carregar(): void {

@@ -10,6 +10,7 @@ use clarituz_application::dto::{
 };
 use clarituz_application::Ator;
 use clarituz_domain::entities::CltCorrecao;
+use clarituz_shared::PageParams;
 use serde::Deserialize;
 
 use crate::http::error::ApiError as AppError;
@@ -348,4 +349,87 @@ pub async fn clt_corrigir(
         .aplicar_correcao(&ator, &correcao)
         .await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+// ---------------------------------------------------------------------------
+// painéis — 1 chamada por tela de operação
+// ---------------------------------------------------------------------------
+
+/// Governança — quadro + previsão + lavanderia + enxoval + funcionários em 1 chamada.
+/// Dado vivo (tarefas mudam o dia todo): sem cache; realtime/ações recarregam.
+pub async fn painel_governanca(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Query(q): Query<DataQuery>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let (tarefas, previsao, lotes, movs, saldo, funcionarios) = tokio::join!(
+        s.services.governanca.quadro(q.data),
+        s.services.governanca.previsao(),
+        s.services.governanca.lotes(None),
+        s.services.governanca.enxoval_mov(),
+        s.services.governanca.enxoval_saldo(),
+        s.services.funcionarios.listar(
+            true,
+            PageParams {
+                page: 1,
+                per_page: 100
+            }
+        ),
+    );
+    Ok(Json(serde_json::json!({
+        "tarefas": tarefas?,
+        "previsao": previsao?,
+        "lotes": lotes?,
+        "movs_enxoval": movs?,
+        "saldo_enxoval": saldo?,
+        "funcionarios": funcionarios?.items,
+    })))
+}
+
+/// Manutenção & PMOC — ordens + checklist PMOC em 1 chamada. Fila viva: sem cache.
+pub async fn painel_manutencao(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Query(q): Query<OrdensQuery>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    Ok(Json(serde_json::json!({
+        "ordens": s.services.manutencao.ordens(q.status).await?,
+        "pmoc_itens": clarituz_application::services::manutencao::PMOC_ITENS,
+    })))
+}
+
+/// Escalas & CLT — turnos + jornadas + violações CLT (gerencial) + funcionários.
+/// `violacoes_clt` vem null sem nível gerencial — mesmo efeito do 403 silencioso de antes.
+pub async fn painel_escalas(
+    State(s): State<AppState>,
+    ator: Ator,
+    Query(q): Query<TurnosQuery>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let hoje = Utc::now().date_naive();
+    let (turnos, jornadas, funcionarios) = tokio::join!(
+        s.services.escalas.turnos(
+            q.inicio.unwrap_or(hoje),
+            q.fim.unwrap_or(hoje + chrono::Duration::days(14)),
+            q.idfuncionario,
+        ),
+        s.services.escalas.jornadas(),
+        s.services.funcionarios.listar(
+            true,
+            PageParams {
+                page: 1,
+                per_page: 100
+            }
+        ),
+    );
+    let violacoes = if ator.is_gerencial() {
+        Some(s.services.escalas.validar(&ator, 14).await?)
+    } else {
+        None
+    };
+    Ok(Json(serde_json::json!({
+        "turnos": turnos?,
+        "jornadas": jornadas?,
+        "violacoes_clt": violacoes,
+        "funcionarios": funcionarios?.items,
+    })))
 }

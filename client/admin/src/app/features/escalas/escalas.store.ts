@@ -1,7 +1,6 @@
 // Lógica e estado de escalas — separada da camada de UI (escalas.component.ts).
 // O componente herda os membros; templates e comportamento não mudam.
 import { OnInit, inject, signal, Directive } from '@angular/core';
-import { FuncionariosApi } from '@core/api/funcionarios.api';
 import { OperacaoApi } from '@core/api/operacao.api';
 import { NotifyService } from '@core/services/notify.service';
 import {
@@ -25,7 +24,6 @@ const REGRA_ROTULO: Record<string, string> = {
 /** Escalas — jornadas por regime, grade de turnos e conformidade CLT. */
 @Directive()
 export abstract class EscalasStore implements OnInit {
-  private readonly funcionariosApi = inject(FuncionariosApi);
   private readonly operacaoApi = inject(OperacaoApi);
   private readonly notify = inject(NotifyService);
 
@@ -36,8 +34,9 @@ export abstract class EscalasStore implements OnInit {
   protected readonly funcionarios = signal<{ id: number; nome: string }[]>([]);
   protected readonly modalJornada = signal(false);
   protected readonly alterados = signal<Set<number>>(new Set());
-  protected inicio = new Date().toISOString().slice(0, 10);
-  protected fim = new Date(Date.now() + 13 * 864e5).toISOString().slice(0, 10);
+  // Datas locais (não UTC): toISOString vira o dia às 21h no horário de Brasília.
+  protected inicio = EscalasStore.dataLocal(new Date());
+  protected fim = EscalasStore.dataLocal(new Date(Date.now() + 13 * 864e5));
   protected diasGerar = 30;
   protected jornadaForm: {
     idfuncionario: number;
@@ -52,24 +51,29 @@ export abstract class EscalasStore implements OnInit {
     entrada: '08:00',
     saida: '17:00',
     almoco_min: 60,
-    ancora: new Date().toISOString().slice(0, 10),
+    ancora: EscalasStore.dataLocal(new Date()),
   };
   protected readonly regraRotulo = REGRA_ROTULO;
   private nomes = new Map<number, string>();
 
+  private static dataLocal(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  // 1 request consolidada — turnos + jornadas + violações CLT + funcionários.
   ngOnInit(): void {
-    this.funcionariosApi.listarFuncionarios(1, 100, true).subscribe({
+    this.operacaoApi.painelEscalas(this.inicio, this.fim).subscribe({
       next: (p) => {
-        this.funcionarios.set(p.items.map((f) => ({ id: f.id, nome: f.nome })));
-        this.nomes = new Map(p.items.map((f) => [f.id, f.nome]));
+        this.funcionarios.set(p.funcionarios.map((f) => ({ id: f.id, nome: f.nome })));
+        this.nomes = new Map(p.funcionarios.map((f) => [f.id, f.nome]));
+        this.turnos.set(p.turnos);
+        this.alterados.set(new Set());
+        this.jornadas.set(p.jornadas);
+        // null = sem nível gerencial — mesma ausência do 403 silencioso de antes.
+        if (p.violacoes_clt) this.violacoes.set(p.violacoes_clt);
       },
-      error: () => undefined,
+      error: () => this.notify.erroMsg('Falha ao carregar escalas.'),
     });
-    this.carregar();
-    this.operacaoApi
-      .jornadas()
-      .subscribe({ next: (j) => this.jornadas.set(j), error: () => undefined });
-    this.validarClt();
   }
 
   carregar(): void {

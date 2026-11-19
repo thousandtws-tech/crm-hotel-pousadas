@@ -1,3 +1,4 @@
+import { Funcionario } from './funcionarios.models';
 // Contratos do domínio operacao (extraído de api.models.ts).
 
 export type PrioridadeManut = 'baixa' | 'media' | 'alta' | 'urgente';
@@ -111,3 +112,31 @@ export interface CltViolacao {
 // ---------------------------------------------------------------------------
 // Inteligência preditiva (Maria — /ia/*)
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Painéis consolidados — 1 request por tela de operação
+// ---------------------------------------------------------------------------
+
+/** Governança — quadro + previsão + lavanderia + enxoval + funcionários (6→1). */
+export interface PainelGovernanca {
+  tarefas: GovTarefa[];
+  previsao: PrevisaoDia[];
+  lotes: LavLote[];
+  movs_enxoval: EnxovalMov[];
+  saldo_enxoval: [string, number][];
+  funcionarios: Funcionario[];
+}
+
+/** Manutenção & PMOC — ordens + checklist (2→1). */
+export interface PainelManutencao {
+  ordens: ManutOrdem[];
+  pmoc_itens: string[];
+}
+
+/** Escalas & CLT — turnos + jornadas + violações (gerencial) + funcionários (4→1). */
+export interface PainelEscalas {
+  turnos: EscalaTurno[];
+  jornadas: FuncionarioJornada[];
+  violacoes_clt: CltViolacao[] | null;
+  funcionarios: Funcionario[];
+}

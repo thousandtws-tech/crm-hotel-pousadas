@@ -27,6 +27,10 @@ export class OperacaoApi extends ApiHttp {
     return this.get<string[]>('/manutencao/pmoc/itens');
   }
 
+  painelManutencao(status?: string) {
+    return this.get<M.PainelManutencao>('/manutencao/painel', { status });
+  }
+
   pmocRegistrar(input: unknown) {
     return this.post<M.PmocRegistro>('/manutencao/pmoc', input);
   }
@@ -83,6 +87,10 @@ export class OperacaoApi extends ApiHttp {
     return this.post<void>('/governanca/enxoval', input);
   }
 
+  painelGovernanca(data?: string) {
+    return this.get<M.PainelGovernanca>('/governanca/painel', { data });
+  }
+
   jornadas() {
     return this.get<M.FuncionarioJornada[]>('/escalas/jornadas');
   }
@@ -105,6 +113,10 @@ export class OperacaoApi extends ApiHttp {
 
   cltValidar(dias = 14) {
     return this.get<M.CltViolacao[]>('/escalas/clt/validar', { dias });
+  }
+
+  painelEscalas(inicio?: string, fim?: string) {
+    return this.get<M.PainelEscalas>('/escalas/painel', { inicio, fim });
   }
 
   cltCorrigir(correcao: unknown) {
