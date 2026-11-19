@@ -84,6 +84,13 @@ export interface MapaQuarto {
   manut_aberta: number;
 }
 
+/** Painel consolidado da Recepção — 1 request, dados do dia em paralelo. */
+export interface PainelRecepcao {
+  chegadas: ReservaResumo[];
+  na_casa: ReservaResumo[];
+  mapa: MapaQuarto[];
+}
+
 export interface Bloqueio {
   id: number;
   idacomodacao: number;

@@ -37,7 +37,13 @@ async function mockAdminApi(page: Page): Promise<void> {
     const url = route.request().url();
     if (url.includes('/auth/login')) return route.fallback();
     let body: unknown;
-    if (url.includes('/reservas/mapa')) body = MAPA;
+    if (url.includes('/reservas/painel-recepcao'))
+      body = {
+        chegadas: [CHEGADA(42, 'Ana Souza'), CHEGADA(43, 'Diego Melo')],
+        na_casa: [NACASA(90, 'Bruno Lima', HOJE), NACASA(91, 'Carla Nunes', DEPOIS)],
+        mapa: MAPA,
+      };
+    else if (url.includes('/reservas/mapa')) body = MAPA;
     else if (url.includes('/reservas') && url.includes('status=i'))
       body = { items: [NACASA(90, 'Bruno Lima', HOJE), NACASA(91, 'Carla Nunes', DEPOIS)], total: 2 };
     else if (url.includes('/reservas') && url.includes('status=p'))

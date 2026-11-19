@@ -130,6 +130,11 @@ export class ReservasApi extends ApiHttp {
     return this.get<M.MapaQuarto[]>('/reservas/mapa');
   }
 
+  /** Recepção — chegadas + na casa + mapa do dia em uma chamada. */
+  painelRecepcao(data: string) {
+    return this.get<M.PainelRecepcao>('/reservas/painel-recepcao', { data });
+  }
+
   widgetMotor() {
     return this.get<{ url: string; qr_svg: string; snippet: string }>('/reservas/widget');
   }

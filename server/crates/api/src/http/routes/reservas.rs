@@ -451,6 +451,50 @@ pub async fn mapa_quartos(State(s): State<AppState>, _ator: Ator) -> Result<Json
 }
 
 #[derive(Debug, Deserialize)]
+pub struct PainelRecepcaoQuery {
+    /// Dia de referência (YYYY-MM-DD local do front-desk); sem ele usa
+    /// o dia UTC do servidor.
+    pub data: Option<NaiveDate>,
+}
+
+/// GET /reservas/painel-recepcao — chegadas, hóspedes na casa e mapa de
+/// quartos do dia em uma única chamada, resolvidas em paralelo no
+/// servidor. O front-desk faz 1 request em vez de 3.
+pub async fn painel_recepcao(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Query(q): Query<PainelRecepcaoQuery>,
+) -> Result<Json<Value>, AppError> {
+    let hoje = q.data.unwrap_or_else(|| chrono::Utc::now().date_naive());
+    let periodo = Some(PeriodoEstadia::new(hoje, hoje)?);
+    let filtro = |status: StatusReserva| FiltroReserva {
+        periodo: periodo.clone(),
+        status: Some(status),
+        idacomodacao: None,
+        idcliente: None,
+        busca: None,
+    };
+    let pag = |n: u32| PageParams {
+        page: 1,
+        per_page: n,
+    };
+    let (chegadas, na_casa, mapa) = tokio::join!(
+        s.services
+            .reservas
+            .listar(filtro(StatusReserva::Pendente), pag(50)),
+        s.services
+            .reservas
+            .listar(filtro(StatusReserva::Iniciada), pag(100)),
+        s.services.reservas.mapa_quartos(),
+    );
+    Ok(Json(json!({
+        "chegadas": chegadas?.items,
+        "na_casa": na_casa?.items,
+        "mapa": mapa?,
+    })))
+}
+
+#[derive(Debug, Deserialize)]
 pub struct BloqueioInput {
     pub inicio: NaiveDate,
     pub fim: NaiveDate,

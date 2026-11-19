@@ -200,6 +200,10 @@ pub fn build(state: AppState) -> Router {
         )
         .route("/reservas/eventos", get(routes::reservas::eventos))
         .route("/reservas/mapa", get(routes::reservas::mapa_quartos))
+        .route(
+            "/reservas/painel-recepcao",
+            get(routes::reservas::painel_recepcao),
+        )
         .route("/reservas/widget", get(routes::reservas::widget_motor))
         .route(
             "/reservas/{id}/grupo",

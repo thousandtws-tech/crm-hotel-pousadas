@@ -25,8 +25,6 @@ export abstract class RecepcaoStore implements OnInit {
   protected readonly skel = [1, 2, 3];
   protected readonly skelMapa = Array.from({ length: 18 }, (_, i) => i);
 
-  private pendentes = 0;
-
   protected readonly andares = computed(() => {
     const porAndar = new Map<number, MapaQuarto[]>();
     for (const q of this.mapa()) {
@@ -74,33 +72,24 @@ export abstract class RecepcaoStore implements OnInit {
   }
 
   carregar(): void {
-    this.pendentes = 3;
     this.carregando.set(true);
-    const done = () => {
-      if (--this.pendentes === 0) this.carregando.set(false);
-    };
-    const hoje = this.hoje.toISOString().slice(0, 10);
-    this.reservasApi
-      .listarReservas({ inicio: hoje, fim: hoje, status: 'p', porPagina: 50 })
-      .subscribe({
-        next: (p) => this.chegadas.set(p.items),
-        error: (e) => this.notify.erro(e),
-        complete: done,
-      });
-    this.reservasApi
-      .listarReservas({ inicio: hoje, fim: hoje, status: 'i', porPagina: 100 })
-      .subscribe({
-        next: (p) => {
-          this.naCasa.set(p.items);
-          this.saidas.set(p.items.filter((r) => r.saidaprevista === hoje));
-        },
-        error: () => undefined,
-        complete: done,
-      });
-    this.reservasApi.mapaQuartos().subscribe({
-      next: (m) => this.mapa.set(m),
-      error: () => undefined,
-      complete: done,
+    // Data local (não UTC): toISOString vira o dia às 21h no horário de
+    // Brasília — a recepção via chegadas do dia errado no turno da noite.
+    const d = this.hoje;
+    const hoje = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    // 1 request consolidada — backend resolve as 3 leituras em paralelo.
+    this.reservasApi.painelRecepcao(hoje).subscribe({
+      next: (p) => {
+        this.chegadas.set(p.chegadas);
+        this.naCasa.set(p.na_casa);
+        this.saidas.set(p.na_casa.filter((r) => r.saidaprevista === hoje));
+        this.mapa.set(p.mapa);
+        this.carregando.set(false);
+      },
+      error: (e) => {
+        this.notify.erro(e);
+        this.carregando.set(false);
+      },
     });
   }
 
