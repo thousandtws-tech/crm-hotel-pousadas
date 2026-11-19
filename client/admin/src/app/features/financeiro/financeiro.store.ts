@@ -4,7 +4,6 @@ import { computed, inject, signal, OnInit, effect, Directive } from '@angular/co
 import { FormControl, FormGroup } from '@angular/forms';
 import { debounceTime } from 'rxjs';
 import { RelatoriosApi } from '@core/api/relatorios.api';
-import { ReservasApi } from '@core/api/reservas.api';
 import { STATUS_RESERVA } from '@core/models/reservas.models';
 import { num } from '@core/utils/num.utils';
 import {
@@ -72,7 +71,6 @@ function ttItem(fmtExtra: (p: { name: string; value: number; dataIndex: number }
 @Directive()
 export abstract class FinanceiroStore implements OnInit {
   private readonly relatoriosApi = inject(RelatoriosApi);
-  private readonly reservasApi = inject(ReservasApi);
   private readonly notify = inject(NotifyService);
   private readonly rt = inject(RealtimeService);
   private readonly tour = inject(TourService);
@@ -171,73 +169,24 @@ export abstract class FinanceiroStore implements OnInit {
     const i = this.ini();
     const f = this.fim();
     this.carregando.set(true);
-    let pendentes = 8;
-    const fimReq = () => {
-      if (--pendentes === 0) this.carregando.set(false);
-    };
-
-    this.relatoriosApi.resumoFinanceiro(i, f).subscribe({
-      next: (r) => {
-        this.resumo.set(r);
-        fimReq();
+    // 1 request consolidada — o servidor resolve as 8 leituras em paralelo.
+    this.relatoriosApi.painelCompleto(i, f).subscribe({
+      next: (p) => {
+        this.resumo.set(p.resumo);
+        this.serieRecebido.set(p.serie_recebido);
+        this.serieReservasFat.set(p.serie_reservas);
+        this.serieVendas.set(p.serie_vendas);
+        this.seriePagamento.set(p.serie_por_pagamento);
+        this.serieAcomodacao.set(p.serie_por_acomodacao);
+        this.itensVendidos.set(p.itens_mais_vendidos);
+        this.vendasItens.set(p.vendas);
+        this.reservas.set(p.reservas);
+        this.carregando.set(false);
       },
       error: (e) => {
         this.notify.erro(e);
-        fimReq();
+        this.carregando.set(false);
       },
-    });
-    this.relatoriosApi.serieRecebido(i, f).subscribe({
-      next: (s) => {
-        this.serieRecebido.set(s);
-        fimReq();
-      },
-      error: () => fimReq(),
-    });
-    this.relatoriosApi.serieReservas(i, f).subscribe({
-      next: (s) => {
-        this.serieReservasFat.set(s);
-        fimReq();
-      },
-      error: () => fimReq(),
-    });
-    this.relatoriosApi.serieVendas(i, f).subscribe({
-      next: (s) => {
-        this.serieVendas.set(s);
-        fimReq();
-      },
-      error: () => fimReq(),
-    });
-    this.relatoriosApi.seriePorPagamento(i, f).subscribe({
-      next: (s) => {
-        this.seriePagamento.set(s);
-        fimReq();
-      },
-      error: () => fimReq(),
-    });
-    this.relatoriosApi.seriePorAcomodacao(i, f).subscribe({
-      next: (s) => {
-        this.serieAcomodacao.set(s);
-        fimReq();
-      },
-      error: () => fimReq(),
-    });
-    this.relatoriosApi.itensMaisVendidos(i, f).subscribe({
-      next: (v) => {
-        this.itensVendidos.set(v);
-        fimReq();
-      },
-      error: () => fimReq(),
-    });
-    this.reservasApi.listarReservas({ inicio: i, fim: f, page: 1, porPagina: 200 }).subscribe({
-      next: (p) => {
-        this.reservas.set(p.items);
-        fimReq();
-      },
-      error: () => fimReq(),
-    });
-    this.relatoriosApi.vendasFinanceiro(i, f).subscribe({
-      next: (v) => this.vendasItens.set(v),
-      error: (e) => this.notify.erro(e),
     });
   }
 

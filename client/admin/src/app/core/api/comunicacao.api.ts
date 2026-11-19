@@ -19,6 +19,11 @@ export class ComunicacaoApi extends ApiHttp {
   }
   // -- comunicação / reputação --------------------------------------------------
 
+  /** Comunicação — as 6 leituras do boot em uma única chamada. */
+  painelComunicacao() {
+    return this.get<M.PainelComunicacao>('/comunicacao/painel');
+  }
+
   filaEnvio() {
     return this.get<M.ItemFila[]>('/comunicacao/fila');
   }

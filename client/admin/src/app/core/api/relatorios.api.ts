@@ -20,6 +20,11 @@ export class RelatoriosApi extends ApiHttp {
     return this.get<M.PainelFinanceiro>('/financeiro/painel', { inicio, fim });
   }
 
+  /** Financeiro — as 8 leituras do período (painel + vendas/itens/reservas) em 1 chamada. */
+  painelCompleto(inicio?: string | null, fim?: string | null) {
+    return this.get<M.PainelCompleto>('/financeiro/painel-completo', { inicio, fim });
+  }
+
   serieRecebido(inicio?: string | null, fim?: string | null) {
     return this.get<M.PontoSerie[]>('/financeiro/series/recebido', { inicio, fim });
   }

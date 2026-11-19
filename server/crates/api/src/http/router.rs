@@ -462,6 +462,10 @@ pub fn build(state: AppState) -> Router {
             "/integracoes/didit/{ambiente}/webhook",
             post(routes::verificacao::didit_webhook_config),
         )
+        .route(
+            "/comunicacao/painel",
+            get(routes::comunicacao::painel_comunicacao),
+        )
         .route("/comunicacao/fila", get(routes::comunicacao::fila_listar))
         .route(
             "/comunicacao/campanhas",
@@ -830,30 +834,40 @@ pub fn build(state: AppState) -> Router {
                 .route_layer(from_fn(middleware::cache_curto)),
         )
         .route(
+            "/financeiro/painel-completo",
+            get(routes::relatorios::painel_completo).route_layer(from_fn(middleware::cache_curto)),
+        )
+        .route(
             "/financeiro/series/recebido",
-            get(routes::relatorios::serie_recebido),
+            get(routes::relatorios::serie_recebido).route_layer(from_fn(middleware::cache_curto)),
         )
         .route(
             "/financeiro/series/por-pagamento",
-            get(routes::relatorios::serie_por_pagamento),
+            get(routes::relatorios::serie_por_pagamento)
+                .route_layer(from_fn(middleware::cache_curto)),
         )
         .route(
             "/financeiro/series/reservas",
-            get(routes::relatorios::serie_reservas),
+            get(routes::relatorios::serie_reservas).route_layer(from_fn(middleware::cache_curto)),
         )
         .route(
             "/financeiro/series/vendas",
-            get(routes::relatorios::serie_vendas),
+            get(routes::relatorios::serie_vendas).route_layer(from_fn(middleware::cache_curto)),
         )
         .route(
             "/financeiro/series/por-acomodacao",
-            get(routes::relatorios::lucro_por_acomodacao),
+            get(routes::relatorios::lucro_por_acomodacao)
+                .route_layer(from_fn(middleware::cache_curto)),
         )
         .route(
             "/financeiro/itens-mais-vendidos",
-            get(routes::relatorios::itens_mais_vendidos),
+            get(routes::relatorios::itens_mais_vendidos)
+                .route_layer(from_fn(middleware::cache_curto)),
         )
-        .route("/financeiro/vendas", get(routes::relatorios::vendas))
+        .route(
+            "/financeiro/vendas",
+            get(routes::relatorios::vendas).route_layer(from_fn(middleware::cache_curto)),
+        )
         .route(
             "/financeiro/plano-contas",
             get(routes::tesouraria::listar_plano_contas)

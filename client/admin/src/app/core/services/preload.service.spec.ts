@@ -37,17 +37,13 @@ describe('PreloadService — preload seletivo', () => {
 describe('Rotas — contrato de preload', () => {
   const filhos = routes.find((r) => r.path === '')?.children ?? [];
 
-  it.each(['dashboard', 'recepcao', 'reservas', 'reservas/:id', 'clientes', 'acomodacoes', 'pdv'])(
-    'rota quente %s está marcada',
-    (path) => {
-      expect(filhos.find((r) => r.path === path)?.data?.['preload']).toBe(true);
-    },
-  );
-
-  it.each(['auditoria', 'cms', 'integracoes', 'financeiro'])(
-    'rota administrativa %s fica sob demanda',
-    (path) => {
-      expect(filhos.find((r) => r.path === path)?.data?.['preload']).toBeUndefined();
-    },
-  );
+  // Todas as telas do shell pré-carregam em background após o login — a
+  // navegação do CRM inteira fica instantânea (chunks são pequenos; o
+  // custo de banda é uma vez por sessão, não por clique).
+  it('toda rota de feature do shell está marcada para preload', () => {
+    const sem = filhos
+      .filter((r) => r.path !== '' && !r.redirectTo && r.data?.['preload'] !== true)
+      .map((r) => r.path);
+    expect(sem).toEqual([]);
+  });
 });

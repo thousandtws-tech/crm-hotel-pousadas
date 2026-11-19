@@ -62,6 +62,14 @@ export interface PainelFinanceiro {
   serie_por_acomodacao: PontoSerie[];
 }
 
+/** Painel completo da página Financeiro — 8 leituras do período em 1 request. */
+export interface PainelCompleto extends PainelFinanceiro {
+  serie_vendas: PontoSerie[];
+  itens_mais_vendidos: ItemMaisVendido[];
+  vendas: VendaItem[];
+  reservas: ReservaResumo[];
+}
+
 export interface ItemMaisVendido {
   nome: string;
   quantidade: number;

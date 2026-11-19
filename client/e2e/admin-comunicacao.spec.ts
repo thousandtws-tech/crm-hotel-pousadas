@@ -50,7 +50,16 @@ async function mockAdminApi(page: Page): Promise<void> {
     const url = route.request().url();
     if (url.includes('/auth/login')) return route.fallback();
     let body: unknown;
-    if (url.includes('/avaliacoes/dashboard')) body = DASH;
+    if (url.includes('/comunicacao/painel'))
+      body = {
+        avaliacoes_dash: DASH,
+        avaliacoes: AVALIACOES,
+        fila: FILA,
+        matriz: MATRIZ,
+        lgpd: LGPD,
+        atendimentos: ATENDIMENTOS,
+      };
+    else if (url.includes('/avaliacoes/dashboard')) body = DASH;
     else if (url.includes('/avaliacoes')) body = AVALIACOES;
     else if (url.includes('/comunicacao/fila')) body = FILA;
     else if (url.includes('/comunicacao/matriz')) body = MATRIZ;

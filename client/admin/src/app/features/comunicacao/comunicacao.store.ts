@@ -63,20 +63,21 @@ export abstract class ComunicacaoStore implements OnInit {
   }
 
   carregar(): void {
-    this.comunicacaoApi
-      .avaliacoesDashboard()
-      .subscribe({ next: (d) => this.dash.set(d), error: () => undefined });
-    this.comunicacaoApi
-      .avaliacoes()
-      .subscribe({ next: (a) => this.avaliacoes.set(a), error: () => undefined });
-    this.comunicacaoApi
-      .filaEnvio()
-      .subscribe({ next: (f) => this.fila.set(f), error: () => undefined });
-    this.comunicacaoApi
-      .matrizNotificacao()
-      .subscribe({ next: (m) => this.matriz.set(m), error: () => undefined });
-    this.carregarLgpd();
-    this.carregarAtend();
+    // 1 request consolidada — campos gerenciais vêm null sem acesso,
+    // mantendo o comportamento anterior (erros silenciosos → listas vazias).
+    this.comunicacaoApi.painelComunicacao().subscribe({
+      next: (p) => {
+        this.dash.set(p.avaliacoes_dash);
+        this.avaliacoes.set(p.avaliacoes ?? []);
+        this.fila.set(p.fila ?? []);
+        this.matriz.set(p.matriz ?? []);
+        this.lgpd.set(p.lgpd);
+        // O painel traz só 'aberto' — com outro filtro ativo, recarrega filtrado.
+        if (this.atendFiltro() === 'aberto') this.atends.set(p.atendimentos);
+        else this.carregarAtend();
+      },
+      error: () => undefined,
+    });
   }
 
   carregarAtend(): void {

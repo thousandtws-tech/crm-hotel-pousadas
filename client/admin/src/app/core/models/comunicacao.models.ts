@@ -114,4 +114,17 @@ export interface NivelFidelidade {
   ativo: boolean;
 }
 
+/**
+ * Painel consolidado da página Comunicação — 6 leituras em 1 request.
+ * Campos gerenciais vêm null para níveis sem acesso (antes eram 403).
+ */
+export interface PainelComunicacao {
+  avaliacoes_dash: AvaliacoesDash | null;
+  avaliacoes: Avaliacao[] | null;
+  fila: ItemFila[] | null;
+  matriz: RegraMatriz[] | null;
+  lgpd: LgpdSolicitacao[];
+  atendimentos: Atendimento[];
+}
+
 // -- operação: manutenção, governança, escalas -----------------------------------

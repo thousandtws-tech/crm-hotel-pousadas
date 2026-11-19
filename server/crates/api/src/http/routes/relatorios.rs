@@ -8,8 +8,9 @@ use chrono::NaiveDate;
 use clarituz_application::actor::Ator;
 use clarituz_application::dto::{DashboardResponse, PeriodoQuery};
 use clarituz_domain::entities::RegistroLog;
-use clarituz_domain::ports::FiltroLog;
+use clarituz_domain::ports::{FiltroLog, FiltroReserva};
 use clarituz_domain::queries::{ItemMaisVendido, PontoSerie, ResumoFinanceiro, VendaItem};
+use clarituz_domain::value_objects::PeriodoEstadia;
 use clarituz_shared::{Page, PageParams};
 use serde::Deserialize;
 
@@ -58,6 +59,73 @@ pub async fn painel_financeiro(
         "serie_reservas": reservas?,
         "serie_por_pagamento": pagamento?,
         "serie_por_acomodacao": acomodacao?,
+    })))
+}
+
+/// Painel completo da página Financeiro — as 8 leituras do período em
+/// uma única chamada, resolvidas em paralelo no servidor (tokio::join).
+/// O browser faz 1 request em vez de 8, e o custo total é o da query
+/// mais lenta. Inclui a lista de reservas do período, que o painel da
+/// Home não precisa.
+pub async fn painel_completo(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Query(q): Query<PeriodoQuery>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let fin = &s.services.financeiro;
+    let periodo = match (q.inicio, q.fim) {
+        (Some(i), Some(f)) => Some(PeriodoEstadia::new(i, f)?),
+        (None, None) => None,
+        _ => {
+            return Err(
+                clarituz_domain::DomainError::validacao("Informe inicio e fim juntos.").into(),
+            )
+        }
+    };
+    let filtro = FiltroReserva {
+        periodo,
+        status: None,
+        idacomodacao: None,
+        idcliente: None,
+        busca: None,
+    };
+    let (
+        resumo,
+        recebido,
+        reservas_serie,
+        vendas_serie,
+        pagamento,
+        acomodacao,
+        itens,
+        vendas,
+        reservas,
+    ) = tokio::join!(
+        fin.resumo(q.inicio, q.fim),
+        fin.serie_recebido(q.inicio, q.fim),
+        fin.serie_reservas(q.inicio, q.fim),
+        fin.serie_vendas(q.inicio, q.fim),
+        fin.recebido_por_pagamento(q.inicio, q.fim),
+        fin.lucro_por_acomodacao(q.inicio, q.fim),
+        fin.itens_mais_vendidos(q.inicio, q.fim),
+        fin.vendas(q.inicio, q.fim),
+        s.services.reservas.listar(
+            filtro,
+            PageParams {
+                page: 1,
+                per_page: 200,
+            },
+        ),
+    );
+    Ok(Json(serde_json::json!({
+        "resumo": resumo?,
+        "serie_recebido": recebido?,
+        "serie_reservas": reservas_serie?,
+        "serie_vendas": vendas_serie?,
+        "serie_por_pagamento": pagamento?,
+        "serie_por_acomodacao": acomodacao?,
+        "itens_mais_vendidos": itens?,
+        "vendas": vendas?,
+        "reservas": reservas?.items,
     })))
 }
 

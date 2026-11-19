@@ -46,11 +46,13 @@ export const routes: Routes = [
       },
       {
         path: 'operadoras',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/operadoras/operadoras.component').then((m) => m.OperadorasComponent),
       },
       {
         path: 'contratos',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/contratos/contratos.component').then((m) => m.ContratosComponent),
       },
@@ -78,26 +80,31 @@ export const routes: Routes = [
       },
       {
         path: 'estoque',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/estoque/estoque.component').then((m) => m.EstoqueComponent),
       },
       {
         path: 'insumos',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/estoque/insumos.component').then((m) => m.InsumosComponent),
       },
       {
         path: 'compras',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/compras/compras.component').then((m) => m.ComprasComponent),
       },
       {
         path: 'frigobares',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/frigobares/frigobares.component').then((m) => m.FrigobaresComponent),
       },
       {
         path: 'estacionamento',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/estacionamento/estacionamento.component').then(
             (m) => m.EstacionamentoComponent,
@@ -105,6 +112,7 @@ export const routes: Routes = [
       },
       {
         path: 'pagamentos',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/pagamentos/pagamentos.component').then((m) => m.PagamentosComponent),
       },
@@ -125,11 +133,13 @@ export const routes: Routes = [
       },
       {
         path: 'cms',
+        data: { preload: true },
         canActivate: [adminGuard],
         loadComponent: () => import('./features/cms/cms.component').then((m) => m.CmsComponent),
       },
       {
         path: 'estabelecimento',
+        data: { preload: true },
         canActivate: [adminGuard],
         loadComponent: () =>
           import('./features/estabelecimento/estabelecimento.component').then(
@@ -138,6 +148,7 @@ export const routes: Routes = [
       },
       {
         path: 'funcionarios',
+        data: { preload: true },
         canActivate: [adminGuard],
         loadComponent: () =>
           import('./features/funcionarios/funcionarios.component').then(
@@ -146,6 +157,7 @@ export const routes: Routes = [
       },
       {
         path: 'comunicacao',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/comunicacao/comunicacao.component').then(
             (m) => m.ComunicacaoComponent,
@@ -153,6 +165,7 @@ export const routes: Routes = [
       },
       {
         path: 'inteligencia',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/inteligencia/inteligencia.component').then(
             (m) => m.InteligenciaComponent,
@@ -160,26 +173,31 @@ export const routes: Routes = [
       },
       {
         path: 'operacao/governanca',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/governanca/governanca.component').then((m) => m.GovernancaComponent),
       },
       {
         path: 'operacao/manutencao',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/manutencao/manutencao.component').then((m) => m.ManutencaoComponent),
       },
       {
         path: 'operacao/escalas',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/escalas/escalas.component').then((m) => m.EscalasComponent),
       },
       {
         path: 'financeiro',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/financeiro/financeiro.component').then((m) => m.FinanceiroComponent),
       },
       {
         path: 'financeiro/pagamentos-online',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/financeiro/pagamentos-online.component').then(
             (m) => m.FinPagamentosOnlineComponent,
@@ -187,11 +205,13 @@ export const routes: Routes = [
       },
       {
         path: 'financeiro/contas',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/financeiro/contas.component').then((m) => m.FinContasComponent),
       },
       {
         path: 'financeiro/fluxo-caixa',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/financeiro/fluxo-caixa.component').then(
             (m) => m.FinFluxoCaixaComponent,
@@ -199,11 +219,13 @@ export const routes: Routes = [
       },
       {
         path: 'financeiro/dre',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/financeiro/dre.component').then((m) => m.FinDreComponent),
       },
       {
         path: 'financeiro/conciliacao',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/financeiro/conciliacao.component').then(
             (m) => m.FinConciliacaoComponent,
@@ -211,21 +233,25 @@ export const routes: Routes = [
       },
       {
         path: 'financeiro/split',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/financeiro/split.component').then((m) => m.FinSplitComponent),
       },
       {
         path: 'financeiro/caixa',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/financeiro/caixa.component').then((m) => m.FinCaixaComponent),
       },
       {
         path: 'auditoria',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/auditoria/auditoria.component').then((m) => m.AuditoriaComponent),
       },
       {
         path: 'integracoes',
+        data: { preload: true },
         canActivate: [adminGuard],
         loadComponent: () =>
           import('./features/integracoes/integracoes.component').then(
@@ -235,6 +261,7 @@ export const routes: Routes = [
       {
         // Z-API, Spedy e Didit têm telas dedicadas — antes da rota genérica.
         path: 'integracoes/didit/:ambiente',
+        data: { preload: true },
         canActivate: [adminGuard],
         loadComponent: () =>
           import('./features/integracoes/integracao-didit.component').then(
@@ -243,6 +270,7 @@ export const routes: Routes = [
       },
       {
         path: 'integracoes/spedy/:ambiente',
+        data: { preload: true },
         canActivate: [adminGuard],
         loadComponent: () =>
           import('./features/integracoes/integracao-spedy.component').then(
@@ -251,6 +279,7 @@ export const routes: Routes = [
       },
       {
         path: 'integracoes/channex/:ambiente',
+        data: { preload: true },
         canActivate: [adminGuard],
         loadComponent: () =>
           import('./features/integracoes/integracao-channex.component').then(
@@ -259,6 +288,7 @@ export const routes: Routes = [
       },
       {
         path: 'integracoes/zapi/:ambiente',
+        data: { preload: true },
         canActivate: [adminGuard],
         loadComponent: () =>
           import('./features/integracoes/integracao-zapi.component').then(
@@ -267,6 +297,7 @@ export const routes: Routes = [
       },
       {
         path: 'integracoes/infobip/:ambiente',
+        data: { preload: true },
         canActivate: [adminGuard],
         loadComponent: () =>
           import('./features/integracoes/integracao-infobip.component').then(
@@ -275,6 +306,7 @@ export const routes: Routes = [
       },
       {
         path: 'integracoes/:provedor/:ambiente',
+        data: { preload: true },
         canActivate: [adminGuard],
         loadComponent: () =>
           import('./features/integracoes/integracao-detalhe.component').then(

@@ -502,6 +502,40 @@ pub async fn fila_listar(
     Ok(Json(serde_json::json!(itens)))
 }
 
+/// GET /comunicacao/painel — as 6 leituras do boot da página em uma
+/// única chamada, resolvidas em paralelo no servidor (tokio::join).
+/// Campos gerenciais (avaliações, fila, matriz) vêm null para quem não
+/// tem nível — antes eram 403 silenciosos em requests separados.
+pub async fn painel_comunicacao(
+    State(st): State<AppState>,
+    ator: Ator,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let com = &st.services;
+    let (lgpd, atendimentos) = tokio::join!(
+        com.lgpd.listar_solicitacoes(None),
+        com.atendimento.fila("aberto", None),
+    );
+    let (dash, avaliacoes, fila, matriz) = if ator.is_gerencial() {
+        let (d, a, f, m) = tokio::join!(
+            com.avaliacoes.dashboard(),
+            com.avaliacoes.listar(None, 100),
+            com.comunicacao.listar_fila(200),
+            com.comunicacao.listar_matriz(),
+        );
+        (Some(d?), Some(a?), Some(f?), Some(m?))
+    } else {
+        (None, None, None, None)
+    };
+    Ok(Json(serde_json::json!({
+        "avaliacoes_dash": dash,
+        "avaliacoes": avaliacoes,
+        "fila": fila,
+        "matriz": matriz,
+        "lgpd": lgpd?,
+        "atendimentos": atendimentos?,
+    })))
+}
+
 pub async fn matriz_listar(
     State(st): State<AppState>,
     ator: Ator,
