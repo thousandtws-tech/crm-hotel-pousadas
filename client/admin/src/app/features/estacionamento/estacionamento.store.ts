@@ -3,7 +3,6 @@
 import { inject, signal, computed, OnInit, effect, Directive } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, Validators } from '@angular/forms';
-import { AcomodacoesApi } from '@core/api/acomodacoes.api';
 import { EstacionamentoApi } from '@core/api/estacionamento.api';
 import { Acomodacao } from '@core/models/catalogo.models';
 import { VagaEstacionamento } from '@core/models/estacionamento.models';
@@ -34,7 +33,6 @@ export abstract class EstacionamentoStore implements OnInit {
       .pipe(takeUntilDestroyed())
       .subscribe((v) => this.termo.set(v.trim().toLowerCase()));
   }
-  private readonly acomodacoesApi = inject(AcomodacoesApi);
   private readonly estacionamentoApi = inject(EstacionamentoApi);
   private readonly notify = inject(NotifyService);
   private readonly tour = inject(TourService);
@@ -75,10 +73,17 @@ export abstract class EstacionamentoStore implements OnInit {
   });
 
   ngOnInit(): void {
-    this.carregar();
-    this.acomodacoesApi.listarAcomodacoes(1, 200, true).subscribe({
-      next: (p) => this.acomodacoes.set(p.items),
-      error: () => undefined,
+    // Boot consolidado — vagas + acomodações em 1 request.
+    this.estacionamentoApi.painelEstacionamento().subscribe({
+      next: (p) => {
+        this.vagas.set(p.vagas);
+        this.acomodacoes.set(p.acomodacoes);
+        this.carregando.set(false);
+      },
+      error: (e) => {
+        this.carregando.set(false);
+        this.notify.erro(e);
+      },
     });
   }
 

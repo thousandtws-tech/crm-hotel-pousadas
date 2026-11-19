@@ -3,7 +3,6 @@
 import { computed, inject, signal, OnInit, effect, Directive } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, Validators } from '@angular/forms';
-import { AcomodacoesApi } from '@core/api/acomodacoes.api';
 import { EstoqueApi } from '@core/api/estoque.api';
 import { FrigobaresApi } from '@core/api/frigobares.api';
 import { num } from '@core/utils/num.utils';
@@ -40,7 +39,6 @@ export abstract class FrigobaresStore implements OnInit {
       .subscribe((v) => this.termo.set(v.trim().toLowerCase()));
   }
 
-  private readonly acomodacoesApi = inject(AcomodacoesApi);
   private readonly estoqueApi = inject(EstoqueApi);
   private readonly frigobaresApi = inject(FrigobaresApi);
   private readonly notify = inject(NotifyService);
@@ -114,18 +112,19 @@ export abstract class FrigobaresStore implements OnInit {
   });
 
   ngOnInit(): void {
-    this.carregar();
-    this.acomodacoesApi.listarAcomodacoes(1, 200, true).subscribe({
-      next: (p) => this.acomodacoes.set(p.items),
-      error: () => undefined,
-    });
-    this.estoqueApi.listarItens(1, 200, true).subscribe({
-      next: (p) => this.itensEstoque.set(p.items),
-      error: () => undefined,
-    });
-    this.estoqueApi.listarCategorias().subscribe({
-      next: (c) => this.categorias.set(c.filter((x) => x.ativo)),
-      error: () => undefined,
+    // Boot consolidado — 4 leituras em 1 request.
+    this.frigobaresApi.painelFrigobares().subscribe({
+      next: (p) => {
+        this.frigobares.set(p.frigobares);
+        this.acomodacoes.set(p.acomodacoes);
+        this.itensEstoque.set(p.itens);
+        this.categorias.set(p.categorias.filter((x) => x.ativo));
+        this.carregando.set(false);
+      },
+      error: (e) => {
+        this.carregando.set(false);
+        this.notify.erro(e);
+      },
     });
   }
 

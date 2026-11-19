@@ -1,5 +1,11 @@
 // Contratos do domínio pdv (extraído de api.models.ts).
 
+import { Page } from './comum.models';
+import { ContaFinanceira } from './financeiro.models';
+import { Funcionario } from './funcionarios.models';
+import { FormaPagamento } from './pagamentos.models';
+import { ReservaResumo } from './reservas.models';
+
 export type PdvComandaTipo = 'mesa' | 'quarto' | 'balcao';
 export type PdvComandaStatus = 'aberta' | 'fechada' | 'cancelada';
 export type PdvItemStatus = 'pendente' | 'em_preparo' | 'pronto' | 'entregue' | 'cancelado';
@@ -190,3 +196,16 @@ export interface FilaItemView {
 // ---------------------------------------------------------------------------
 // Café da manhã — presença por reserva/dia
 // ---------------------------------------------------------------------------
+
+/** Painel consolidado do PDV — as 9 leituras do boot em 1 request. */
+export interface PainelPdv {
+  mesas: MesaView[];
+  comandas: Page<ComandaView>;
+  comandas_abertas: ComandaView[];
+  garcons: GarcomView[];
+  itens_venda: ItemVendaView[];
+  contas: ContaFinanceira[];
+  formas: FormaPagamento[];
+  funcionarios: Funcionario[];
+  reservas_estadia: ReservaResumo[];
+}

@@ -7,6 +7,11 @@ import { ApiHttp } from './api-http';
 
 @Service()
 export class FrigobaresApi extends ApiHttp {
+  /** Frigobar — unidades + acomodações + itens/categorias de estoque em 1 chamada. */
+  painelFrigobares() {
+    return this.get<M.PainelFrigobares>('/frigobares/painel');
+  }
+
   listarFrigobares() {
     return this.get<M.Frigobar[]>('/frigobares');
   }

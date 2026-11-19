@@ -7,6 +7,18 @@ import { ApiHttp } from './api-http';
 
 @Service()
 export class PdvApi extends ApiHttp {
+  /** PDV — as 9 leituras do boot (mesas, comandas, abertas, garçons e auxiliares) em 1 chamada. */
+  painelPdv(f: {
+    tipo?: string | null; status?: string | null; idgarcom?: number | null;
+    inicio?: string | null; fim?: string | null; page?: number; porPagina?: number;
+  } = {}) {
+    return this.get<M.PainelPdv>('/pdv/painel', {
+      tipo: f.tipo, status: f.status, idgarcom: f.idgarcom,
+      inicio: f.inicio, fim: f.fim,
+      page: f.page ?? 1, por_pagina: f.porPagina ?? 20,
+    });
+  }
+
   listarMesas() {
     return this.get<M.MesaView[]>('/pdv/mesas');
   }

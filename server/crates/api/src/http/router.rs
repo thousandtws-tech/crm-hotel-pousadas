@@ -101,7 +101,8 @@ pub fn build(state: AppState) -> Router {
             "/clientes/{id}/foto",
             put(routes::pessoas::upload_foto_cliente)
                 .get(routes::pessoas::foto_cliente)
-                .delete(routes::pessoas::remover_foto_cliente),
+                .delete(routes::pessoas::remover_foto_cliente)
+                .route_layer(from_fn(middleware::cache_curto)),
         )
         .route(
             "/clientes/{id}/documentos",
@@ -142,7 +143,9 @@ pub fn build(state: AppState) -> Router {
         )
         .route(
             "/tipos-acomodacao",
-            get(routes::catalogo::listar_tipos).post(routes::catalogo::criar_tipo),
+            get(routes::catalogo::listar_tipos)
+                .post(routes::catalogo::criar_tipo)
+                .route_layer(from_fn(middleware::cache_curto)),
         )
         .route(
             "/tipos-acomodacao/{id}",
@@ -703,6 +706,10 @@ pub fn build(state: AppState) -> Router {
         )
         // frigobares
         .route(
+            "/frigobares/painel",
+            get(routes::catalogo::painel_frigobares),
+        )
+        .route(
             "/frigobares",
             get(routes::catalogo::listar_frigobares).post(routes::catalogo::criar_frigobar),
         )
@@ -730,6 +737,10 @@ pub fn build(state: AppState) -> Router {
             patch(routes::catalogo::status_item_frigobar),
         )
         // estacionamento
+        .route(
+            "/estacionamento/painel",
+            get(routes::catalogo::painel_estacionamento),
+        )
         .route(
             "/estacionamento",
             get(routes::catalogo::listar_vagas).post(routes::catalogo::criar_vaga),
@@ -1008,6 +1019,7 @@ pub fn build(state: AppState) -> Router {
             "/pdv/mesas",
             get(routes::pdv::listar_mesas).post(routes::pdv::criar_mesa),
         )
+        .route("/pdv/painel", get(routes::pdv::painel_pdv))
         .route("/pdv/mesas/{id}/status", put(routes::pdv::status_mesa))
         .route(
             "/pdv/garcons",

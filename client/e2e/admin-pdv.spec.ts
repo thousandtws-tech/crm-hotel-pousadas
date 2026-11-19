@@ -57,7 +57,19 @@ async function mockAdminApi(page: Page): Promise<void> {
     const url = route.request().url();
     if (url.includes('/auth/login')) return route.fallback();
     let body: unknown;
-    if (/\/pdv\/comandas\/\d+\/itens/.test(url)) body = ITENS_9;
+    if (url.includes('/pdv/painel'))
+      body = {
+        mesas: MESAS,
+        comandas: { items: COMANDAS_ABERTAS, total: COMANDAS_ABERTAS.length },
+        comandas_abertas: COMANDAS_ABERTAS,
+        garcons: [{ id: 1, idfuncionario: 1, funcionario_nome: 'Ana', percentual: '10', ativo: true }],
+        itens_venda: ITENS_VENDA,
+        contas: [],
+        formas: [],
+        funcionarios: [{ id: 1, nome: 'Ana' }],
+        reservas_estadia: [],
+      };
+    else if (/\/pdv\/comandas\/\d+\/itens/.test(url)) body = ITENS_9;
     else if (/\/pdv\/comandas\/\d+/.test(url)) body = COMANDA_9;
     else if (url.includes('/pdv/mesas')) body = MESAS;
     else if (url.includes('/pdv/comandas')) body = { items: COMANDAS_ABERTAS, total: COMANDAS_ABERTAS.length };

@@ -283,6 +283,53 @@ pub async fn listar_frigobares(
     Ok(Json(s.services.frigobar.listar().await?))
 }
 
+/// GET /estacionamento/painel — vagas + acomodações (para o vínculo) em
+/// uma única chamada, resolvidas em paralelo no servidor.
+pub async fn painel_estacionamento(
+    State(s): State<AppState>,
+    _ator: Ator,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let (vagas, acomodacoes) = tokio::join!(
+        s.services.estacionamento.listar(),
+        s.services.acomodacoes.listar(
+            true,
+            PageParams {
+                page: 1,
+                per_page: 200,
+            },
+        ),
+    );
+    Ok(Json(serde_json::json!({
+        "vagas": vagas?,
+        "acomodacoes": acomodacoes?.items,
+    })))
+}
+
+/// GET /frigobares/painel — boot do Frigobar em uma única chamada:
+/// unidades + acomodações + itens e categorias de estoque, resolvidos
+/// em paralelo no servidor. O browser faz 1 request em vez de 4.
+pub async fn painel_frigobares(
+    State(s): State<AppState>,
+    _ator: Ator,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let pag = PageParams {
+        page: 1,
+        per_page: 200,
+    };
+    let (frigobares, acomodacoes, itens, categorias) = tokio::join!(
+        s.services.frigobar.listar(),
+        s.services.acomodacoes.listar(true, pag),
+        s.services.estoque.listar_itens(true, pag),
+        s.services.estoque.listar_categorias(false),
+    );
+    Ok(Json(serde_json::json!({
+        "frigobares": frigobares?,
+        "acomodacoes": acomodacoes?.items,
+        "itens": itens?.items,
+        "categorias": categorias?,
+    })))
+}
+
 pub async fn buscar_frigobar(
     State(s): State<AppState>,
     _ator: Ator,

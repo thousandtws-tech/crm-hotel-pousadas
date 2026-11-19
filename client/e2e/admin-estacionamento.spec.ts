@@ -38,7 +38,9 @@ async function mockAdminApi(page: Page): Promise<void> {
     const url = route.request().url();
     if (url.includes('/auth/login')) return route.fallback();
     let body: unknown;
-    if (url.includes('/estacionamento')) body = VAGAS;
+    if (url.includes('/estacionamento/painel'))
+      body = { vagas: VAGAS, acomodacoes: ACOMODACOES };
+    else if (url.includes('/estacionamento')) body = VAGAS;
     else if (url.includes('/acomodacoes')) body = { items: ACOMODACOES, total: ACOMODACOES.length };
     else if (url.includes('/dashboard'))
       body = { cards: { total_acomodacoes: 1, acomodacoes_disponiveis: 1, acomodacoes_ocupadas: 0, hospedes_atuais: 0, checkins_hoje: 0, checkouts_hoje: 0, checkins_pendentes_hoje: 0, checkouts_pendentes_hoje: 0 }, checkins_pendentes: [], checkouts_pendentes: [], ultimas_reservas: [], acomodacoes_disponiveis: [], acomodacoes_ocupadas: [] };

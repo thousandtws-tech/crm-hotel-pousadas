@@ -93,6 +93,67 @@ pub async fn listar_comandas(
     Ok(Json(s.services.pdv.listar_comandas(filtro, q.page).await?))
 }
 
+/// GET /pdv/painel — boot do PDV em uma única chamada: mesas, comandas
+/// da aba (com filtro), comandas abertas, garçons e os cadastros
+/// auxiliares (itens, contas, formas, funcionários, hóspedes na casa),
+/// resolvidos em paralelo no servidor. O browser faz 1 request em vez
+/// de 9. Sem cache — comandas e mesas são dados vivos.
+pub async fn painel_pdv(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Query(q): Query<ComandasQuery>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let filtro = FiltroComanda {
+        tipo: q.tipo,
+        status: q.status,
+        idgarcom: q.idgarcom,
+        inicio: q.inicio,
+        fim: q.fim,
+    };
+    let filtro_abertas = FiltroComanda {
+        tipo: None,
+        status: Some(PdvComandaStatus::Aberta),
+        idgarcom: None,
+        inicio: None,
+        fim: None,
+    };
+    let pag = |n: u32| PageParams {
+        page: 1,
+        per_page: n,
+    };
+    let (mesas, comandas, abertas, garcons, itens, contas, formas, funcionarios, estadia) = tokio::join!(
+        s.services.pdv.listar_mesas(),
+        s.services.pdv.listar_comandas(filtro, q.page),
+        s.services.pdv.listar_comandas(filtro_abertas, pag(50)),
+        s.services.pdv.listar_garcons(),
+        s.services.pdv.listar_itens_venda(None),
+        s.services.tesouraria.listar_contas(true),
+        s.services.pagamentos.listar(true),
+        s.services.funcionarios.listar(true, pag(100)),
+        s.services.reservas.listar(
+            clarituz_domain::ports::FiltroReserva {
+                periodo: None,
+                status: Some(clarituz_domain::enums::StatusReserva::Iniciada),
+                idacomodacao: None,
+                idcliente: None,
+                busca: None,
+            },
+            pag(100),
+        ),
+    );
+    Ok(Json(serde_json::json!({
+        "mesas": mesas?,
+        "comandas": comandas?,
+        "comandas_abertas": abertas?.items,
+        "garcons": garcons?,
+        "itens_venda": itens?,
+        "contas": contas?,
+        "formas": formas?,
+        "funcionarios": funcionarios?.items,
+        "reservas_estadia": estadia?.items,
+    })))
+}
+
 pub async fn abrir_comanda(
     State(s): State<AppState>,
     ator: Ator,

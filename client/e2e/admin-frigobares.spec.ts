@@ -42,7 +42,9 @@ async function mockAdminApi(page: Page): Promise<void> {
     const url = route.request().url();
     if (url.includes('/auth/login')) return route.fallback();
     let body: unknown;
-    if (url.includes('/frigobares/') && url.includes('/itens')) body = ITENS;
+    if (url.includes('/frigobares/painel'))
+      body = { frigobares: FRIGOBARES, acomodacoes: ACOMODACOES, itens: [], categorias: [] };
+    else if (url.includes('/frigobares/') && url.includes('/itens')) body = ITENS;
     else if (url.includes('/frigobares')) body = FRIGOBARES;
     else if (url.includes('/estoque/itens')) body = { items: [], total: 0 };
     else if (url.includes('/estoque/categorias')) body = [];

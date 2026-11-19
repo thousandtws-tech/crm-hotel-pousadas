@@ -3,11 +3,7 @@
 import { computed, effect, ElementRef, inject, signal, OnInit, Directive } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { ComunicacaoApi } from '@core/api/comunicacao.api';
-import { FinanceiroApi } from '@core/api/financeiro.api';
-import { FuncionariosApi } from '@core/api/funcionarios.api';
-import { PagamentosApi } from '@core/api/pagamentos.api';
 import { PdvApi } from '@core/api/pdv.api';
-import { ReservasApi } from '@core/api/reservas.api';
 import { num } from '@core/utils/num.utils';
 import { Page } from '@core/models/comum.models';
 import { ContaFinanceira } from '@core/models/financeiro.models';
@@ -42,11 +38,7 @@ function rotuloComanda(c: ComandaView): string {
 export abstract class PdvStore implements OnInit {
   declare protected readonly modalVoltar: Signal<ElementRef<HTMLButtonElement> | undefined>;
   private readonly comunicacaoApi = inject(ComunicacaoApi);
-  private readonly financeiroApi = inject(FinanceiroApi);
-  private readonly funcionariosApi = inject(FuncionariosApi);
-  private readonly pagamentosApi = inject(PagamentosApi);
   private readonly pdvApi = inject(PdvApi);
-  private readonly reservasApi = inject(ReservasApi);
   private readonly notify = inject(NotifyService);
 
   readonly num = num;
@@ -213,37 +205,32 @@ export abstract class PdvStore implements OnInit {
   }
 
   ngOnInit(): void {
-    this.carregarMesas();
-    this.carregarComandas();
-    this.carregarAbertas();
-    this.carregarGarcons();
-    this.carregarAuxiliares();
+    // Boot consolidado — 9 leituras em 1 request. Refreshes pós-ação
+    // continuam nas chamadas direcionadas (carregarComandas & cia).
+    this.pdvApi
+      .painelPdv({
+        status: this.filtroStatus.value,
+        page: 1,
+        porPagina: this.POR_PAGINA,
+      })
+      .subscribe({
+        next: (p) => {
+          this.mesas.set(p.mesas);
+          this.comandas.set(p.comandas.items);
+          this.comandasTotal.set(p.comandas.total);
+          this.comandasAbertas.set(p.comandas_abertas);
+          this.garcons.set(p.garcons);
+          this.itensVenda.set(p.itens_venda);
+          this.contas.set(p.contas.filter((x) => x.ativo));
+          this.formas.set(p.formas.filter((x) => x.ativo));
+          this.funcionarios.set(p.funcionarios);
+          this.reservasEstadia.set(p.reservas_estadia.filter((r) => r.idquarto !== null));
+        },
+        error: () => this.notify.erro('Falha ao carregar o PDV.'),
+      });
     this.filtroStatus.valueChanges.subscribe(() => {
       this.comandasPage.set(1);
       this.carregarComandas();
-    });
-  }
-
-  private carregarAuxiliares(): void {
-    this.financeiroApi.listarContasFinanceiras().subscribe({
-      next: (c) => this.contas.set(c.filter((x) => x.ativo)),
-      error: () => {},
-    });
-    this.pagamentosApi.listarPagamentos().subscribe({
-      next: (f) => this.formas.set(f.filter((x) => x.ativo)),
-      error: () => {},
-    });
-    this.funcionariosApi.listarFuncionarios(1, 100, true).subscribe({
-      next: (p: Page<Funcionario>) => this.funcionarios.set(p.items),
-      error: () => {},
-    });
-    this.pdvApi.itensVenda().subscribe({
-      next: (i) => this.itensVenda.set(i),
-      error: () => {},
-    });
-    this.reservasApi.listarReservas({ status: 'i', porPagina: 100 }).subscribe({
-      next: (p) => this.reservasEstadia.set(p.items.filter((r) => r.idquarto !== null)),
-      error: () => {},
     });
   }
 

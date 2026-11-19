@@ -7,6 +7,11 @@ import { ApiHttp } from './api-http';
 
 @Service()
 export class EstacionamentoApi extends ApiHttp {
+  /** Estacionamento — vagas + acomodações em 1 chamada. */
+  painelEstacionamento() {
+    return this.get<M.PainelEstacionamento>('/estacionamento/painel');
+  }
+
   listarVagas() {
     return this.get<M.VagaEstacionamento[]>('/estacionamento');
   }
