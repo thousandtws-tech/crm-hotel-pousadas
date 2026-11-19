@@ -79,6 +79,10 @@ pub struct VerificacaoService {
     funcionarios: Arc<dyn FuncionarioRepository>,
     vault: Arc<dyn CredentialVault>,
     factory: DiditFactory,
+    /// Cache de 60s da integração Didit de produção — `acesso_permitido`
+    /// roda em toda request autenticada e antes gastava 1 query só para
+    /// descobrir que o portão está desligado.
+    portao: tokio::sync::Mutex<Option<(std::time::Instant, Option<Integracao>)>>,
 }
 
 impl VerificacaoService {
@@ -95,6 +99,7 @@ impl VerificacaoService {
             funcionarios,
             vault,
             factory,
+            portao: tokio::sync::Mutex::new(None),
         }
     }
 
@@ -207,16 +212,41 @@ impl VerificacaoService {
     /// Falha de infraestrutura (banco indisponível) **não** pode derrubar
     /// o painel inteiro — fail-open com log; o portão volta a valer na
     /// próxima requisição.
+    /// Integração Didit de produção com TTL de 60s. Erro de banco não
+    /// entra no cache — a request atual sai em degrade e a próxima tenta
+    /// de novo (não cola estado ruim no cache).
+    async fn portao_didit(&self) -> Option<Integracao> {
+        const TTL: std::time::Duration = std::time::Duration::from_secs(60);
+        {
+            let g = self.portao.lock().await;
+            if let Some((ts, integ)) = &*g {
+                if ts.elapsed() < TTL {
+                    return integ.clone();
+                }
+            }
+        }
+        match self
+            .integracoes
+            .buscar(ProvedorIntegracao::Didit, AmbienteIntegracao::Producao)
+            .await
+        {
+            Ok(integ) => {
+                *self.portao.lock().await = Some((std::time::Instant::now(), integ.clone()));
+                integ
+            }
+            Err(e) => {
+                warn!(erro = %e, "didit: falha ao consultar integração do portão");
+                None
+            }
+        }
+    }
+
     pub async fn acesso_permitido(&self, funcionario_id: i64, admin: bool) -> bool {
         if admin {
             return true;
         }
         let res: Result<bool, DomainError> = async {
-            let Some(i) = self
-                .integracoes
-                .buscar(ProvedorIntegracao::Didit, AmbienteIntegracao::Producao)
-                .await?
-            else {
+            let Some(i) = self.portao_didit().await else {
                 return Ok(true);
             };
             if !(i.habilitado && Self::cfg_bool(&i, "exigir_verificacao")) {

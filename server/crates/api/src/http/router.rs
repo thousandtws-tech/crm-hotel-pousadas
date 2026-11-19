@@ -248,7 +248,9 @@ pub fn build(state: AppState) -> Router {
         )
         .route(
             "/contratos",
-            get(routes::operadoras::contratos_listar).post(routes::operadoras::contratos_criar),
+            get(routes::operadoras::contratos_listar)
+                .post(routes::operadoras::contratos_criar)
+                .route_layer(from_fn(middleware::cache_curto)),
         )
         .route(
             "/contratos/{id}",
