@@ -9,9 +9,9 @@ export default defineRailway(() => {
   const postgresVolume = volume("postgres-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "ams", sizeMB: 5000 });
   const admin = service("admin", {
     replicas: { "ams": 1 },
-    // nginx estático — 1 vCPU / 1 GiB
+    // nginx estático — 0.25 vCPU / 512 MiB
     deploy: {
-      limitOverride: { containers: { cpu: 1, memoryBytes: 1073741824 } },
+      limitOverride: { containers: { cpu: 0.25, memoryBytes: 536870912 } },
       restartPolicyMaxRetries: 5,
     },
     env: { RAILWAY_DOCKERFILE_PATH: preserve() },
@@ -26,9 +26,9 @@ export default defineRailway(() => {
   });
   const maria = service("inteligencia-artificial", {
     replicas: { "ams": 1 },
-    // agente de voz Python — 2 vCPU / 4 GiB
+    // agente de voz Python — 0.5 vCPU / 1 GiB
     deploy: {
-      limitOverride: { containers: { cpu: 2, memoryBytes: 4294967296 } },
+      limitOverride: { containers: { cpu: 0.5, memoryBytes: 1073741824 } },
       restartPolicyMaxRetries: 5,
     },
     volumeMounts: { "/app/data": mariaVolume },
@@ -40,18 +40,18 @@ export default defineRailway(() => {
   });
   const realtime = service("motor-realtime-erlang", {
     replicas: { "ams": 1 },
-    // hub Phoenix/BEAM — 2 vCPU / 2 GiB (não hibernar: WebSocket + LISTEN 24/7)
+    // hub Phoenix/BEAM — 1 vCPU / 1 GiB (não hibernar: WebSocket + LISTEN 24/7)
     deploy: {
-      limitOverride: { containers: { cpu: 2, memoryBytes: 2147483648 } },
+      limitOverride: { containers: { cpu: 1, memoryBytes: 1073741824 } },
       restartPolicyMaxRetries: 5,
     },
     env: { CHECK_ORIGIN: preserve(), DATABASE_URL: preserve(), INGEST_TOKEN: preserve(), JWT_SECRET: preserve(), PHX_HOST: preserve(), PHX_SERVER: preserve(), PORT: preserve(), RAILWAY_DOCKERFILE_PATH: preserve(), SECRET_KEY_BASE: preserve() },
   });
   const web = service("website-institucional", {
     replicas: { "ams": 1 },
-    // nginx estático — 1 vCPU / 1 GiB
+    // nginx estático — 0.25 vCPU / 512 MiB
     deploy: {
-      limitOverride: { containers: { cpu: 1, memoryBytes: 1073741824 } },
+      limitOverride: { containers: { cpu: 0.25, memoryBytes: 536870912 } },
       restartPolicyMaxRetries: 5,
     },
     env: { RAILWAY_DOCKERFILE_PATH: preserve() },
@@ -61,9 +61,9 @@ export default defineRailway(() => {
     // < ~80% do max_connections do Postgres (2×(10+1)=22 conns aqui — ok).
     // Avisos/deltas cruzam réplicas via LISTEN/NOTIFY (clarituz_aviso/delta).
     replicas: { "ams": 2 },
-    // Rust/Axum — 2 vCPU / 4 GiB
+    // Rust/Axum — 1 vCPU / 1 GiB
     deploy: {
-      limitOverride: { containers: { cpu: 2, memoryBytes: 4294967296 } },
+      limitOverride: { containers: { cpu: 1, memoryBytes: 1073741824 } },
       restartPolicyMaxRetries: 5,
     },
     env: { CORS_ORIGINS: preserve(), DATABASE_URL: preserve(), DB_MAX_CONNECTIONS: preserve(), JWT_SECRET: preserve(), RAILWAY_DOCKERFILE_PATH: preserve(), RUST_LOG: preserve(), S3_ACCESS_KEY: preserve(), S3_BUCKET: preserve(), S3_ENDPOINT: preserve(), S3_REGION: preserve(), S3_SECRET_KEY: preserve(), STORAGE_DIR: preserve() },
@@ -89,7 +89,7 @@ export default defineRailway(() => {
     replicas: { "ams": 1 },
     networking: { privateNetworkEndpoint: "prometheus" },
     deploy: {
-      limitOverride: { containers: { cpu: 1, memoryBytes: 1073741824 } },
+      limitOverride: { containers: { cpu: 0.5, memoryBytes: 536870912 } },
       restartPolicyMaxRetries: 5,
     },
     volumeMounts: { "/prometheus": prometheusVolume },
@@ -108,7 +108,7 @@ export default defineRailway(() => {
     replicas: { "ams": 1 },
     networking: { privateNetworkEndpoint: "grafana" },
     deploy: {
-      limitOverride: { containers: { cpu: 1, memoryBytes: 1073741824 } },
+      limitOverride: { containers: { cpu: 0.5, memoryBytes: 536870912 } },
       restartPolicyMaxRetries: 5,
     },
     volumeMounts: { "/var/lib/grafana": grafanaVolume },
@@ -128,7 +128,7 @@ export default defineRailway(() => {
     replicas: { "ams": 1 },
     networking: { privateNetworkEndpoint: "pg-exporter" },
     deploy: {
-      limitOverride: { containers: { cpu: 0.5, memoryBytes: 536870912 } },
+      limitOverride: { containers: { cpu: 0.25, memoryBytes: 268435456 } },
       restartPolicyMaxRetries: 5,
     },
     env: {
@@ -146,7 +146,7 @@ export default defineRailway(() => {
     replicas: { "ams": 1 },
     networking: { privateNetworkEndpoint: "jenkins" },
     deploy: {
-      limitOverride: { containers: { cpu: 2, memoryBytes: 4294967296 } },
+      limitOverride: { containers: { cpu: 1, memoryBytes: 2147483648 } },
       restartPolicyMaxRetries: 5,
     },
     volumeMounts: { "/var/jenkins_home": jenkinsVolume },
@@ -168,7 +168,7 @@ export default defineRailway(() => {
     // Só-outbound: nenhum endpoint — nada conecta nele, ele conecta nos outros.
     replicas: { "ams": 1 },
     deploy: {
-      limitOverride: { containers: { cpu: 0.5, memoryBytes: 536870912 } },
+      limitOverride: { containers: { cpu: 0.25, memoryBytes: 268435456 } },
       restartPolicyMaxRetries: 10,
     },
     env: {
