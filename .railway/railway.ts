@@ -1,9 +1,11 @@
 // IaC do Railway — mudanças aqui disparam o stage 'iac-drift' no Jenkins (apenas aviso; apply é manual).
-import { defineRailway, github, group, image, postgres, preserve, project, service, volume } from "railway/iac";
+import { defineRailway, github, group, image, postgres, preserve, project, redis, service, volume } from "railway/iac";
 
 export default defineRailway(() => {
   const Postgres = postgres("Postgres", { region: "us-east4-eqdc4a" });
   Postgres.networking = { privateNetworkEndpoint: "postgres" };
+  const Redis = redis("Redis", { region: "us-east4-eqdc4a" });
+  Redis.networking = { privateNetworkEndpoint: "redis" };
   const bucketVolume = volume("bucket-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "us-east4-eqdc4a", sizeMB: 5000 });
   const mariaVolume = volume("maria-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "us-east4-eqdc4a", sizeMB: 5000 });
   const postgresVolume = volume("postgres-volume", { alerts: { usage: { "100": {}, "80": {}, "95": {} } }, allowOnlineResize: true, region: "us-east4-eqdc4a", sizeMB: 5000 });
@@ -36,7 +38,7 @@ export default defineRailway(() => {
     // (mesmo padrão do pg-exporter/pg-backup) — zero segredo copiado à mão
     // e nada se perde num apply. Bucket/flags são literais: backup nasce
     // ligado; intervalo/retenção/prefixo/região ficam preserve() p/ tuning.
-    env: { API_BASE: preserve(), BACKUP_DATABASE_URL: "postgresql://${{Postgres.PGUSER}}:${{Postgres.PGPASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}?sslmode=disable", ELEVENLABS_API_KEY: preserve(), ELEVENLABS_MODEL_ID: preserve(), ELEVENLABS_SIMILARITY: preserve(), ELEVENLABS_SPEED: preserve(), ELEVENLABS_STABILITY: preserve(), ELEVENLABS_STYLE: preserve(), ELEVENLABS_VOICE_ID: preserve(), JWT_SECRET: preserve(), MARIA_BACKUP_ENABLED: "true", MARIA_BACKUP_INTERVAL_H: preserve(), MARIA_BACKUP_RETAIN: preserve(), MARIA_DEFAULT_LANGUAGE: preserve(), MARIA_HISTORY_ENABLED: preserve(), MARIA_HISTORY_MAX_TURNS: preserve(), MARIA_S3_ACCESS_KEY: "${{Bucket.MINIO_ROOT_USER}}", MARIA_S3_BUCKET: "backups", MARIA_S3_ENDPOINT: "http://${{Bucket.MINIO_PRIVATE_HOST}}:${{Bucket.MINIO_PRIVATE_PORT}}", MARIA_S3_PREFIX: preserve(), MARIA_S3_REGION: preserve(), MARIA_S3_SECRET_KEY: "${{Bucket.MINIO_ROOT_PASSWORD}}", MARIA_TIMEZONE: preserve(), MARIA_VOICE_ENABLED: preserve(), OPENAI_API_KEY: preserve(), OPENAI_LLM_MODEL: preserve(), OPENAI_REALTIME_MODEL: preserve(), OPENAI_SERVER_VAD: preserve(), OPENAI_TRANSCRIPTION_MODEL: preserve(), RAILWAY_DOCKERFILE_PATH: preserve() },
+    env: { API_BASE: preserve(), BACKUP_DATABASE_URL: "postgresql://${{Postgres.PGUSER}}:${{Postgres.PGPASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}?sslmode=disable", CEREBRAS_API_KEY: preserve(), CEREBRAS_MODEL: preserve(), ELEVENLABS_AGENT_ID: preserve(), ELEVENLABS_API_KEY: preserve(), ELEVENLABS_MODEL_ID: preserve(), ELEVENLABS_SIMILARITY: preserve(), ELEVENLABS_SPEED: preserve(), ELEVENLABS_STABILITY: preserve(), ELEVENLABS_STYLE: preserve(), ELEVENLABS_VOICE_ID: preserve(), INNA_INTERNAL_KEY: preserve(), JWT_SECRET: preserve(), MARIA_BACKUP_ENABLED: "true", MARIA_BACKUP_INTERVAL_H: preserve(), MARIA_BACKUP_RETAIN: preserve(), MARIA_BUDGET_TOKENS_DIA: preserve(), MARIA_CORS_ORIGINS: preserve(), MARIA_DEFAULT_LANGUAGE: preserve(), MARIA_HISTORY_ENABLED: preserve(), MARIA_HISTORY_MAX_TURNS: preserve(), MARIA_RATE_TURNOS_MIN: preserve(), MARIA_S3_ACCESS_KEY: "${{Bucket.MINIO_ROOT_USER}}", MARIA_S3_BUCKET: "backups", MARIA_S3_ENDPOINT: "http://${{Bucket.MINIO_PRIVATE_HOST}}:${{Bucket.MINIO_PRIVATE_PORT}}", MARIA_S3_PREFIX: preserve(), MARIA_S3_REGION: preserve(), MARIA_S3_SECRET_KEY: "${{Bucket.MINIO_ROOT_PASSWORD}}", MARIA_TIMEZONE: preserve(), MARIA_TTS_PROVIDER: preserve(), MARIA_VOICE_ENABLED: preserve(), OPENAI_API_KEY: preserve(), OPENAI_LLM_MODEL: preserve(), OPENAI_REALTIME_MODEL: preserve(), OPENAI_SERVER_VAD: preserve(), OPENAI_TRANSCRIPTION_MODEL: preserve(), PIPER_VOICE: preserve(), RAILWAY_DOCKERFILE_PATH: preserve(), REDIS_URL: "${{Redis.REDIS_URL}}" },
   });
   const realtime = service("motor-realtime-erlang", {
     replicas: { "us-east4-eqdc4a": 1 },
@@ -54,7 +56,7 @@ export default defineRailway(() => {
       limitOverride: { containers: { cpu: 0.25, memoryBytes: 536870912 } },
       restartPolicyMaxRetries: 5,
     },
-    env: { RAILWAY_DOCKERFILE_PATH: preserve() },
+    env: { API_INTERNAL_URL: preserve(), RAILWAY_DOCKERFILE_PATH: preserve() },
   });
   const api = service("api-server-rust", {
     // API stateless: réplicas N×(DB_MAX_CONNECTIONS + 1 LISTEN) devem ficar
@@ -66,7 +68,7 @@ export default defineRailway(() => {
       limitOverride: { containers: { cpu: 1, memoryBytes: 1073741824 } },
       restartPolicyMaxRetries: 5,
     },
-    env: { CORS_ORIGINS: preserve(), DATABASE_URL: preserve(), DB_MAX_CONNECTIONS: preserve(), JWT_SECRET: preserve(), RAILWAY_DOCKERFILE_PATH: preserve(), RUST_LOG: preserve(), S3_ACCESS_KEY: preserve(), S3_BUCKET: preserve(), S3_ENDPOINT: preserve(), S3_REGION: preserve(), S3_SECRET_KEY: preserve(), STORAGE_DIR: preserve() },
+    env: { CORS_ORIGINS: preserve(), DATABASE_URL: preserve(), DB_MAX_CONNECTIONS: preserve(), INNA_INTERNAL_KEY: preserve(), INTEGRACOES_MASTER_KEY: preserve(), JWT_SECRET: preserve(), MARIA_URL: preserve(), POUSADA_NOME: preserve(), PUBLIC_API_URL: preserve(), RAILWAY_DOCKERFILE_PATH: preserve(), RESEND_API_KEY: preserve(), RUST_LOG: preserve(), S3_ACCESS_KEY: preserve(), S3_BUCKET: preserve(), S3_ENDPOINT: preserve(), S3_REGION: preserve(), S3_SECRET_KEY: preserve(), SITE_BASE: preserve(), STORAGE_DIR: preserve(), STRIPE_CANCEL_URL: preserve(), STRIPE_SECRET_KEY: preserve(), STRIPE_SUCCESS_URL: preserve(), STRIPE_WEBHOOK_SECRET: preserve(), VAPID_CONTATO: preserve(), VAPID_PRIVATE_PEM: preserve(), VAPID_PUBLIC_B64: preserve(), WHATSAPP_APP_SECRET: preserve(), WHATSAPP_PHONE_ID: preserve(), WHATSAPP_TOKEN: preserve(), WHATSAPP_VERIFY_TOKEN: preserve() },
   });
   const Bucket = service("Bucket", {
     source: github("railwayapp-templates/minio", { commitSha: "4a260461496f2ecd60944a51e6df6dabc073720f", upstreamUrl: "https://github.com/railwayapp-templates/minio" }),
@@ -183,6 +185,6 @@ export default defineRailway(() => {
   });
 
   return project("projeto-espirito-do-mar", {
-    resources: [admin, maria, realtime, Postgres, web, api, bucketVolume, mariaVolume, postgresVolume, prometheusVolume, grafanaVolume, jenkinsVolume, MinIO, Observabilidade, CI, pgBackup],
+    resources: [admin, maria, realtime, Postgres, Redis, web, api, bucketVolume, mariaVolume, postgresVolume, prometheusVolume, grafanaVolume, jenkinsVolume, MinIO, Observabilidade, CI, pgBackup],
   });
 });
