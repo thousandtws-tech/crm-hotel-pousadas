@@ -84,22 +84,21 @@ impl ManutencaoRepository for PgManutencaoRepository {
         id: i64,
         status: StatusManut,
         custo_centavos: Option<i64>,
-    ) -> Result<(), DomainError> {
+    ) -> Result<ManutencaoOrdem, DomainError> {
         let concluida = matches!(status, StatusManut::Concluida);
-        sqlx::query(
+        sqlx::query_as::<_, ManutencaoOrdem>(&format!(
             "UPDATE manutencao_ordem SET status=$2,
                 custo_centavos=COALESCE($3,custo_centavos),
                 concluida_em = CASE WHEN $4 THEN now() ELSE concluida_em END
-             WHERE id=$1",
-        )
+             WHERE id=$1 RETURNING {MANUT_COLS}"
+        ))
         .bind(id)
         .bind(status)
         .bind(custo_centavos)
         .bind(concluida)
-        .execute(&self.pool)
+        .fetch_one(&self.pool)
         .await
-        .map_err(map_db_err)?;
-        Ok(())
+        .map_err(map_db_err)
     }
 
     async fn pmoc_registrar(&self, r: &NovoPmoc) -> Result<PmocRegistro, DomainError> {
@@ -237,30 +236,30 @@ impl GovernancaRepository for PgGovernancaRepository {
         &self,
         id: i64,
         status: StatusTarefaGov,
-    ) -> Result<(), DomainError> {
+    ) -> Result<GovernancaTarefa, DomainError> {
         let concluida = matches!(status, StatusTarefaGov::Concluida);
-        sqlx::query(
+        sqlx::query_as::<_, GovernancaTarefa>(&format!(
             "UPDATE governanca_tarefa SET status=$2,
                 concluida_em = CASE WHEN $3 THEN now() ELSE NULL END
-             WHERE id=$1",
-        )
+             WHERE id=$1 RETURNING {GOV_COLS}"
+        ))
         .bind(id)
         .bind(status)
         .bind(concluida)
-        .execute(&self.pool)
+        .fetch_one(&self.pool)
         .await
-        .map_err(map_db_err)?;
-        Ok(())
+        .map_err(map_db_err)
     }
 
-    async fn atribuir(&self, id: i64, idfuncionario: i64) -> Result<(), DomainError> {
-        sqlx::query("UPDATE governanca_tarefa SET idfuncionario=$2 WHERE id=$1")
-            .bind(id)
-            .bind(idfuncionario)
-            .execute(&self.pool)
-            .await
-            .map_err(map_db_err)?;
-        Ok(())
+    async fn atribuir(&self, id: i64, idfuncionario: i64) -> Result<GovernancaTarefa, DomainError> {
+        sqlx::query_as::<_, GovernancaTarefa>(&format!(
+            "UPDATE governanca_tarefa SET idfuncionario=$2 WHERE id=$1 RETURNING {GOV_COLS}"
+        ))
+        .bind(id)
+        .bind(idfuncionario)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
     }
 
     async fn checkouts_do_dia(&self, data: NaiveDate) -> Result<Vec<i64>, DomainError> {
@@ -341,8 +340,8 @@ impl GovernancaRepository for PgGovernancaRepository {
         id: i64,
         qtd_devolvida: i32,
         custo_centavos: Option<i64>,
-    ) -> Result<(), DomainError> {
-        sqlx::query(
+    ) -> Result<LavanderiaLote, DomainError> {
+        sqlx::query_as::<_, LavanderiaLote>(&format!(
             "UPDATE lavanderia_lote SET
                 qtd_devolvida = qtd_devolvida + $2,
                 custo_centavos = COALESCE($3, custo_centavos),
@@ -350,15 +349,14 @@ impl GovernancaRepository for PgGovernancaRepository {
                 status = CASE WHEN qtd_devolvida + $2 >= qtd_itens
                               THEN 'devolvido'::status_lote_lav
                               ELSE 'devolvido_parcial'::status_lote_lav END
-             WHERE id=$1 AND status <> 'fechado'",
-        )
+             WHERE id=$1 AND status <> 'fechado' RETURNING {LOTE_COLS}"
+        ))
         .bind(id)
         .bind(qtd_devolvida)
         .bind(custo_centavos)
-        .execute(&self.pool)
+        .fetch_one(&self.pool)
         .await
-        .map_err(map_db_err)?;
-        Ok(())
+        .map_err(map_db_err)
     }
 
     async fn lav_fechar_competencia(&self, competencia: NaiveDate) -> Result<i64, DomainError> {
@@ -614,16 +612,17 @@ impl EscalaRepository for PgEscalaRepository {
         fim: DateTime<Utc>,
         almoco_min: i16,
         origem: OrigemTurno,
-    ) -> Result<(), DomainError> {
-        sqlx::query("UPDATE escala_turno SET inicio=$2,fim=$3,almoco_min=$4,origem=$5 WHERE id=$1")
-            .bind(id)
-            .bind(inicio)
-            .bind(fim)
-            .bind(almoco_min)
-            .bind(origem)
-            .execute(&self.pool)
-            .await
-            .map_err(map_db_err)?;
-        Ok(())
+    ) -> Result<EscalaTurno, DomainError> {
+        sqlx::query_as::<_, EscalaTurno>(&format!(
+            "UPDATE escala_turno SET inicio=$2,fim=$3,almoco_min=$4,origem=$5 WHERE id=$1 RETURNING {TURNO_COLS}"
+        ))
+        .bind(id)
+        .bind(inicio)
+        .bind(fim)
+        .bind(almoco_min)
+        .bind(origem)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
     }
 }

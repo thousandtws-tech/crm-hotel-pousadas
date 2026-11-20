@@ -104,7 +104,8 @@ export abstract class EscalasStore implements OnInit {
     const inicio = `${t.data}T${this.horasEdit.get(t.id + '-i') ?? this.hhmm(t.inicio)}:00Z`;
     const fim = `${t.data}T${this.horasEdit.get(t.id + '-f') ?? this.hhmm(t.fim)}:00Z`;
     this.operacaoApi.turnoAtualizar(t.id, { inicio, fim, almoco_min: t.almoco_min }).subscribe({
-      next: () => {
+      next: (salvo) => {
+        this.turnos.update((l) => l.map((x) => (x.id === salvo.id ? salvo : x)));
         this.alterados.update((s) => {
           const n = new Set(s);
           n.delete(t.id);
@@ -118,7 +119,7 @@ export abstract class EscalasStore implements OnInit {
 
   removerTurno(t: EscalaTurno): void {
     this.operacaoApi.removerTurno(t.id).subscribe({
-      next: () => this.carregar(),
+      next: () => this.turnos.update((l) => l.filter((x) => x.id !== t.id)),
       error: () => this.notify.erroMsg('Falha ao excluir turno.'),
     });
   }

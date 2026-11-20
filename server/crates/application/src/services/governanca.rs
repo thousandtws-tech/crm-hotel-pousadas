@@ -61,12 +61,17 @@ impl GovernancaService {
         ator: &Ator,
         id: i64,
         status: StatusTarefaGov,
-    ) -> AppResult<()> {
+    ) -> AppResult<GovernancaTarefa> {
         let _ = ator;
         Ok(self.repo.mudar_status_tarefa(id, status).await?)
     }
 
-    pub async fn atribuir(&self, ator: &Ator, id: i64, idfuncionario: i64) -> AppResult<()> {
+    pub async fn atribuir(
+        &self,
+        ator: &Ator,
+        id: i64,
+        idfuncionario: i64,
+    ) -> AppResult<GovernancaTarefa> {
         ator.exigir_gerencial()?;
         Ok(self.repo.atribuir(id, idfuncionario).await?)
     }
@@ -199,7 +204,7 @@ impl GovernancaService {
         id: i64,
         qtd_devolvida: i32,
         custo_centavos: Option<i64>,
-    ) -> AppResult<()> {
+    ) -> AppResult<LavanderiaLote> {
         let _ = ator;
         if qtd_devolvida <= 0 {
             return Err(DomainError::validacao("devolução deve ser positiva").into());

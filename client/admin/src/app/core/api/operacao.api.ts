@@ -16,7 +16,7 @@ export class OperacaoApi extends ApiHttp {
   }
 
   manutStatus(id: number, status: M.StatusManut, custo_centavos?: number) {
-    return this.post<void>(`/manutencao/ordens/${id}/status`, { status, custo_centavos });
+    return this.post<M.ManutOrdem>(`/manutencao/ordens/${id}/status`, { status, custo_centavos });
   }
 
   pmocListar() {
@@ -44,11 +44,11 @@ export class OperacaoApi extends ApiHttp {
   }
 
   govStatus(id: number, status: M.StatusTarefaGov) {
-    return this.post<void>(`/governanca/tarefas/${id}/status`, { status });
+    return this.post<M.GovTarefa>(`/governanca/tarefas/${id}/status`, { status });
   }
 
   govAtribuir(id: number, idfuncionario: number) {
-    return this.post<void>(`/governanca/tarefas/${id}/atribuir`, { idfuncionario });
+    return this.post<M.GovTarefa>(`/governanca/tarefas/${id}/atribuir`, { idfuncionario });
   }
 
   govPrevisao() {
@@ -68,7 +68,7 @@ export class OperacaoApi extends ApiHttp {
   }
 
   lavDevolver(id: number, qtd_devolvida: number, custo_centavos?: number) {
-    return this.post<void>(`/governanca/lavanderia/${id}/devolver`, { qtd_devolvida, custo_centavos });
+    return this.post<M.LavLote>(`/governanca/lavanderia/${id}/devolver`, { qtd_devolvida, custo_centavos });
   }
 
   lavFechar(competencia: string) {
@@ -108,7 +108,7 @@ export class OperacaoApi extends ApiHttp {
   }
 
   turnoAtualizar(id: number, input: { inicio: string; fim: string; almoco_min: number }) {
-    return this.put<void>(`/escalas/turnos/${id}`, input);
+    return this.put<M.EscalaTurno>(`/escalas/turnos/${id}`, input);
   }
 
   cltValidar(dias = 14) {

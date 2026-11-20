@@ -50,12 +50,13 @@ pub async fn ordem_status(
     ator: Ator,
     Path(id): Path<i64>,
     Json(input): Json<StatusManutInput>,
-) -> Result<StatusCode, AppError> {
-    s.services
-        .manutencao
-        .mudar_status(&ator, id, input.status, input.custo_centavos)
-        .await?;
-    Ok(StatusCode::NO_CONTENT)
+) -> Result<Json<serde_json::Value>, AppError> {
+    Ok(Json(serde_json::json!(
+        s.services
+            .manutencao
+            .mudar_status(&ator, id, input.status, input.custo_centavos)
+            .await?
+    )))
 }
 
 pub async fn pmoc_listar(
@@ -118,12 +119,13 @@ pub async fn gov_status(
     ator: Ator,
     Path(id): Path<i64>,
     Json(input): Json<StatusTarefaInput>,
-) -> Result<StatusCode, AppError> {
-    s.services
-        .governanca
-        .mudar_status(&ator, id, input.status)
-        .await?;
-    Ok(StatusCode::NO_CONTENT)
+) -> Result<Json<serde_json::Value>, AppError> {
+    Ok(Json(serde_json::json!(
+        s.services
+            .governanca
+            .mudar_status(&ator, id, input.status)
+            .await?
+    )))
 }
 
 pub async fn gov_atribuir(
@@ -131,12 +133,13 @@ pub async fn gov_atribuir(
     ator: Ator,
     Path(id): Path<i64>,
     Json(input): Json<AtribuirTarefaInput>,
-) -> Result<StatusCode, AppError> {
-    s.services
-        .governanca
-        .atribuir(&ator, id, input.idfuncionario)
-        .await?;
-    Ok(StatusCode::NO_CONTENT)
+) -> Result<Json<serde_json::Value>, AppError> {
+    Ok(Json(serde_json::json!(
+        s.services
+            .governanca
+            .atribuir(&ator, id, input.idfuncionario)
+            .await?
+    )))
 }
 
 pub async fn gov_previsao(
@@ -186,12 +189,13 @@ pub async fn lav_devolver(
     ator: Ator,
     Path(id): Path<i64>,
     Json(input): Json<DevolverLoteInput>,
-) -> Result<StatusCode, AppError> {
-    s.services
-        .governanca
-        .devolver_lote(&ator, id, input.qtd_devolvida, input.custo_centavos)
-        .await?;
-    Ok(StatusCode::NO_CONTENT)
+) -> Result<Json<serde_json::Value>, AppError> {
+    Ok(Json(serde_json::json!(
+        s.services
+            .governanca
+            .devolver_lote(&ator, id, input.qtd_devolvida, input.custo_centavos)
+            .await?
+    )))
 }
 
 #[derive(Debug, Deserialize)]
@@ -317,12 +321,13 @@ pub async fn turno_editar(
     ator: Ator,
     Path(id): Path<i64>,
     Json(b): Json<TurnoEditar>,
-) -> Result<StatusCode, AppError> {
-    s.services
-        .escalas
-        .editar_turno(&ator, id, b.inicio, b.fim, b.almoco_min)
-        .await?;
-    Ok(StatusCode::NO_CONTENT)
+) -> Result<Json<serde_json::Value>, AppError> {
+    Ok(Json(serde_json::json!(
+        s.services
+            .escalas
+            .editar_turno(&ator, id, b.inicio, b.fim, b.almoco_min)
+            .await?
+    )))
 }
 
 pub async fn clt_validar(

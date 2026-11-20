@@ -136,7 +136,7 @@ impl EscalasService {
         inicio: DateTime<Utc>,
         fim: DateTime<Utc>,
         almoco_min: i16,
-    ) -> AppResult<()> {
+    ) -> AppResult<EscalaTurno> {
         ator.exigir_gerencial()?;
         if fim <= inicio {
             return Err(DomainError::validacao("fim deve ser após o início").into());
@@ -144,10 +144,10 @@ impl EscalasService {
         if !(0..=240).contains(&almoco_min) {
             return Err(DomainError::validacao("almoço inválido").into());
         }
-        self.repo
+        Ok(self
+            .repo
             .ajustar_turno(id, inicio, fim, almoco_min, OrigemTurno::Manual)
-            .await?;
-        Ok(())
+            .await?)
     }
 
     // ------------------------------------------------------------------

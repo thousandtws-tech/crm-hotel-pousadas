@@ -94,7 +94,7 @@ impl ManutencaoService {
         id: i64,
         status: StatusManut,
         custo_centavos: Option<i64>,
-    ) -> AppResult<()> {
+    ) -> AppResult<ManutencaoOrdem> {
         // Status operacional é tarefa de campo — recepção também executa.
         let _ = ator;
         if let Some(c) = custo_centavos {

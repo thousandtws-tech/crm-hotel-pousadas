@@ -24,7 +24,7 @@ pub trait ManutencaoRepository: Send + Sync {
         id: i64,
         status: StatusManut,
         custo_centavos: Option<i64>,
-    ) -> Result<(), DomainError>;
+    ) -> Result<ManutencaoOrdem, DomainError>;
     async fn pmoc_registrar(&self, reg: &NovoPmoc) -> Result<PmocRegistro, DomainError>;
     async fn pmoc_listar(&self) -> Result<Vec<PmocRegistro>, DomainError>;
     /// Competências com PMOC em atraso (proxima_data < hoje e sem registro novo).
@@ -76,8 +76,8 @@ pub trait GovernancaRepository: Send + Sync {
         &self,
         id: i64,
         status: StatusTarefaGov,
-    ) -> Result<(), DomainError>;
-    async fn atribuir(&self, id: i64, idfuncionario: i64) -> Result<(), DomainError>;
+    ) -> Result<GovernancaTarefa, DomainError>;
+    async fn atribuir(&self, id: i64, idfuncionario: i64) -> Result<GovernancaTarefa, DomainError>;
 
     /// Quartos com checkout no dia (reserva sai = limpeza completa).
     async fn checkouts_do_dia(&self, data: NaiveDate) -> Result<Vec<i64>, DomainError>;
@@ -96,7 +96,7 @@ pub trait GovernancaRepository: Send + Sync {
         id: i64,
         qtd_devolvida: i32,
         custo_centavos: Option<i64>,
-    ) -> Result<(), DomainError>;
+    ) -> Result<LavanderiaLote, DomainError>;
     /// Fecha o mês: marca lotes e gera conta a pagar consolidada.
     async fn lav_fechar_competencia(&self, competencia: NaiveDate) -> Result<i64, DomainError>;
     async fn enxoval_mov(&self, limite: i64) -> Result<Vec<EnxovalMov>, DomainError>;
@@ -169,7 +169,7 @@ pub trait EscalaRepository: Send + Sync {
         fim: DateTime<Utc>,
         almoco_min: i16,
         origem: OrigemTurno,
-    ) -> Result<(), DomainError>;
+    ) -> Result<EscalaTurno, DomainError>;
 }
 
 #[derive(Debug, Clone)]

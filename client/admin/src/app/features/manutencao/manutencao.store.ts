@@ -84,7 +84,14 @@ export abstract class ManutencaoStore implements OnInit {
 
   mudarStatus(o: ManutOrdem, status: StatusManut): void {
     this.operacaoApi.manutStatus(o.id, status).subscribe({
-      next: () => this.carregar(),
+      next: (salva) => {
+        const f = this.filtroStatus();
+        this.ordens.update((l) =>
+          f && salva.status !== f
+            ? l.filter((x) => x.id !== salva.id)
+            : l.map((x) => (x.id === salva.id ? salva : x)),
+        );
+      },
       error: () => this.notify.erroMsg('Falha ao atualizar status.'),
     });
   }
@@ -99,9 +106,15 @@ export abstract class ManutencaoStore implements OnInit {
         descricao: this.novaOrdem.descricao,
       })
       .subscribe({
-        next: () => {
+        next: (salva) => {
           this.modalOrdem.set(false);
-          this.carregar();
+          const f = this.filtroStatus();
+          if (!f || salva.status === f) {
+            const peso: Record<string, number> = { urgente: 3, alta: 2, media: 1, baixa: 0 };
+            this.ordens.update((l) =>
+              [...l, salva].sort((a, b) => (peso[b.prioridade] ?? 0) - (peso[a.prioridade] ?? 0)),
+            );
+          }
           this.notify.ok('OS aberta.');
         },
         error: () => this.notify.erroMsg('Falha ao abrir OS.'),
@@ -123,9 +136,9 @@ export abstract class ManutencaoStore implements OnInit {
         observacoes: this.pmocForm.obs,
       })
       .subscribe({
-        next: () => {
+        next: (salvo) => {
           this.modalPmoc.set(false);
-          this.carregarPmoc();
+          this.pmoc.update((l) => [salvo, ...l]);
           this.notify.ok('Inspeção registrada.');
         },
         error: () => this.notify.erroMsg('Falha ao registrar inspeção.'),

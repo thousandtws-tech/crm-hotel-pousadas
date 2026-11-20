@@ -71,7 +71,7 @@ export abstract class GovernancaStore implements OnInit {
 
   status(t: GovTarefa, status: StatusTarefaGov): void {
     this.operacaoApi.govStatus(t.id, status).subscribe({
-      next: () => this.carregarQuadro(),
+      next: (salva) => this.tarefas.update((l) => l.map((x) => (x.id === salva.id ? salva : x))),
       error: () => this.notify.erroMsg('Não foi possível atualizar.'),
     });
   }
@@ -79,7 +79,10 @@ export abstract class GovernancaStore implements OnInit {
   atribuir(id: number, idfuncionario: number | null): void {
     if (!idfuncionario) return;
     this.operacaoApi.govAtribuir(id, idfuncionario).subscribe({
-      next: () => this.notify.ok('Responsável atribuído.'),
+      next: (salva) => {
+        this.tarefas.update((l) => l.map((x) => (x.id === salva.id ? salva : x)));
+        this.notify.ok('Responsável atribuído.');
+      },
       error: () => this.notify.erroMsg('Falha ao atribuir.'),
     });
   }
@@ -99,9 +102,9 @@ export abstract class GovernancaStore implements OnInit {
         custo_centavos: Math.round(this.novoLote.custo * 100),
       })
       .subscribe({
-        next: () => {
+        next: (salvo) => {
           this.modalLote.set(false);
-          this.ngOnInit();
+          this.lotes.update((l) => [salvo, ...l]);
           this.notify.ok('Lote enviado.');
         },
         error: () => this.notify.erroMsg('Falha ao registrar lote.'),
@@ -111,11 +114,7 @@ export abstract class GovernancaStore implements OnInit {
   devolver(l: LavLote): void {
     const qtd = l.qtd_itens - l.qtd_devolvida;
     this.operacaoApi.lavDevolver(l.id, qtd).subscribe({
-      next: () => {
-        this.operacaoApi
-          .lavLotes()
-          .subscribe({ next: (x) => this.lotes.set(x), error: () => undefined });
-      },
+      next: (salvo) => this.lotes.update((x) => x.map((o) => (o.id === salvo.id ? salvo : o))),
       error: () => this.notify.erroMsg('Falha ao registrar devolução.'),
     });
   }
