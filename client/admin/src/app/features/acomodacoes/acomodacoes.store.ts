@@ -276,9 +276,9 @@ export abstract class AcomodacoesStore implements OnInit {
     const nome = this.novoTipo.value?.trim();
     if (!nome) return;
     this.acomodacoesApi.criarTipo(nome).subscribe({
-      next: () => {
+      next: (salvo) => {
         this.novoTipo.reset();
-        this.carregarTipos();
+        this.tipos.update((l) => [...l, salvo].sort((a, b) => a.nome.localeCompare(b.nome)));
         this.notify.ok('Tipo criado.');
       },
       error: (e) => this.notify.erro(e),
@@ -351,9 +351,9 @@ export abstract class AcomodacoesStore implements OnInit {
     const nome = this.tipoNomeCtrl.value?.trim();
     if (!nome) return;
     this.acomodacoesApi.atualizarTipo(t.id, nome, t.version).subscribe({
-      next: () => {
+      next: (salvo) => {
         this.editandoTipo.set(null);
-        this.carregarTipos();
+        this.tipos.update((l) => l.map((x) => (x.id === salvo.id ? salvo : x)));
         this.notify.ok('Tipo atualizado.');
       },
       error: (e) => this.notify.erro(e),
@@ -362,16 +362,16 @@ export abstract class AcomodacoesStore implements OnInit {
 
   statusTipo(t: TipoAcomodacao, ativo: boolean): void {
     this.acomodacoesApi.statusTipo(t.id, ativo).subscribe({
-      next: () => this.carregarTipos(),
+      next: (salvo) => this.tipos.update((l) => l.map((x) => (x.id === salvo.id ? salvo : x))),
       error: (e) => this.notify.erro(e),
     });
   }
 
   statusAcomodacao(a: Acomodacao, ativo: boolean): void {
     this.acomodacoesApi.statusAcomodacao(a.id, ativo).subscribe({
-      next: () => {
+      next: (salva) => {
         this.notify.ok(ativo ? 'Acomodação ativada.' : 'Acomodação desativada.');
-        this.carregar();
+        this.items.update((l) => l.map((x) => (x.id === salva.id ? salva : x)));
       },
       error: (e) => this.notify.erro(e),
     });
@@ -434,9 +434,9 @@ export abstract class AcomodacoesStore implements OnInit {
     const numero = this.quartoNumero.value?.trim();
     if (!a || !numero) return;
     this.acomodacoesApi.criarQuarto(a.id, numero).subscribe({
-      next: () => {
+      next: (salvo) => {
         this.fecharModal();
-        this.visualizar(a);
+        this.quartos.update((l) => [...l, salvo].sort((x, y) => x.numero.localeCompare(y.numero)));
         this.notify.ok('Quarto cadastrado.');
       },
       error: (e) => this.notify.erro(e),

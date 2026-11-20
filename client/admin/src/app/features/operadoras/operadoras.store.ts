@@ -120,23 +120,32 @@ export abstract class OperadorasStore implements OnInit {
     const op = this.editando();
     if (op) {
       this.operadorasApi.atualizarOperadora(op.id, input).subscribe({
-        next: () => this.posSalvamento(null),
+        next: (salva) => this.posSalvamento(salva, null),
         error: (e) => this.falhaSalvamento(e),
       });
     } else {
       this.operadorasApi.criarOperadora(input).subscribe({
-        next: (resp) => this.posSalvamento(resp),
+        next: (resp) => this.posSalvamento(resp.operadora, resp.token),
         error: (e) => this.falhaSalvamento(e),
       });
     }
   }
 
-  private posSalvamento(resp: { operadora: M.Operadora; token: string } | null): void {
+  // Aplica a entidade retornada direto na lista — evita o refetch de 1 RTT.
+  private upsert(salva: M.Operadora): void {
+    this.operadoras.update((l) => {
+      const i = l.findIndex((o) => o.id === salva.id);
+      const nl = i >= 0 ? l.map((o) => (o.id === salva.id ? salva : o)) : [...l, salva];
+      return [...nl].sort((a, b) => a.nome.localeCompare(b.nome));
+    });
+  }
+
+  private posSalvamento(salva: M.Operadora, token: string | null): void {
     this.salvando.set(false);
     this.modalForm.set(false);
-    this.carregar();
-    if (resp) {
-      this.modalToken.set({ id: resp.operadora.id, nome: resp.operadora.nome, token: resp.token });
+    this.upsert(salva);
+    if (token) {
+      this.modalToken.set({ id: salva.id, nome: salva.nome, token });
       this.notify.ok('Operadora criada — copie o token da extranet.');
     } else {
       this.notify.ok('Operadora salva.');
@@ -151,7 +160,7 @@ export abstract class OperadorasStore implements OnInit {
 
   protected alternar(o: M.Operadora): void {
     this.operadorasApi.definirOperadoraAtiva(o.id, !o.ativa).subscribe({
-      next: () => this.carregar(),
+      next: (salva) => this.upsert(salva),
       error: () => this.notify.erroMsg('Falha ao alterar o status.'),
     });
   }

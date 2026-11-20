@@ -824,13 +824,13 @@ Use para pedidos de eliminação do titular.`,
         ? this.clientesApi.removerFotoCliente(salvo.id)
         : null;
     if (!foto$) {
-      this.finalizarSalvar(anterior);
+      this.finalizarSalvar(salvo, anterior);
       return;
     }
     foto$.subscribe({
       next: () => {
         this.invalidarFoto(salvo.id);
-        this.finalizarSalvar(anterior);
+        this.finalizarSalvar(salvo, anterior);
       },
       error: () => {
         this.notify.ok(anterior ? 'Cliente atualizado.' : 'Cliente cadastrado.');
@@ -841,10 +841,13 @@ Use para pedidos de eliminação do titular.`,
     });
   }
 
-  private finalizarSalvar(anterior: Cliente | null): void {
+  private finalizarSalvar(salvo: Cliente, anterior: Cliente | null): void {
     this.notify.ok(anterior ? 'Cliente atualizado.' : 'Cliente cadastrado.');
     this.fecharModal();
-    this.carregar();
+    // Edição: aplica a entidade retornada direto na página — evita 1 RTT de
+    // refetch. Cadastro novo muda o total paginado: refetch ainda é necessário.
+    if (anterior) this.items.update((xs) => xs.map((x) => (x.id === salvo.id ? salvo : x)));
+    else this.carregar();
   }
 
   private carregarFotos(lista: Cliente[]): void {

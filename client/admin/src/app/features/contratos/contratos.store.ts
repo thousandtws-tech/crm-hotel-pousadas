@@ -107,10 +107,10 @@ export abstract class ContratosStore implements OnInit {
       ? this.contratosApi.atualizarContrato(c.id, input)
       : this.contratosApi.criarContrato(input);
     req.subscribe({
-      next: () => {
+      next: (salvo) => {
         this.salvando.set(false);
         this.modalForm.set(false);
-        this.carregar();
+        this.upsert(salvo);
         this.notify.ok('Contrato salvo.');
       },
       error: (e) => {
@@ -120,9 +120,18 @@ export abstract class ContratosStore implements OnInit {
     });
   }
 
+  // Aplica a entidade retornada direto na lista — evita o refetch de 1 RTT.
+  private upsert(salvo: M.ContratoCorporativo): void {
+    this.contratos.update((l) => {
+      const i = l.findIndex((c) => c.id === salvo.id);
+      const nl = i >= 0 ? l.map((c) => (c.id === salvo.id ? salvo : c)) : [...l, salvo];
+      return [...nl].sort((a, b) => a.empresa.localeCompare(b.empresa));
+    });
+  }
+
   protected alternar(c: M.ContratoCorporativo): void {
     this.contratosApi.definirContratoAtivo(c.id, !c.ativo).subscribe({
-      next: () => this.carregar(),
+      next: (salvo) => this.upsert(salvo),
       error: () => this.notify.erroMsg('Falha ao alterar o status.'),
     });
   }

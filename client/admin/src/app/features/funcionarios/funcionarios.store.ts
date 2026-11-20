@@ -283,7 +283,7 @@ export abstract class FuncionariosStore implements OnInit {
 
   status(f: Funcionario, ativo: boolean): void {
     this.funcionariosApi.statusFuncionario(f.id, ativo).subscribe({
-      next: () => this.carregar(),
+      next: (novo) => this.items.update((xs) => xs.map((x) => (x.id === novo.id ? novo : x))),
       error: (e) => this.notify.erro(e),
     });
   }
@@ -388,10 +388,12 @@ export abstract class FuncionariosStore implements OnInit {
         cargo_id: v.cargo_id,
       };
       this.funcionariosApi.criarFuncionario(input).subscribe({
-        next: () => {
+        next: (salvo) => {
           this.notify.ok('Funcionário cadastrado.');
           this.fecharDrawer();
-          this.carregar();
+          this.items.update((xs) =>
+            [...xs, salvo].sort((a, b) => a.nome.localeCompare(b.nome)),
+          );
         },
         error: (e) => this.notify.erro(e),
       });
@@ -406,10 +408,10 @@ export abstract class FuncionariosStore implements OnInit {
       };
       if (v.senha) input.senha = v.senha;
       this.funcionariosApi.atualizarFuncionario(f.id, input).subscribe({
-        next: () => {
+        next: (salvo) => {
           this.notify.ok('Funcionário salvo.');
           this.fecharDrawer();
-          this.carregar();
+          this.items.update((xs) => xs.map((x) => (x.id === salvo.id ? salvo : x)));
         },
         error: (e) => this.notify.erro(e),
       });
