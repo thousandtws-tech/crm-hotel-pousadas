@@ -1,0 +1,32 @@
+<textarea
+  #ta
+  class="rr-input"
+  [rows]="rows()"
+  [placeholder]="placeholder()"
+  [value]="texto()"
+  (input)="digitar($event)"
+  (keydown)="tecla($event)"
+  (blur)="menuAberto.set(false)"
+  role="combobox"
+  aria-autocomplete="list"
+  [attr.aria-expanded]="menuAberto()"
+  aria-controls="rr-menu"
+  [attr.aria-activedescendant]="ativoDesc()"
+></textarea>
+@if (menuAberto() && sugestoes().length) {
+  <ul class="rr-menu" id="rr-menu" role="listbox" aria-label="Respostas rápidas">
+    @for (r of sugestoes(); track r.id; let i = $index) {
+      <li
+        role="option"
+        [id]="'rr-op-' + r.id"
+        [attr.aria-selected]="i === indice()"
+        [class.sel]="i === indice()"
+      >
+        <button type="button" (mousedown)="$event.preventDefault(); escolher(r)">
+          <code>/{{ r.atalho }}</code>
+          <span>{{ r.titulo }}</span>
+        </button>
+      </li>
+    }
+  </ul>
+}
