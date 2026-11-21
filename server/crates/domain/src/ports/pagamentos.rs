@@ -250,10 +250,20 @@ pub trait PagamentoRepository: Send + Sync {
         idpagamento: i64,
     ) -> Result<Option<TentativaPagamento>, DomainError>;
 
+    /// Última tentativa registrada, em qualquer estado — referência de
+    /// reconciliação por `session_id` para provedor cujo pi ainda não
+    /// chegou (ex.: Stripe pago com webhook atrasado/perdido).
+    async fn ultima_tentativa(
+        &self,
+        idpagamento: i64,
+    ) -> Result<Option<TentativaPagamento>, DomainError>;
+
     /// Pagamentos 'pendente' que o reconciliador consegue consultar no
-    /// provedor: `pi_id` conhecido, **ou** Mercado Pago (a busca por
+    /// provedor: `pi_id` conhecido, Mercado Pago (a busca por
     /// `external_reference = idpagamento` cobre o Checkout Pro, cujo
-    /// payment_id só chegaria via webhook).
+    /// payment_id só chegaria via webhook), ou provedor com tentativa
+    /// registrada — a `session_id` do checkout resolve o estado quando
+    /// o pi ainda não foi gravado (Stripe pago sem webhook).
     async fn pendentes_reconciliaveis(
         &self,
         limite: i64,

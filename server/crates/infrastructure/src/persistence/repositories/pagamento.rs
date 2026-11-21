@@ -188,6 +188,21 @@ impl PagamentoRepository for PgPagamentoRepository {
         .map_err(map_db_err)
     }
 
+    async fn ultima_tentativa(
+        &self,
+        idpagamento: i64,
+    ) -> Result<Option<TentativaPagamento>, DomainError> {
+        sqlx::query_as::<_, TentativaPagamento>(&format!(
+            "SELECT {TENTATIVA_COLS} FROM pagamento_tentativa
+             WHERE idpagamento = $1
+             ORDER BY criado_em DESC LIMIT 1"
+        ))
+        .bind(idpagamento)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
     async fn pendentes_reconciliaveis(
         &self,
         limite: i64,
@@ -195,7 +210,11 @@ impl PagamentoRepository for PgPagamentoRepository {
         sqlx::query_as::<_, PagamentoOnline>(&format!(
             "SELECT {PAGAMENTO_COLS} FROM pagamento
              WHERE status = 'pendente'
-               AND (pi_id IS NOT NULL OR provedor = 'mercadopago')
+               AND (pi_id IS NOT NULL
+                    OR provedor = 'mercadopago'
+                    OR (provedor = 'stripe'
+                        AND EXISTS (SELECT 1 FROM pagamento_tentativa pt
+                                    WHERE pt.idpagamento = pagamento.id)))
              ORDER BY criado_em LIMIT $1"
         ))
         .bind(limite)

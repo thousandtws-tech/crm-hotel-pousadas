@@ -106,6 +106,16 @@ struct SessionResp {
     url: Option<String>,
     expires_at: i64,
     payment_intent: Option<String>,
+    /// `open` | `complete` | `expired` — presente no retrieve.
+    #[serde(default)]
+    status: Option<String>,
+    /// `paid` | `unpaid` | `no_payment_required` — presente no retrieve.
+    #[serde(default)]
+    payment_status: Option<String>,
+    #[serde(default)]
+    metadata: std::collections::HashMap<String, String>,
+    #[serde(default)]
+    payment_method_types: Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -206,6 +216,43 @@ impl PaymentGateway for StripeGateway {
     }
 
     async fn consultar_pagamento(&self, ref_id: &str) -> Result<ConsultaPagamento, DomainError> {
+        // `cs_…` — sessão de checkout ainda sem PaymentIntent gravado
+        // localmente (webhook perdido/atrasado). Resolve pelo retrieve
+        // da sessão, que expõe `payment_status` e o pi quando pago.
+        if ref_id.starts_with("cs_") {
+            let resp = self
+                .http
+                .get(format!("{}/v1/checkout/sessions/{ref_id}", self.base_url))
+                .bearer_auth(&self.secret)
+                .send()
+                .await
+                .map_err(|e| Self::erro_http("session.retrieve", &e))?;
+            let status = resp.status();
+            let corpo = resp
+                .text()
+                .await
+                .map_err(|e| Self::erro_http("session.retrieve", &e))?;
+            if !status.is_success() {
+                return Err(Self::erro_status("session.retrieve", status, &corpo));
+            }
+            let s: SessionResp = serde_json::from_str(&corpo).map_err(|e| {
+                error!(erro = %e, "stripe: checkout.session malformada");
+                DomainError::Infra
+            })?;
+            let status_pi = match (s.payment_status.as_deref(), s.status.as_deref()) {
+                (Some("paid"), _) | (Some("no_payment_required"), _) => StatusPi::Pago,
+                (_, Some("expired")) => StatusPi::Cancelado,
+                (Some("unpaid"), Some("open")) => StatusPi::RequerAcao,
+                _ => StatusPi::Processando,
+            };
+            return Ok(ConsultaPagamento {
+                status: status_pi,
+                referencia: s.metadata.get("idpagamento").cloned(),
+                id_provedor: s.payment_intent,
+                metodo: s.payment_method_types.first().cloned(),
+                status_detail: None,
+            });
+        }
         let pi_id = ref_id;
         let resp = self
             .http

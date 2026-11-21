@@ -869,6 +869,19 @@ impl PagamentosOnlineService {
             let ref_id = match &p.pi_id {
                 Some(pi) => pi.clone(),
                 None if p.provedor == "mercadopago" => p.id.to_string(),
+                // Stripe sem pi: a última sessão de checkout (`cs_…`)
+                // resolve o estado — cobre pagamento feito com webhook
+                // ainda não configurado ou evento perdido.
+                None if p.provedor == "stripe" => {
+                    match self.pagamentos.ultima_tentativa(p.id).await {
+                        Ok(Some(t)) => t.session_id,
+                        Ok(None) => continue,
+                        Err(e) => {
+                            warn!(idpagamento = p.id, erro = %e, "conciliação: tentativa não lida");
+                            continue;
+                        }
+                    }
+                }
                 None => continue,
             };
             let gateway = match self.gateway_do_pagamento(&p).await {
