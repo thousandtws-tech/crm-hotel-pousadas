@@ -270,3 +270,56 @@ groups:
               datasource:
                 type: __expr__
                 uid: __expr__
+
+      - uid: clarituz-api-latencia-p95
+        title: "API p95 acima de 500ms (degradação de latência)"
+        condition: C
+        for: 10m
+        noDataState: OK
+        labels:
+          severity: warning
+        data:
+          - refId: A
+            datasourceUid: clarituz-prom
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              refId: A
+              expr: >-
+                histogram_quantile(0.95,
+                  sum by (le) (rate(axum_http_requests_duration_seconds_bucket[5m])))
+              instant: true
+              range: false
+              intervalMs: 1000
+              maxDataPoints: 43200
+              datasource:
+                type: prometheus
+                uid: clarituz-prom
+              editorMode: code
+          - refId: C
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - type: query
+                  evaluator:
+                    type: gt
+                    params: [0.5]
+                  operator:
+                    type: and
+                  query:
+                    params: [C]
+                  reducer:
+                    type: last
+                    params: []
+              intervalMs: 1000
+              maxDataPoints: 43200
+              datasource:
+                type: __expr__
+                uid: __expr__

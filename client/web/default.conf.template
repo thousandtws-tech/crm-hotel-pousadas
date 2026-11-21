@@ -4,6 +4,13 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    gzip on;
+    gzip_comp_level 5;
+    gzip_min_length 1024;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_types text/plain text/css text/javascript application/javascript application/json image/svg+xml application/manifest+json;
+
     # Arquivos com hash do build Angular (main-XXXXXXXX.js, chunk-*.js,
     # styles-*.css, media/*): conteúdo novo = nome novo → cache longo seguro.
     # O separador do hash é hífen (main-RAELJMRL.js), não ponto.
