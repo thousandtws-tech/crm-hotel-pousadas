@@ -13,21 +13,20 @@
 }
 .eyebrow {
   margin: 0;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: #4b95ab;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.04em;
 }
 .titulo {
   margin: 2px 0 0;
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 600;
   color: #054054;
 }
 .sub {
   margin: 4px 0 0;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: #5d6d7e;
   max-width: 60ch;
 }
@@ -36,11 +35,11 @@
 .faixa-padrao {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: rgba(25, 135, 84, 0.07);
   border: 1px solid rgba(25, 135, 84, 0.22);
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 8px 12px;
 }
 .faixa-padrao.sem {
   background: rgba(26, 111, 138, 0.05);
@@ -58,11 +57,11 @@
 }
 .faixa-padrao strong {
   display: block;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #054054;
 }
 .faixa-padrao span {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #5d6d7e;
 }
 
@@ -70,22 +69,21 @@
 .secao {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .secao-t {
   margin: 0;
-  font-size: 0.74rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: #4b95ab;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.04em;
 }
 
 /* ---------- grade de provedores ---------- */
 .grade {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
-  gap: 14px;
+  gap: 12px;
   align-items: start;
 }
 .card-prov {
@@ -95,18 +93,18 @@
   overflow: hidden;
 }
 .prov-cab {
-  padding: 14px 16px 12px;
+  padding: 12px 16px 12px;
   border-bottom: 1px solid #f0f4f6;
 }
 .prov-nome {
   margin: 0;
-  font-size: 0.98rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 600;
   color: #054054;
 }
 .prov-desc {
   margin: 2px 0 0;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: #7d97a1;
 }
 
@@ -138,10 +136,9 @@
   flex: none;
   width: 72px;
   text-align: center;
-  font-size: 0.64rem;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #054054;
   background: #e4eef2;
   border-radius: 6px;
@@ -166,7 +163,7 @@
   flex-wrap: wrap;
 }
 .env-info {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: #7d97a1;
   white-space: nowrap;
   overflow: hidden;
@@ -187,10 +184,10 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 10px;
+  padding: 3px 8px;
   border-radius: 20px;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   background: rgba(26, 111, 138, 0.1);
   color: #1a6f8a;
 }
@@ -254,7 +251,7 @@
   border-radius: 8px;
   padding: 0 16px;
   min-height: 38px;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   cursor: pointer;
   font-family: inherit;
 }
@@ -267,7 +264,7 @@
   border-radius: 4px;
   background: #eef4f6;
   height: 13px;
-  margin: 14px 16px;
+  margin: 12px 16px;
 }
 .sk-t {
   width: 120px;

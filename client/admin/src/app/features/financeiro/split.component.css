@@ -4,40 +4,40 @@
   align-items: flex-end;
   gap: 12px;
   flex-wrap: wrap;
-  padding-bottom: 14px;
+  padding-bottom: 12px;
   margin-bottom: 16px;
   border-bottom: 1px solid #e3eaef;
 }
 .fin-titulo {
   margin: 0;
   font-size: 1.5rem;
-  font-weight: 800;
+  font-weight: 600;
   color: #054054;
   letter-spacing: -0.02em;
 }
 .fin-sub {
   margin: 2px 0 0;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: #7d97a1;
 }
 .card {
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 10px;
-  padding: 16px 18px;
-  margin-bottom: 14px;
+  padding: 16px 16px;
+  margin-bottom: 12px;
 }
 .card-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .card-head h3 {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 600;
   color: #054054;
   display: inline-flex;
   align-items: center;
@@ -49,7 +49,7 @@
   height: 18px;
 }
 .card-head small {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .btn-prim {
@@ -59,11 +59,11 @@
   background: #054054;
   color: #fff;
   border: none;
-  border-radius: 7px;
+  border-radius: 6px;
   padding: 0 16px;
   min-height: 34px;
   font-weight: 600;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   cursor: pointer;
   font-family: inherit;
 }
@@ -80,11 +80,11 @@
   background: #fff;
   border: 1px solid #d7e0e6;
   color: #5d6d7e;
-  border-radius: 7px;
+  border-radius: 6px;
   padding: 0 12px;
   min-height: 32px;
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   cursor: pointer;
   font-family: inherit;
 }
@@ -94,9 +94,9 @@
 }
 .inp {
   border: 1px solid #d7e0e6;
-  border-radius: 7px;
-  padding: 8px 11px;
-  font-size: 0.85rem;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.875rem;
   font-family: inherit;
   color: #33424c;
   background: #fff;
@@ -116,14 +116,13 @@
 }
 .cfg-num strong {
   font-size: 1.5rem;
-  font-weight: 800;
+  font-weight: 600;
   color: #054054;
   font-variant-numeric: tabular-nums;
 }
 .cfg-num span {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
   color: #7d97a1;
   font-weight: 600;
 }
@@ -143,14 +142,14 @@
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   overflow-x: auto;
 }
 .kpi-item {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding: 14px 24px;
+  padding: 12px 24px;
   min-width: 160px;
   border-left: 1px solid #eef2f5;
 }
@@ -158,8 +157,8 @@
   border-left: none;
 }
 .kpi-num {
-  font-size: 1.3rem;
-  font-weight: 800;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #054054;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -172,11 +171,10 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #7d97a1;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.04em;
   white-space: nowrap;
 }
 .kpi-lbl mat-icon {
@@ -191,22 +189,21 @@
 .tab {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.88rem;
+  font-size: 0.875rem;
 }
 .tab thead th {
   background: #f4f8fa;
   color: #40525d;
-  font-size: 0.73rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 11px 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 12px 12px;
   text-align: left;
   border-bottom: 2px solid #e3eaef;
   white-space: nowrap;
 }
 .tab tbody td {
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-bottom: 1px solid #eef2f5;
   color: #33424c;
 }
@@ -225,21 +222,21 @@
   color: #054054;
 }
 .fw {
-  font-weight: 700;
+  font-weight: 600;
 }
 .chip {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: #5d6d7e;
   background: #eef4f6;
-  border-radius: 5px;
-  padding: 3px 9px;
+  border-radius: 4px;
+  padding: 3px 8px;
 }
 .st {
   display: inline-block;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   border-radius: 999px;
-  padding: 3px 11px;
+  padding: 3px 12px;
   text-transform: capitalize;
 }
 .st-provisionado {
@@ -262,15 +259,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 12px;
   padding-top: 12px;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: #7d97a1;
 }
 .vazio {
   color: #8a99a4;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   text-align: center;
-  padding: 18px 0;
+  padding: 16px 0;
   margin: 0;
 }

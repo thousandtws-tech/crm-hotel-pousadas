@@ -13,19 +13,19 @@
 }
 .eyebrow {
   margin: 0 0 4px;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
 }
 .pg-titulo {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   margin: 0;
-  font-weight: 700;
+  font-weight: 600;
   color: #054054;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 .pg-sub {
   margin: 0.15rem 0 0;
   color: var(--mut, #667);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 .abas {
   display: flex;
@@ -33,12 +33,12 @@
   border-bottom: 1px solid var(--borda, #e3e6ea);
 }
 .aba {
-  padding: 0.55rem 1rem;
+  padding: 0.5rem 1rem;
   border: 0;
   background: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
-  font-size: 0.88rem;
+  font-size: 0.875rem;
   color: #5d6d7e;
 }
 .aba:hover {
@@ -47,7 +47,7 @@
 .aba.ativa {
   border-bottom-color: #054054;
   color: #054054;
-  font-weight: 700;
+  font-weight: 600;
 }
 .cards {
   display: grid;
@@ -58,23 +58,22 @@
   background: var(--card, #fff);
   border: 1px solid var(--borda, #e3e6ea);
   border-radius: 12px;
-  padding: 0.9rem 1rem;
+  padding: 1rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
 }
 .card span {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
   color: var(--mut, #667);
 }
 .card strong {
-  font-size: 1.15rem;
+  font-size: 1.125rem;
 }
 .card small {
   color: var(--mut, #667);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
 }
 .bloco {
   background: var(--card, #fff);
@@ -85,27 +84,26 @@
 }
 .bloco h3 {
   margin: 0 0 0.75rem;
-  font-size: 0.95rem;
+  font-size: 1rem;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
 }
 th,
 td {
   text-align: left;
-  padding: 0.45rem 0.6rem;
+  padding: 0.45rem 0.5rem;
   border-bottom: 1px solid var(--borda, #eee);
   vertical-align: top;
 }
 th {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
   color: var(--mut, #667);
 }
 .coment {
@@ -122,7 +120,7 @@ th {
 .st {
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 .st-respondida,
@@ -157,7 +155,7 @@ th {
   padding: 0.3rem 0.5rem;
   border: 1px solid #ddd;
   border-radius: 6px;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
 }
 .sel:focus-visible,
 .modal textarea:focus-visible {
@@ -168,7 +166,7 @@ th {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   margin: 0.1rem 0;
   cursor: pointer;
 }
@@ -179,8 +177,8 @@ th {
   cursor: pointer;
 }
 .btn-mini {
-  font-size: 0.72rem;
-  padding: 0.3rem 0.7rem;
+  font-size: 0.75rem;
+  padding: 0.3rem 0.75rem;
   border-radius: 6px;
   border: 1px solid var(--borda, #ccd);
   background: #fff;
@@ -188,7 +186,7 @@ th {
 }
 .vazio {
   color: var(--mut, #667);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   padding: 0.5rem 0;
   text-align: center;
 }
@@ -208,37 +206,37 @@ th {
   width: min(460px, 92vw);
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.75rem;
 }
 .modal h3 {
   margin: 0;
 }
 .modal p {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: var(--mut, #667);
 }
 .modal label {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 .modal textarea {
-  padding: 0.55rem 0.65rem;
+  padding: 0.5rem 0.75rem;
   border: 1px solid var(--borda, #ccd);
   border-radius: 8px;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 .acoes {
   display: flex;
-  gap: 0.6rem;
+  gap: 0.5rem;
   margin-top: 0.4rem;
 }
 .btn {
   flex: 1;
-  padding: 0.6rem;
+  padding: 0.5rem;
   border: 0;
   border-radius: 8px;
   background: #054054;
@@ -253,7 +251,7 @@ th {
   opacity: 0.6;
 }
 .btn-sec {
-  padding: 0.6rem 1rem;
+  padding: 0.5rem 1rem;
   border: 1px solid var(--borda, #ccd);
   border-radius: 8px;
   background: #fff;
@@ -262,18 +260,18 @@ th {
 /* respostas rápidas -------------------------------------------------- */
 .at {
   color: #054054;
-  font-weight: 700;
+  font-weight: 600;
 }
 .inativa td {
   opacity: 0.55;
 }
 .modal input:not([type='checkbox']):not([type='number']),
 .modal input[type='number'] {
-  padding: 0.55rem 0.65rem;
+  padding: 0.5rem 0.75rem;
   border: 1px solid var(--borda, #ccd);
   border-radius: 8px;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 .modal input:focus-visible {
   outline: 2px solid #054054;
@@ -285,7 +283,7 @@ th {
   gap: 0.4rem;
 }
 .at-wrap span {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--mut, #667);
 }
 .at-wrap input {
@@ -303,7 +301,7 @@ th {
   flex-direction: row !important;
   align-items: center;
   gap: 0.4rem !important;
-  padding-bottom: 0.55rem;
+  padding-bottom: 0.5rem;
 }
 
 /* -- detalhe do protocolo: notas, transferência, tags ---------------------- */
@@ -312,10 +310,10 @@ th {
 }
 .atend-meta {
   color: var(--mut, #667);
-  font-size: 0.84rem;
+  font-size: 0.8125rem;
 }
 .atend-sec {
-  margin-top: 0.9rem;
+  margin-top: 1rem;
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
@@ -326,10 +324,9 @@ th {
 }
 .atend-lbl {
   flex: 1 1 100%;
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: var(--mut, #667);
-  text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 .tag {
@@ -337,8 +334,8 @@ th {
   background: transparent;
   color: var(--txt, #2b3245);
   border-radius: 999px;
-  padding: 0.22rem 0.7rem;
-  font-size: 0.8rem;
+  padding: 0.22rem 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -363,7 +360,7 @@ th {
   border-left: 3px solid var(--pri, #2563eb);
   background: var(--bg-alt, #f6f7fb);
   border-radius: 0 8px 8px 0;
-  padding: 0.45rem 0.7rem;
+  padding: 0.45rem 0.75rem;
 }
 .nota p {
   margin: 0;
@@ -377,7 +374,7 @@ th {
   display: flex;
   gap: 2rem;
   flex-wrap: wrap;
-  margin-top: 0.8rem;
+  margin-top: 0.75rem;
 }
 .rel-vols > div {
   display: flex;
@@ -387,7 +384,7 @@ th {
 }
 
 .tx-erro {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--erro, #c0392b);
   max-width: 16rem;
   white-space: nowrap;

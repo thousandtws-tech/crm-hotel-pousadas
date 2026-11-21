@@ -5,7 +5,7 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .est-titulo-grupo {
   display: flex;
@@ -14,32 +14,31 @@
 }
 .eyebrow {
   margin: 0;
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #8fa3ab;
 }
 .est-titulo-linha {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 .est-titulo {
   margin: 0;
-  font-size: 1.35rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #054054;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 .est-contador {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #054054;
   background: #eef4f6;
   border-radius: 999px;
-  padding: 3px 10px;
+  padding: 3px 8px;
   white-space: nowrap;
 }
 .est-head-acoes {
@@ -55,10 +54,10 @@
   background: #fff;
   color: #5d6d7e;
   border-radius: 4px;
-  padding: 0 14px;
+  padding: 0 12px;
   min-height: 34px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
   transition:
     background 0.15s ease,
@@ -66,7 +65,7 @@
     border-color 0.15s ease;
 }
 .btn-tour mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -79,7 +78,7 @@
 .est-info {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 12px;
   margin-bottom: 16px;
 }
 .est-info-card {
@@ -89,7 +88,7 @@
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 12px;
-  padding: 15px 16px;
+  padding: 16px 16px;
   transition:
     box-shadow 0.15s ease,
     transform 0.15s ease;
@@ -101,7 +100,7 @@
 .est-info-icone {
   width: 38px;
   height: 38px;
-  border-radius: 9px;
+  border-radius: 8px;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -119,14 +118,14 @@
 }
 .est-info-txt strong {
   display: block;
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: #054054;
   margin-bottom: 3px;
 }
 .est-info-txt p {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   color: #7d97a1;
 }
@@ -141,7 +140,7 @@
 
 /* ---------- cadastro rápido ---------- */
 .est-card {
-  padding-top: 14px;
+  padding-top: 12px;
 }
 .est-form {
   display: flex;
@@ -151,13 +150,13 @@
   background: #f4f8fa;
   border: 1px dashed #c3d4dc;
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 12px 12px;
   margin-bottom: 16px;
 }
 .est-form-icone {
   width: 38px;
   height: 38px;
-  border-radius: 9px;
+  border-radius: 8px;
   flex-shrink: 0;
   background: #eef4f6;
   color: #054054;
@@ -177,12 +176,12 @@
   margin-right: auto;
 }
 .est-form-txt strong {
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: #054054;
 }
 .est-form-txt small {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #7d97a1;
 }
 .est-num {
@@ -206,7 +205,7 @@
   justify-content: space-between;
   gap: 28px;
   flex-wrap: wrap;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   padding: 4px 2px;
 }
 .est-busca {
@@ -219,7 +218,7 @@
   background: #fff;
   border: 1px solid #d7e0e6;
   border-radius: 8px;
-  padding: 0 10px;
+  padding: 0 8px;
   height: 40px;
   transition:
     border-color 0.15s,
@@ -240,7 +239,7 @@
   border: none;
   outline: none;
   background: transparent;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: #33424c;
   font-family: inherit;
   height: 100%;
@@ -276,12 +275,12 @@
 .est-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   border: 1px solid #d7e0e6;
   background: #fff;
   border-radius: 999px;
   padding: 8px 20px 8px 12px;
-  font-size: 0.84rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #5d6d7e;
   cursor: pointer;
@@ -330,7 +329,7 @@
 .est-tabela {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: 0.875rem;
 }
 .est-tabela thead th {
   position: sticky;
@@ -339,16 +338,15 @@
   background: #f4f8fa;
   color: #40525d;
   font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-align: left;
-  padding: 14px 14px;
+  padding: 12px 12px;
   border-bottom: 1px solid #d7e0e6;
   white-space: nowrap;
 }
 .est-tabela tbody td {
-  padding: 16px 14px;
+  padding: 16px 12px;
   border-bottom: 1px solid #eef2f5;
   color: #2c3a44;
   vertical-align: middle;
@@ -388,7 +386,7 @@
   justify-content: center;
 }
 .est-vaga-icone mat-icon {
-  font-size: 23px;
+  font-size: 1.5rem;
   width: 23px;
   height: 23px;
 }
@@ -400,17 +398,17 @@
 .est-cell-txt strong {
   color: #054054;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 .est-cell-txt small {
   color: #7d97a1;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
 }
 
 .est-vinc {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
 }
 .est-dot {
   width: 9px;
@@ -432,8 +430,8 @@
   border-radius: 999px;
   background: #eef4f6;
   color: #054054;
-  padding: 6px 14px;
-  font-size: 0.8rem;
+  padding: 6px 12px;
+  font-size: 0.8125rem;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -457,7 +455,7 @@
   height: 32px;
   margin: 0 2px;
   border: 1px solid #d7e0e6;
-  border-radius: 7px;
+  border-radius: 6px;
   background: #fff;
   color: #5d6d7e;
   cursor: pointer;
@@ -467,7 +465,7 @@
     background 0.15s;
 }
 .acao-btn mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -496,7 +494,7 @@
 }
 .est-vazio p {
   margin: 0 0 6px;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 .est-vazio-dica {
   font-size: 0.82rem !important;
@@ -527,7 +525,7 @@
 .skel-nome {
   width: 110px;
   height: 14px;
-  margin-left: 10px;
+  margin-left: 8px;
   vertical-align: middle;
 }
 .skel-sel {

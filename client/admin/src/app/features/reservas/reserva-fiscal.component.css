@@ -1,18 +1,18 @@
 .vazio {
   color: #8a989e;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   text-align: center;
-  padding: 14px;
+  padding: 12px;
 }
 .previa {
   border: 1px solid #cfe0e8;
   background: #f4f9fb;
   border-radius: 10px;
-  padding: 14px;
+  padding: 12px;
   margin-bottom: 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .previa-h {
   display: flex;
@@ -23,7 +23,7 @@
 .previa-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
 .previa-grid > div {
   display: flex;
@@ -34,25 +34,25 @@
   grid-column: 1 / -1;
 }
 .mini {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: #7a8a92;
 }
 .previa-aviso {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   color: #5d4a08;
 }
 .pendencias {
   margin: 0;
-  padding: 10px 12px 10px 28px;
+  padding: 8px 12px 8px 28px;
   border-radius: 8px;
   background: #fdeceb;
   color: #7a1c15;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
 }
 .previa-acoes {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 .doc-erro {
   display: block;
@@ -91,9 +91,9 @@
   cursor: not-allowed;
 }
 .my-badge {
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 3px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 8px;
   border-radius: 999px;
 }
 .pill-ok {

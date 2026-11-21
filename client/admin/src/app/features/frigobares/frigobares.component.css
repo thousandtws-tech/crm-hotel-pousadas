@@ -5,7 +5,7 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .fr-titulo-grupo {
   display: flex;
@@ -14,32 +14,31 @@
 }
 .eyebrow {
   margin: 0;
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #8fa3ab;
 }
 .fr-titulo-linha {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 .fr-titulo {
   margin: 0;
-  font-size: 1.35rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #054054;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 .fr-contador {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #054054;
   background: #eef4f6;
   border-radius: 999px;
-  padding: 3px 10px;
+  padding: 3px 8px;
   white-space: nowrap;
 }
 .fr-head-acoes {
@@ -60,17 +59,17 @@
   background: #fff;
   color: #5d6d7e;
   border-radius: 4px;
-  padding: 0 14px;
+  padding: 0 12px;
   min-height: 34px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
   transition:
     border-color 0.15s ease,
     color 0.15s ease;
 }
 .btn-tour mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -83,7 +82,7 @@
 .fr-info {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 12px;
   margin-bottom: 16px;
 }
 .fr-info-card {
@@ -93,7 +92,7 @@
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 12px;
-  padding: 15px 16px;
+  padding: 16px 16px;
   transition:
     box-shadow 0.15s ease,
     transform 0.15s ease;
@@ -105,7 +104,7 @@
 .fr-info-icone {
   width: 38px;
   height: 38px;
-  border-radius: 9px;
+  border-radius: 8px;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -123,14 +122,14 @@
 }
 .fr-info-txt strong {
   display: block;
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: #054054;
   margin-bottom: 3px;
 }
 .fr-info-txt p {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   color: #7d97a1;
 }
@@ -145,7 +144,7 @@
 
 /* ---------- toolbar ---------- */
 .fr-card {
-  padding-top: 14px;
+  padding-top: 12px;
 }
 .fr-toolbar {
   display: flex;
@@ -153,7 +152,7 @@
   justify-content: space-between;
   gap: 28px;
   flex-wrap: wrap;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   padding: 4px 2px;
 }
 .fr-busca {
@@ -166,7 +165,7 @@
   background: #fff;
   border: 1px solid #d7e0e6;
   border-radius: 8px;
-  padding: 0 10px;
+  padding: 0 8px;
   height: 40px;
   transition:
     border-color 0.15s,
@@ -187,7 +186,7 @@
   border: none;
   outline: none;
   background: transparent;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: #33424c;
   font-family: inherit;
   height: 100%;
@@ -223,12 +222,12 @@
 .fr-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   border: 1px solid #d7e0e6;
   background: #fff;
   border-radius: 999px;
   padding: 8px 20px 8px 12px;
-  font-size: 0.84rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #5d6d7e;
   cursor: pointer;
@@ -277,7 +276,7 @@
 .fr-tabela {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: 0.875rem;
 }
 .fr-tabela thead th {
   position: sticky;
@@ -286,10 +285,9 @@
   background: #f4f8fa;
   color: #40525d;
   font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 14px 16px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 12px 16px;
   text-align: left;
   border-bottom: 2px solid #e3eaef;
   white-space: nowrap;
@@ -324,7 +322,7 @@
   justify-content: center;
 }
 .fr-ic mat-icon {
-  font-size: 22px;
+  font-size: 1.25rem;
   width: 22px;
   height: 22px;
 }
@@ -334,12 +332,12 @@
   min-width: 0;
 }
 .fr-cell-txt strong {
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: #054054;
-  font-weight: 700;
+  font-weight: 600;
 }
 .fr-cell-txt small {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .fr-acom {
@@ -347,7 +345,7 @@
   flex-direction: column;
 }
 .fr-acom small {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .fr-tabela .acao-btn {
@@ -360,7 +358,7 @@
   width: 32px;
   height: 32px;
   border: 1px solid #d7e0e6;
-  border-radius: 7px;
+  border-radius: 6px;
   background: #fff;
   color: #5d6d7e;
   cursor: pointer;
@@ -370,7 +368,7 @@
     background 0.15s;
 }
 .acao-btn mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -390,8 +388,8 @@
   border-radius: 999px;
   background: #eef4f6;
   color: #054054;
-  padding: 6px 14px;
-  font-size: 0.8rem;
+  padding: 6px 12px;
+  font-size: 0.8125rem;
   font-weight: 600;
   font-family: inherit;
   transition:
@@ -423,8 +421,8 @@ button.st-chip:hover {
   margin-bottom: 8px;
 }
 .fr-vazio p {
-  margin: 0 0 14px;
-  font-size: 0.9rem;
+  margin: 0 0 12px;
+  font-size: 0.875rem;
 }
 .skel-row td {
   border-bottom: 1px solid #eef2f5;
@@ -507,20 +505,20 @@ button.st-chip:hover {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 18px 22px;
+  padding: 16px 20px;
   background: #fff;
   border-bottom: 1px solid #e3eaef;
   flex-shrink: 0;
 }
 .drawer-head-txt h5 {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.125rem;
+  font-weight: 600;
   color: #054054;
 }
 .drawer-head-txt p {
   margin: 3px 0 0;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   color: #7d97a1;
 }
 .drawer-fechar {
@@ -555,35 +553,34 @@ button.st-chip:hover {
 .drawer-body {
   flex: 1;
   overflow-y: auto;
-  padding: 18px 22px;
+  padding: 16px 20px;
 }
 .dsec {
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 10px;
   padding: 16px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .dsec-tit {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #40525d;
   margin-bottom: 12px;
 }
 .dsec-tit mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
 .dgrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px 14px;
+  gap: 8px 12px;
 }
 .dgrid .full {
   grid-column: 1 / -1;
@@ -594,7 +591,7 @@ button.st-chip:hover {
   gap: 4px;
 }
 .campo .lbl {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #40525d;
 }
@@ -604,7 +601,7 @@ button.st-chip:hover {
 }
 .erro-campo {
   color: #dc3545;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 .input-inn.inval {
@@ -616,13 +613,13 @@ button.st-chip:hover {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 13px 22px;
+  padding: 12px 20px;
   background: #fff;
   border-top: 1px solid #e3eaef;
   flex-shrink: 0;
 }
 .drawer-req {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .drawer-foot-acoes {
@@ -648,15 +645,15 @@ button.st-chip:hover {
 .input-group-inn .addon {
   display: inline-flex;
   align-items: center;
-  padding: 0 10px;
-  font-size: 0.8rem;
+  padding: 0 8px;
+  font-size: 0.8125rem;
   background: #5d6d7e;
   color: #fff;
   border: 1px solid #5d6d7e;
   border-radius: 4px 0 0 4px;
 }
 .input-group-inn .addon mat-icon {
-  font-size: 15px;
+  font-size: 0.875rem;
   width: 15px;
   height: 15px;
 }
@@ -680,12 +677,12 @@ button.st-chip:hover {
 .fr-det-titulo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 .fr-det-ic {
   width: 34px;
   height: 34px;
-  border-radius: 9px;
+  border-radius: 8px;
   flex-shrink: 0;
   background: rgba(5, 64, 84, 0.1);
   color: #054054;
@@ -694,7 +691,7 @@ button.st-chip:hover {
   justify-content: center;
 }
 .fr-det-ic mat-icon {
-  font-size: 19px;
+  font-size: 1.125rem;
   width: 19px;
   height: 19px;
 }
@@ -702,21 +699,20 @@ button.st-chip:hover {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #40525d;
-  margin: 18px 0 10px;
+  margin: 16px 0 8px;
 }
 .modal-fr h4 mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
 .det-dica {
-  margin: -4px 0 10px;
-  font-size: 0.76rem;
+  margin: -4px 0 8px;
+  font-size: 0.75rem;
   color: #8a99a4;
   line-height: 1.5;
 }
@@ -729,17 +725,17 @@ button.st-chip:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 24px;
+  gap: 8px 24px;
   background: #f7fafb;
   border: 1px solid #e3eaef;
   border-radius: 12px;
-  padding: 12px 18px;
+  padding: 12px 16px;
   margin: 0 0 4px;
 }
 .det-item {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   min-width: 0;
 }
 .det-item-ic {
@@ -754,7 +750,7 @@ button.st-chip:hover {
   color: #054054;
 }
 .det-item-ic mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -764,16 +760,15 @@ button.st-chip:hover {
   line-height: 1.15;
 }
 .det-item-txt small {
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: #7d97a1;
 }
 .det-item-txt strong {
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: #054054;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -781,7 +776,7 @@ button.st-chip:hover {
 .fr-add {
   display: flex;
   align-items: stretch;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
   background: #f4f8fa;
   border: 1px solid #e0ebf0;
@@ -806,11 +801,11 @@ button.st-chip:hover {
   align-items: center;
   gap: 6px;
   border-radius: 4px;
-  padding: 0 18px;
-  font-size: 0.85rem;
+  padding: 0 16px;
+  font-size: 0.875rem;
 }
 .fr-add-btn mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -822,15 +817,15 @@ button.st-chip:hover {
 }
 .fr-tabela-itens .fr-item-nome {
   color: #054054;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 .fr-cat {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #5d6d7e;
   background: #eef4f6;
   border-radius: 999px;
-  padding: 3px 10px;
+  padding: 3px 8px;
   white-space: nowrap;
 }
 .fr-valor {
@@ -864,7 +859,7 @@ button.st-chip:hover {
     color 0.15s;
 }
 .qtd-btn mat-icon {
-  font-size: 15px;
+  font-size: 0.875rem;
   width: 15px;
   height: 15px;
 }
@@ -875,7 +870,7 @@ button.st-chip:hover {
 .qtd-num {
   min-width: 22px;
   text-align: center;
-  font-size: 0.92rem;
+  font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
   color: #054054;
 }

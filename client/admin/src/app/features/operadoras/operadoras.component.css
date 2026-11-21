@@ -13,21 +13,20 @@
 }
 .eyebrow {
   margin: 0;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: #4b95ab;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.04em;
 }
 .titulo {
   margin: 2px 0 0;
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 600;
   color: #054054;
 }
 .sub {
   margin: 4px 0 0;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: #5d6d7e;
 }
 
@@ -41,7 +40,7 @@
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 10px;
-  padding: 14px 16px 13px;
+  padding: 12px 16px 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -52,11 +51,10 @@
   align-items: center;
 }
 .kpi-lbl {
-  font-size: 0.66rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: #7d97a1;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.04em;
 }
 .kpi-ic {
   width: 30px;
@@ -70,20 +68,20 @@
   justify-content: center;
 }
 .kpi-ic mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
 .kpi-num {
   font-size: 1.5rem;
-  font-weight: 800;
+  font-weight: 600;
   color: #054054;
   line-height: 1.1;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
 .kpi-sub {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 
@@ -92,18 +90,18 @@
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 10px;
-  padding: 16px 18px;
+  padding: 16px 16px;
 }
 .como h3 {
   margin: 0 0 12px;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 600;
   color: #054054;
 }
 .como-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 .como-passo {
   display: flex;
@@ -113,7 +111,7 @@
 .como-ic {
   width: 34px;
   height: 34px;
-  border-radius: 9px;
+  border-radius: 8px;
   flex-shrink: 0;
   background: #eef4f6;
   color: #054054;
@@ -128,13 +126,13 @@
 }
 .como-passo strong {
   display: block;
-  font-size: 0.84rem;
+  font-size: 0.8125rem;
   color: #33424c;
   margin-bottom: 2px;
 }
 .como-passo p {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #7d97a1;
   line-height: 1.45;
 }
@@ -164,19 +162,18 @@
 .tab {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
 }
 .tab th {
   text-align: left;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
   color: #7d97a1;
-  padding: 6px 10px;
+  padding: 6px 8px;
   border-bottom: 1px solid #e3eaef;
 }
 .tab td {
-  padding: 10px;
+  padding: 8px;
   border-bottom: 1px solid #f0f4f6;
   vertical-align: middle;
 }
@@ -188,7 +185,7 @@
   white-space: nowrap;
 }
 .mini {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #7d97a1;
 }
 .notas {
@@ -196,10 +193,10 @@
 }
 .pill {
   display: inline-block;
-  padding: 3px 10px;
+  padding: 3px 8px;
   border-radius: 20px;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   background: rgba(26, 111, 138, 0.1);
   color: #1a6f8a;
 }
@@ -215,8 +212,8 @@
   background: #fff;
   color: #1a6f8a;
   border-radius: 6px;
-  padding: 5px 9px;
-  font-size: 0.74rem;
+  padding: 5px 8px;
+  font-size: 0.75rem;
   cursor: pointer;
   margin-left: 6px;
 }
@@ -241,7 +238,7 @@
   border-radius: 8px;
   padding: 0 16px;
   min-height: 38px;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -258,7 +255,7 @@
   border-radius: 8px;
   padding: 0 16px;
   min-height: 38px;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   cursor: pointer;
 }
 .btn-sec.perigo {
@@ -269,15 +266,15 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #5d6d7e;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .input-inn {
   border: 1px solid #d7e0e6;
   border-radius: 8px;
-  padding: 9px 12px;
-  font-size: 0.88rem;
+  padding: 8px 12px;
+  font-size: 0.875rem;
   font-family: inherit;
   color: #33424c;
 }
@@ -288,7 +285,7 @@
 }
 .mono {
   font-family: monospace;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
 }
 .grid2 {
   display: grid;
@@ -309,7 +306,7 @@
   z-index: 61;
   background: #fff;
   border-radius: 14px;
-  padding: 22px;
+  padding: 20px;
   width: min(480px, 92vw);
   max-height: 88vh;
   overflow-y: auto;
@@ -318,15 +315,15 @@
   width: min(720px, 94vw);
 }
 .modal h2 {
-  margin: 0 0 10px;
-  font-size: 1.1rem;
+  margin: 0 0 8px;
+  font-size: 1.125rem;
   color: #054054;
 }
 .modal-acoes {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 14px;
+  gap: 8px;
+  margin-top: 12px;
 }
 .fat-filtro {
   display: flex;
@@ -345,17 +342,16 @@
   flex-direction: column;
 }
 .fat-stat strong {
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   color: #054054;
 }
 .fat-stat span {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: #7d97a1;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
 }
 .mini-tab {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
 }
 @media (max-width: 640px) {
   .grid2 {

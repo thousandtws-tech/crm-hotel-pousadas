@@ -4,20 +4,20 @@
   align-items: flex-end;
   gap: 12px;
   flex-wrap: wrap;
-  padding-bottom: 14px;
+  padding-bottom: 12px;
   margin-bottom: 16px;
   border-bottom: 1px solid #e3eaef;
 }
 .fin-titulo {
   margin: 0;
   font-size: 1.5rem;
-  font-weight: 800;
+  font-weight: 600;
   color: #054054;
   letter-spacing: -0.02em;
 }
 .fin-sub {
   margin: 2px 0 0;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: #7d97a1;
 }
 .fin-range {
@@ -28,14 +28,14 @@
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   overflow-x: auto;
 }
 .kpi-item {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding: 14px 24px;
+  padding: 12px 24px;
   min-width: 160px;
   border-left: 1px solid #eef2f5;
 }
@@ -43,11 +43,11 @@
   border-left: none;
 }
 .kpi-num {
-  font-size: 1.35rem;
-  font-weight: 800;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #054054;
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -62,11 +62,10 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #7d97a1;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.04em;
   white-space: nowrap;
 }
 .kpi-lbl mat-icon {
@@ -79,8 +78,8 @@
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 10px;
-  padding: 16px 18px;
-  margin-bottom: 14px;
+  padding: 16px 16px;
+  margin-bottom: 12px;
 }
 .card-head {
   display: flex;
@@ -91,12 +90,12 @@
 }
 .card-head h3 {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 600;
   color: #054054;
 }
 .card-head small {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .tab-wrap {
@@ -105,22 +104,21 @@
 .tab {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.88rem;
+  font-size: 0.875rem;
 }
 .tab thead th {
   background: #f4f8fa;
   color: #40525d;
-  font-size: 0.73rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 11px 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 12px 12px;
   text-align: left;
   border-bottom: 2px solid #e3eaef;
   white-space: nowrap;
 }
 .tab tbody td {
-  padding: 9px 14px;
+  padding: 8px 12px;
   border-bottom: 1px solid #eef2f5;
   color: #33424c;
   font-variant-numeric: tabular-nums;
@@ -136,14 +134,14 @@
   color: #8a99a4;
 }
 .fw {
-  font-weight: 700;
+  font-weight: 600;
   color: #054054;
 }
 .vazio {
   color: #8a99a4;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   text-align: center;
-  padding: 22px 0;
+  padding: 20px 0;
   margin: 0;
 }
 .skel {

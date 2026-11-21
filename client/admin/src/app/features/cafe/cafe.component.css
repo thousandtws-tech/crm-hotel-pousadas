@@ -19,27 +19,26 @@
   flex-wrap: wrap;
 }
 .eyebrow {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #8fa3ab;
   margin: 0 0 4px;
 }
 .titulo {
   margin: 0;
-  font-size: 1.35rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #054054;
   line-height: 1.1;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   display: flex;
   align-items: center;
   gap: 12px;
 }
 .sub {
   margin: 4px 0 0;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
   color: #7d97a1;
 }
 
@@ -50,7 +49,7 @@
   gap: 6px;
 }
 .lbl {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #5d6d7e;
 }
@@ -80,7 +79,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 14px;
+  padding: 0 12px;
   border-left: 1px solid #e3eaef;
   border-right: 1px solid #e3eaef;
   color: #054054;
@@ -92,7 +91,7 @@
   border: 0;
   outline: none;
   box-shadow: none;
-  font-size: 0.88rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: #33424c;
   background: transparent;
@@ -102,8 +101,8 @@
   border: 0;
   background: transparent;
   color: #5d6d7e;
-  font-size: 0.76rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   cursor: pointer;
   padding: 2px 4px;
 }
@@ -114,20 +113,20 @@
 .stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 .stat {
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 12px;
-  padding: 16px 18px;
+  padding: 16px 16px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 .stat-l {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #5d6d7e;
 }
@@ -139,12 +138,12 @@
 }
 .stat strong {
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 600;
   color: #054054;
   line-height: 1;
 }
 .stat small {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .stat-ico {
@@ -168,16 +167,16 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 .sec-head h3 {
   margin: 0;
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 600;
   color: #054054;
 }
 .sec-head span {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #7d97a1;
 }
 
@@ -192,7 +191,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 18px;
+  padding: 16px 16px;
   border-bottom: 1px solid #e3eaef;
   flex-wrap: wrap;
 }
@@ -206,9 +205,9 @@
 }
 .inp {
   border: 1px solid #d7e0e6;
-  border-radius: 9px;
-  padding: 11px 14px;
-  font-size: 0.88rem;
+  border-radius: 8px;
+  padding: 12px 12px;
+  font-size: 0.875rem;
   background: #fff;
   color: #33424c;
 }
@@ -223,15 +222,15 @@
 .seg-btn {
   border: 1px solid #d7e0e6;
   background: #fff;
-  border-radius: 9px;
-  padding: 9px 14px;
-  font-size: 0.8rem;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #5d6d7e;
   cursor: pointer;
 }
 .seg-btn b {
-  font-weight: 800;
+  font-weight: 600;
   margin-left: 2px;
 }
 .seg-btn.ativo {
@@ -250,12 +249,11 @@
     minmax(0, 1.6fr) minmax(110px, 0.6fr)
     minmax(130px, 0.7fr) minmax(200px, 1fr);
   gap: 12px;
-  padding: 11px 18px;
+  padding: 12px 16px;
   background: #f4f8fa;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #7d97a1;
 }
 .q-tr {
@@ -264,7 +262,7 @@
     minmax(0, 1.6fr) minmax(110px, 0.6fr)
     minmax(130px, 0.7fr) minmax(200px, 1fr);
   gap: 12px;
-  padding: 14px 18px;
+  padding: 12px 16px;
   align-items: center;
   border-top: 1px solid #f2f7f9;
 }
@@ -274,7 +272,7 @@
   }
   .q-tr {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 8px;
   }
 }
 .q-hospede {
@@ -296,11 +294,11 @@
   gap: 1px;
 }
 .q-tile small {
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   color: #5d6d7e;
 }
 .q-tile b {
-  font-size: 1.05rem;
+  font-size: 1rem;
   color: #054054;
   max-width: 52px;
   overflow: hidden;
@@ -314,23 +312,23 @@
   min-width: 0;
 }
 .q-nome strong {
-  font-size: 0.92rem;
+  font-size: 0.875rem;
   color: #33424c;
 }
 .q-nome small {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .q-pessoas {
-  font-size: 0.86rem;
+  font-size: 0.875rem;
   color: #33424c;
 }
 .pill {
   display: inline-block;
   padding: 5px 12px;
   border-radius: 999px;
-  font-size: 0.74rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 .pill.aguarda {
   background: #fdf3e2;
@@ -348,19 +346,19 @@
 }
 .btn-marcar {
   border: 0;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #054054;
   color: #fff;
-  font-weight: 700;
-  font-size: 0.85rem;
-  padding: 12px 22px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 12px 20px;
   cursor: pointer;
 }
 .btn-marcar:hover {
   background: #042f3d;
 }
 .q-nota {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: #8fa3ab;
 }
 .presente-info {
@@ -372,11 +370,11 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #198754;
 }
 .quem mat-icon {
-  font-size: 15px;
+  font-size: 0.875rem;
   width: 15px;
   height: 15px;
 }
@@ -388,8 +386,8 @@
   border-radius: 8px;
   background: #fff;
   color: #198754;
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   padding: 7px 12px;
   cursor: pointer;
 }
@@ -397,7 +395,7 @@
   background: #e3f3e6;
 }
 .btn-undo mat-icon {
-  font-size: 15px;
+  font-size: 0.875rem;
   width: 15px;
   height: 15px;
 }
@@ -420,7 +418,7 @@
   width: 44px;
   height: 40px;
   border: 1px solid #d7e0e6;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #f4f8fa;
   display: flex;
   align-items: center;
@@ -440,8 +438,8 @@
 .qtd {
   min-width: 40px;
   text-align: center;
-  font-size: 1.4rem;
-  font-weight: 800;
+  font-size: 1.5rem;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: #054054;
 }
@@ -449,11 +447,11 @@
   flex: 1;
   min-height: 40px;
   border: 0;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #054054;
   color: #fff;
-  font-size: 0.82rem;
-  font-weight: 700;
+  font-size: 0.8125rem;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -468,7 +466,7 @@
   width: 40px;
   height: 40px;
   border: 1px solid #d7e0e6;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #fff;
   display: flex;
   align-items: center;
@@ -481,10 +479,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   color: #94a3b8;
-  font-size: 0.9rem;
-  padding: 46px 20px;
+  font-size: 0.875rem;
+  padding: 48px 20px;
 }
 .q-vazio mat-icon {
   font-size: 40px;
@@ -495,10 +493,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 12px 18px;
+  gap: 8px;
+  padding: 12px 16px;
   border-top: 1px solid #f2f7f9;
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #8a99a4;
   flex-wrap: wrap;
 }

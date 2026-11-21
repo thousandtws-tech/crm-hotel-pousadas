@@ -17,16 +17,15 @@
 }
 .eyebrow {
   margin: 0 0 4px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #4b95ab;
 }
 .titulo {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 1.9rem;
+  font-size: 2rem;
   font-weight: 600;
   color: #054054;
   line-height: 1.1;
@@ -36,7 +35,7 @@
 }
 .sub {
   margin: 4px 0 0;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
   color: #7d97a1;
   text-transform: capitalize;
 }
@@ -76,11 +75,11 @@
   color: #fff;
   border: none;
   border-radius: 10px;
-  padding: 0 18px;
+  padding: 0 16px;
   height: 40px;
   font-family: inherit;
-  font-size: 0.86rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
   text-decoration: none;
   transition: background 0.15s;
@@ -117,7 +116,7 @@
   background: #fff;
   border-radius: 8px;
   padding: 7px 12px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #5d6d7e;
   cursor: pointer;
@@ -138,11 +137,11 @@
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 12px;
-  padding: 15px 16px;
+  padding: 16px 16px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 .stat-btn {
   font-family: inherit;
@@ -162,11 +161,10 @@
   min-width: 0;
 }
 .stat-l {
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: #7d97a1;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
 }
 .stat p {
   margin: 7px 0 0;
@@ -177,17 +175,17 @@
 }
 .stat strong {
   font-family: var(--font-display);
-  font-size: 1.9rem;
-  font-weight: 700;
+  font-size: 2rem;
+  font-weight: 600;
   color: #054054;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 .stat-warn {
-  color: #b5811f;
+  color: #8a5a1e;
 }
 .stat small {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .stat-ico {
@@ -214,7 +212,7 @@
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 14px;
-  padding: 16px 18px;
+  padding: 16px 16px;
   min-width: 0;
 }
 .rv-toolbar {
@@ -222,7 +220,7 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 /* segmented control — 4 visões */
@@ -241,9 +239,9 @@
   border: none;
   background: transparent;
   border-radius: 8px;
-  padding: 7px 14px;
+  padding: 7px 12px;
   font-family: inherit;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #5d6d7e;
   cursor: pointer;
@@ -273,7 +271,7 @@
   background: #fff;
   border: 1px solid #d7e0e6;
   border-radius: 10px;
-  padding: 0 10px;
+  padding: 0 8px;
   height: 40px;
   transition:
     border-color 0.15s,
@@ -294,7 +292,7 @@
   border: none;
   outline: none;
   background: transparent;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: #33424c;
   font-family: inherit;
   height: 100%;
@@ -336,13 +334,13 @@
   border: 1px solid #d7e0e6;
   background: #fff;
   border-radius: 999px;
-  padding: 6px 15px;
+  padding: 6px 16px;
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #5d6d7e;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
 }
 .pf:hover:not(.on) {
   border-color: #4b95ab;
@@ -363,7 +361,7 @@
 .rv-tabela {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: 0.875rem;
 }
 .rv-tabela thead th {
   position: sticky;
@@ -371,17 +369,16 @@
   z-index: 1;
   background: #f4f8fa;
   color: #40525d;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 13px 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 12px 16px;
   text-align: left;
   border-bottom: 2px solid #e3eaef;
   white-space: nowrap;
 }
 .rv-tabela tbody td {
-  padding: 13px 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid #eef2f5;
   vertical-align: middle;
   color: #33424c;
@@ -411,8 +408,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.82rem;
-  font-weight: 700;
+  font-size: 0.8125rem;
+  font-weight: 600;
   letter-spacing: 0.02em;
 }
 .rv-cell-txt {
@@ -421,9 +418,9 @@
   min-width: 0;
 }
 .rv-cell-txt strong {
-  font-size: 0.93rem;
+  font-size: 0.875rem;
   color: #054054;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -437,7 +434,7 @@
 .rv-dot {
   width: 14px;
   height: 14px;
-  border-radius: 5px;
+  border-radius: 4px;
   flex-shrink: 0;
 }
 .rv-acom-nome {
@@ -451,7 +448,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: #33424c;
   font-weight: 600;
   white-space: nowrap;
@@ -460,11 +457,11 @@
   color: #8fa3ab;
 }
 .rv-periodo small {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .rv-hj {
-  color: #b5811f;
+  color: #8a5a1e;
 }
 .rv-valor {
   font-variant-numeric: tabular-nums;
@@ -474,16 +471,16 @@
 }
 .rv-total {
   display: block;
-  font-size: 0.73rem;
+  font-size: 0.75rem;
   color: #8a99a4;
   white-space: nowrap;
 }
 .rv-st {
   display: inline-block;
   border-radius: 999px;
-  padding: 5px 14px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
   white-space: nowrap;
 }
 .rv-tabela .badge-acao {
@@ -509,8 +506,8 @@
   background: #054054;
   color: #fff;
   font-family: inherit;
-  font-size: 0.76rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   cursor: pointer;
   transition:
     background 0.15s,
@@ -527,7 +524,7 @@
 /* tamanhos de ícones compartilhados */
 .seg-btn mat-icon,
 .rv-tabela .badge-acao mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -542,7 +539,7 @@
 }
 .gr-tit mat-icon,
 .dlg h3 mat-icon {
-  font-size: 19px;
+  font-size: 1.125rem;
   width: 19px;
   height: 19px;
 }
@@ -550,7 +547,7 @@
 /* ---------- vazio / skeleton ---------- */
 .rv-vazio {
   text-align: center;
-  padding: 44px 16px !important;
+  padding: 40px 16px !important;
   color: #7d97a1;
 }
 .rv-vazio mat-icon {
@@ -561,8 +558,8 @@
   margin-bottom: 8px;
 }
 .rv-vazio p {
-  margin: 0 0 14px;
-  font-size: 0.9rem;
+  margin: 0 0 12px;
+  font-size: 0.875rem;
 }
 .vazio {
   display: flex;
@@ -572,11 +569,11 @@
   margin: 0;
   padding: 40px 16px;
   color: #8fa3ab;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
   text-align: center;
 }
 .vazio mat-icon {
-  font-size: 34px;
+  font-size: 2rem;
   width: 34px;
   height: 34px;
   color: #c3d2d9;
@@ -624,7 +621,7 @@
   width: 60%;
   height: 24px;
   border-radius: 6px;
-  margin: 10px 0 10px 60px;
+  margin: 8px 0 8px 56px;
 }
 .skel-qt {
   height: 118px;
@@ -635,7 +632,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: #5d6d7e;
   margin-bottom: 6px;
 }
@@ -647,7 +644,7 @@
 .dt {
   width: 10px;
   height: 10px;
-  border-radius: 3px;
+  border-radius: 4px;
   display: inline-block;
 }
 .dt.lv {

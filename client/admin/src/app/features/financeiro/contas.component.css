@@ -4,39 +4,39 @@
   align-items: flex-end;
   gap: 12px;
   flex-wrap: wrap;
-  padding-bottom: 14px;
+  padding-bottom: 12px;
   margin-bottom: 16px;
   border-bottom: 1px solid #e3eaef;
 }
 .fin-titulo {
   margin: 0;
   font-size: 1.5rem;
-  font-weight: 800;
+  font-weight: 600;
   color: #054054;
   letter-spacing: -0.02em;
 }
 .fin-sub {
   margin: 2px 0 0;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: #7d97a1;
 }
 .card {
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 10px;
-  padding: 16px 18px;
-  margin-bottom: 14px;
+  padding: 16px 16px;
+  margin-bottom: 12px;
 }
 .card-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .card-head h3 {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 600;
   color: #054054;
   display: inline-flex;
   align-items: center;
@@ -54,11 +54,11 @@
   background: #054054;
   color: #fff;
   border: none;
-  border-radius: 7px;
+  border-radius: 6px;
   padding: 0 16px;
   min-height: 36px;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   cursor: pointer;
   font-family: inherit;
 }
@@ -76,11 +76,11 @@
   background: #fff;
   border: 1px solid #d7e0e6;
   color: #5d6d7e;
-  border-radius: 7px;
+  border-radius: 6px;
   padding: 0 12px;
   min-height: 32px;
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   cursor: pointer;
   font-family: inherit;
 }
@@ -94,9 +94,9 @@
 }
 .inp {
   border: 1px solid #d7e0e6;
-  border-radius: 7px;
-  padding: 8px 11px;
-  font-size: 0.85rem;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.875rem;
   font-family: inherit;
   color: #33424c;
   background: #fff;
@@ -110,7 +110,7 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #7d97a1;
 }
@@ -118,16 +118,16 @@
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  padding: 10px 0;
+  padding: 8px 0;
   border-bottom: 1px dashed #e3eaef;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .cf-form .inp {
   flex: 1 1 130px;
 }
 .cf-lista {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 .cf-chip {
@@ -136,7 +136,7 @@
   gap: 8px;
   border: 1px solid #e3eaef;
   border-radius: 8px;
-  padding: 8px 14px;
+  padding: 8px 12px;
   background: #f7fafb;
 }
 .cf-chip.inativa {
@@ -150,20 +150,19 @@
 }
 .cf-nome {
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: #33424c;
 }
 .cf-saldo {
-  font-weight: 800;
-  font-size: 0.88rem;
+  font-weight: 600;
+  font-size: 0.875rem;
   color: #054054;
   font-variant-numeric: tabular-nums;
 }
 .cf-tag {
-  font-size: 0.68rem;
-  text-transform: uppercase;
+  font-size: 0.75rem;
   color: #a5b6bf;
-  font-weight: 700;
+  font-weight: 600;
 }
 .form-card {
   container-type: inline-size;
@@ -177,7 +176,7 @@
   grid-column: span 2;
   min-width: 0;
   gap: 6px;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   color: #40525d;
 }
 .l-form .l-half {
@@ -206,7 +205,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
   border-top: 1px solid #e3eaef;
   padding-top: 16px;
 }
@@ -217,7 +216,7 @@
 .l-hint {
   margin-right: auto;
   color: #5d6d7e;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
 }
 .seg {
   display: flex;
@@ -257,9 +256,9 @@
   border: 1.5px solid #d7e0e6;
   background: #fff;
   border-radius: 999px;
-  padding: 7px 18px;
+  padding: 7px 16px;
   font-weight: 600;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   cursor: pointer;
   font-family: inherit;
   color: #5d6d7e;
@@ -287,16 +286,16 @@
   gap: 7px;
   border: 1px solid #d7e0e6;
   background: #fff;
-  border-radius: 9px;
-  padding: 9px 16px;
+  border-radius: 8px;
+  padding: 8px 16px;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   cursor: pointer;
   font-family: inherit;
   color: #5d6d7e;
 }
 .aba mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -310,7 +309,7 @@
 }
 .aba-total {
   font-variant-numeric: tabular-nums;
-  font-weight: 800;
+  font-weight: 600;
 }
 .filtros {
   margin-left: auto;
@@ -320,14 +319,14 @@
   flex-wrap: wrap;
 }
 .filtros .inp {
-  padding: 7px 10px;
-  font-size: 0.82rem;
+  padding: 7px 8px;
+  font-size: 0.8125rem;
 }
 .chk {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: #5d6d7e;
   font-weight: 600;
   white-space: nowrap;
@@ -338,22 +337,21 @@
 .tab {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 .tab thead th {
   background: #f4f8fa;
   color: #40525d;
-  font-size: 0.73rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 11px 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 12px 12px;
   text-align: left;
   border-bottom: 2px solid #e3eaef;
   white-space: nowrap;
 }
 .tab tbody td {
-  padding: 11px 14px;
+  padding: 12px 12px;
   border-bottom: 1px solid #eef2f5;
   vertical-align: middle;
   color: #33424c;
@@ -369,43 +367,43 @@
   color: #054054;
 }
 .td-mini {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .td-valor {
-  font-weight: 700;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .td-venc {
   color: #dc3545;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
 }
 .linha-vencida {
   background: #fdf6f6;
 }
 .ic-alerta {
-  font-size: 15px;
+  font-size: 0.875rem;
   width: 15px;
   height: 15px;
   vertical-align: -3px;
   color: #dc3545;
 }
 .chip-conta {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #5d6d7e;
   background: #eef4f6;
-  border-radius: 5px;
+  border-radius: 4px;
   padding: 3px 8px;
   white-space: nowrap;
 }
 .st {
   display: inline-block;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   border-radius: 999px;
-  padding: 3px 11px;
+  padding: 3px 12px;
   white-space: nowrap;
 }
 .st-aberto {
@@ -435,7 +433,7 @@
   width: 30px;
   height: 30px;
   border: none;
-  border-radius: 7px;
+  border-radius: 6px;
   cursor: pointer;
   color: #fff;
   margin: 0 2px;
@@ -457,7 +455,7 @@
 .tr-baixa td,
 .tr-baixas td {
   background: #f7fafb;
-  padding: 14px 18px;
+  padding: 12px 16px;
 }
 .bx-form {
   display: flex;
@@ -467,13 +465,13 @@
 }
 .bx-form strong {
   color: #054054;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 .bx-form .inp {
   flex: 0 1 auto;
 }
 .tab-mini {
-  font-size: 0.84rem;
+  font-size: 0.8125rem;
 }
 .tab-mini thead th {
   padding: 8px 12px;
@@ -485,16 +483,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 12px;
   padding-top: 12px;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: #7d97a1;
 }
 .vazio {
   color: #8a99a4;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   text-align: center;
-  padding: 22px 0;
+  padding: 20px 0;
   margin: 0;
 }
 .skel {

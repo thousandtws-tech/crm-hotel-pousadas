@@ -19,7 +19,7 @@
   align-items: center;
 }
 .total-consumo {
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
 .alert-warn {
@@ -28,16 +28,16 @@
   color: #664d03;
   border: 1px solid #ffecb5;
   border-radius: 0.25rem;
-  padding: 0.6rem 1rem;
-  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
   animation: in 0.3s ease-out;
 }
 .alert-eca {
   background: #fdf1e8;
   border: 1px solid #f0c9a8;
   border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 0.82rem;
+  padding: 8px 12px;
+  font-size: 0.8125rem;
   color: #7a4a12;
 }
 .alert-eca strong {
@@ -54,7 +54,7 @@
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .badges {
   display: flex;
@@ -62,7 +62,7 @@
   flex-wrap: wrap;
 }
 .my-badge {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
 }
 .status-chip.bg-warn-t {
   background: #b5811f;
@@ -83,7 +83,7 @@
 .acoes .btn-green,
 .acoes .btn-gray,
 .acoes .btn-danger {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   padding: 0.3em 0.7em;
 }
 .btn-gray.sq {
@@ -106,7 +106,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 600;
   margin-bottom: 8px;
 }
@@ -120,7 +120,7 @@
 .fgrid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 .f {
   display: flex;
@@ -140,7 +140,7 @@
   grid-column: span 12;
 }
 .lbl2 {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #374151;
   display: flex;
@@ -153,7 +153,7 @@
 .ig-icon {
   background: #5d6d7e;
   color: #fff;
-  border-radius: 0.2rem 0 0 0.2rem;
+  border-radius: 0.25rem 0 0 0.25rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -162,7 +162,7 @@
   padding: 0 8px;
 }
 .ig-icon mat-icon {
-  font-size: 15px;
+  font-size: 0.875rem;
   width: 15px;
   height: 15px;
 }
@@ -170,9 +170,9 @@
   flex: 1;
   border: 1px solid #c3d2d9;
   border-left: none;
-  border-radius: 0 0.2rem 0.2rem 0;
-  padding: 5px 9px;
-  font-size: 0.82rem;
+  border-radius: 0 0.25rem 0.25rem 0;
+  padding: 5px 8px;
+  font-size: 0.8125rem;
   font-family: inherit;
   background: #eef2f5;
   color: #495057;
@@ -206,7 +206,7 @@
   align-items: stretch;
 }
 .ig-add .input-inn {
-  border-radius: 0.2rem 0 0 0.2rem;
+  border-radius: 0.25rem 0 0 0.25rem;
   border-right: none;
   width: 110px;
 }
@@ -214,25 +214,25 @@
   background: #eef2f5;
   border: 1px solid #c3d2d9;
   border-right: none;
-  border-radius: 0.2rem 0 0 0.2rem;
-  padding: 6px 9px;
-  font-size: 0.85rem;
+  border-radius: 0.25rem 0 0 0.25rem;
+  padding: 6px 8px;
+  font-size: 0.875rem;
   color: #495057;
 }
 .ig-add .btn-green {
-  border-radius: 0 0.2rem 0.2rem 0;
+  border-radius: 0 0.25rem 0.25rem 0;
 }
 .ig-add .rs + .input-inn {
   border-radius: 0;
 }
 .ig-add .rs + .input-inn + .btn-green {
-  border-radius: 0 0.2rem 0.2rem 0;
+  border-radius: 0 0.25rem 0.25rem 0;
 }
 table.sm {
   font-size: 80%;
 }
 .print {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 /* modais Bootstrap-like — base global em styles.css */
@@ -243,7 +243,7 @@ table.sm {
   max-width: 420px;
 }
 .modal-body {
-  gap: 10px;
+  gap: 8px;
 }
 .alert-warn {
   animation: modal-in 0.3s ease-out;
@@ -253,7 +253,7 @@ table.sm {
 }
 .bb {
   border-bottom: 1px solid #d7e0e6;
-  padding-bottom: 10px;
+  padding-bottom: 8px;
 }
 .bt {
   border-top: 1px solid #d7e0e6;
@@ -269,7 +269,7 @@ table.sm {
 .duo {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
 .ro {
   background: #eef2f5;
@@ -281,7 +281,7 @@ table.sm {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   padding: 6px 0;
   cursor: pointer;
 }
@@ -289,7 +289,7 @@ table.sm {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   padding: 4px 0;
   cursor: pointer;
 }
@@ -304,7 +304,7 @@ table.sm {
 
 /* registro de hóspedes */
 .fnrh-btn {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   padding: 0.3em 0.7em;
   display: inline-flex;
   align-items: center;
@@ -339,11 +339,11 @@ table.sm {
 }
 .admin-box h6 {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 table.plain td {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 .fnrh-export {
   display: flex;
@@ -361,14 +361,14 @@ table.plain td {
   border: 1px solid #d7e0e6;
   border-radius: 6px;
   padding: 4px 8px;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
 }
 .ret-badge {
   background: #eef4f6;
   color: #054054;
   border-radius: 10px;
   padding: 2px 8px;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
@@ -402,17 +402,16 @@ table.plain td {
 }
 .com-tbl th {
   text-align: left;
-  padding: 8px 14px;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #75858f;
   border-bottom: 1px solid #e3eaef;
   white-space: nowrap;
 }
 .com-tbl td {
-  padding: 11px 14px;
+  padding: 12px 12px;
   border-bottom: 1px solid #f0f4f6;
   vertical-align: middle;
 }
@@ -439,10 +438,10 @@ table.plain td {
   flex-shrink: 0;
   background: #aab6bc;
 }
-.canal-dot.canal-whatsapp { background: #25d366; }
-.canal-dot.canal-email    { background: #4c8bf5; }
-.canal-dot.canal-sms      { background: #8e63ce; }
-.canal-dot.canal-push     { background: #f0a22e; }
+.canal-dot.canal-whatsapp { background: #25d366;}
+.canal-dot.canal-email    { background: #4c8bf5;}
+.canal-dot.canal-sms      { background: #8e63ce;}
+.canal-dot.canal-push     { background: #f0a22e;}
 
 /* mensagem e destino */
 .msg {
@@ -465,7 +464,7 @@ table.plain td {
   align-items: center;
   gap: 7px;
   white-space: nowrap;
-  font-size: 12.5px;
+  font-size: 0.75rem;
   color: #40525d;
 }
 .st-dot {
@@ -474,16 +473,16 @@ table.plain td {
   border-radius: 50%;
   flex-shrink: 0;
 }
-.st-dot.st-ok   { background: var(--inn-green); }
-.st-dot.st-warn { background: #f0a22e; }
-.st-dot.st-erro { background: var(--inn-danger); }
-.st-dot.st-mut  { background: #aab6bc; }
+.st-dot.st-ok   { background: var(--inn-green);}
+.st-dot.st-warn { background: #f0a22e;}
+.st-dot.st-erro { background: var(--inn-danger);}
+.st-dot.st-mut  { background: #aab6bc;}
 
 /* progresso — stepper enviado → entregue → lido + último marco */
 .prog {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   white-space: nowrap;
 }
 .msteps {
@@ -512,7 +511,7 @@ table.plain td {
   background: var(--inn-green);
 }
 .mtime {
-  font-size: 11.5px;
+  font-size: 0.75rem;
   color: #8a9aa3;
 }
 
@@ -527,7 +526,7 @@ table.plain td {
   color: var(--inn-darkblue);
   border-radius: 6px;
   padding: 4px 12px;
-  font-size: 11.5px;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.12s, border-color 0.12s;
@@ -556,11 +555,11 @@ table.plain td {
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  padding: 10px 14px;
-  margin: 0 14px;
+  padding: 8px 12px;
+  margin: 0 12px;
   border-radius: 8px;
   background: #f4f8fa;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
 }
 .preck-st {
   display: inline-flex;
@@ -582,7 +581,7 @@ table.plain td {
   align-items: center;
   gap: 5px;
   color: #8a6d1d;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
 }
 .preck-warn mat-icon {
   font-size: 16px;
@@ -590,22 +589,22 @@ table.plain td {
   height: 16px;
 }
 .btn-ghost.sm {
-  padding: 4px 10px;
-  font-size: 0.78rem;
+  padding: 4px 8px;
+  font-size: 0.75rem;
 }
 .preck-dados {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 6px 18px;
-  margin: 10px 14px;
-  padding: 12px 14px;
+  gap: 6px 16px;
+  margin: 8px 12px;
+  padding: 12px 12px;
   border: 1px dashed #c9d6dc;
   border-radius: 8px;
 }
 .preck-linha {
   display: flex;
   gap: 8px;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
 }
 .preck-linha dt {
   color: #7d97a1;
@@ -633,7 +632,7 @@ table.plain td {
   border-radius: 12px;
 }
 .qr-url {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   word-break: break-all;
   color: var(--mut, #667);
 }

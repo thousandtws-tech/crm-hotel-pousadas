@@ -1,17 +1,17 @@
 .settings-desc,
 .field-help {
   margin: 0;
-  font-size: 0.79rem;
+  font-size: 0.8125rem;
   color: var(--c-txt);
   line-height: 1.5;
 }
 .settings-card {
   border: 1px solid var(--c-brd);
   border-radius: 8px;
-  padding: 18px 20px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 .field {
   display: flex;
@@ -23,12 +23,12 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 500;
   color: var(--c-ink2);
 }
 .field-hint {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 400;
   color: var(--c-txt);
 }
@@ -38,13 +38,13 @@
   border-radius: 6px;
   background: var(--c-bg);
   color: var(--c-ink);
-  font: 0.85rem var(--font-body);
-  padding: 8px 11px;
+  font: 0.875rem var(--font-body);
+  padding: 8px 12px;
 }
 input.cms-input,
 select.cms-input {
   height: 36px;
-  padding: 0 11px;
+  padding: 0 12px;
 }
 textarea.cms-input {
   resize: vertical;
@@ -54,7 +54,7 @@ textarea.cms-input {
   border-color: var(--c-brd2);
 }
 .empty-inline {
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: var(--c-txt);
   padding: 8px 0;
 }
@@ -62,7 +62,7 @@ textarea.cms-input {
 .como-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .faq-item {
   display: flex;
@@ -79,7 +79,7 @@ textarea.cms-input {
   justify-content: space-between;
 }
 .faq-num {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--c-ink3);
 }
@@ -103,7 +103,7 @@ textarea.cms-input {
   min-width: 240px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .copy-row {
   display: flex;
@@ -139,7 +139,7 @@ textarea.cms-input {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px 24px;
+  padding: 16px 24px;
   border-bottom: 1px solid var(--c-brd);
 }
 .modal-tit {
@@ -148,7 +148,7 @@ textarea.cms-input {
 .modal-sub,
 .sec-sub {
   margin: 2px 0 0;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: var(--c-txt);
 }
 .modal-body {
@@ -161,7 +161,7 @@ textarea.cms-input {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  padding: 14px 24px;
+  padding: 12px 24px;
   border-top: 1px solid var(--c-brd);
   background: var(--c-sub);
   border-radius: 0 0 10px 10px;
@@ -177,8 +177,8 @@ textarea.cms-input {
 .sec-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 .sec-between {
   justify-content: space-between;
@@ -188,7 +188,7 @@ textarea.cms-input {
 .sec-header-left {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
 }
 .sec-step {
   display: inline-flex;
@@ -196,24 +196,24 @@ textarea.cms-input {
   justify-content: center;
   width: 24px;
   height: 24px;
-  border-radius: 5px;
+  border-radius: 4px;
   border: 1px solid var(--c-brd);
   background: var(--c-sub);
   color: var(--c-ink3);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   flex-shrink: 0;
 }
 .sec-title {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: 0.875rem;
   font-weight: 600;
   line-height: 24px;
 }
 .form-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px 14px;
+  gap: 12px 12px;
 }
 .f-span2 {
   grid-column: span 2;
@@ -224,8 +224,8 @@ textarea.cms-input {
 .check-row {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 8px 12px;
   border: 1px solid var(--c-brd);
   border-radius: 6px;
   background: var(--c-sub);
@@ -240,10 +240,10 @@ textarea.cms-input {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
 }
 .check-row small {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: var(--c-txt);
 }
 .presets-bar {
@@ -254,12 +254,12 @@ textarea.cms-input {
 }
 .preset-chip {
   height: 28px;
-  padding: 0 11px;
+  padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--c-brd);
   background: var(--c-bg);
   color: var(--c-ink3);
-  font: 500 0.76rem var(--font-body);
+  font: 500 0.75rem var(--font-body);
   cursor: pointer;
 }
 .preset-chip:hover {
@@ -289,7 +289,7 @@ textarea.cms-input {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: var(--c-ink3);
   cursor: pointer;
   white-space: nowrap;
@@ -300,14 +300,14 @@ textarea.cms-input {
 .loading-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 12px;
   margin-bottom: 12px;
   border: 1px solid var(--c-brd);
   border-radius: 6px;
   background: var(--c-sub);
   color: var(--c-ink3);
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
 }
 .midia-empty {
   padding: 24px 16px;
@@ -316,12 +316,12 @@ textarea.cms-input {
   background: var(--c-sub);
   text-align: center;
   color: var(--c-txt);
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
 }
 .midia-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 .midia-card {
   position: relative;
@@ -348,9 +348,8 @@ textarea.cms-input {
   top: 10px;
   background: rgba(9, 9, 11, 0.82);
   color: #fff;
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  text-transform: uppercase;
   padding: 2px 7px;
   border-radius: 4px;
 }
@@ -397,7 +396,7 @@ textarea.cms-input {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   max-width: min(1100px, 92vw);
 }
 .lb-midia img,
@@ -409,7 +408,7 @@ textarea.cms-input {
 }
 .lb-midia figcaption {
   color: #d4d4d8;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
 }
 .lb-btn {
@@ -462,7 +461,7 @@ textarea.cms-input {
   .settings-row,
   .form-grid {
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 12px;
   }
   .f-span2 {
     grid-column: span 1;

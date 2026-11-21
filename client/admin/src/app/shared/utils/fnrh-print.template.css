@@ -8,32 +8,31 @@
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
   color: #111;
-  font-size: 11px;
+  font-size: 0.75rem;
   margin: 0;
 }
 h1 {
-  font-size: 15px;
+  font-size: 0.875rem;
   text-align: center;
   margin: 0 0 2px;
   letter-spacing: 0.04em;
 }
 .sub {
   text-align: center;
-  font-size: 10px;
+  font-size: 0.75rem;
   color: #444;
   margin-bottom: 12px;
 }
 fieldset {
   border: 1px solid #999;
-  border-radius: 3px;
-  padding: 8px 10px 10px;
-  margin: 0 0 10px;
+  border-radius: 4px;
+  padding: 8px 8px 8px;
+  margin: 0 0 8px;
 }
 legend {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   padding: 0 6px;
 }
 .grid {
@@ -52,8 +51,7 @@ legend {
 }
 .f label {
   display: block;
-  font-size: 8.5px;
-  text-transform: uppercase;
+  font-size: 0.75rem;
   color: #555;
   letter-spacing: 0.03em;
 }
@@ -66,7 +64,7 @@ legend {
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 10px;
+  font-size: 0.75rem;
 }
 th,
 td {
@@ -76,8 +74,7 @@ td {
 }
 th {
   background: #eee;
-  text-transform: uppercase;
-  font-size: 8.5px;
+  font-size: 0.75rem;
   letter-spacing: 0.03em;
 }
 .assinaturas {
@@ -92,11 +89,11 @@ th {
 .assinatura .linha {
   border-top: 1px solid #333;
   padding-top: 4px;
-  font-size: 9.5px;
+  font-size: 0.75rem;
 }
 .rodape {
-  margin-top: 14px;
-  font-size: 8.5px;
+  margin-top: 12px;
+  font-size: 0.75rem;
   color: #555;
   display: flex;
   justify-content: space-between;

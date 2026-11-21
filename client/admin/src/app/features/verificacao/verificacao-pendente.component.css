@@ -23,7 +23,7 @@
   margin-bottom: 16px;
 }
 .vp-ic mat-icon {
-  font-size: 36px;
+  font-size: 2rem;
   width: 36px;
   height: 36px;
   color: #054054;
@@ -35,8 +35,8 @@
   color: #1e7d32;
 }
 .vp-t {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #0b2437;
   margin: 0 0 8px;
 }
@@ -50,12 +50,12 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 14px 24px;
+  padding: 12px 24px;
   border: 0;
   border-radius: 999px;
   background: #054054;
   color: #fff;
-  font-size: 15px;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -76,7 +76,7 @@
   color: #8a5a00;
   background: #fff7e0;
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   margin: 16px 0 0;
 }
 .vp-acoes {

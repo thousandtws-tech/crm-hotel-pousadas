@@ -16,7 +16,7 @@
   padding: 32px;
 }
 .sec {
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 600;
   display: block;
 }
@@ -62,7 +62,7 @@ table.sm {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 12px 16px;
   border: 1px dashed #c3d2d9;
   border-radius: 10px;
   background: #f7fafb;
@@ -70,7 +70,7 @@ table.sm {
 }
 .vazio mat-icon {
   color: #adb5bd;
-  font-size: 28px;
+  font-size: 1.5rem;
   width: 28px;
   height: 28px;
 }
@@ -81,14 +81,14 @@ table.sm {
 }
 .vazio strong {
   color: #054054;
-  font-size: 0.88rem;
+  font-size: 0.875rem;
 }
 .vazio span {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
 }
 .doc-form {
   border-top: 1px solid #e3eaef;
-  padding-top: 14px;
+  padding-top: 12px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -96,7 +96,7 @@ table.sm {
 .doc-grid {
   display: grid;
   grid-template-columns: 1fr 1.3fr 1fr 80px;
-  gap: 12px 14px;
+  gap: 12px 12px;
   align-items: start;
 }
 .doc-grid:has(app-date) {
@@ -116,20 +116,20 @@ table.sm {
   border-radius: 999px;
   background: #fdecec;
   color: #dc3545;
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 .aviso-dup {
   margin: 0;
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #8a5a10;
   background: #fdf7ec;
   border: 1px solid #f0dcb4;
   border-radius: 8px;
-  padding: 6px 10px;
+  padding: 6px 8px;
 }
 .aviso-dup mat-icon {
   font-size: 16px;
@@ -144,7 +144,7 @@ table.sm {
   height: 30px;
   margin: 0 2px;
   border: 1px solid #d7e0e6;
-  border-radius: 7px;
+  border-radius: 6px;
   background: #fff;
   color: #5d6d7e;
   cursor: pointer;
@@ -173,7 +173,7 @@ table.sm {
   gap: 8px;
 }
 .lbl2 {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #374151;
   display: flex;
@@ -185,7 +185,6 @@ table.sm {
   margin-left: 2px;
 }
 .uf {
-  text-transform: uppercase;
 }
 @media (max-width: 700px) {
   .doc-grid,

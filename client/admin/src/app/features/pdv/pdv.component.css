@@ -13,27 +13,26 @@
   padding: 8px 4px 0;
 }
 .eyebrow {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #4b95ab;
   margin: 0 0 4px;
 }
 .eyebrow.sm {
-  font-size: 0.66rem;
+  font-size: 0.75rem;
 }
 .titulo {
   margin: 0;
-  font-size: 1.35rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #054054;
   line-height: 1.1;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 .sub {
   margin: 4px 0 0;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
   color: #7d97a1;
 }
 
@@ -42,19 +41,19 @@
   display: flex;
   gap: 4px;
   border-bottom: 1px solid #e5ded2;
-  margin: 14px 0 18px;
+  margin: 12px 0 16px;
   padding: 0 4px;
 }
 .aba {
   gap: 8px;
-  padding: 12px 18px;
+  padding: 12px 16px;
   border: 0;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   background: transparent;
   color: #5d6d7e;
   font-weight: 600;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
 }
 .aba:hover,
 .aba.ativa {
@@ -72,7 +71,7 @@
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 12px;
-  padding: 18px 20px;
+  padding: 16px 20px;
   margin-bottom: 16px;
 }
 .card-head {
@@ -80,12 +79,12 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .card-head h3 {
   margin: 0;
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 600;
   color: #054054;
   display: flex;
   align-items: center;
@@ -104,7 +103,7 @@
 .atend {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 400px;
-  gap: 18px;
+  gap: 16px;
   align-items: start;
 }
 .voltar-salao {
@@ -121,14 +120,14 @@
 .salao {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 .salao-tools {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
-  padding: 12px 14px;
+  padding: 12px 12px;
 }
 .salao-tools .seg3 {
   flex: 0 1 320px;
@@ -137,7 +136,7 @@
 .seg3 {
   display: flex;
   background: #eef2f5;
-  border-radius: 9px;
+  border-radius: 8px;
   padding: 3px;
 }
 .seg3-btn {
@@ -145,8 +144,8 @@
   border: 0;
   background: transparent;
   padding: 7px 4px;
-  border-radius: 7px;
-  font-size: 0.78rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #5d6d7e;
   cursor: pointer;
@@ -163,7 +162,7 @@
   align-items: center;
   gap: 8px;
   border: 1px solid #d7e0e6;
-  border-radius: 9px;
+  border-radius: 8px;
   padding: 0 12px;
   background: #fff;
 }
@@ -178,8 +177,8 @@
   flex: 1;
   border: 0;
   outline: 0;
-  padding: 9px 0;
-  font-size: 0.88rem;
+  padding: 8px 0;
+  font-size: 0.875rem;
   background: transparent;
   color: #33424c;
 }
@@ -225,7 +224,7 @@ button.tile {
   align-items: flex-start;
   gap: 4px;
   min-height: 104px;
-  padding: 13px 15px;
+  padding: 12px 16px;
   cursor: pointer;
   text-align: left;
   font: inherit;
@@ -238,7 +237,7 @@ button.tile {
 }
 .tile-num {
   font-size: 1.25rem;
-  font-weight: 800;
+  font-weight: 600;
   color: #33424c;
   line-height: 1.15;
   display: inline-flex;
@@ -251,7 +250,7 @@ button.tile {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: #8a99a4;
   max-width: 100%;
 }
@@ -262,10 +261,9 @@ button.tile {
 }
 .tile-status {
   margin-top: auto;
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #198754;
 }
 .tile.ocupada .tile-status {
@@ -275,8 +273,8 @@ button.tile {
   color: #8a99a4;
 }
 .tile-val {
-  font-size: 0.92rem;
-  font-weight: 800;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: #054054;
   min-height: 1.15em;
 }
@@ -288,7 +286,7 @@ button.tile {
   gap: 6px;
   color: #5d6d7e;
   font-weight: 600;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
 }
 .tile.novo:hover {
   color: #054054;
@@ -342,14 +340,14 @@ button.tile {
 }
 .inativas {
   border-top: 1px dashed #e3eaef;
-  padding-top: 10px;
+  padding-top: 8px;
 }
 .inativas summary {
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #7d97a1;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 /* abertura rápida — painel horizontal */
@@ -361,7 +359,7 @@ button.tile {
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 12px 16px;
 }
 .quick-t {
   flex-basis: 100%;
@@ -369,8 +367,8 @@ button.tile {
   align-items: center;
   gap: 7px;
   margin: 0;
-  font-size: 0.88rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: #054054;
 }
 .quick .inp {
@@ -406,19 +404,19 @@ button.tile {
 }
 .cat-head h3 {
   margin: 0;
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 600;
   color: #054054;
 }
 .cat-sub {
   margin: 3px 0 0;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: #7d97a1;
 }
 .pill-gold {
   flex-shrink: 0;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   padding: 5px 12px;
   border-radius: 999px;
   background: #fdf3e2;
@@ -433,9 +431,9 @@ button.tile {
 .cat-pill {
   border: 1px solid #d7e0e6;
   background: #fff;
-  border-radius: 9px;
-  padding: 8px 15px;
-  font-size: 0.8rem;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #5d6d7e;
 }
@@ -457,7 +455,7 @@ button.tile {
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 12px;
-  padding: 14px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -468,22 +466,22 @@ button.tile {
   gap: 3px;
 }
 .prod-desc strong {
-  font-size: 0.92rem;
+  font-size: 0.875rem;
   color: #33424c;
 }
 .prod-desc small {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .prod-rod {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 .prod-preco {
-  font-size: 0.95rem;
-  font-weight: 800;
+  font-size: 1rem;
+  font-weight: 600;
   color: #054054;
 }
 .btn-add {
@@ -492,9 +490,9 @@ button.tile {
   background: #fff;
   color: #054054;
   font-weight: 600;
-  font-size: 0.8rem;
-  padding: 8px 13px;
-  border-radius: 9px;
+  font-size: 0.8125rem;
+  padding: 8px 12px;
+  border-radius: 8px;
 }
 .btn-add:hover:not(:disabled) {
   background: #054054;
@@ -511,26 +509,26 @@ button.tile {
   background: #eef4f6;
   border: 1px solid #d3e4ec;
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 12px 16px;
 }
 .info-card mat-icon {
   color: #054054;
   margin-top: 2px;
 }
 .info-card strong {
-  font-size: 0.86rem;
+  font-size: 0.875rem;
   color: #054054;
 }
 .info-card p {
   margin: 3px 0 0;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #5d6d7e;
 }
 .sem-atend {
   background: #fff;
   border: 1px dashed #ddd4c4;
   border-radius: 12px;
-  padding: 44px 24px;
+  padding: 40px 24px;
   text-align: center;
   color: #8a99a4;
   display: flex;
@@ -543,16 +541,16 @@ button.tile {
 }
 .sem-atend p {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: 0.875rem;
   max-width: 340px;
 }
 
 /* ---------- comanda ---------- */
 .com-card {
-  padding: 18px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   position: sticky;
   top: 12px;
 }
@@ -560,17 +558,17 @@ button.tile {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 .cc-head h3 {
   margin: 2px 0 0;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.125rem;
+  font-weight: 600;
   color: #054054;
 }
 .cc-head h3 small {
   font-family: 'Manrope', sans-serif;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #8a99a4;
   font-weight: 500;
 }
@@ -579,7 +577,7 @@ button.tile {
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #5d6d7e;
   padding-bottom: 12px;
   border-bottom: 1px solid #e3eaef;
@@ -596,19 +594,19 @@ button.tile {
 }
 .cc-ped-head h4 {
   margin: 0;
-  font-size: 0.92rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: #33424c;
 }
 .cc-ped-head span {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .cc-consumo {
   background: #eef4f6;
   border-radius: 10px;
-  padding: 12px 14px;
-  margin: 10px 0;
+  padding: 12px 12px;
+  margin: 8px 0;
 }
 .cc-consumo > div {
   display: flex;
@@ -616,16 +614,16 @@ button.tile {
   align-items: baseline;
 }
 .cc-consumo strong {
-  font-size: 0.84rem;
+  font-size: 0.8125rem;
   color: #054054;
 }
 .cc-total-sm {
-  font-weight: 800;
+  font-weight: 600;
   color: #054054;
 }
 .cc-consumo p {
   margin: 5px 0 0;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: #5d6d7e;
   line-height: 1.45;
 }

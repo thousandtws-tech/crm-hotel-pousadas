@@ -5,7 +5,7 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .acm-titulo-grupo {
   display: flex;
@@ -14,32 +14,31 @@
 }
 .eyebrow {
   margin: 0;
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #8fa3ab;
 }
 .acm-titulo-linha {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 .acm-titulo {
   margin: 0;
-  font-size: 1.35rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #054054;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 .acm-contador {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #054054;
   background: #eef4f6;
   border-radius: 999px;
-  padding: 3px 10px;
+  padding: 3px 8px;
   white-space: nowrap;
 }
 .acm-head-acoes {
@@ -60,10 +59,10 @@
   background: #fff;
   color: #5d6d7e;
   border-radius: 4px;
-  padding: 0 14px;
+  padding: 0 12px;
   min-height: 34px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
   transition:
     background 0.15s ease,
@@ -71,7 +70,7 @@
     border-color 0.15s ease;
 }
 .btn-tour mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -84,7 +83,7 @@
 .acm-info {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 12px;
   margin-bottom: 16px;
 }
 .acm-info-card {
@@ -94,7 +93,7 @@
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 12px;
-  padding: 15px 16px;
+  padding: 16px 16px;
   transition:
     box-shadow 0.15s ease,
     transform 0.15s ease;
@@ -106,7 +105,7 @@
 .acm-info-icone {
   width: 38px;
   height: 38px;
-  border-radius: 9px;
+  border-radius: 8px;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -124,14 +123,14 @@
 }
 .acm-info-txt strong {
   display: block;
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: #054054;
   margin-bottom: 3px;
 }
 .acm-info-txt p {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   color: #7d97a1;
 }
@@ -146,7 +145,7 @@
 
 /* ---------- toolbar ---------- */
 .acm-card {
-  padding-top: 14px;
+  padding-top: 12px;
 }
 .acm-toolbar {
   display: flex;
@@ -154,7 +153,7 @@
   justify-content: space-between;
   gap: 28px;
   flex-wrap: wrap;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   padding: 4px 2px;
 }
 .acm-busca {
@@ -167,7 +166,7 @@
   background: #fff;
   border: 1px solid #d7e0e6;
   border-radius: 8px;
-  padding: 0 10px;
+  padding: 0 8px;
   height: 40px;
   transition:
     border-color 0.15s,
@@ -188,7 +187,7 @@
   border: none;
   outline: none;
   background: transparent;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: #33424c;
   font-family: inherit;
   height: 100%;
@@ -224,12 +223,12 @@
 .acm-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   border: 1px solid #d7e0e6;
   background: #fff;
   border-radius: 999px;
   padding: 8px 20px 8px 12px;
-  font-size: 0.84rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #5d6d7e;
   cursor: pointer;
@@ -278,7 +277,7 @@
 .acm-tabela {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: 0.875rem;
 }
 .acm-tabela thead th {
   position: sticky;
@@ -287,16 +286,15 @@
   background: #f4f8fa;
   color: #40525d;
   font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-align: left;
-  padding: 14px 14px;
+  padding: 12px 12px;
   border-bottom: 1px solid #d7e0e6;
   white-space: nowrap;
 }
 .acm-tabela tbody td {
-  padding: 16px 14px;
+  padding: 16px 12px;
   border-bottom: 1px solid #eef2f5;
   color: #2c3a44;
   vertical-align: middle;
@@ -330,7 +328,7 @@
 .acm-dot {
   width: 14px;
   height: 14px;
-  border-radius: 5px;
+  border-radius: 4px;
   flex-shrink: 0;
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
 }
@@ -343,23 +341,23 @@
 .acm-cell-txt strong {
   color: #054054;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 .acm-cell-txt small {
   color: #7d97a1;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   max-width: 320px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .acm-tipo {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #40525d;
   background: #eef2f5;
   border-radius: 999px;
-  padding: 3px 10px;
+  padding: 3px 8px;
   white-space: nowrap;
 }
 .acm-valor {
@@ -372,10 +370,10 @@
   align-items: center;
   gap: 5px;
   color: #40525d;
-  font-size: 0.88rem;
+  font-size: 0.875rem;
 }
 .acm-cap mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
   color: #8fa3ab;
@@ -389,8 +387,8 @@
   border-radius: 999px;
   background: #eef4f6;
   color: #054054;
-  padding: 6px 14px;
-  font-size: 0.8rem;
+  padding: 6px 12px;
+  font-size: 0.8125rem;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -420,7 +418,7 @@
   height: 32px;
   margin: 0 2px;
   border: 1px solid #d7e0e6;
-  border-radius: 7px;
+  border-radius: 6px;
   background: #fff;
   color: #5d6d7e;
   cursor: pointer;
@@ -430,7 +428,7 @@
     background 0.15s;
 }
 .acao-btn mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -458,8 +456,8 @@
   margin-bottom: 8px;
 }
 .acm-vazio p {
-  margin: 0 0 14px;
-  font-size: 0.9rem;
+  margin: 0 0 12px;
+  font-size: 0.875rem;
 }
 
 /* ---------- skeleton ---------- */
@@ -481,12 +479,12 @@
 .skel-dot {
   width: 14px;
   height: 14px;
-  border-radius: 5px;
+  border-radius: 4px;
 }
 .skel-nome {
   width: 170px;
   height: 14px;
-  margin-left: 10px;
+  margin-left: 8px;
   vertical-align: middle;
 }
 .skel-txt {
@@ -515,11 +513,11 @@
 .det-titulo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 .det-desc {
   margin: 0 0 4px;
-  font-size: 0.84rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   color: #7d97a1;
 }
@@ -527,21 +525,20 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #40525d;
-  margin: 18px 0 10px;
+  margin: 16px 0 8px;
 }
 .modal-detalhe h4 mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
 .det-dica {
-  margin: -4px 0 10px;
-  font-size: 0.76rem;
+  margin: -4px 0 8px;
+  font-size: 0.75rem;
   color: #8a99a4;
   line-height: 1.5;
 }
@@ -554,17 +551,17 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 24px;
+  gap: 8px 24px;
   background: #f7fafb;
   border: 1px solid #e3eaef;
   border-radius: 12px;
-  padding: 12px 18px;
-  margin: 14px 0 4px;
+  padding: 12px 16px;
+  margin: 12px 0 4px;
 }
 .det-item {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   min-width: 0;
 }
 .det-item-ic {
@@ -579,7 +576,7 @@
   color: #054054;
 }
 .det-item-ic mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -589,22 +586,21 @@
   line-height: 1.15;
 }
 .det-item-txt small {
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: #7d97a1;
 }
 .det-item-txt strong {
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: #054054;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
 }
 .quartos {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
 }
 .chip {
@@ -613,12 +609,12 @@
   gap: 8px;
   border: 1px solid #d7e0e6;
   border-radius: 8px;
-  padding: 6px 10px;
+  padding: 6px 8px;
   background: #fff;
 }
 .chip strong {
   color: #054054;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 .chip-del {
   display: inline-flex;
@@ -631,7 +627,7 @@
   padding: 0;
 }
 .chip-del mat-icon {
-  font-size: 15px;
+  font-size: 0.875rem;
   width: 15px;
   height: 15px;
 }
@@ -642,8 +638,8 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 0.4rem 0.8rem;
-  font-size: 0.84rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8125rem;
 }
 .btn-add-quarto mat-icon {
   font-size: 16px;
@@ -654,14 +650,14 @@
   overflow-x: auto;
 }
 .acm-tabela-mini {
-  font-size: 0.98rem;
+  font-size: 1rem;
 }
 .acm-tabela-mini thead th {
-  padding: 14px 16px;
-  font-size: 0.78rem;
+  padding: 12px 16px;
+  font-size: 0.75rem;
 }
 .acm-tabela-mini tbody td {
-  padding: 15px 16px;
+  padding: 16px 16px;
 }
 
 /* ---------- modais pequenos (tipos / quarto) ---------- */
@@ -670,14 +666,14 @@
 }
 .modal-dica {
   margin: 0 0 12px;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   color: #7d97a1;
 }
 .modal-foot {
   display: flex;
   justify-content: flex-end;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-top: 1px solid #d7e0e6;
 }
 .modal-foot .btn-dark-blue {
@@ -686,7 +682,7 @@
   gap: 6px;
 }
 .modal-foot mat-icon {
-  font-size: 15px;
+  font-size: 0.875rem;
   width: 15px;
   height: 15px;
 }
@@ -738,20 +734,20 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 18px 22px;
+  padding: 16px 20px;
   background: #fff;
   border-bottom: 1px solid #e3eaef;
   flex-shrink: 0;
 }
 .drawer-head-txt h5 {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.125rem;
+  font-weight: 600;
   color: #054054;
 }
 .drawer-head-txt p {
   margin: 3px 0 0;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   color: #7d97a1;
 }
 .drawer-fechar {
@@ -787,46 +783,45 @@
 .drawer-body {
   flex: 1;
   overflow-y: auto;
-  padding: 18px 22px;
+  padding: 16px 20px;
 }
 .dsec {
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 10px;
   padding: 16px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .dsec-tit {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #40525d;
   margin-bottom: 12px;
 }
 .dsec-tit mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
 .dsec-sub {
   margin: -6px 0 12px;
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .dsec-dica {
   display: block;
   margin-top: 6px;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .dgrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px 14px;
+  gap: 8px 12px;
 }
 .dgrid .full {
   grid-column: 1 / -1;
@@ -837,7 +832,7 @@
   gap: 4px;
 }
 .campo .lbl {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #40525d;
 }
@@ -847,7 +842,7 @@
 }
 .erro-campo {
   color: #dc3545;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 .input-inn.inval {
@@ -860,7 +855,7 @@
 }
 
 .vagas-mat {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .input-group-inn {
@@ -870,15 +865,15 @@
 .input-group-inn .addon {
   display: inline-flex;
   align-items: center;
-  padding: 0 10px;
-  font-size: 0.8rem;
+  padding: 0 8px;
+  font-size: 0.8125rem;
   background: #5d6d7e;
   color: #fff;
   border: 1px solid #5d6d7e;
   border-radius: 4px 0 0 4px;
 }
 .input-group-inn .addon mat-icon {
-  font-size: 15px;
+  font-size: 0.875rem;
   width: 15px;
   height: 15px;
 }
@@ -900,7 +895,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.84rem;
+  font-size: 0.8125rem;
   color: #40525d;
 }
 
@@ -913,25 +908,25 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px 6px;
+  padding: 8px 6px;
 }
 .fx-tit {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: #054054;
   font-weight: 600;
 }
 .fx-linha {
   display: flex;
   align-items: flex-end;
-  gap: 10px;
+  gap: 8px;
 }
 .fx-inp {
   width: 110px;
 }
 .fx-acoes {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   margin-top: 4px;
 }
@@ -939,7 +934,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #5d6d7e;
 }
 .mc-btn {
@@ -961,13 +956,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 13px 22px;
+  padding: 12px 20px;
   background: #fff;
   border-top: 1px solid #e3eaef;
   flex-shrink: 0;
 }
 .drawer-req {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .drawer-foot-acoes {
@@ -1008,9 +1003,9 @@
 .tarifa-form {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) auto;
-  gap: 10px;
+  gap: 8px;
   align-items: end;
-  padding: 10px 12px;
+  padding: 8px 12px;
   margin: 8px 0 12px;
   background: #f4f8fa;
   border-radius: 8px;
@@ -1019,17 +1014,16 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #5b7180;
-  text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 .tarifa-form input {
-  padding: 7px 9px;
+  padding: 7px 8px;
   border: 1px solid #c9d6dc;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: #223b47;
   background: #fff;
 }
@@ -1042,8 +1036,8 @@
 }
 .tarifa-form .btn-dark-blue {
   white-space: nowrap;
-  padding: 8px 14px;
-  font-size: 0.8rem;
+  padding: 8px 12px;
+  font-size: 0.8125rem;
 }
 .acm-col-acao {
   width: 56px;

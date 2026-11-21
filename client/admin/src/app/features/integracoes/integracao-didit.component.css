@@ -26,8 +26,8 @@
   height: 18px;
 }
 .titulo {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   margin: 6px 0 4px;
   color: #0b2437;
 }
@@ -46,14 +46,14 @@
   background: #fff;
   border: 1px solid #e4ecf0;
   border-radius: 14px;
-  padding: 18px;
+  padding: 16px;
 }
 .card-t {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: #0b2437;
   margin: 0 0 8px;
 }
@@ -66,7 +66,7 @@
 .mut {
   font-size: 13px;
   color: #7a8b96;
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   line-height: 1.5;
 }
 .fld {
@@ -86,7 +86,7 @@
   font-weight: 600;
 }
 .fld-i {
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: 1px solid #d5e0e6;
   border-radius: 10px;
   font-size: 14px;
@@ -109,7 +109,7 @@
 }
 .acoes {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
   margin-top: 8px;
 }
@@ -117,7 +117,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 18px;
+  padding: 8px 16px;
   border: 0;
   border-radius: 999px;
   background: #054054;
@@ -133,7 +133,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 16px;
+  padding: 8px 16px;
   border: 1px solid #d5e0e6;
   border-radius: 999px;
   background: #fff;
@@ -154,7 +154,7 @@
   padding: 4px 12px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .pill-ok {
   background: #e6f4ea;
@@ -178,12 +178,12 @@
 }
 .sw {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: flex-start;
   font-size: 13px;
   color: #39464f;
   line-height: 1.5;
-  margin: 10px 0;
+  margin: 8px 0;
   cursor: pointer;
 }
 .sw input {
@@ -192,7 +192,7 @@
 .teste {
   font-size: 13px;
   margin: 12px 0 0;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-radius: 10px;
 }
 .teste.ok {
@@ -205,7 +205,7 @@
 }
 .hook {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   flex-wrap: wrap;
   margin-bottom: 8px;
@@ -213,13 +213,13 @@
 .hook-url {
   font-size: 12px;
   background: #f2f6f8;
-  padding: 8px 10px;
+  padding: 8px 8px;
   border-radius: 8px;
   word-break: break-all;
 }
 .lista {
   margin: 0;
-  padding-left: 18px;
+  padding-left: 16px;
   font-size: 13px;
   color: #39464f;
   display: grid;

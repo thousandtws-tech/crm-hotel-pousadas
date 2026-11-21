@@ -5,7 +5,7 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .cli-titulo-grupo {
   display: flex;
@@ -14,31 +14,30 @@
 }
 .eyebrow {
   margin: 0;
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #8fa3ab;
 }
 .cli-titulo-linha {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 8px;
 }
 .cli-titulo {
   margin: 0;
-  font-size: 1.35rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #054054;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 .cli-contador {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #054054;
   background: #eef4f6;
   border-radius: 999px;
-  padding: 3px 10px;
+  padding: 3px 8px;
   white-space: nowrap;
 }
 .cli-head-acoes {
@@ -60,7 +59,7 @@
 }
 [mat-menu-item] small {
   display: block;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   color: #8a99a4;
   font-weight: 400;
   line-height: 1.3;
@@ -73,10 +72,10 @@
   background: #fff;
   color: #5d6d7e;
   border-radius: 4px;
-  padding: 0 14px;
+  padding: 0 12px;
   min-height: 34px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
   transition:
     background 0.15s ease,
@@ -84,7 +83,7 @@
     border-color 0.15s ease;
 }
 .btn-tour mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -97,7 +96,7 @@
 .cli-info {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 12px;
   margin-bottom: 16px;
 }
 .cli-info-card {
@@ -107,7 +106,7 @@
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 12px;
-  padding: 15px 16px;
+  padding: 16px 16px;
   transition:
     box-shadow 0.15s ease,
     transform 0.15s ease;
@@ -118,7 +117,7 @@
 .cli-info-icone {
   width: 38px;
   height: 38px;
-  border-radius: 9px;
+  border-radius: 8px;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -136,14 +135,14 @@
 }
 .cli-info-txt strong {
   display: block;
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: #054054;
   margin-bottom: 3px;
 }
 .cli-info-txt p {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   color: #7d97a1;
 }
@@ -155,7 +154,7 @@
 
 /* ---------- toolbar ---------- */
 .cli-card {
-  padding-top: 14px;
+  padding-top: 12px;
 }
 .cli-toolbar {
   display: flex;
@@ -163,7 +162,7 @@
   justify-content: space-between;
   gap: 28px;
   flex-wrap: wrap;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   padding: 4px 2px;
 }
 .cli-busca {
@@ -177,12 +176,12 @@
   background: #fff;
   border: 1px solid #d7e0e6;
   border-radius: 8px;
-  padding: 0 10px;
+  padding: 0 8px;
   height: 40px;
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
-  margin-left: 1.3rem;
+  margin-left: 1.25rem;
 }
 .cli-busca.foco {
   border-color: #054054;
@@ -199,7 +198,7 @@
   border: none;
   outline: none;
   background: transparent;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: #33424c;
   font-family: inherit;
   height: 100%;
@@ -256,12 +255,11 @@
   }
 }
 .sug-titulo {
-  padding: 6px 10px 4px;
-  font-size: 0.68rem;
-  font-weight: 700;
+  padding: 6px 8px 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: #8fa3ab;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.04em;
 }
 .sug-item {
   display: flex;
@@ -271,7 +269,7 @@
   border: none;
   background: transparent;
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 8px 8px;
   cursor: pointer;
   text-align: left;
   font-family: inherit;
@@ -299,7 +297,7 @@
 .sug-txt strong {
   color: #2c3a44;
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: 0.875rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -307,20 +305,20 @@
 .sug-txt mark {
   background: #dce9ee;
   color: #054054;
-  border-radius: 3px;
+  border-radius: 4px;
   padding: 0 1px;
 }
 .sug-txt small {
   color: #7d97a1;
-  font-size: 0.76rem;
+  font-size: 0.75rem;
 }
 .sug-cpf {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   flex-shrink: 0;
 }
 .sug-go {
   opacity: 0;
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
   color: #8fa3ab;
@@ -331,10 +329,10 @@
 .sug-vazio {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 18px 14px;
+  gap: 8px;
+  padding: 16px 12px;
   color: #7d97a1;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 .sug-vazio mat-icon {
   color: #c3d2d9;
@@ -345,8 +343,8 @@
   justify-content: space-between;
   border-top: 1px solid #eef2f5;
   margin-top: 4px;
-  padding: 8px 10px 4px;
-  font-size: 0.72rem;
+  padding: 8px 8px 4px;
+  font-size: 0.75rem;
   color: #8fa3ab;
 }
 .sug-dica {
@@ -357,12 +355,12 @@
 .cli-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   border: 1px solid #d7e0e6;
   background: #fff;
   border-radius: 999px;
   padding: 8px 20px 8px 12px;
-  font-size: 0.84rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #5d6d7e;
   cursor: pointer;
@@ -370,7 +368,7 @@
   transition:
     border-color 0.15s,
     background 0.15s;
-  margin-right: 1.3rem;
+  margin-right: 1.25rem;
 }
 .cli-trilho {
   width: 34px;
@@ -412,7 +410,7 @@
 .cli-tabela {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: 0.875rem;
 }
 .cli-tabela thead th {
   position: sticky;
@@ -421,16 +419,15 @@
   background: #f4f8fa;
   color: #40525d;
   font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-align: left;
-  padding: 14px 14px;
+  padding: 12px 12px;
   border-bottom: 1px solid #d7e0e6;
   white-space: nowrap;
 }
 .cli-tabela tbody td {
-  padding: 16px 14px;
+  padding: 16px 12px;
   border-bottom: 1px solid #eef2f5;
   color: #2c3a44;
   vertical-align: middle;
@@ -466,11 +463,11 @@
 .cli-cell-txt strong {
   color: #054054;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 .cli-cell-txt small {
   color: #7d97a1;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
 }
 
 .avatar-sm,
@@ -482,7 +479,7 @@
   overflow: hidden;
   flex-shrink: 0;
   color: #fff;
-  font-weight: 700;
+  font-weight: 600;
 }
 .avatar-sm {
   width: 42px;
@@ -490,7 +487,7 @@
   background: linear-gradient(135deg, #1a6f8a, #4b95ab);
 }
 .avatar-iniciais {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.02em;
 }
 .avatar-lg {
@@ -520,12 +517,12 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #054054;
   background: #eef4f6;
   border-radius: 999px;
-  padding: 3px 9px;
+  padding: 3px 8px;
 }
 .tag-site mat-icon {
   font-size: 13px;
@@ -540,8 +537,8 @@
   border-radius: 999px;
   background: #eef4f6;
   color: #054054;
-  padding: 6px 14px;
-  font-size: 0.8rem;
+  padding: 6px 12px;
+  font-size: 0.8125rem;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -568,7 +565,7 @@
   height: 32px;
   margin: 0 2px;
   border: 1px solid #d7e0e6;
-  border-radius: 7px;
+  border-radius: 6px;
   background: #fff;
   color: #5d6d7e;
   cursor: pointer;
@@ -578,7 +575,7 @@
     background 0.15s;
 }
 .acao-btn mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -606,8 +603,8 @@
   margin-bottom: 8px;
 }
 .cli-vazio p {
-  margin: 0 0 14px;
-  font-size: 0.9rem;
+  margin: 0 0 12px;
+  font-size: 0.875rem;
 }
 
 /* ---------- skeleton ---------- */
@@ -634,7 +631,7 @@
 .skel-nome {
   width: 150px;
   height: 14px;
-  margin-left: 10px;
+  margin-left: 8px;
   vertical-align: middle;
 }
 .skel-txt {
@@ -692,20 +689,20 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 18px 22px;
+  padding: 16px 20px;
   background: #fff;
   border-bottom: 1px solid #e3eaef;
   flex-shrink: 0;
 }
 .drawer-head-txt h5 {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.125rem;
+  font-weight: 600;
   color: #054054;
 }
 .drawer-head-txt p {
   margin: 3px 0 0;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   color: #7d97a1;
 }
 .drawer-fechar {
@@ -741,7 +738,7 @@
 .drawer-body {
   flex: 1;
   overflow-y: auto;
-  padding: 18px 22px;
+  padding: 16px 20px;
 }
 
 .dsec {
@@ -749,34 +746,33 @@
   border: 1px solid #e3eaef;
   border-radius: 10px;
   padding: 16px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .dsec-tit {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #40525d;
   margin-bottom: 12px;
 }
 .dsec-tit mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
 .dsec-sub {
   margin: -6px 0 12px;
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 
 .dgrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px 14px;
+  gap: 8px 12px;
 }
 .dgrid .full {
   grid-column: 1 / -1;
@@ -787,7 +783,7 @@
   gap: 4px;
 }
 .campo .lbl {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #40525d;
 }
@@ -796,7 +792,7 @@
 }
 .erro-campo {
   color: #dc3545;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 .input-inn.inval {
@@ -809,7 +805,7 @@
   position: relative;
 }
 .cep-wrap .input-inn {
-  padding-right: 34px;
+  padding-right: 32px;
 }
 .cep-spin {
   position: absolute;
@@ -829,7 +825,7 @@
 }
 .cep-erro {
   color: #b3261e;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
 }
 
 /* ---------- seletor de país com bandeiras ---------- */
@@ -842,12 +838,12 @@
   gap: 8px;
   width: 100%;
   min-height: 38px;
-  padding: 0 10px;
+  padding: 0 8px;
   background: #fff;
   border: 1px solid #d7e0e6;
   border-radius: 6px;
   font-family: inherit;
-  font-size: 0.88rem;
+  font-size: 0.875rem;
   color: #2c3a44;
   cursor: pointer;
   text-align: left;
@@ -910,7 +906,7 @@
   border-bottom: 1px solid #eef2f5;
 }
 .pais-busca-wrap mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
   color: #8fa3ab;
@@ -921,7 +917,7 @@
   outline: none;
   background: transparent;
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: #2c3a44;
 }
 .pais-lista {
@@ -932,16 +928,16 @@
 .pais-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   border: none;
   background: transparent;
-  border-radius: 7px;
-  padding: 7px 10px;
+  border-radius: 6px;
+  padding: 7px 8px;
   cursor: pointer;
   text-align: left;
   font-family: inherit;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
   color: #2c3a44;
   transition: background 0.1s;
 }
@@ -950,14 +946,14 @@
 }
 .pais-item.sel {
   background: #eef4f6;
-  font-weight: 700;
+  font-weight: 600;
   color: #054054;
 }
 .pais-vazio {
   display: block;
   padding: 16px 12px;
   color: #8fa3ab;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   text-align: center;
 }
 
@@ -975,8 +971,8 @@
   left: 10px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 0.82rem;
-  font-weight: 700;
+  font-size: 0.8125rem;
+  font-weight: 600;
   color: #054054;
   background: #eef4f6;
   border-radius: 4px;
@@ -984,7 +980,7 @@
   pointer-events: none;
 }
 .input-inn.com-ddi {
-  padding-left: 52px;
+  padding-left: 48px;
 }
 
 .drawer-foot {
@@ -992,13 +988,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 13px 22px;
+  padding: 12px 20px;
   background: #fff;
   border-top: 1px solid #e3eaef;
   flex-shrink: 0;
 }
 .drawer-req {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .drawer-req .req {
@@ -1024,7 +1020,7 @@
 .foto-linha {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 .foto-acoes {
   display: flex;
@@ -1035,8 +1031,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 0.3rem 0.6rem;
-  font-size: 0.82rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.8125rem;
 }
 .btn-foto mat-icon {
   font-size: 16px;

@@ -22,7 +22,7 @@
   background: #fff;
   border: 1px solid #d7e0e6;
   border-radius: 10px;
-  padding: 0 10px;
+  padding: 0 8px;
   height: 40px;
   transition:
     border-color 0.15s,
@@ -43,7 +43,7 @@
   border: none;
   outline: none;
   background: transparent;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: #33424c;
   font-family: inherit;
   height: 100%;
@@ -82,13 +82,13 @@
   border: 1px solid #d7e0e6;
   background: #fff;
   border-radius: 999px;
-  padding: 6px 15px;
+  padding: 6px 16px;
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #5d6d7e;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
 }
 .pf:hover:not(.on) {
   border-color: #4b95ab;
@@ -108,22 +108,22 @@
 .rv-tabela {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: 0.875rem;
 }
 .rv-tabela thead th {
   background: #f4f8fa;
   color: #40525d;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 13px 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  letter-spacing: 0.04em;
+  padding: 12px 16px;
   text-align: left;
   border-bottom: 2px solid #e3eaef;
   white-space: nowrap;
 }
 .rv-tabela tbody td {
-  padding: 13px 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid #eef2f5;
   vertical-align: middle;
   color: #33424c;
@@ -153,8 +153,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.82rem;
-  font-weight: 700;
+  font-size: 0.8125rem;
+  font-weight: 600;
   letter-spacing: 0.02em;
 }
 .rv-cell-txt {
@@ -163,9 +163,9 @@
   min-width: 0;
 }
 .rv-cell-txt strong {
-  font-size: 0.93rem;
+  font-size: 0.875rem;
   color: #054054;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -179,7 +179,7 @@
 .rv-dot {
   width: 14px;
   height: 14px;
-  border-radius: 5px;
+  border-radius: 4px;
   flex-shrink: 0;
 }
 .rv-acom-nome {
@@ -193,7 +193,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: #33424c;
   font-weight: 600;
   white-space: nowrap;
@@ -205,11 +205,11 @@
   height: 14px;
 }
 .rv-periodo small {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .rv-hj {
-  color: #b5811f;
+  color: #8a5a1e;
 }
 .rv-valor {
   font-variant-numeric: tabular-nums;
@@ -219,23 +219,23 @@
 }
 .rv-total {
   display: block;
-  font-size: 0.73rem;
+  font-size: 0.75rem;
   color: #8a99a4;
   white-space: nowrap;
 }
 .rv-st {
   display: inline-block;
   border-radius: 999px;
-  padding: 5px 14px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
   white-space: nowrap;
 }
 .rv-tabela .badge-acao {
   padding: 0.5em 0.68em;
 }
 .rv-tabela .badge-acao mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -257,7 +257,7 @@
 /* ---------- vazio / skeleton ---------- */
 .rv-vazio {
   text-align: center;
-  padding: 44px 16px !important;
+  padding: 40px 16px !important;
   color: #7d97a1;
 }
 .rv-vazio mat-icon {
@@ -268,8 +268,8 @@
   margin-bottom: 8px;
 }
 .rv-vazio p {
-  margin: 0 0 14px;
-  font-size: 0.9rem;
+  margin: 0 0 12px;
+  font-size: 0.875rem;
 }
 .skel-av {
   width: 40px;
@@ -299,8 +299,8 @@
 .inp {
   border: 1px solid #d7e0e6;
   border-radius: 8px;
-  padding: 8px 10px;
-  font-size: 0.85rem;
+  padding: 8px 8px;
+  font-size: 0.875rem;
   font-family: inherit;
   color: #33424c;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -326,7 +326,7 @@
   color: #8a99a4;
 }
 .res-range .f-chip mat-icon {
-  font-size: 15px;
+  font-size: 0.875rem;
   width: 15px;
   height: 15px;
 }
@@ -360,13 +360,13 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .gr-tit {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: #054054;
-  font-weight: 700;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -397,9 +397,9 @@
 }
 .gr-sub {
   margin: 4px 0 0;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #5d6d7e;
-  font-weight: 700;
+  font-weight: 600;
 }
 .gr-units {
   display: flex;
@@ -409,8 +409,8 @@
   overflow-y: auto;
 }
 .gr-unit {
-  font-size: 0.8rem;
-  padding: 6px 9px;
+  font-size: 0.8125rem;
+  padding: 6px 8px;
   border: 1px solid #e3eaef;
   border-radius: 8px;
   cursor: pointer;
@@ -428,7 +428,7 @@
   border-color: #1a6f8a;
 }
 .gr-blk {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   color: #5d6d7e;
   display: flex;
   gap: 7px;
@@ -442,18 +442,18 @@
   min-width: 300px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .gr-card {
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 12px 16px;
 }
 .gr-head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 .gr-av {
@@ -476,30 +476,30 @@
 }
 .gr-head-txt strong {
   color: #054054;
-  font-size: 0.94rem;
+  font-size: 1rem;
 }
 .gr-datas {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #7d97a1;
 }
 .gr-datas mat-icon {
-  font-size: 15px;
+  font-size: 0.875rem;
   width: 15px;
   height: 15px;
 }
 .gr-contato {
   margin: 8px 0 0;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #8a99a4;
   display: inline-flex;
   align-items: center;
   gap: 5px;
 }
 .gr-contato mat-icon {
-  font-size: 15px;
+  font-size: 0.875rem;
   width: 15px;
   height: 15px;
 }
@@ -507,21 +507,21 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.76rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   font-family: inherit;
   color: #1a6f8a;
   background: #e8f4f8;
   border: 1px solid #c8e0e8;
-  border-radius: 7px;
-  padding: 5px 10px;
+  border-radius: 6px;
+  padding: 5px 8px;
   cursor: pointer;
 }
 .gr-btn:hover {
   background: #d8edf3;
 }
 .gr-btn mat-icon {
-  font-size: 15px;
+  font-size: 0.875rem;
   width: 15px;
   height: 15px;
 }
@@ -534,13 +534,13 @@
   background: #f5dcdc;
 }
 .gr-tb {
-  margin-top: 10px;
-  font-size: 0.82rem;
+  margin-top: 8px;
+  font-size: 0.8125rem;
 }
 .gr-tb th {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: #8a99a4;
-  text-transform: uppercase;
+
 }
 .gr-vazio {
   color: #8a99a4;

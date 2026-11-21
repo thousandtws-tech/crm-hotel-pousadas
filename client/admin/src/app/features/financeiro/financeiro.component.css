@@ -5,20 +5,20 @@
   align-items: flex-end;
   gap: 16px;
   flex-wrap: wrap;
-  padding-bottom: 14px;
+  padding-bottom: 12px;
   margin-bottom: 16px;
   border-bottom: 1px solid #e3eaef;
 }
 .fin-titulo {
   margin: 0;
   font-size: 1.5rem;
-  font-weight: 800;
+  font-weight: 600;
   color: #054054;
   letter-spacing: -0.02em;
 }
 .fin-periodo {
   margin: 2px 0 0;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: #7d97a1;
 }
 .fin-head-acoes {
@@ -33,10 +33,10 @@
   background: #fff;
   color: #5d6d7e;
   border-radius: 4px;
-  padding: 0 14px;
+  padding: 0 12px;
   min-height: 34px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
   font-family: inherit;
   transition:
@@ -44,7 +44,7 @@
     color 0.15s ease;
 }
 .btn-tour mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -57,10 +57,10 @@
 .fin-periodo-card {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   flex-wrap: wrap;
-  padding: 14px 18px;
-  margin-bottom: 14px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
 }
 .fin-presets {
   display: flex;
@@ -73,11 +73,11 @@
   color: #40525d;
   border-radius: 999px;
   padding: 7px 16px;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.14s ease;
+  transition: color 0.14s ease, background-color 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease, opacity 0.14s ease, transform 0.14s ease;
 }
 .pre-btn:hover {
   border-color: #1a6f8a;
@@ -108,7 +108,7 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
-  padding: 14px 26px;
+  padding: 12px 24px;
   min-width: 160px;
   border-left: 1px solid #eef2f5;
 }
@@ -116,11 +116,11 @@
   border-left: none;
 }
 .fin-est-num {
-  font-size: 1.45rem;
-  font-weight: 800;
+  font-size: 1.5rem;
+  font-weight: 600;
   color: #054054;
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -128,11 +128,10 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #7d97a1;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.04em;
   white-space: nowrap;
 }
 .fin-est-lbl mat-icon {
@@ -142,8 +141,8 @@
   color: #a5b6bf;
 }
 .fin-est-online {
-  font-size: 0.68rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: #1e7d32;
   white-space: nowrap;
 }
@@ -153,7 +152,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: #a5b6bf;
   white-space: nowrap;
 }
@@ -172,7 +171,7 @@
 .fin-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
   margin-bottom: 16px;
 }
 .fin-card.span2 {
@@ -190,7 +189,7 @@
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 10px;
-  padding: 16px 18px 10px;
+  padding: 16px 16px 8px;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -204,17 +203,17 @@
 }
 .fin-card-head h3 {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 600;
   color: #054054;
 }
 .fin-card-head small {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .fin-card-total {
-  font-size: 1.05rem;
-  font-weight: 800;
+  font-size: 1rem;
+  font-weight: 600;
   color: #1a6f8a;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -240,7 +239,7 @@
   min-height: 200px;
   margin: 0;
   color: #8a99a4;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 .fin-vazio mat-icon {
   font-size: 20px;
@@ -250,7 +249,7 @@
 
 /* ---------- tabelas ---------- */
 .fin-tabelas {
-  padding: 6px 18px 18px;
+  padding: 6px 16px 16px;
 }
 .fin-tabela-wrap {
   overflow-x: auto;
@@ -258,15 +257,14 @@
 .fin-tabela {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: 0.875rem;
 }
 .fin-tabela thead th {
   background: #f4f8fa;
   color: #40525d;
   font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   padding: 12px 16px;
   text-align: left;
   border-bottom: 2px solid #e3eaef;
@@ -288,12 +286,12 @@
   text-align: right;
 }
 .td-id {
-  font-weight: 700;
+  font-weight: 600;
   color: #054054;
   white-space: nowrap;
 }
 .td-valor {
-  font-weight: 700;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -310,7 +308,7 @@
 .fin-cell {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 .fin-avatar {
@@ -323,8 +321,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   letter-spacing: 0.02em;
 }
 .fin-cell-nome {
@@ -338,8 +336,8 @@
 .fin-vazio-tab {
   text-align: center;
   color: #8a99a4;
-  padding: 30px !important;
-  font-size: 0.85rem;
+  padding: 28px !important;
+  font-size: 0.875rem;
 }
 .badge-acao {
   display: inline-flex;
@@ -351,7 +349,7 @@
   cursor: pointer;
 }
 .badge-acao mat-icon {
-  font-size: 15px;
+  font-size: 0.875rem;
   width: 15px;
   height: 15px;
 }

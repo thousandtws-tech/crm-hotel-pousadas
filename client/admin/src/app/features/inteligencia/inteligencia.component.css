@@ -1,5 +1,5 @@
 .pg {
-  padding: 1.4rem;
+  padding: 1.5rem;
 }
 .pg-head {
   display: flex;
@@ -9,26 +9,26 @@
 }
 .pg-titulo {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.5rem;
 }
 .pg-sub {
   margin: 0.2rem 0 0;
   color: var(--inn-muted, #6b7f88);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 .abas {
   display: flex;
   gap: 0.4rem;
-  margin-bottom: 1.1rem;
+  margin-bottom: 1rem;
   flex-wrap: wrap;
 }
 .aba {
   border: 1px solid #cfdde3;
   background: #fff;
-  padding: 0.45rem 0.9rem;
+  padding: 0.45rem 1rem;
   border-radius: 999px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 .aba.ativa {
   background: var(--inn-first, #14303c);
@@ -38,14 +38,14 @@
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 0.8rem;
+  gap: 0.75rem;
   margin-bottom: 1rem;
 }
 .card {
   background: #fff;
   border: 1px solid #dde7ec;
   border-radius: 12px;
-  padding: 0.9rem 1rem;
+  padding: 1rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -55,8 +55,7 @@
   background: #fffaf0;
 }
 .card-label {
-  font-size: 0.72rem;
-  text-transform: uppercase;
+  font-size: 0.75rem;
   letter-spacing: 0.04em;
   color: #6b7f88;
 }
@@ -73,26 +72,26 @@
   background: #eef7f9;
   border: 1px solid #cfe4ea;
   border-radius: 10px;
-  padding: 0.7rem 1rem;
+  padding: 0.75rem 1rem;
   margin: 0 0 1rem;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 .bloco {
   background: #fff;
   border: 1px solid #dde7ec;
   border-radius: 12px;
-  padding: 1rem 1.2rem;
+  padding: 1rem 1.25rem;
   margin-bottom: 1rem;
   overflow-x: auto;
 }
 .bloco h3 {
-  margin: 0 0 0.8rem;
+  margin: 0 0 0.75rem;
   font-size: 1rem;
 }
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
 }
 th,
 td {
@@ -102,15 +101,14 @@ td {
   vertical-align: top;
 }
 th {
-  font-size: 0.72rem;
-  text-transform: uppercase;
+  font-size: 0.75rem;
   letter-spacing: 0.04em;
   color: #6b7f88;
 }
 .vazio {
   text-align: center;
   color: #8ba0a9;
-  padding: 1.4rem;
+  padding: 1.5rem;
 }
 .linha-vermelho {
   background: #fdf2f2;
@@ -121,8 +119,8 @@ th {
   text-align: center;
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
-  font-weight: 700;
-  font-size: 0.8rem;
+  font-weight: 600;
+  font-size: 0.8125rem;
 }
 .pill-verde {
   background: #e3f3e7;
@@ -137,7 +135,7 @@ th {
   color: #a02424;
 }
 .tag {
-  padding: 0.15rem 0.55rem;
+  padding: 0.15rem 0.5rem;
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -176,7 +174,7 @@ th {
   gap: 4px;
   height: 100%;
   justify-content: flex-end;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: #6b7f88;
 }
 .barra {
@@ -190,7 +188,7 @@ th {
 }
 .legenda {
   display: flex;
-  gap: 1.2rem;
+  gap: 1.25rem;
   font-size: 0.75rem;
   color: #6b7f88;
   margin-top: 0.5rem;

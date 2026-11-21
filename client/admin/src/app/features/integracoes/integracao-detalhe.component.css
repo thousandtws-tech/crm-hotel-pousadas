@@ -8,7 +8,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: #1a6f8a;
   width: fit-content;
 }
@@ -30,33 +30,31 @@
 }
 .eyebrow {
   margin: 0;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: #4b95ab;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.04em;
 }
 .titulo {
   margin: 2px 0 0;
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 600;
   color: #054054;
 }
 .env {
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #536b73;
   background: #eef4f6;
   border-radius: 999px;
-  padding: 3px 9px;
+  padding: 3px 8px;
   vertical-align: middle;
   margin-left: 8px;
 }
 .sub {
   margin: 4px 0 0;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: #5d6d7e;
 }
 .cab-pills {
@@ -70,10 +68,10 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 10px;
+  padding: 3px 8px;
   border-radius: 20px;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   background: rgba(26, 111, 138, 0.1);
   color: #1a6f8a;
   white-space: nowrap;
@@ -112,12 +110,12 @@
 .aviso {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: #fdf6e8;
   border: 1px solid #ecd9a8;
   border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 0.82rem;
+  padding: 8px 12px;
+  font-size: 0.8125rem;
   color: #7a5a10;
 }
 .aviso mat-icon {
@@ -140,13 +138,13 @@
 }
 .card-h {
   margin: 0 0 4px;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 600;
   color: #054054;
 }
 .card-sub {
-  margin: 0 0 14px;
-  font-size: 0.78rem;
+  margin: 0 0 12px;
+  font-size: 0.75rem;
   color: #7d97a1;
 }
 
@@ -155,7 +153,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #5d6d7e;
   margin-bottom: 12px;
 }
@@ -166,7 +164,7 @@
   font-weight: 600;
 }
 .conf {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #17703f;
   background: rgba(25, 135, 84, 0.1);
@@ -189,8 +187,8 @@
 .input-inn {
   border: 1px solid #d7e0e6;
   border-radius: 8px;
-  padding: 9px 12px;
-  font-size: 0.88rem;
+  padding: 8px 12px;
+  font-size: 0.875rem;
   font-family: inherit;
   color: #33424c;
   background: #fff;
@@ -209,12 +207,12 @@
 }
 .mono {
   font-family: monospace;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
 }
 .acoes {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
   margin-top: 4px;
 }
 
@@ -229,7 +227,7 @@
   border-radius: 8px;
   padding: 0 16px;
   min-height: 38px;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -247,7 +245,7 @@
   border-radius: 8px;
   padding: 0 16px;
   min-height: 38px;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   cursor: pointer;
   font-family: inherit;
 }
@@ -271,8 +269,8 @@
   background: #fff;
   color: #1a6f8a;
   border-radius: 6px;
-  padding: 5px 9px;
-  font-size: 0.74rem;
+  padding: 5px 8px;
+  font-size: 0.75rem;
   cursor: pointer;
   font-family: inherit;
 }
@@ -294,7 +292,7 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  margin-top: 14px;
+  margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid #f0f4f6;
 }
@@ -307,8 +305,8 @@
   gap: 8px;
   margin-top: 12px;
   border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 0.82rem;
+  padding: 8px 12px;
+  font-size: 0.8125rem;
 }
 .res mat-icon {
   font-size: 18px;
@@ -340,7 +338,7 @@
   padding-bottom: 2px;
 }
 .op-linha strong {
-  font-size: 0.84rem;
+  font-size: 0.8125rem;
   color: #33424c;
 }
 .op-linha .mini {
@@ -387,25 +385,24 @@
 .tab {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
 }
 .tab th {
   text-align: left;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
   color: #7d97a1;
-  padding: 6px 10px;
+  padding: 6px 8px;
   border-bottom: 1px solid #e3eaef;
 }
 .tab td {
-  padding: 10px;
+  padding: 8px;
   border-bottom: 1px solid #f0f4f6;
   vertical-align: middle;
 }
 .ev-tipo {
   display: block;
-  font-size: 0.84rem;
+  font-size: 0.8125rem;
   color: #33424c;
 }
 .ev-id {
@@ -414,7 +411,7 @@
 .ev-data {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   color: #536b73;
 }
 .erro {
@@ -424,7 +421,7 @@
 /* ---------- estados ---------- */
 .vazio {
   color: #7d97a1;
-  font-size: 0.84rem;
+  font-size: 0.8125rem;
 }
 .vazio-card {
   display: flex;
@@ -440,7 +437,7 @@
   height: 40px;
 }
 .mini {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #7d97a1;
 }
 .mut {
@@ -451,7 +448,7 @@
   border-radius: 4px;
   background: #eef4f6;
   height: 13px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .sk-t {
   width: 160px;

@@ -13,8 +13,8 @@
   align-items: center;
   gap: 7px;
   padding: 8px 16px;
-  border-radius: 7px;
-  font-size: 0.84rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #5d6d7e;
   text-decoration: none;
@@ -24,7 +24,7 @@
     color 0.14s ease;
 }
 .fin-nav-link mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }

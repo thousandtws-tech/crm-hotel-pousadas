@@ -9,7 +9,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: #4b95ab;
   text-decoration: none;
   font-weight: 600;
@@ -27,34 +27,33 @@
 }
 .eyebrow {
   margin: 0;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: #4b95ab;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.04em;
 }
 .titulo {
   margin: 2px 0 4px;
   font-size: 1.5rem;
-  font-weight: 800;
+  font-weight: 600;
   color: #0c3c54;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 .sub {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: 0.875rem;
   color: #666;
 }
 .env {
-  font-size: 0.68rem;
-  font-weight: 800;
-  padding: 3px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 8px;
   border-radius: 999px;
   background: #0c3c54;
   color: #fff;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   vertical-align: middle;
 }
 .env-teste {
@@ -64,7 +63,7 @@
   background: #fff;
   border: 1px solid #e4eaee;
   border-radius: 12px;
-  padding: 18px 20px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -73,7 +72,7 @@
   align-items: center;
   text-align: center;
   color: #777;
-  padding: 36px;
+  padding: 32px;
 }
 .vazio-card mat-icon {
   font-size: 40px;
@@ -84,12 +83,12 @@
 .card-h {
   margin: 0;
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 600;
   color: #0c3c54;
 }
 .card-sub {
   margin: -6px 0 0;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: #777;
 }
 .dl {
@@ -98,22 +97,22 @@
   gap: 4px;
 }
 .dl-rotulo {
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: #395;
   color: #33505e;
 }
 .dl-valor {
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 .conf {
   margin-left: 8px;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: #2e7d32;
-  font-weight: 700;
+  font-weight: 600;
 }
 .segredo-linha {
   display: flex;
@@ -123,10 +122,10 @@
 .input-inn {
   flex: 1;
   min-width: 0;
-  padding: 9px 12px;
+  padding: 8px 12px;
   border: 1px solid #cfdce2;
   border-radius: 8px;
-  font-size: 0.88rem;
+  font-size: 0.875rem;
   background: #fff;
   color: #12303e;
 }
@@ -139,7 +138,7 @@
 }
 .mono {
   font-family: ui-monospace, monospace;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
 }
 .wrap {
   word-break: break-all;
@@ -158,7 +157,7 @@
 }
 .acoes {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   margin-top: 4px;
 }
@@ -171,9 +170,9 @@
   border: 0;
   cursor: pointer;
   border-radius: 8px;
-  font-weight: 700;
-  font-size: 0.85rem;
-  padding: 10px 16px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 8px 16px;
 }
 .btn-pri {
   background: #0c3c54;
@@ -193,7 +192,7 @@
   cursor: not-allowed;
 }
 .mini-btn {
-  padding: 6px 10px;
+  padding: 6px 8px;
   font-size: 0.75rem;
   background: #eef4f6;
   color: #0c3c54;
@@ -205,13 +204,13 @@
 }
 .aviso {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: flex-start;
-  padding: 12px 14px;
+  padding: 12px 12px;
   border-radius: 10px;
   background: #fef7e0;
   border: 1px solid #e8d48b;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: #5d4a08;
 }
 .aviso-perigo {
@@ -224,7 +223,7 @@
 }
 .consulta-linha {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -237,9 +236,9 @@
   display: flex;
   gap: 8px;
   align-items: flex-start;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 .res-ok {
   background: #e8f5e9;
@@ -298,13 +297,12 @@
 .tab {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
 }
 .tab th {
   text-align: left;
   padding: 8px;
-  font-size: 0.72rem;
-  text-transform: uppercase;
+  font-size: 0.75rem;
   color: #7a8a92;
   border-bottom: 1px solid #e4eaee;
 }
@@ -325,7 +323,7 @@
 }
 .vazio {
   color: #8a989e;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   text-align: center;
   padding: 12px;
 }
@@ -333,9 +331,9 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 3px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 8px;
   border-radius: 999px;
 }
 .pill mat-icon {

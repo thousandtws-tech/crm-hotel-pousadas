@@ -5,20 +5,20 @@
   align-items: flex-end;
   gap: 16px;
   flex-wrap: wrap;
-  padding-bottom: 14px;
+  padding-bottom: 12px;
   margin-bottom: 16px;
   border-bottom: 1px solid #e3eaef;
 }
 .fn-titulo {
   margin: 0;
   font-size: 1.5rem;
-  font-weight: 800;
+  font-weight: 600;
   color: #054054;
   letter-spacing: -0.02em;
 }
 .fn-sub {
   margin: 2px 0 0;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: #7d97a1;
 }
 .fn-acoes {
@@ -40,10 +40,10 @@
   background: #fff;
   color: #536b73;
   border-radius: 6px;
-  padding: 0 14px;
+  padding: 0 12px;
   min-height: 34px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
   font-family: inherit;
   text-decoration: none;
@@ -52,7 +52,7 @@
     color 0.15s ease;
 }
 .btn-tour mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -80,7 +80,7 @@
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 10px;
-  padding: 14px 16px;
+  padding: 12px 16px;
 }
 .fn-banner-ic {
   width: 36px;
@@ -94,19 +94,19 @@
   color: #054054;
 }
 .fn-banner-ic mat-icon {
-  font-size: 19px;
+  font-size: 1.125rem;
   width: 19px;
   height: 19px;
 }
 .fn-banner strong {
   display: block;
-  font-size: 0.88rem;
+  font-size: 0.875rem;
   color: #054054;
   margin-bottom: 3px;
 }
 .fn-banner p {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #7d97a1;
   line-height: 1.45;
 }
@@ -125,7 +125,7 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding: 12px 26px;
+  padding: 12px 24px;
   min-width: 140px;
   border-left: 1px solid #eef2f5;
 }
@@ -134,7 +134,7 @@
 }
 .fn-est-num {
   font-size: 1.5rem;
-  font-weight: 800;
+  font-weight: 600;
   color: #054054;
   line-height: 1;
   letter-spacing: -0.02em;
@@ -144,11 +144,10 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #7d97a1;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.04em;
   white-space: nowrap;
 }
 .fn-est-lbl mat-icon {
@@ -160,13 +159,13 @@
 
 /* ---------- toolbar ---------- */
 .fn-card {
-  padding-top: 14px;
+  padding-top: 12px;
 }
 .fn-toolbar {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 4px 2px 14px;
+  gap: 12px;
+  padding: 4px 2px 12px;
 }
 .fn-busca {
   display: flex;
@@ -177,7 +176,7 @@
   background: #fff;
   border: 1px solid #d7e0e6;
   border-radius: 8px;
-  padding: 0 10px;
+  padding: 0 8px;
   height: 40px;
   transition:
     border-color 0.15s,
@@ -198,7 +197,7 @@
   border: none;
   outline: none;
   background: transparent;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: #33424c;
   font-family: inherit;
   height: 100%;
@@ -231,7 +230,7 @@
   background: #d7e0e6;
 }
 .fn-contagem {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #8a99a4;
   margin-left: auto;
   white-space: nowrap;
@@ -245,16 +244,15 @@
 .fn-tabela {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: 0.875rem;
 }
 .fn-tabela thead th {
   background: #f4f8fa;
   color: #40525d;
   font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 14px 16px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 12px 16px;
   text-align: left;
   border-bottom: 2px solid #e3eaef;
   white-space: nowrap;
@@ -287,8 +285,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.82rem;
-  font-weight: 700;
+  font-size: 0.8125rem;
+  font-weight: 600;
   letter-spacing: 0.02em;
 }
 .fn-avatar.eu {
@@ -301,9 +299,9 @@
   min-width: 0;
 }
 .fn-cell-txt strong {
-  font-size: 0.93rem;
+  font-size: 0.875rem;
   color: #054054;
-  font-weight: 700;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 7px;
@@ -315,13 +313,13 @@
 .fn-voce {
   background: #eef4f6;
   color: #054054;
-  font-size: 0.65rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   padding: 1px 8px;
   border-radius: 999px;
 }
 .fn-cell-txt small {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: #8a99a4;
   display: inline-flex;
   align-items: center;
@@ -343,8 +341,8 @@
   gap: 5px;
   border-radius: 999px;
   padding: 4px 12px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   white-space: nowrap;
 }
 .fn-nivel mat-icon {
@@ -364,7 +362,7 @@
   justify-content: center;
   border: none;
   border-radius: 999px;
-  padding: 4px 14px;
+  padding: 4px 12px;
   background: #eef4f6;
   color: #054054;
   font-size: 0.75rem;
@@ -402,7 +400,7 @@
     color 0.14s;
 }
 .acao-btn mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
@@ -426,10 +424,10 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 10px;
+  padding: 3px 8px;
   border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   vertical-align: middle;
 }
 .v-pill-ic {
@@ -475,8 +473,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 600;
   color: #0b2437;
   margin: 0 0 8px;
 }
@@ -497,7 +495,7 @@
 .vl-url {
   flex: 1;
   min-width: 220px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: 1px solid #d5e0e6;
   border-radius: 10px;
   font-size: 13px;
@@ -517,7 +515,7 @@
   text-align: center;
   color: #8a99a4;
   padding: 40px !important;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
 }
 .fn-vazio mat-icon {
   display: block;
@@ -530,7 +528,7 @@
 
 /* ---------- skeleton ---------- */
 .skel-row td {
-  padding: 14px 16px;
+  padding: 12px 16px;
 }
 .skel {
   display: block;
@@ -615,20 +613,20 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 18px 22px;
+  padding: 16px 20px;
   background: #fff;
   border-bottom: 1px solid #e3eaef;
   flex-shrink: 0;
 }
 .drawer-head-txt h5 {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.125rem;
+  font-weight: 600;
   color: #054054;
 }
 .drawer-head-txt p {
   margin: 3px 0 0;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   color: #7d97a1;
 }
 .drawer-fechar {
@@ -663,35 +661,34 @@
 .drawer-body {
   flex: 1;
   overflow-y: auto;
-  padding: 18px 22px;
+  padding: 16px 20px;
 }
 .dsec {
   background: #fff;
   border: 1px solid #e3eaef;
   border-radius: 10px;
   padding: 16px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .dsec-tit {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: #054054;
   margin-bottom: 12px;
 }
 .dsec-tit mat-icon {
-  font-size: 17px;
+  font-size: 1rem;
   width: 17px;
   height: 17px;
 }
 .dgrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px 14px;
+  gap: 8px 12px;
 }
 .dgrid .full {
   grid-column: 1 / -1;
@@ -702,7 +699,7 @@
   gap: 4px;
 }
 .campo .lbl {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #40525d;
 }
@@ -712,7 +709,7 @@
 }
 .erro-campo {
   color: #dc3545;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 .input-inn.inval {
@@ -723,10 +720,10 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #40525d;
   font-weight: 600;
-  padding: 7px 10px;
+  padding: 7px 8px;
   border: 1px solid #d7e0e6;
   border-radius: 8px;
   background: #f7fafc;
@@ -760,7 +757,7 @@
 }
 .senha-wrap .input-inn {
   width: 100%;
-  padding-right: 38px;
+  padding-right: 40px;
 }
 .senha-eye {
   position: absolute;
@@ -785,7 +782,7 @@
   height: 18px;
 }
 .senha-hint {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .dica-sec {
@@ -793,8 +790,8 @@
 }
 .dicas {
   margin: 0;
-  padding-left: 18px;
-  font-size: 0.8rem;
+  padding-left: 16px;
+  font-size: 0.8125rem;
   color: #536b73;
   line-height: 1.7;
 }
@@ -807,7 +804,7 @@
   background: none;
   padding: 0;
   margin-top: 2px;
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #4b95ab;
   font-family: inherit;
@@ -818,7 +815,7 @@
   text-decoration: underline;
 }
 .link-gerir mat-icon {
-  font-size: 15px;
+  font-size: 0.875rem;
   width: 15px;
   height: 15px;
 }
@@ -835,7 +832,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 0.45rem 0.9rem;
+  padding: 0.45rem 1rem;
 }
 .cg-acoes mat-icon {
   font-size: 16px;
@@ -854,7 +851,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 4px;
+  padding: 8px 4px;
   border-bottom: 1px solid #eef2f5;
 }
 .cg-item:last-child {
@@ -870,9 +867,9 @@
   min-width: 0;
 }
 .cg-info strong {
-  font-size: 0.88rem;
+  font-size: 0.875rem;
   color: #054054;
-  font-weight: 700;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 7px;
@@ -880,15 +877,14 @@
 .cg-sys {
   background: #eef4f6;
   color: #054054;
-  font-size: 0.62rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   padding: 1px 7px;
   border-radius: 999px;
-  text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 .cg-info small {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: #8a99a4;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -905,13 +901,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 13px 22px;
+  padding: 12px 20px;
   background: #fff;
   border-top: 1px solid #e3eaef;
   flex-shrink: 0;
 }
 .drawer-req {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #8a99a4;
 }
 .drawer-foot-acoes {
