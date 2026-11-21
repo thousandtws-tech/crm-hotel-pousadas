@@ -3,7 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Meta } from '@angular/platform-browser';
-import { GuestService, MensagemChat, PortalInfo } from '../../core/services/guest.service';
+import { GuestService, MensagemChat, OfertaUpsell, PortalInfo } from '../../core/services/guest.service';
 import { SeoService } from '../../core/services/seo.service';
 
 type Estado = 'carregando' | 'ok' | 'erro';
@@ -98,6 +98,43 @@ type EstadoEnvio = 'ocioso' | 'enviando' | 'enviado' | 'erro';
               </button>
             </form>
           </section>
+
+          @if (ofertas().length || ofertasErro()) {
+            <section aria-labelledby="upsell-titulo" class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+              <p class="text-xs font-medium uppercase tracking-[0.15em] text-[#032B38]/60">Extras</p>
+              <h2 id="upsell-titulo" class="mt-1 text-lg font-semibold text-[#032B38]">Melhore sua estadia</h2>
+              <p class="mt-1 text-sm text-gray-600">
+                Garanta agora pelo cartão ou Pix — a confirmação cai na sua reserva em instantes.
+              </p>
+
+              @if (ofertasErro()) {
+                <p class="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">
+                  {{ ofertasErro() }}
+                </p>
+              }
+              <div class="mt-4 space-y-3">
+                @for (o of ofertas(); track o.oferta + (o.idacomodacao ?? 0)) {
+                  <div class="flex items-center gap-4 rounded-xl border border-gray-200 p-4">
+                    <div class="min-w-0 flex-1">
+                      <h3 class="text-sm font-semibold text-[#032B38]">{{ o.titulo }}</h3>
+                      <p class="mt-0.5 text-xs text-gray-600">{{ o.descricao }}</p>
+                    </div>
+                    <div class="shrink-0 text-right">
+                      <p class="text-sm font-bold text-[#032B38]">{{ moeda(o.valor_centavos) }}</p>
+                      <button type="button" (click)="comprarExtra(o)"
+                              [disabled]="pagando() !== ''"
+                              [attr.aria-busy]="pagando() === chaveOferta(o)"
+                              class="mt-1.5 rounded-full bg-[#032B38] px-4 py-1.5 text-xs font-medium text-white
+                                     disabled:opacity-40
+                                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
+                        {{ pagando() === chaveOferta(o) ? 'Abrindo…' : 'Comprar' }}
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </section>
+          }
 
           <section aria-labelledby="dados-titulo" class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <p class="text-xs font-medium uppercase tracking-[0.15em] text-[#032B38]/60">Privacidade</p>
@@ -206,6 +243,10 @@ export class PortalComponent implements OnInit {
   readonly erroEnvio = signal('');
   readonly solicitando = signal(false);
   readonly protocolo = signal<{ protocolo: number; prazo_dias: number } | null>(null);
+  readonly ofertas = signal<OfertaUpsell[]>([]);
+  readonly ofertasErro = signal('');
+  /** Chave da oferta em checkout — trava os botões durante o redirect. */
+  readonly pagando = signal('');
   urlDadosPdf = '';
   rascunho = '';
   tipoLgpd = 'acesso';
@@ -222,8 +263,47 @@ export class PortalComponent implements OnInit {
         this.info.set(i);
         this.mensagens.set(i.historico ?? []);
         this.estado.set('ok');
+        this.carregarOfertas();
       },
       error: () => this.estado.set('erro'),
+    });
+  }
+
+  /** Extras compráveis — preço e disponibilidade calculados no servidor. */
+  private carregarOfertas(): void {
+    this.guest.ofertas(this.token).subscribe({
+      next: (o) => this.ofertas.set(o),
+      error: () => this.ofertasErro.set(''),
+    });
+  }
+
+  chaveOferta(o: OfertaUpsell): string {
+    return `${o.oferta}:${o.idacomodacao ?? 0}`;
+  }
+
+  moeda(centavos: number): string {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+      centavos / 100,
+    );
+  }
+
+  /** Abre o checkout seguro do extra — o efeito na reserva só acontece
+   *  após a confirmação do provedor (webhook), nunca pelo redirect. */
+  comprarExtra(o: OfertaUpsell): void {
+    if (this.pagando()) return;
+    this.pagando.set(this.chaveOferta(o));
+    this.ofertasErro.set('');
+    this.guest.checkoutExtra(this.token, o.oferta, o.idacomodacao).subscribe({
+      next: (r) => {
+        globalThis.location.href = r.checkout_url;
+      },
+      error: (e) => {
+        const msg =
+          e?.error?.mensagem ?? e?.error?.erro ?? e?.error?.message ??
+          'Não foi possível abrir o pagamento — tente de novo ou fale com a recepção.';
+        this.ofertasErro.set(msg);
+        this.pagando.set('');
+      },
     });
   }
 

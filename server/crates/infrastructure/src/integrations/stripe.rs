@@ -158,6 +158,7 @@ impl PaymentGateway for StripeGateway {
             TipoPagamento::Integral => "integral",
             TipoPagamento::Sinal => "sinal",
             TipoPagamento::Saldo => "saldo",
+            TipoPagamento::Extra => "extra",
         };
         let form = vec![
             ("mode".into(), "payment".into()),

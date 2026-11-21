@@ -49,6 +49,22 @@ export interface RespostaConcierge {
   escalar: boolean;
 }
 
+/** Oferta de upsell — preço calculado no servidor; o checkout revalida. */
+export interface OfertaUpsell {
+  oferta: 'early_checkin' | 'late_checkout' | 'upgrade';
+  idacomodacao?: number;
+  titulo: string;
+  descricao: string;
+  valor_centavos: number;
+}
+
+export interface CheckoutExtraOut {
+  checkout_url: string;
+  valor_centavos: number;
+  expira_em: string;
+  idpagamento: number;
+}
+
 /** Endpoints públicos de hóspede — acesso por token opaco, sem login. */
 @Injectable({ providedIn: 'root' })
 export class GuestService {
@@ -86,6 +102,20 @@ export class GuestService {
 
   enviarMensagem(token: string, mensagem: string): Observable<RespostaConcierge> {
     return this.http.post<RespostaConcierge>(`${this.base}/concierge/${token}`, { mensagem });
+  }
+
+  /** Upsell do portal — ofertas disponíveis agora pra esta reserva. */
+  ofertas(token: string): Observable<OfertaUpsell[]> {
+    return this.http.get<OfertaUpsell[]>(`${this.base}/portal/${token}/ofertas`);
+  }
+
+  /** Cria o checkout Stripe do extra — a confirmação vem só por webhook;
+   *  o redirect de sucesso nunca marca o extra como pago. */
+  checkoutExtra(token: string, oferta: string, idacomodacao?: number): Observable<CheckoutExtraOut> {
+    return this.http.post<CheckoutExtraOut>(`${this.base}/portal/${token}/extras/checkout`, {
+      oferta,
+      idacomodacao,
+    });
   }
 
   /** LGPD art. 18 — documento PDF legível com os dados do titular.

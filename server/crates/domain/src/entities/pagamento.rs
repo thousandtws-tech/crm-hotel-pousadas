@@ -28,6 +28,10 @@ pub struct PagamentoOnline {
     pub provedor: String,
     pub ambiente: Option<String>,
     pub idintegracao: Option<i64>,
+    /// Qual extra aplicar na liquidação — `{"oferta": ..., ...}`; só
+    /// existe em pagamentos `tipo = 'extra'`.
+    #[sqlx(default)]
+    pub contexto: Option<JsonValue>,
     pub criado_em: DateTime<Utc>,
     pub atualizado_em: DateTime<Utc>,
 }

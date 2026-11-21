@@ -7,6 +7,9 @@ pub enum TipoPagamento {
     Integral,
     Sinal,
     Saldo,
+    /// Extra vendido pelo portal (early/late check-in-out, upgrade) —
+    /// cobrança avulsa que não amortiza o valor da estadia.
+    Extra,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]

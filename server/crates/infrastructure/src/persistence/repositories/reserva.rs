@@ -571,6 +571,84 @@ impl ReservaRepository for PgReservaRepository {
         Ok(reserva)
     }
 
+    async fn reserva_por_token(&self, token: uuid::Uuid) -> Result<Option<i64>, DomainError> {
+        sqlx::query_scalar::<_, i64>("SELECT id FROM reserva WHERE token_publico = $1")
+            .bind(token)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(map_db_err)
+    }
+
+    async fn aplicar_extra(
+        &self,
+        idreserva: i64,
+        contexto: &serde_json::Value,
+        valor_centavos: i64,
+        log: NovoLog,
+    ) -> Result<(), DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        match contexto["oferta"].as_str() {
+            Some("early_checkin") => {
+                sqlx::query(
+                    "UPDATE reserva SET early_checkin = true
+                     WHERE id = $1 AND status IN ('p','i')",
+                )
+                .bind(idreserva)
+                .execute(&mut *tx)
+                .await
+                .map_err(map_db_err)?;
+            }
+            Some("late_checkout") => {
+                sqlx::query(
+                    "UPDATE reserva SET late_checkout = true
+                     WHERE id = $1 AND status IN ('p','i')",
+                )
+                .bind(idreserva)
+                .execute(&mut *tx)
+                .await
+                .map_err(map_db_err)?;
+            }
+            Some("upgrade") => {
+                let destino = contexto["idacomodacao"]
+                    .as_i64()
+                    .ok_or_else(|| DomainError::validacao("Upgrade sem acomodação de destino."))?;
+                // Só reserva ainda pendente troca de unidade (check-in já
+                // atribuiu quarto físico); a exclusão de overlap rejeita
+                // destino ocupado no período → Conflito.
+                let ok = sqlx::query(
+                    "UPDATE reserva SET idacomodacao = $2
+                     WHERE id = $1 AND status = 'p'",
+                )
+                .bind(idreserva)
+                .bind(destino)
+                .execute(&mut *tx)
+                .await
+                .map_err(map_db_err)?
+                .rows_affected();
+                if ok == 0 {
+                    return Err(DomainError::conflito(
+                        "A reserva não está mais pendente — o upgrade não foi aplicado.",
+                    ));
+                }
+            }
+            _ => return Err(DomainError::validacao("Oferta de extra desconhecida.").into()),
+        }
+        // Receita do extra entra como adicional da conta — `valor_final`
+        // é derivado das partes no fechamento; relatórios leem `consumo`.
+        sqlx::query(
+            "UPDATE consumo SET valor_adicional = valor_adicional + $2
+             WHERE idreserva = $1 AND status = 'pendente'",
+        )
+        .bind(idreserva)
+        .bind(Decimal::from(valor_centavos) / Decimal::from(100))
+        .execute(&mut *tx)
+        .await
+        .map_err(map_db_err)?;
+        audit::gravar(&mut *tx, &log).await?;
+        tx.commit().await.map_err(map_db_err)?;
+        Ok(())
+    }
+
     async fn checkin(
         &self,
         id: i64,

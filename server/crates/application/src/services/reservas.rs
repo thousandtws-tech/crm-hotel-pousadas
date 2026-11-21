@@ -8,8 +8,9 @@
 use crate::actor::Ator;
 use crate::dto::{
     AcompanhanteInput, AdicionalInput, CancelamentoResponse, CancelarReservaRequest,
-    CheckoutRequest, DisponibilidadeResponse, FnrhEmitRequest, GrupoInput, ItemConsumidoRequest,
-    RemanejarInput, ReservaInput, ReservaPublicaInput, ReservaPublicaOutput,
+    CheckoutExtraInput, CheckoutRequest, DisponibilidadeResponse, FnrhEmitRequest, GrupoInput,
+    ItemConsumidoRequest, OfertaCheckout, OfertaUpsell, RemanejarInput, ReservaInput,
+    ReservaPublicaInput, ReservaPublicaOutput,
 };
 use crate::error::AppResult;
 use crate::services::AuthService;
@@ -36,6 +37,7 @@ use serde_json::json;
 use std::fmt::Write as _;
 use std::sync::Arc;
 use tracing::instrument;
+use uuid::Uuid;
 
 /// Dependências do serviço de reservas — agrupadas para manter o
 /// construtor enxuto conforme novos ports são adicionados.
@@ -616,6 +618,182 @@ impl ReservaService {
             extra += est.taxa_late;
         }
         Ok(extra)
+    }
+
+    // -- upsell pelo portal do hóspede ----------------------------------------
+
+    /// Ofertas compráveis pelo link do portal — tudo avaliado no
+    /// servidor: early/late dependem das taxas do estabelecimento e da
+    /// noite adjacente livre; upgrade é a diferença do total da estadia
+    /// (período + ocupação) para uma unidade superior disponível.
+    pub async fn ofertas_upsell(&self, token: Uuid) -> AppResult<Vec<OfertaUpsell>> {
+        let (reserva, _) = self.reserva_upsell(token).await?;
+        let mut ofertas = Vec::new();
+        let est = self.estabelecimentos.obter().await?;
+        let periodo = PeriodoEstadia::new(reserva.entradaprevista, reserva.saidaprevista)?;
+
+        if let Some(est) = &est {
+            if !reserva.early_checkin && est.taxa_early > Decimal::ZERO {
+                let vespera = reserva.entradaprevista - Duration::days(1);
+                let livre = self
+                    .reservas
+                    .disponibilidade(
+                        PeriodoEstadia::new(vespera, vespera)?,
+                        None,
+                        Some(reserva.idacomodacao),
+                        Some(reserva.id),
+                    )
+                    .await?;
+                if !livre.is_empty() {
+                    let cent = centavos(est.taxa_early)?;
+                    ofertas.push(OfertaUpsell {
+                        oferta: "early_checkin",
+                        idacomodacao: None,
+                        titulo: "Early check-in".into(),
+                        descricao: format!(
+                            "Entre a partir das 10h no dia {} em vez do horário padrão.",
+                            reserva.entradaprevista.format("%d/%m")
+                        ),
+                        valor_centavos: cent,
+                    });
+                }
+            }
+            if !reserva.late_checkout && est.taxa_late > Decimal::ZERO {
+                let depois = reserva.saidaprevista + Duration::days(1);
+                let livre = self
+                    .reservas
+                    .disponibilidade(
+                        PeriodoEstadia::new(depois, depois)?,
+                        None,
+                        Some(reserva.idacomodacao),
+                        Some(reserva.id),
+                    )
+                    .await?;
+                if !livre.is_empty() {
+                    let cent = centavos(est.taxa_late)?;
+                    ofertas.push(OfertaUpsell {
+                        oferta: "late_checkout",
+                        idacomodacao: None,
+                        titulo: "Late checkout".into(),
+                        descricao: format!(
+                            "Saia até 16h no dia {} em vez do horário padrão.",
+                            reserva.saidaprevista.format("%d/%m")
+                        ),
+                        valor_centavos: cent,
+                    });
+                }
+            }
+        }
+
+        // Upgrade: unidades livres no mesmo período cujo total da estadia
+        // supera o da unidade atual — a diferença é o preço do upgrade.
+        // Só reserva 'p' (pré-check-in): na 'i' o quarto físico já foi
+        // atribuído e a troca é decisão do balcão, não de checkout online.
+        if reserva.status != clarituz_domain::enums::StatusReserva::Pendente {
+            return Ok(ofertas);
+        }
+        let livres = self
+            .reservas
+            .disponibilidade(
+                periodo,
+                Some(reserva.quantidade_hospedes),
+                None,
+                Some(reserva.id),
+            )
+            .await?;
+        let ids: Vec<i64> = livres
+            .iter()
+            .map(|a| a.id)
+            .filter(|id| *id != reserva.idacomodacao)
+            .chain(std::iter::once(reserva.idacomodacao))
+            .collect();
+        let precos = self
+            .reservas
+            .precos_estadia(periodo, reserva.quantidade_hospedes, &ids)
+            .await?;
+        let atual = precos
+            .get(&reserva.idacomodacao)
+            .copied()
+            .unwrap_or_else(|| {
+                reserva.valordiaria
+                    * Decimal::from(time::diarias(
+                        reserva.entradaprevista,
+                        reserva.saidaprevista,
+                    ))
+            });
+        for acc in livres.iter().filter(|a| a.id != reserva.idacomodacao) {
+            let Some(novo_total) = precos.get(&acc.id) else {
+                continue;
+            };
+            let diff = *novo_total - atual;
+            if diff <= Decimal::ZERO {
+                continue;
+            }
+            ofertas.push(OfertaUpsell {
+                oferta: "upgrade",
+                idacomodacao: Some(acc.id),
+                titulo: format!("Upgrade para {}", acc.nome),
+                descricao: format!(
+                    "Troque sua acomodação pela {} pagando só a diferença da estadia.",
+                    acc.nome
+                ),
+                valor_centavos: centavos(diff)?,
+            });
+        }
+        Ok(ofertas)
+    }
+
+    /// Revalida a oferta no ato do checkout — o corpo da request nunca
+    /// traz dinheiro nem confiança; a oferta some se a disponibilidade
+    /// mudou entre a listagem e o clique.
+    pub async fn oferta_para_checkout(
+        &self,
+        token: Uuid,
+        input: &CheckoutExtraInput,
+    ) -> AppResult<OfertaCheckout> {
+        let (reserva, idreserva) = self.reserva_upsell(token).await?;
+        let ofertas = self.ofertas_upsell(token).await?;
+        let encontrada = ofertas.iter().find(|o| {
+            o.oferta == input.oferta
+                && (input.oferta != "upgrade" || o.idacomodacao == input.idacomodacao)
+        });
+        let o = encontrada.ok_or_else(|| {
+            DomainError::conflito("Esta oferta não está mais disponível para sua reserva.")
+        })?;
+        Ok(OfertaCheckout {
+            idreserva,
+            oferta: o.oferta,
+            idacomodacao: o.idacomodacao,
+            descricao: format!("Reserva #{} — {}", reserva.id, o.titulo),
+            valor_centavos: o.valor_centavos,
+        })
+    }
+
+    /// Resolve a reserva pelo token opaco e garante que o upsell ainda
+    /// faz sentido (reserva ativa, estadia não encerrada).
+    async fn reserva_upsell(&self, token: Uuid) -> AppResult<(Reserva, i64)> {
+        let idreserva = self
+            .reservas
+            .reserva_por_token(token)
+            .await?
+            .ok_or_else(|| DomainError::nao_encontrado("Reserva não encontrada."))?;
+        let reserva = self
+            .reservas
+            .buscar(idreserva)
+            .await?
+            .ok_or_else(|| DomainError::nao_encontrado("Reserva não encontrada."))?;
+        if !matches!(
+            reserva.status,
+            clarituz_domain::enums::StatusReserva::Pendente
+                | clarituz_domain::enums::StatusReserva::Iniciada
+        ) || reserva.saidaprevista < chrono::Local::now().date_naive()
+        {
+            return Err(DomainError::conflito(
+                "Esta reserva não aceita mais extras — fale com a recepção.",
+            )
+            .into());
+        }
+        Ok((reserva, idreserva))
     }
 
     /// Cria reserva em status `pendente` com conta de consumo aberta.
@@ -1921,4 +2099,13 @@ impl ReservaService {
 /// `Some(t)` → `None` quando vazio após trim.
 fn opt_str(v: Option<String>) -> Option<String> {
     v.map(|s| s.trim().to_string()).filter(|s| !s.is_empty())
+}
+
+/// Decimal BRL → centavos inteiros (x100, arredondado) — fronteira onde
+/// dinheiro vira unidade mínima para cobrança.
+fn centavos(v: Decimal) -> AppResult<i64> {
+    let c = (v * Decimal::from(100)).round();
+    c.to_string()
+        .parse::<i64>()
+        .map_err(|_| DomainError::regra("Valor monetário inválido.").into())
 }

@@ -58,6 +58,40 @@ pub async fn status_publico(
 }
 
 // ---------------------------------------------------------------------------
+// upsell do portal — token opaco da reserva (mesmo escopo do concierge)
+// ---------------------------------------------------------------------------
+
+/// Ofertas compráveis calculadas no servidor — o portal exibe o que o
+/// hóspede pode pagar agora (early/late/upgrade disponíveis).
+pub async fn ofertas_portal(
+    State(s): State<AppState>,
+    Path(token): Path<Uuid>,
+) -> Result<Json<Vec<clarituz_application::dto::OfertaUpsell>>, AppError> {
+    Ok(Json(s.services.reservas.ofertas_upsell(token).await?))
+}
+
+/// Checkout de um extra — a rota compõe os dois serviços: a oferta é
+/// revalidada (disponibilidade + preço) e só então vira cobrança
+/// `tipo = 'extra'`. O efeito na reserva acontece só no webhook.
+pub async fn checkout_extra_portal(
+    State(s): State<AppState>,
+    Path(token): Path<Uuid>,
+    Json(input): Json<clarituz_application::dto::CheckoutExtraInput>,
+) -> Result<Json<CheckoutPublicoOutput>, AppError> {
+    let oferta = s
+        .services
+        .reservas
+        .oferta_para_checkout(token, &input)
+        .await?;
+    Ok(Json(
+        s.services
+            .pagamentos_online
+            .criar_checkout_extra(token, &oferta)
+            .await?,
+    ))
+}
+
+// ---------------------------------------------------------------------------
 // webhook Stripe
 // ---------------------------------------------------------------------------
 

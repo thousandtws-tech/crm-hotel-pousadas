@@ -31,6 +31,8 @@ pub struct NovoPagamento {
     pub provedor: String,
     pub ambiente: Option<String>,
     pub idintegracao: Option<i64>,
+    /// Extra vendido pelo portal — diz ao webhook o que aplicar.
+    pub contexto: Option<JsonValue>,
 }
 
 #[derive(Debug, Clone)]

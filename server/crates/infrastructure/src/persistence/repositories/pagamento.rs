@@ -31,7 +31,7 @@ impl PgPagamentoRepository {
 }
 
 const PAGAMENTO_COLS: &str = "id, idreserva, tipo, status, valor_centavos, moeda,
-    pi_id, metodo, paid_em, provedor, ambiente, idintegracao, criado_em, atualizado_em";
+    pi_id, metodo, paid_em, provedor, ambiente, idintegracao, contexto, criado_em, atualizado_em";
 
 const TENTATIVA_COLS: &str =
     "id, idpagamento, session_id, session_url, status, expires_em, criado_em";
@@ -113,8 +113,8 @@ impl PagamentoRepository for PgPagamentoRepository {
     async fn criar(&self, novo: &NovoPagamento) -> Result<PagamentoOnline, DomainError> {
         let mut tx = self.pool.begin().await.map_err(map_db_err)?;
         let p = sqlx::query_as::<_, PagamentoOnline>(&format!(
-            "INSERT INTO pagamento (idreserva, tipo, valor_centavos, provedor, ambiente, idintegracao)
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING {PAGAMENTO_COLS}"
+            "INSERT INTO pagamento (idreserva, tipo, valor_centavos, provedor, ambiente, idintegracao, contexto)
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING {PAGAMENTO_COLS}"
         ))
         .bind(novo.idreserva)
         .bind(novo.tipo)
@@ -122,6 +122,7 @@ impl PagamentoRepository for PgPagamentoRepository {
         .bind(&novo.provedor)
         .bind(&novo.ambiente)
         .bind(novo.idintegracao)
+        .bind(&novo.contexto)
         .fetch_one(&mut *tx)
         .await
         .map_err(map_db_err)?;

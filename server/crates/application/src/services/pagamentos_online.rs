@@ -96,6 +96,52 @@ impl PagamentosOnlineService {
         }
     }
 
+    /// Efeito colateral da liquidação real — chamado só quando
+    /// `confirmar_pago` reportou transição. Extra aplica seu efeito na
+    /// reserva (early/late/upgrade + receita) e avisa a recepção;
+    /// estadia sinaliza a confirmação transacional ao hóspede.
+    async fn pos_liquidacao(&self, p: &PagamentoOnline) -> AppResult<()> {
+        if p.tipo != TipoPagamento::Extra {
+            self.sinalizar_confirmacao(p.idreserva).await;
+            return Ok(());
+        }
+        let ctx = p.contexto.clone().unwrap_or_else(|| json!({}));
+        // Falha propaga → evento marcado 'falhou' e reprocessável; o
+        // dinheiro já está liquidado e a reserva fica visível na trilha.
+        self.reservas
+            .aplicar_extra(
+                p.idreserva,
+                &ctx,
+                p.valor_centavos,
+                clarituz_domain::entities::NovoLog {
+                    idfuncionario: None,
+                    acao: "extra_pago".into(),
+                    obs: format!(
+                        "Extra pago online — {}",
+                        ctx["oferta"].as_str().unwrap_or("?")
+                    ),
+                    tabela: "reserva",
+                    idtabela: p.idreserva,
+                    dados: Some(ctx.clone()),
+                },
+            )
+            .await?;
+        self.eventos.avisar(
+            Aviso::novo(
+                TipoAviso::Sucesso,
+                "Extra vendido pelo portal",
+                format!(
+                    "Reserva #{} — {} (R$ {:.2})",
+                    p.idreserva,
+                    ctx["oferta"].as_str().unwrap_or("extra"),
+                    p.valor_reais()
+                ),
+            )
+            .dados(json!({"idreserva": p.idreserva, "idpagamento": p.id})),
+        );
+        Ok(())
+    }
+
     /// Dispara a comunicação de confirmação — chamado só quando
     /// `confirmar_pago` reportou transição real (dedup no outbox torna
     /// chamadas repetidas inofensivas). Falha de envio nunca desfaz o
@@ -247,6 +293,10 @@ impl PagamentosOnlineService {
                 (TipoPagamento::Sinal, sinal)
             }
             TipoPagamento::Saldo => (TipoPagamento::Saldo, total_centavos - ja_pago),
+            // Extra não amortiza estadia — fluxo próprio pelo portal.
+            TipoPagamento::Extra => {
+                return Err(DomainError::validacao("Tipo de pagamento inválido.").into())
+            }
         };
         if valor_centavos <= 0 {
             return Err(DomainError::regra("Não há saldo a pagar nesta reserva.").into());
@@ -278,28 +328,115 @@ impl PagamentosOnlineService {
                 provedor: resolvido.provedor.as_str().into(),
                 ambiente: resolvido.ambiente.map(|a| a.as_str().into()),
                 idintegracao: resolvido.idintegracao,
+                contexto: None,
             })
             .await?;
 
+        self.finalizar_checkout(
+            &resolvido,
+            &reserva,
+            &pagamento,
+            format!(
+                "Reserva #{} — {} ({} → {})",
+                reserva.id,
+                reserva.acomodacao_nome,
+                reserva.entradaprevista.format("%d/%m/%Y"),
+                reserva.saidaprevista.format("%d/%m/%Y")
+            ),
+            input.token,
+        )
+        .await
+    }
+
+    /// Checkout de um extra vendido pelo portal — a oferta já chega
+    /// revalidada pelo `ReservasService` (rota compõe os dois); aqui só
+    /// se cria a cobrança `tipo = 'extra'` com o `contexto` que o webhook
+    /// usará para aplicar o efeito na reserva.
+    #[instrument(skip(self, oferta))]
+    pub async fn criar_checkout_extra(
+        &self,
+        token: Uuid,
+        oferta: &crate::dto::OfertaCheckout,
+    ) -> AppResult<CheckoutPublicoOutput> {
+        let resolvido = self.gateway_nova_cobranca().await?;
+        let reserva = self
+            .reservas
+            .buscar_detalhe(oferta.idreserva)
+            .await?
+            .ok_or_else(|| DomainError::nao_encontrado("Reserva não encontrada."))?;
+
+        // Reuso idempotente por oferta: pagamento extra pendente com o
+        // MESMO contexto devolve a sessão aberta — clique duplo não
+        // duplica cobrança nem efeito.
+        for p in self.pagamentos.listar_da_reserva(oferta.idreserva).await? {
+            let mesmo = p.tipo == TipoPagamento::Extra
+                && p.contexto.as_ref().and_then(|c| c["oferta"].as_str()) == Some(oferta.oferta)
+                && p.contexto.as_ref().and_then(|c| c["idacomodacao"].as_i64())
+                    == oferta.idacomodacao;
+            if mesmo && p.status == StatusPagamento::Pendente {
+                if let Some(t) = self.pagamentos.tentativa_aberta(p.id).await? {
+                    if let Some(url) = t.session_url.clone() {
+                        return Ok(CheckoutPublicoOutput {
+                            checkout_url: url,
+                            valor_centavos: p.valor_centavos,
+                            expira_em: t.expires_em,
+                            idpagamento: p.id,
+                        });
+                    }
+                }
+            }
+        }
+
+        let pagamento = self
+            .pagamentos
+            .criar(&NovoPagamento {
+                idreserva: oferta.idreserva,
+                tipo: TipoPagamento::Extra,
+                valor_centavos: oferta.valor_centavos,
+                provedor: resolvido.provedor.as_str().into(),
+                ambiente: resolvido.ambiente.map(|a| a.as_str().into()),
+                idintegracao: resolvido.idintegracao,
+                contexto: Some(json!({
+                    "oferta": oferta.oferta,
+                    "idacomodacao": oferta.idacomodacao,
+                })),
+            })
+            .await?;
+
+        self.finalizar_checkout(
+            &resolvido,
+            &reserva,
+            &pagamento,
+            oferta.descricao.clone(),
+            token,
+        )
+        .await
+    }
+
+    /// Cria a sessão no gateway + registra a tentativa — tail comum do
+    /// checkout de estadia e do checkout de extra.
+    async fn finalizar_checkout(
+        &self,
+        resolvido: &Resolvido,
+        reserva: &clarituz_domain::queries::ReservaDetalhe,
+        pagamento: &PagamentoOnline,
+        descricao: String,
+        token: Uuid,
+    ) -> AppResult<CheckoutPublicoOutput> {
         let hold = chrono::Utc::now() + chrono::Duration::minutes(self.hold_minutos);
-        let sessao = gateway
+        let sessao = resolvido
+            .gateway
             .criar_checkout(&NovaCheckout {
                 idpagamento: pagamento.id,
-                idreserva,
-                descricao: format!(
-                    "Reserva #{} — {} ({} → {})",
-                    reserva.id,
-                    reserva.acomodacao_nome,
-                    reserva.entradaprevista.format("%d/%m/%Y"),
-                    reserva.saidaprevista.format("%d/%m/%Y")
-                ),
-                valor_centavos,
-                tipo,
+                idreserva: reserva.id,
+                descricao,
+                valor_centavos: pagamento.valor_centavos,
+                tipo: pagamento.tipo,
                 expires_em: hold,
                 // Retorno identificado pelo token opaco — nunca o id
                 // sequencial, que seria enumerável na URL do site.
-                success_url: format!("{}?token={}", self.success_url, input.token),
-                cancel_url: format!("{}?token={}", self.cancel_url, input.token),
+                success_url: format!("{}?token={}", self.success_url, token),
+                cancel_url: format!("{}?token={}", self.cancel_url, token),
                 idempotency_key: Uuid::new_v4(),
                 pagador: Some(clarituz_domain::ports::PagadorCheckout {
                     nome: reserva.cliente_nome.clone(),
@@ -336,7 +473,7 @@ impl PagamentosOnlineService {
         metrics::counter!("clarituz_pagamentos_checkout_criado_total").increment(1);
         Ok(CheckoutPublicoOutput {
             checkout_url: sessao.url,
-            valor_centavos,
+            valor_centavos: pagamento.valor_centavos,
             expira_em: sessao.expires_em,
             idpagamento: pagamento.id,
         })
@@ -470,7 +607,7 @@ impl PagamentosOnlineService {
             )
             .await?
         {
-            self.sinalizar_confirmacao(p.idreserva).await;
+            self.pos_liquidacao(&p).await?;
         }
         info!(idpagamento = p.id, "pagamento confirmado (pi.succeeded)");
         Ok(())
@@ -637,7 +774,7 @@ impl PagamentosOnlineService {
             )
             .await?
         {
-            self.sinalizar_confirmacao(p.idreserva).await;
+            self.pos_liquidacao(&p).await?;
         }
         metrics::counter!("clarituz_pagamentos_confirmados_total").increment(1);
         info!(
@@ -705,7 +842,7 @@ impl PagamentosOnlineService {
             )
             .await?
         {
-            self.sinalizar_confirmacao(p.idreserva).await;
+            self.pos_liquidacao(&p).await?;
         }
         metrics::counter!("clarituz_pagamentos_confirmados_total").increment(1);
         info!(
@@ -923,7 +1060,7 @@ impl PagamentosOnlineService {
                                 )
                                 .await?
                             {
-                                self.sinalizar_confirmacao(p.idreserva).await;
+                                self.pos_liquidacao(&p).await?;
                             }
                             info!(idpagamento = p.id, "pagamento confirmado via conciliação");
                         }

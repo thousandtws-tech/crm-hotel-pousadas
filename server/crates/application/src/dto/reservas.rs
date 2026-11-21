@@ -279,3 +279,33 @@ pub struct BuscaPublicaResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub aviso: Option<String>,
 }
+
+/// Oferta de upsell exibida no portal do hóspede — preço já calculado
+/// no servidor; o checkout revalida tudo antes de cobrar.
+#[derive(Debug, Clone, Serialize)]
+pub struct OfertaUpsell {
+    /// 'early_checkin' | 'late_checkout' | 'upgrade'
+    pub oferta: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub idacomodacao: Option<i64>,
+    pub titulo: String,
+    pub descricao: String,
+    pub valor_centavos: i64,
+}
+
+/// Pedido de checkout de um extra — `oferta` + destino do upgrade.
+#[derive(Debug, Deserialize)]
+pub struct CheckoutExtraInput {
+    pub oferta: String,
+    #[serde(default)]
+    pub idacomodacao: Option<i64>,
+}
+
+/// Oferta revalidada pronta para cobrar — sai só do servidor.
+pub struct OfertaCheckout {
+    pub idreserva: i64,
+    pub oferta: &'static str,
+    pub idacomodacao: Option<i64>,
+    pub descricao: String,
+    pub valor_centavos: i64,
+}

@@ -143,6 +143,22 @@ pub trait ReservaRepository: Send + Sync {
         log: NovoLog,
     ) -> Result<Reserva, DomainError>;
 
+    /// Resolve token público opaco → idreserva (portal/upsell).
+    async fn reserva_por_token(&self, token: uuid::Uuid) -> Result<Option<i64>, DomainError>;
+
+    /// Aplica o efeito de um pagamento `tipo = 'extra'` liquidado:
+    /// flags early/late ou troca de acomodação (upgrade) + a receita no
+    /// `consumo` — tudo numa transação. `contexto` traz `oferta` e, para
+    /// upgrade, `idacomodacao`. Idempotente: flags já ligadas e mesmo
+    /// destino de upgrade são no-op; a exclusão `reserva_excl_overlap`
+    /// segue valendo na troca de unidade (23P01 → `Conflito`).
+    async fn aplicar_extra(
+        &self,
+        idreserva: i64,
+        contexto: &serde_json::Value,
+        valor_centavos: i64,
+        log: NovoLog,
+    ) -> Result<(), DomainError>;
 
     /// Mapa por andar — uma linha por acomodação ativa com ocupação de
     /// hoje, bloqueio vigente e pendências de limpeza/manutenção.

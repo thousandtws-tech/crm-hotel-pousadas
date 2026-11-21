@@ -1280,6 +1280,21 @@ pub fn build(state: AppState) -> Router {
                     IpRateLimit::middleware,
                 )),
         )
+        // upsell do portal — ofertas e checkout de extras, escopo = token
+        .route(
+            "/api/v1/publico/portal/{token}/ofertas",
+            get(routes::pagamentos_online::ofertas_portal).route_layer(from_fn_with_state(
+                IpRateLimit::novo(20, Duration::from_secs(60)),
+                IpRateLimit::middleware,
+            )),
+        )
+        .route(
+            "/api/v1/publico/portal/{token}/extras/checkout",
+            post(routes::pagamentos_online::checkout_extra_portal).route_layer(from_fn_with_state(
+                IpRateLimit::novo(20, Duration::from_secs(60)),
+                IpRateLimit::middleware,
+            )),
+        )
         // pré-ficha FNRH pública — link único por reserva (token opaco)
         .route(
             "/api/v1/publico/fnrh/{token}",
