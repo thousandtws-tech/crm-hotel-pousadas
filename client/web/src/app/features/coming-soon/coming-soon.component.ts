@@ -26,7 +26,7 @@ import { WhatsappFloatComponent } from '../../shared/components/whatsapp-float/w
         <h1>Em breve, uma nova experiência à beira-mar.</h1>
 
         <p class="sub">
-          Estamos preparando algo especial para os nossos hóspedes.
+          Estamos preparando algo especial para os nossos hóspedes.<br>
           Deixe seu <span class="nb">e-mail</span> e seja avisado quando estiver no ar.
         </p>
 
@@ -113,9 +113,8 @@ import { WhatsappFloatComponent } from '../../shared/components/whatsapp-float/w
       font-size: 1rem;
       line-height: 1.65;
       color: #a9c3cb;
-      max-width: 27rem;
+      max-width: 34rem;
       margin: 0 auto 2.4rem;
-      text-wrap: balance;
     }
     .nb { white-space: nowrap; }
     .captura {
