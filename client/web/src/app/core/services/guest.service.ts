@@ -30,6 +30,12 @@ export interface RespostaAvaliacao {
   comentario?: string;
 }
 
+/** Roteamento pós-envio — crítica vira atendimento privado; promotor ganha link do Google. */
+export interface AvaliacaoFeedback {
+  critica: boolean;
+  google_url?: string | null;
+}
+
 export interface MensagemChat {
   origem: 'hospede' | 'inna';
   texto: string;
@@ -91,8 +97,8 @@ export class GuestService {
     return this.http.get<AvaliacaoInfo>(`${this.base}/avaliacoes/${token}`);
   }
 
-  responderAvaliacao(token: string, resposta: RespostaAvaliacao): Observable<void> {
-    return this.http.post<void>(`${this.base}/avaliacoes/${token}`, resposta);
+  responderAvaliacao(token: string, resposta: RespostaAvaliacao): Observable<AvaliacaoFeedback> {
+    return this.http.post<AvaliacaoFeedback>(`${this.base}/avaliacoes/${token}`, resposta);
   }
 
   /** Portal do hóspede — contexto + histórico do concierge (token opaco). */

@@ -23,6 +23,7 @@ export interface Estabelecimento {
   politica_cancelamento?: unknown;
   retencao_dados_anos?: number;
   dpo_email?: string | null;
+  google_review_url?: string | null;
   fnrh_assinatura?: boolean;
   version?: number;
 }

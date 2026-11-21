@@ -73,6 +73,7 @@ export abstract class EstabelecimentoStore implements OnInit {
     info_servicos: [''],
     cadastur: [''],
     dpo_email: [''],
+    google_review_url: [''],
     retencao_dados_anos: [5],
     fnrh_assinatura: [false],
     // CDC — faixas escalonadas: reembolso integral, parcial e nenhum.
@@ -152,6 +153,7 @@ export abstract class EstabelecimentoStore implements OnInit {
           info_servicos: e.info_servicos ?? '',
           cadastur: e.cadastur ?? '',
           dpo_email: e.dpo_email ?? '',
+          google_review_url: e.google_review_url ?? '',
           retencao_dados_anos: e.retencao_dados_anos ?? 5,
           fnrh_assinatura: e.fnrh_assinatura ?? false,
           pol1_dias: fx(0)?.ate_dias ?? 15,
@@ -215,6 +217,7 @@ export abstract class EstabelecimentoStore implements OnInit {
         info_servicos: empty(v.info_servicos),
         cadastur: empty(v.cadastur),
         dpo_email: empty(v.dpo_email),
+        google_review_url: empty(v.google_review_url),
         retencao_dados_anos: Number(v.retencao_dados_anos) || 5,
         fnrh_assinatura: !!v.fnrh_assinatura,
         politica_cancelamento: {

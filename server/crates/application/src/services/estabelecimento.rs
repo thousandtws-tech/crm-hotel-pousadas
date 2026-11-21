@@ -77,6 +77,10 @@ impl EstabelecimentoService {
                 .dpo_email
                 .map(|s| s.trim().to_string())
                 .filter(|s| !s.is_empty()),
+            google_review_url: input
+                .google_review_url
+                .map(|s| s.trim().to_string())
+                .filter(|s| s.starts_with("https://")),
             fnrh_assinatura: input.fnrh_assinatura.unwrap_or(false),
             pin_fechamento: input
                 .pin_fechamento

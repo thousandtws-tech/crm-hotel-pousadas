@@ -250,7 +250,6 @@ impl PagamentosOnlineService {
         input: CheckoutPublicoInput,
     ) -> AppResult<CheckoutPublicoOutput> {
         let resolvido = self.gateway_nova_cobranca().await?;
-        let gateway = &resolvido.gateway;
         let idreserva = self
             .pagamentos
             .reserva_por_token(input.token)

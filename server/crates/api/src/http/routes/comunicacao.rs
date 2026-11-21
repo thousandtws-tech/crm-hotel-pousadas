@@ -103,12 +103,44 @@ pub async fn avaliacao_post(
     State(st): State<AppState>,
     Path(token): Path<uuid::Uuid>,
     Json(input): Json<RespostaAvaliacaoInput>,
-) -> Result<StatusCode, ApiError> {
-    st.services
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let fb = st
+        .services
         .comunicacao
         .responder_avaliacao_hospede(token, &input)
         .await?;
-    Ok(StatusCode::NO_CONTENT)
+    if fb.critica {
+        // Nota baixa vira atendimento privado antes de virar review público.
+        let _ = st
+            .services
+            .atendimento
+            .abrir(
+                "avaliacao",
+                &fb.reserva,
+                &format!(
+                    "Avaliação crítica pós-estadia: nota geral {} — {}.",
+                    input.nota_geral,
+                    input.comentario.as_deref().unwrap_or("sem comentário")
+                ),
+                Some("avaliacao_critica"),
+            )
+            .await;
+    }
+    let google_url = if fb.promotor {
+        st.services
+            .estabelecimento
+            .obter()
+            .await
+            .ok()
+            .flatten()
+            .and_then(|e| e.google_review_url)
+    } else {
+        None
+    };
+    Ok(Json(serde_json::json!({
+        "critica": fb.critica,
+        "google_url": google_url,
+    })))
 }
 
 pub async fn concierge_get(

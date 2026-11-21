@@ -34,6 +34,8 @@ pub struct EstabelecimentoInput {
     pub retencao_dados_anos: Option<i32>,
     /// LGPD: e-mail do encarregado (DPO) na política de privacidade.
     pub dpo_email: Option<String>,
+    /// Link de avaliação do Google — convite ao hóspede promotor.
+    pub google_review_url: Option<String>,
     /// MTur: exige assinatura desenhada na pré-ficha pública.
     pub fnrh_assinatura: Option<bool>,
     /// Fechamento: PIN gerencial para autorizar no-show (vazio = mantém).

@@ -48,6 +48,14 @@ enum OutcomeEnvio {
     Suprimido(String),
 }
 
+/// Roteamento pós-resposta da avaliação — a rota decide o efeito
+/// (atendimento privado na crítica; link do Google no promotor).
+pub struct AvaliacaoFeedback {
+    pub reserva: ReservaAuto,
+    pub critica: bool,
+    pub promotor: bool,
+}
+
 pub struct ComunicacaoService {
     fila: Arc<dyn FilaEnvioRepository>,
     push: Arc<dyn PushRepository>,
@@ -982,11 +990,15 @@ impl ComunicacaoService {
         }
     }
 
+    /// Grava a resposta e devolve o roteamento de reputação:
+    /// `critica` (nota ≤2 ou NPS ≤6) → atendimento privado imediato;
+    /// `promotor` (nota ≥4) → convite a avaliar no Google. A reserva do
+    /// hóspede vem junto pro atendimento/abrir não repetir consulta.
     pub async fn responder_avaliacao_hospede(
         &self,
         token: uuid::Uuid,
         input: &RespostaAvaliacaoInput,
-    ) -> AppResult<()> {
+    ) -> AppResult<AvaliacaoFeedback> {
         if !(1..=5).contains(&input.nota_geral) {
             return Err(DomainError::validacao("nota_geral deve ser 1–5").into());
         }
@@ -1005,8 +1017,8 @@ impl ComunicacaoService {
                 },
             )
             .await?;
-        // Alerta imediato pra equipe quando a nota dói (≤2 geral ou NPS ≤6).
-        if input.nota_geral <= 2 || input.nps.is_some_and(|n| n <= 6) {
+        let critica = input.nota_geral <= 2 || input.nps.is_some_and(|n| n <= 6);
+        if critica {
             let _ = self
                 .avisar_equipe(
                     "avaliacao.critica",
@@ -1019,7 +1031,16 @@ impl ComunicacaoService {
                 )
                 .await;
         }
-        Ok(())
+        let reserva = self
+            .automacao
+            .reserva_por_id(av.idreserva)
+            .await?
+            .ok_or_else(|| DomainError::nao_encontrado("reserva não encontrada"))?;
+        Ok(AvaliacaoFeedback {
+            reserva,
+            critica,
+            promotor: !critica && input.nota_geral >= 4,
+        })
     }
 
     // ------------------------------------------------------------------

@@ -27,6 +27,8 @@ pub struct Estabelecimento {
     pub politica_cancelamento: serde_json::Value,
     pub retencao_dados_anos: i32,
     pub dpo_email: Option<String>,
+    /// Link de avaliação do Google — convite exibido ao hóspede promotor.
+    pub google_review_url: Option<String>,
     pub fnrh_assinatura: bool,
     pub pin_fechamento: Option<String>,
     pub version: i64,

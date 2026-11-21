@@ -57,11 +57,29 @@ const NPS_FAIXA = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
           </div>
         }
         @case ('enviado') {
-          <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-8 text-center">
-            <h2 class="text-xl font-semibold text-emerald-800">Avaliação enviada — muito obrigado!</h2>
-            <p class="mt-2 text-emerald-700">Seu retorno nos ajuda a melhorar a cada hospedagem.</p>
-            <a routerLink="/" class="inline-block mt-6 text-[#032B38] underline">Voltar ao site</a>
-          </div>
+          @if (critica()) {
+            <div class="rounded-xl border border-amber-200 bg-amber-50 p-8 text-center">
+              <h2 class="text-xl font-semibold text-amber-900">Recebemos sua avaliação</h2>
+              <p class="mt-2 text-amber-800">
+                Sentimos muito que a experiência não foi como deveria. Nossa equipe já foi
+                avisada e vai entrar em contato com você para resolver.
+              </p>
+              <a routerLink="/" class="inline-block mt-6 text-[#032B38] underline">Voltar ao site</a>
+            </div>
+          } @else {
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-8 text-center">
+              <h2 class="text-xl font-semibold text-emerald-800">Avaliação enviada — muito obrigado!</h2>
+              <p class="mt-2 text-emerald-700">Seu retorno nos ajuda a melhorar a cada hospedagem.</p>
+              @if (googleUrl(); as url) {
+                <a [href]="url" target="_blank" rel="noopener noreferrer"
+                  class="inline-block mt-6 rounded-lg bg-[#032B38] px-6 py-3 text-white font-semibold">
+                  Avaliar também no Google
+                </a>
+                <p class="mt-2 text-sm text-emerald-700">Sua avaliação pública ajuda outros viajantes.</p>
+              }
+              <a routerLink="/" class="block mt-6 text-[#032B38] underline">Voltar ao site</a>
+            </div>
+          }
         }
         @default {
           <form (ngSubmit)="enviar(com.value)" class="space-y-8">
@@ -148,6 +166,8 @@ export class AvaliacaoFormComponent implements OnInit {
   readonly estado = signal<Estado>('carregando');
   readonly info = signal<AvaliacaoInfo | null>(null);
   readonly erroEnvio = signal<string | null>(null);
+  readonly critica = signal(false);
+  readonly googleUrl = signal<string | null>(null);
 
   readonly notaGeral = signal(0);
   readonly notas = signal<Partial<Record<Categoria['campo'], number>>>({});
@@ -187,7 +207,11 @@ export class AvaliacaoFormComponent implements OnInit {
         comentario,
       })
       .subscribe({
-        next: () => this.estado.set('enviado'),
+        next: (fb) => {
+          this.critica.set(fb.critica);
+          this.googleUrl.set(fb.google_url ?? null);
+          this.estado.set('enviado');
+        },
         error: () => {
           this.estado.set('form');
           this.erroEnvio.set('Não foi possível enviar. Tente novamente em instantes.');
