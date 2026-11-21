@@ -6,7 +6,6 @@
 //! **habilitada**; `testar(ambiente)` ignora `habilitado` porque o
 //! teste é o portão para habilitar — mesmo desenho do Infobip.
 
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use async_trait::async_trait;

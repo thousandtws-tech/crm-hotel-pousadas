@@ -42,6 +42,144 @@ const REEMBOLSO_COLS: &str = "id, idpagamento, refund_id, valor_centavos, motivo
 const EVENTO_COLS: &str = "id, provedor, event_id, event_type, payload, idintegracao,
     status, tentativas, ultimo_erro, recebido_em, processado_em";
 
+// ---------------------------------------------------------------------------
+// espelho financeiro — lançamento liquidado + baixa na mesma tx do evento
+// ---------------------------------------------------------------------------
+
+/// Conta financeira de destino dos espelhos online: primeira `banco` ativa,
+/// senão a primeira ativa qualquer (o dinheiro do gateway cai no banco —
+/// o caixa físico da recepção nunca recebe crédito online).
+const CONTA_ONLINE: &str = "SELECT c.id FROM conta_financeira c WHERE c.ativo
+      ORDER BY (c.tipo = 'banco') DESC, c.id LIMIT 1";
+
+/// Espelho do recebimento online: `lancamento` receber já liquidado +
+/// `baixa_lancamento` — alimenta Contas, Fluxo de caixa, DRE e Conciliação.
+/// Idempotente por `documento = 'pagamento-{id}'`; sem conta financeira
+/// ativa (ou valor zero) o pagamento segue sem espelho — nunca bloqueia.
+async fn espelhar_recebimento(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    idpagamento: i64,
+) -> Result<(), DomainError> {
+    let lanc = sqlx::query_scalar::<_, i64>(&format!(
+        "INSERT INTO lancamento
+             (tipo, descricao, idplano_conta, idconta_financeira, favorecido,
+              documento, idcliente, idreserva, valor, emissao, vencimento,
+              competencia, status, valor_liquidado, observacao)
+         SELECT 'receber',
+                'Reserva Nº'||p.idreserva||' — '||
+                CASE p.tipo::text
+                     WHEN 'sinal'    THEN 'sinal online'
+                     WHEN 'integral' THEN 'estadia online'
+                     WHEN 'saldo'    THEN 'saldo online'
+                     ELSE COALESCE(p.contexto->>'oferta', 'extra')||' online'
+                END||' ('||p.provedor||')',
+                (SELECT pc.id FROM plano_conta pc
+                  WHERE pc.codigo = '1.01' AND pc.ativo),
+                cf.id, cl.nome, 'pagamento-'||p.id, r.idcliente, p.idreserva,
+                (p.valor_centavos::numeric / 100)::numeric(12,2),
+                CURRENT_DATE, CURRENT_DATE, CURRENT_DATE,
+                'liquidado', (p.valor_centavos::numeric / 100)::numeric(12,2),
+                'Espelho automático — pagamento online '||p.provedor
+           FROM pagamento p
+           JOIN reserva r ON r.id = p.idreserva
+           JOIN cliente cl ON cl.id = r.idcliente
+           JOIN LATERAL ({CONTA_ONLINE}) cf ON TRUE
+          WHERE p.id = $1
+            AND p.valor_centavos > 0
+            AND NOT EXISTS (
+                SELECT 1 FROM lancamento l WHERE l.documento = 'pagamento-'||p.id
+            )
+         RETURNING id"
+    ))
+    .bind(idpagamento)
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(map_db_err)?;
+    let Some(lanc) = lanc else {
+        return Ok(());
+    };
+    sqlx::query(
+        "INSERT INTO baixa_lancamento
+             (idlancamento, idconta_financeira, valor, data,
+              idforma_pagamento, observacao)
+         SELECT l.id, l.idconta_financeira, l.valor, CURRENT_DATE,
+                (SELECT fp.id FROM forma_pagamento fp
+                  WHERE lower(replace(fp.nome, ' ', '')) = lower(p.provedor)
+                  LIMIT 1),
+                'Recebido online — '||p.provedor
+           FROM lancamento l JOIN pagamento p ON p.id = $2
+          WHERE l.id = $1",
+    )
+    .bind(lanc)
+    .bind(idpagamento)
+    .execute(&mut **tx)
+    .await
+    .map_err(map_db_err)?;
+    Ok(())
+}
+
+/// Espelho de UM reembolso concluído: título 'pagar' liquidado + baixa —
+/// o estorno sai do fluxo de caixa e entra nas deduções do DRE (plano 2.01).
+/// Idempotente por `documento = 'reembolso-{id}'`.
+async fn espelhar_estorno(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    idreembolso: i64,
+) -> Result<(), DomainError> {
+    let lanc = sqlx::query_scalar::<_, i64>(&format!(
+        "INSERT INTO lancamento
+             (tipo, descricao, idplano_conta, idconta_financeira, favorecido,
+              documento, idcliente, idreserva, valor, emissao, vencimento,
+              competencia, status, valor_liquidado, observacao)
+         SELECT 'pagar',
+                'Estorno online — reserva Nº'||p.idreserva||' ('||p.provedor||')',
+                (SELECT pc.id FROM plano_conta pc
+                  WHERE pc.codigo = '2.01' AND pc.ativo),
+                cf.id, cl.nome, 'reembolso-'||rb.id, r.idcliente, p.idreserva,
+                (rb.valor_centavos::numeric / 100)::numeric(12,2),
+                CURRENT_DATE, CURRENT_DATE, CURRENT_DATE,
+                'liquidado', (rb.valor_centavos::numeric / 100)::numeric(12,2),
+                'Estorno automático — reembolso online '||p.provedor
+           FROM pagamento_reembolso rb
+           JOIN pagamento p ON p.id = rb.idpagamento
+           JOIN reserva r ON r.id = p.idreserva
+           JOIN cliente cl ON cl.id = r.idcliente
+           JOIN LATERAL ({CONTA_ONLINE}) cf ON TRUE
+          WHERE rb.id = $1
+            AND rb.valor_centavos > 0
+            AND NOT EXISTS (
+                SELECT 1 FROM lancamento l WHERE l.documento = 'reembolso-'||rb.id
+            )
+         RETURNING id"
+    ))
+    .bind(idreembolso)
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(map_db_err)?;
+    let Some(lanc) = lanc else {
+        return Ok(());
+    };
+    sqlx::query(
+        "INSERT INTO baixa_lancamento
+             (idlancamento, idconta_financeira, valor, data,
+              idforma_pagamento, observacao)
+         SELECT l.id, l.idconta_financeira, l.valor, CURRENT_DATE,
+                (SELECT fp.id FROM forma_pagamento fp
+                  WHERE lower(replace(fp.nome, ' ', '')) =
+                        lower((SELECT p.provedor FROM pagamento p
+                                JOIN pagamento_reembolso rb ON rb.idpagamento = p.id
+                                WHERE l.documento = 'reembolso-'||rb.id))
+                  LIMIT 1),
+                'Estorno online — reembolso'
+           FROM lancamento l
+          WHERE l.id = $1",
+    )
+    .bind(lanc)
+    .execute(&mut **tx)
+    .await
+    .map_err(map_db_err)?;
+    Ok(())
+}
+
 /// Trilha imutável do pagamento — sempre dentro da transação do chamador.
 async fn auditar(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
@@ -246,6 +384,7 @@ impl PagamentoRepository for PgPagamentoRepository {
         .map_err(map_db_err)?;
         if afetadas.is_some() {
             auditar(&mut tx, &auditoria).await?;
+            espelhar_recebimento(&mut tx, idpagamento).await?;
         }
         tx.commit().await.map_err(map_db_err)?;
         Ok(afetadas.is_some())
@@ -367,6 +506,23 @@ impl PagamentoRepository for PgPagamentoRepository {
         .await
         .map_err(map_db_err)?;
         auditar(&mut tx, &auditoria).await?;
+        // Espelha cada reembolso concluído ainda não espelhado — o mesmo
+        // método é chamado por webhook e por reembolso iniciado pelo admin.
+        let pendentes = sqlx::query_scalar::<_, i64>(
+            "SELECT rb.id FROM pagamento_reembolso rb
+              WHERE rb.idpagamento = $1 AND rb.status = 'concluido'
+                AND NOT EXISTS (
+                    SELECT 1 FROM lancamento l
+                     WHERE l.documento = 'reembolso-'||rb.id
+                )",
+        )
+        .bind(idpagamento)
+        .fetch_all(&mut *tx)
+        .await
+        .map_err(map_db_err)?;
+        for idrb in pendentes {
+            espelhar_estorno(&mut tx, idrb).await?;
+        }
         tx.commit().await.map_err(map_db_err)?;
         Ok(())
     }
