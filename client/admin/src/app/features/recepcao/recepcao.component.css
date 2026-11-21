@@ -422,13 +422,13 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 8px;
+  padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid #d5e0e6;
   background: #f8fbfc;
   color: #40525d;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
   transition: color 0.12s ease, background-color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease, transform 0.12s ease;
@@ -460,40 +460,43 @@
 }
 
 .andar {
-  margin-top: 16px;
+  margin-top: 24px;
 }
 .andar:first-of-type {
-  margin-top: 4px;
+  margin-top: 8px;
 }
 .andar-lbl {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  font-size: 0.75rem;
+  gap: 10px;
+  font-size: 0.9375rem;
   font-weight: 600;
-  color: #7d97a1;
-
-  letter-spacing: 0.04em;
-  margin-bottom: 8px;
+  color: #054054;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e3eaef;
 }
 .andar-lbl em {
   font-style: normal;
   font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0;
+  font-size: 0.75rem;
+  color: #7d97a1;
+  background: #f2f7f9;
+  padding: 1px 10px;
+  border-radius: 999px;
 }
 .qt-grid {
   display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(252px, 1fr));
 }
 .qt {
   position: relative;
-  min-height: 104px;
-  padding: 12px 12px;
+  min-height: 122px;
+  padding: 14px;
   border: 1px solid #e3eaef;
   border-top: 4px solid;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fff;
   cursor: pointer;
   display: flex;
@@ -525,13 +528,13 @@
   min-width: 0;
 }
 .qt-id b {
-  font-size: 1.125rem;
+  font-size: 1.375rem;
   font-weight: 600;
   color: #054054;
   line-height: 1.1;
 }
 .qt-id span {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #40525d;
   white-space: nowrap;
@@ -539,11 +542,9 @@
   text-overflow: ellipsis;
 }
 .qt-st {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
-
-  letter-spacing: 0.04em;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 999px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -558,7 +559,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #054054;
   white-space: nowrap;
@@ -573,12 +574,12 @@
   flex-shrink: 0;
 }
 .qt-datas {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #7d97a1;
   font-variant-numeric: tabular-nums;
 }
 .qt-vazio {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #8a99a4;
 }
 .qt-foot {
@@ -587,15 +588,13 @@
   justify-content: space-between;
   gap: 6px;
   width: 100%;
-  padding-top: 6px;
+  padding-top: 8px;
   border-top: 1px dashed #eef2f5;
 }
 .qt-tipo {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #7d97a1;
-
-  letter-spacing: 0.04em;
 }
 .qt-livre {
   border-top-color: #2e8f6a;
@@ -823,7 +822,8 @@
     min-height: 46px;
   }
   .qt-grid {
-    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
   }
 }
 
