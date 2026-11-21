@@ -318,6 +318,9 @@
                 placeholder="00.000.000/0000-00"
                 (input)="mascaraCnpjForn($event)"
               />
+              @if (cnpjFornMsg(); as msg) {
+                <small class="lbl-hint">{{ msg }}</small>
+              }
             </label>
             <label class="fld">
               <span class="lbl">Lead time (dias)</span>

@@ -107,7 +107,8 @@ export abstract class EstabelecimentoStore implements OnInit {
   protected readonly dadosOk = signal(false);
   protected readonly endOk = signal(false);
   protected readonly cnpjBuscando = signal(false);
-  protected readonly cnpjErro = signal(false);
+  /** Motivo da falha na consulta (not_found/inválido/indisponível). */
+  protected readonly cnpjMsg = signal<string | null>(null);
   protected readonly cnpjSituacao = signal<string | null>(null);
   private ultimoCnpj = '';
   private cnpjReq = 0;
@@ -160,13 +161,13 @@ export abstract class EstabelecimentoStore implements OnInit {
     this.ultimoCnpj = digitos;
     const req = ++this.cnpjReq;
     this.cnpjBuscando.set(true);
-    this.cnpjErro.set(false);
+    this.cnpjMsg.set(null);
     this.geo.buscarCnpj(digitos).subscribe({
       next: (r) => {
         if (req !== this.cnpjReq) return;
         this.cnpjBuscando.set(false);
         if (!r?.cnpj) {
-          this.cnpjErro.set(true);
+          this.cnpjMsg.set('CNPJ não encontrado — preencha manualmente.');
           return;
         }
         this.cnpjSituacao.set(
@@ -190,10 +191,10 @@ export abstract class EstabelecimentoStore implements OnInit {
         if (!en.cidade.value && r.municipio) en.cidade.setValue(r.municipio);
         if (!en.cep.value && r.cep) en.cep.setValue(r.cep);
       },
-      error: () => {
+      error: (e) => {
         if (req === this.cnpjReq) {
           this.cnpjBuscando.set(false);
-          this.cnpjErro.set(true);
+          this.cnpjMsg.set(M.msgErroCnpj(e));
         }
       },
     });

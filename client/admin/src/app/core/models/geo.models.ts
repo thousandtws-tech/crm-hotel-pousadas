@@ -38,6 +38,20 @@ export interface BrasilApiCnpj {
   type?: string;
 }
 
+/** Erros BrasilAPI vêm como { name, message, type } no corpo do erro HTTP. */
+export function msgErroCnpj(e: { error?: { type?: string } } | null): string {
+  switch (e?.error?.type) {
+    case 'not_found':
+      return 'CNPJ não encontrado — preencha manualmente.';
+    case 'bad_request':
+      return 'CNPJ inválido — confira os dígitos.';
+    case 'service_unavailable':
+      return 'Consulta CNPJ indisponível no momento — preencha manualmente.';
+    default:
+      return 'Não foi possível consultar o CNPJ — preencha manualmente.';
+  }
+}
+
 /** País normalizado para o seletor com bandeira. */
 export interface PaisGeo {
   /** ISO 3166-1 alpha-2 — chave das imagens no flagcdn. */

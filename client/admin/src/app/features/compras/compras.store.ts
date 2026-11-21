@@ -11,6 +11,7 @@ import {
   RecebimentoItem,
 } from '@core/models/compras.models';
 import { ItemEstoque } from '@core/models/estoque.models';
+import { msgErroCnpj } from '@core/models/geo.models';
 import { ComprasApi } from '@core/api/compras.api';
 import { EstoqueApi } from '@core/api/estoque.api';
 import { GeoApi } from '@core/api/geo.api';
@@ -106,6 +107,7 @@ export abstract class ComprasStore {
   });
 
   protected readonly cnpjFornBuscando = signal(false);
+  protected readonly cnpjFornMsg = signal<string | null>(null);
   private ultimoCnpjForn = '';
   private ultimoCnpjRapido = '';
   private cnpjFornReq = 0;
@@ -449,11 +451,15 @@ export abstract class ComprasStore {
     this.ultimoCnpjForn = digitos;
     const req = ++this.cnpjFornReq;
     this.cnpjFornBuscando.set(true);
+    this.cnpjFornMsg.set(null);
     this.geo.buscarCnpj(digitos).subscribe({
       next: (r) => {
         if (req !== this.cnpjFornReq) return;
         this.cnpjFornBuscando.set(false);
-        if (!r?.cnpj) return;
+        if (!r?.cnpj) {
+          this.cnpjFornMsg.set('CNPJ não encontrado — preencha manualmente.');
+          return;
+        }
         const f = this.fornForm.controls;
         if (!f.nome.value) f.nome.setValue(r.nome_fantasia || r.razao_social || '');
         const fone = r.ddd_telefone_1 || r.ddd_telefone_2;
@@ -462,8 +468,11 @@ export abstract class ComprasStore {
         if (!f.contato.value && socio)
           f.contato.setValue(socio.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()));
       },
-      error: () => {
-        if (req === this.cnpjFornReq) this.cnpjFornBuscando.set(false);
+      error: (e) => {
+        if (req === this.cnpjFornReq) {
+          this.cnpjFornBuscando.set(false);
+          this.cnpjFornMsg.set(msgErroCnpj(e));
+        }
       },
     });
   }
