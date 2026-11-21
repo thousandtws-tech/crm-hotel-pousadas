@@ -198,6 +198,16 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         hold_minutos: settings.hold_minutos,
         dist: distribuicao_svc.clone(),
         comunicacao: Some(comunicacao_svc.clone()),
+        // SERPRO/FNRH — só sobe com endpoint configurado; sem ele as
+        // transmissões ficam 'pendente' e o painel orienta o CSV.
+        fnrh_serpro: settings.serpro_fnrh_url.as_deref().map(|url| {
+            Arc::new(crate::integrations::serpro::SerproFnrh::new(
+                url,
+                settings.serpro_fnrh_usuario.as_deref().unwrap_or(""),
+                settings.serpro_fnrh_senha.as_deref().unwrap_or(""),
+                settings.serpro_fnrh_cnpj.as_deref().unwrap_or(""),
+            )) as Arc<dyn clarituz_domain::ports::ProvedorFnrh>
+        }),
     }));
     let pagamentos_online_svc = Arc::new(PagamentosOnlineService::new(
         pag_online_repo.clone(),

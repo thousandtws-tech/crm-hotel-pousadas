@@ -507,6 +507,62 @@ pub async fn exportar_fnrh(
     ))
 }
 
+/// GET /reservas/{id}/fnrh-qr — link da pré-ficha + QR em SVG para
+/// a recepção exibir/imprimir (hóspede aponta a câmera e preenche).
+pub async fn fnrh_qr(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<Json<Value>, AppError> {
+    let token = s.services.reservas.fnrh_token(id).await?;
+    let url = format!("{}/fnrh/{}", s.site_base.trim_end_matches('/'), token);
+    let qr = qrcode::QrCode::new(url.as_bytes())
+        .map_err(|e| DomainError::regra(format!("QR inválido: {e}")))?;
+    let svg = qr
+        .render::<qrcode::render::svg::Color>()
+        .min_dimensions(320, 320)
+        .quiet_zone(true)
+        .build();
+    Ok(Json(json!({ "url": url, "qr_svg": svg })))
+}
+
+/// GET /fnrh/transmissoes — painel SERPRO: status de cada envio.
+pub async fn fnrh_transmissoes(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Query(q): Query<std::collections::HashMap<String, String>>,
+) -> Result<Json<Value>, AppError> {
+    let hoje = chrono::Utc::now().date_naive();
+    let parse = |k: &str, default: chrono::NaiveDate| -> Result<chrono::NaiveDate, AppError> {
+        match q.get(k) {
+            Some(v) => chrono::NaiveDate::parse_from_str(v, "%Y-%m-%d")
+                .map_err(|_| DomainError::validacao(format!("data '{k}' inválida")).into()),
+            None => Ok(default),
+        }
+    };
+    let itens = s
+        .services
+        .reservas
+        .fnrh_transmissoes(
+            parse("inicio", hoje - chrono::Duration::days(30))?,
+            parse("fim", hoje)?,
+            q.get("status").map(String::as_str),
+        )
+        .await?;
+    Ok(Json(json!(itens)))
+}
+
+/// POST /fnrh/transmissoes/{id}/reenviar — nova tentativa na mesma
+/// ficha (cada tentativa vira linha própria no histórico).
+pub async fn fnrh_retransmitir(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<StatusCode, AppError> {
+    s.services.reservas.retransmitir_fnrh(id).await?;
+    Ok(StatusCode::ACCEPTED)
+}
+
 // ---------------------------------------------------------------------------
 // Mapa por andar + bloqueio formal
 // ---------------------------------------------------------------------------

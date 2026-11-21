@@ -385,3 +385,12 @@ th {
   gap: 0.4rem;
   align-items: center;
 }
+
+.tx-erro {
+  font-size: 0.72rem;
+  color: var(--erro, #c0392b);
+  max-width: 16rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

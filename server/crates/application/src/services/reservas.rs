@@ -67,6 +67,9 @@ pub struct ReservaDeps {
     /// Comunicação transacional pós-reserva — enfileira avisos
     /// (registrada/confirmada/cancelada) após o commit da transição.
     pub comunicacao: Option<Arc<crate::services::comunicacao::ComunicacaoService>>,
+    /// SERPRO/FNRH — `None` quando `SERPRO_FNRH_URL` não está configurada;
+    /// transmissões ficam 'pendente' e o painel orienta o envio manual.
+    pub fnrh_serpro: Option<Arc<dyn clarituz_domain::ports::ProvedorFnrh>>,
 }
 
 pub struct ReservaService {
@@ -87,6 +90,7 @@ pub struct ReservaService {
     hold_minutos: i64,
     dist: Option<Arc<crate::services::channex::ChannexService>>,
     comunicacao: Option<Arc<crate::services::comunicacao::ComunicacaoService>>,
+    fnrh_serpro: Option<Arc<dyn clarituz_domain::ports::ProvedorFnrh>>,
 }
 
 impl ReservaService {
@@ -109,6 +113,7 @@ impl ReservaService {
             hold_minutos: d.hold_minutos,
             dist: d.dist,
             comunicacao: d.comunicacao,
+            fnrh_serpro: d.fnrh_serpro,
         }
     }
 
@@ -1781,6 +1786,74 @@ impl ReservaService {
     }
 
     // ------------------------------------------------------------------
+    // SERPRO — transmissão automática da ficha emitida, com histórico
+    // ------------------------------------------------------------------
+
+    /// Token público da reserva — QR/link da pré-ficha na recepção.
+    pub async fn fnrh_token(&self, idreserva: i64) -> AppResult<uuid::Uuid> {
+        self.reservas
+            .buscar(idreserva)
+            .await?
+            .map(|r| r.token_publico)
+            .ok_or_else(|| DomainError::nao_encontrado("reserva não encontrada").into())
+    }
+
+    /// Dispara a transmissão SERPRO de uma ficha emitida — best-effort:
+    /// cada tentativa vira uma linha no histórico e o resultado é gravado;
+    /// nunca derruba a emissão/check-in. Sem provider configurado a
+    /// transmissão fica 'pendente' orientando a exportação manual.
+    async fn transmitir_serpro(&self, idfnrh: i64, idreserva: i64) -> AppResult<()> {
+        let tx = self.fnrh.transmissao_registrar(idfnrh, idreserva).await?;
+        let (status, protocolo, erro) = match &self.fnrh_serpro {
+            None => (
+                "pendente".to_string(),
+                None,
+                Some("SERPRO não configurado — envie pela exportação CSV".to_string()),
+            ),
+            Some(provedor) => {
+                let ficha = self
+                    .fnrh
+                    .buscar(idfnrh)
+                    .await?
+                    .ok_or_else(|| DomainError::nao_encontrado("ficha não encontrada"))?;
+                let est =
+                    serde_json::to_value(self.estabelecimentos.obter().await?).unwrap_or_default();
+                match provedor.transmitir(&ficha, &est).await {
+                    Ok(ret) => ("transmitida".into(), ret.protocolo, ret.mensagem),
+                    Err(e) => ("erro".into(), None, Some(e.to_string())),
+                }
+            }
+        };
+        self.fnrh
+            .transmissao_marcar(tx.id, &status, protocolo.as_deref(), erro.as_deref())
+            .await?;
+        Ok(())
+    }
+
+    /// Painel — histórico das transmissões do período (mais recente antes).
+    pub async fn fnrh_transmissoes(
+        &self,
+        inicio: chrono::NaiveDate,
+        fim: chrono::NaiveDate,
+        status: Option<&str>,
+    ) -> AppResult<Vec<clarituz_domain::ports::FnrhTransmissaoView>> {
+        if fim < inicio || (fim - inicio).num_days() > 366 {
+            return Err(DomainError::validacao("Período inválido (máx. 1 ano).").into());
+        }
+        Ok(self.fnrh.transmissoes(inicio, fim, status).await?)
+    }
+
+    /// Reenvio manual — nova linha no histórico (cada tentativa conta).
+    pub async fn retransmitir_fnrh(&self, idtx: i64) -> AppResult<()> {
+        let tx = self
+            .fnrh
+            .transmissao_buscar(idtx)
+            .await?
+            .ok_or_else(|| DomainError::nao_encontrado("transmissão não encontrada"))?;
+        self.transmitir_serpro(tx.idfnrh, tx.idreserva).await
+    }
+
+    // ------------------------------------------------------------------
     // fechamento do dia — pendências, no-show autorizado por PIN, relatório
     // ------------------------------------------------------------------
 
@@ -1971,7 +2044,13 @@ impl ReservaService {
             0,
             Some(json!({"idreserva": idreserva})),
         );
-        Ok(self.fnrh.emitir(&nova, log).await?)
+        let f = self.fnrh.emitir(&nova, log).await?;
+        // SERPRO — a ficha emitida vai ao governo; falha de rede não
+        // segura o check-in (reenvio fica no painel de transmissões).
+        if let Err(e) = self.transmitir_serpro(f.id, idreserva).await {
+            tracing::warn!(erro = %e, "fnrh: transmissão falhou — visível no painel");
+        }
+        Ok(f)
     }
 
     /// Exclui em definitivo uma reserva pendente ou cancelada junto com a

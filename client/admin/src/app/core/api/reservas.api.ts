@@ -38,6 +38,20 @@ export class ReservasApi extends ApiHttp {
   emitirFnrh(idreserva: number, req: { motivo_viagem?: string | null; placa_veiculo?: string | null }) {
     return this.post<M.Fnrh>(`/reservas/${idreserva}/fnrh`, req);
   }
+
+  /** Link da pré-ficha + QR SVG — recepção exibe pro hóspede escanear. */
+  fnrhQr(idreserva: number) {
+    return this.get<M.FnrhQr>(`/reservas/${idreserva}/fnrh-qr`);
+  }
+
+  /** Painel SERPRO — transmissões do período (início/fim `YYYY-MM-DD`). */
+  fnrhTransmissoes(inicio?: string, fim?: string, status?: string) {
+    return this.get<M.FnrhTransmissao[]>('/fnrh/transmissoes', { inicio, fim, status });
+  }
+
+  fnrhReenviar(idtx: number) {
+    return this.post<void>(`/fnrh/transmissoes/${idtx}/reenviar`, {});
+  }
   /** Fechamento do dia — pendências + no-show por PIN + relatório e-mail. */
 
   pendenciasFechamento() {

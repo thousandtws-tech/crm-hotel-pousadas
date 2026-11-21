@@ -346,4 +346,74 @@ pub trait FnrhRepository: Send + Sync {
         inicio: chrono::NaiveDate,
         fim: chrono::NaiveDate,
     ) -> Result<Vec<Fnrh>, DomainError>;
+    async fn buscar(&self, id: i64) -> Result<Option<Fnrh>, DomainError>;
+    /// Registra uma tentativa de transmissão (status 'pendente').
+    async fn transmissao_registrar(
+        &self,
+        idfnrh: i64,
+        idreserva: i64,
+    ) -> Result<FnrhTransmissao, DomainError>;
+    /// Resultado da tentativa — 'transmitida' (com protocolo) ou 'erro'.
+    async fn transmissao_marcar(
+        &self,
+        id: i64,
+        status: &str,
+        protocolo: Option<&str>,
+        erro: Option<&str>,
+    ) -> Result<FnrhTransmissao, DomainError>;
+    async fn transmissao_buscar(&self, id: i64) -> Result<Option<FnrhTransmissao>, DomainError>;
+    /// Painel de transmissões — join com hóspede/acomodação da reserva.
+    async fn transmissoes(
+        &self,
+        inicio: chrono::NaiveDate,
+        fim: chrono::NaiveDate,
+        status: Option<&str>,
+    ) -> Result<Vec<FnrhTransmissaoView>, DomainError>;
+}
+
+// ---------------------------------------------------------------------------
+// Transmissão SERPRO — a ficha oficial vai ao governo após a conferência
+// da recepção; cada envio/retry fica registrado com protocolo e erro.
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize)]
+pub struct FnrhTransmissao {
+    pub id: i64,
+    pub idfnrh: i64,
+    pub idreserva: i64,
+    /// 'pendente' | 'transmitida' | 'erro'.
+    pub status: String,
+    /// Protocolo devolvido pelo SERPRO quando aceita.
+    pub protocolo: Option<String>,
+    pub erro: Option<String>,
+    pub tentativas: i32,
+    pub criado_em: DateTime<Utc>,
+    pub transmitida_em: Option<DateTime<Utc>>,
+}
+
+/// Linha do painel — transmissão + contexto da reserva.
+#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize)]
+pub struct FnrhTransmissaoView {
+    #[sqlx(flatten)]
+    #[serde(flatten)]
+    pub tx: FnrhTransmissao,
+    pub hospede: String,
+    pub acomodacao: Option<String>,
+}
+
+/// Retorno do provedor SERPRO.
+pub struct FnrhSerproRetorno {
+    pub protocolo: Option<String>,
+    pub mensagem: Option<String>,
+}
+
+/// Port de submissão — implementado pelo adapter SERPRO em infra.
+/// `None` no service = transmissões ficam 'pendente' até configurar.
+#[async_trait]
+pub trait ProvedorFnrh: Send + Sync {
+    async fn transmitir(
+        &self,
+        ficha: &Fnrh,
+        estabelecimento: &JsonValue,
+    ) -> Result<FnrhSerproRetorno, DomainError>;
 }

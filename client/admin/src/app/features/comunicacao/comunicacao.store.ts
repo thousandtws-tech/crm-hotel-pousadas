@@ -2,6 +2,7 @@
 // O componente herda os membros; templates e comportamento não mudam.
 import { OnInit, inject, signal, computed, effect, Directive } from '@angular/core';
 import { ComunicacaoApi } from '@core/api/comunicacao.api';
+import { ReservasApi } from '@core/api/reservas.api';
 import { AuthStore } from '@core/services/auth.store';
 import { ConfirmService } from '@core/services/confirm.service';
 import { NotifyService } from '@core/services/notify.service';
@@ -19,8 +20,9 @@ import {
   RegraMatriz,
   RespostaRapida,
 } from '@core/models/comunicacao.models';
+import { FnrhTransmissao } from '@core/models/reservas.models';
 
-type Aba = 'avaliacoes' | 'fila' | 'matriz' | 'lgpd' | 'atend' | 'respostas';
+type Aba = 'avaliacoes' | 'fila' | 'matriz' | 'lgpd' | 'atend' | 'respostas' | 'fnrh';
 const CANAIS: CanalEnvio[] = ['inbox', 'push', 'email', 'whatsapp'];
 const PAPEIS = [1, 2, 3];
 const PAPEL_ROTULO: Record<number, string> = { 1: 'Admin', 2: 'Gerente', 3: 'Todos' };
@@ -29,6 +31,7 @@ const PAPEL_ROTULO: Record<number, string> = { 1: 'Admin', 2: 'Gerente', 3: 'Tod
 @Directive()
 export abstract class ComunicacaoStore implements OnInit {
   private readonly comunicacaoApi = inject(ComunicacaoApi);
+  private readonly reservasApi = inject(ReservasApi);
   private readonly notify = inject(NotifyService);
   private readonly auth = inject(AuthStore);
   private readonly confirm = inject(ConfirmService);
@@ -41,6 +44,7 @@ export abstract class ComunicacaoStore implements OnInit {
     { id: 'matriz', rotulo: 'Matriz de alertas' },
     { id: 'lgpd', rotulo: 'Privacidade (LGPD)' },
     { id: 'atend', rotulo: 'Atendimentos' },
+    { id: 'fnrh', rotulo: 'FNRH / SERPRO' },
     { id: 'respostas', rotulo: 'Respostas rápidas' },
   ];
 
@@ -66,6 +70,12 @@ export abstract class ComunicacaoStore implements OnInit {
   protected readonly relatorio = signal<AtendimentoRelatorio | null>(null);
   protected relInicio = '';
   protected relFim = '';
+
+  // -- FNRH/SERPRO — painel de transmissões -------------------------------------
+  protected readonly transmissoes = signal<FnrhTransmissao[]>([]);
+  protected txFiltro = signal<string>('');
+  protected txInicio = '';
+  protected txFim = '';
   protected readonly modalLgpd = signal<LgpdSolicitacao | null>(null);
   protected textoLgpd = '';
   protected readonly modalAv = signal<Avaliacao | null>(null);
@@ -93,6 +103,10 @@ export abstract class ComunicacaoStore implements OnInit {
     effect(() => {
       this.rt.delta('comunicacao_resposta_rapida');
       this.carregarRespostas();
+    });
+    // painel FNRH carrega sob demanda na primeira abertura da aba
+    effect(() => {
+      if (this.aba() === 'fnrh') this.carregarTransmissoes();
     });
   }
 
@@ -308,6 +322,31 @@ export abstract class ComunicacaoStore implements OnInit {
     if (v == null) return '—';
     if (v < 60) return `${Math.round(v)}min`;
     return `${(v / 60).toFixed(1).replace('.', ',')}h`;
+  }
+
+  carregarTransmissoes(): void {
+    this.reservasApi
+      .fnrhTransmissoes(this.txInicio || undefined, this.txFim || undefined, this.txFiltro() || undefined)
+      .subscribe({ next: (t) => this.transmissoes.set(t), error: () => undefined });
+  }
+
+  reenviarTx(t: FnrhTransmissao): void {
+    this.reservasApi.fnrhReenviar(t.id).subscribe({
+      next: () => {
+        this.notify.ok(`Ficha ${t.idfnrh} reenviada — acompanhe o status.`);
+        this.carregarTransmissoes();
+      },
+      error: () => this.notify.erroMsg('Não foi possível reenviar.'),
+    });
+  }
+
+  txSt(s: string): string {
+    const m: Record<string, string> = {
+      pendente: 'st st-pendente',
+      transmitida: 'st st-resolvido',
+      erro: 'st st-falhou',
+    };
+    return m[s] ?? 'st';
   }
 
   carregarLgpd(): void {

@@ -353,6 +353,88 @@
     </div>
   }
 
+  @if (aba() === 'fnrh') {
+    <div class="bloco">
+      <h3>
+        Transmissões FNRH ao SERPRO — enviada sozinha após a emissão
+        <input
+          type="date"
+          class="sel"
+          aria-label="Início"
+          [ngModel]="txInicio"
+          (ngModelChange)="txInicio = $event; carregarTransmissoes()"
+        />
+        <input
+          type="date"
+          class="sel"
+          aria-label="Fim"
+          [ngModel]="txFim"
+          (ngModelChange)="txFim = $event; carregarTransmissoes()"
+        />
+        <select
+          class="sel"
+          aria-label="Status"
+          [ngModel]="txFiltro()"
+          (ngModelChange)="txFiltro.set($event); carregarTransmissoes()"
+        >
+          <option value="">Todos</option>
+          <option value="transmitida">Transmitidas</option>
+          <option value="pendente">Pendentes</option>
+          <option value="erro">Com erro</option>
+        </select>
+        <button class="btn-mini" (click)="carregarTransmissoes()">Atualizar</button>
+      </h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Ficha</th>
+            <th>Reserva</th>
+            <th>Hóspede</th>
+            <th>Acomodação</th>
+            <th>Status</th>
+            <th>Protocolo SERPRO</th>
+            <th>Tent.</th>
+            <th>Criada</th>
+            <th>Transmitida</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of transmissoes(); track t.id) {
+            <tr>
+              <td><b>#{{ t.idfnrh }}</b></td>
+              <td>#{{ t.idreserva }}</td>
+              <td>{{ t.hospede }}</td>
+              <td>{{ t.acomodacao ?? '—' }}</td>
+              <td>
+                <span [class]="txSt(t.status)">{{ t.status }}</span>
+                @if (t.erro) {
+                  <div class="tx-erro" [title]="t.erro">{{ t.erro }}</div>
+                }
+              </td>
+              <td>{{ t.protocolo ?? '—' }}</td>
+              <td>{{ t.tentativas }}</td>
+              <td>{{ t.criado_em | date: 'dd/MM/yy HH:mm' }}</td>
+              <td>{{ t.transmitida_em ? (t.transmitida_em | date: 'dd/MM/yy HH:mm') : '—' }}</td>
+              <td>
+                @if (t.status !== 'transmitida') {
+                  <button class="btn-mini" (click)="reenviarTx(t)">Reenviar</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="10" class="vazio">
+                Nenhuma transmissão — as fichas emitidas aparecem aqui com o status
+                de cada envio ao SERPRO.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
   @if (aba() === 'respostas') {
     <div class="bloco">
       <h3>

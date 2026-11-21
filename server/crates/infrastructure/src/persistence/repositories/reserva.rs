@@ -8,9 +8,9 @@ use clarituz_domain::entities::{
 };
 use clarituz_domain::enums::StatusConsumo;
 use clarituz_domain::ports::{
-    AcompanhanteRepository, ComandoCheckout, FiltroReserva, FnrhRepository, NovaFnrh, NovaReserva,
-    NovoAcompanhante, NovoAdicional, NovoItemConsumido, PrecoDia, ReservaRepository,
-    ResultadoCancelamento,
+    AcompanhanteRepository, ComandoCheckout, FiltroReserva, FnrhRepository, FnrhTransmissao,
+    FnrhTransmissaoView, NovaFnrh, NovaReserva, NovoAcompanhante, NovoAdicional, NovoItemConsumido,
+    PrecoDia, ReservaRepository, ResultadoCancelamento,
 };
 use clarituz_domain::queries::{
     AcomodacaoDisponivel, ComprovanteResumo, ConsumoResumo, MapaQuarto, PendenciaReserva,
@@ -1316,6 +1316,100 @@ impl FnrhRepository for PgReservaRepository {
         ))
         .bind(inicio)
         .bind(fim)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn buscar(&self, id: i64) -> Result<Option<Fnrh>, DomainError> {
+        sqlx::query_as::<_, Fnrh>(&format!("SELECT {FNRH_COLS} FROM fnrh WHERE id = $1"))
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(map_db_err)
+    }
+
+    async fn transmissao_registrar(
+        &self,
+        idfnrh: i64,
+        idreserva: i64,
+    ) -> Result<FnrhTransmissao, DomainError> {
+        sqlx::query_as::<_, FnrhTransmissao>(
+            "INSERT INTO fnrh_transmissao (idfnrh, idreserva)
+             VALUES ($1, $2)
+             RETURNING id, idfnrh, idreserva, status, protocolo, erro,
+                       tentativas, criado_em, transmitida_em",
+        )
+        .bind(idfnrh)
+        .bind(idreserva)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn transmissao_marcar(
+        &self,
+        id: i64,
+        status: &str,
+        protocolo: Option<&str>,
+        erro: Option<&str>,
+    ) -> Result<FnrhTransmissao, DomainError> {
+        sqlx::query_as::<_, FnrhTransmissao>(
+            "UPDATE fnrh_transmissao
+             SET status = $2,
+                 protocolo = coalesce($3, protocolo),
+                 erro = $4,
+                 tentativas = tentativas + 1,
+                 transmitida_em = CASE WHEN $2 = 'transmitida' THEN now()
+                                       ELSE transmitida_em END
+             WHERE id = $1
+             RETURNING id, idfnrh, idreserva, status, protocolo, erro,
+                       tentativas, criado_em, transmitida_em",
+        )
+        .bind(id)
+        .bind(status)
+        .bind(protocolo)
+        .bind(erro)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn transmissao_buscar(&self, id: i64) -> Result<Option<FnrhTransmissao>, DomainError> {
+        sqlx::query_as::<_, FnrhTransmissao>(
+            "SELECT id, idfnrh, idreserva, status, protocolo, erro,
+                    tentativas, criado_em, transmitida_em
+             FROM fnrh_transmissao WHERE id = $1",
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn transmissoes(
+        &self,
+        inicio: chrono::NaiveDate,
+        fim: chrono::NaiveDate,
+        status: Option<&str>,
+    ) -> Result<Vec<FnrhTransmissaoView>, DomainError> {
+        sqlx::query_as::<_, FnrhTransmissaoView>(
+            "SELECT t.id, t.idfnrh, t.idreserva, t.status, t.protocolo,
+                    t.erro, t.tentativas, t.criado_em, t.transmitida_em,
+                    c.nome AS hospede,
+                    a.nome AS acomodacao
+             FROM fnrh_transmissao t
+             JOIN reserva r ON r.id = t.idreserva
+             JOIN cliente c ON c.id = r.idcliente
+             LEFT JOIN acomodacao a ON a.id = r.idacomodacao
+             WHERE t.criado_em::date BETWEEN $1 AND $2
+               AND ($3::text IS NULL OR t.status = $3)
+             ORDER BY t.criado_em DESC
+             LIMIT 500",
+        )
+        .bind(inicio)
+        .bind(fim)
+        .bind(status)
         .fetch_all(&self.pool)
         .await
         .map_err(map_db_err)

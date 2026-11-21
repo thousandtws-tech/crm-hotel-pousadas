@@ -186,6 +186,26 @@ export interface ReservaDetalhe extends Omit<Reserva, 'atualizado_em'> {
   fnrh_documento_key: string | null;
 }
 
+/** Transmissão da FNRH ao SERPRO — linha do painel de status. */
+export interface FnrhTransmissao {
+  id: number;
+  idfnrh: number;
+  idreserva: number;
+  status: 'pendente' | 'transmitida' | 'erro';
+  protocolo: string | null;
+  erro: string | null;
+  tentativas: number;
+  criado_em: string;
+  transmitida_em: string | null;
+  hospede: string;
+  acomodacao: string | null;
+}
+
+export interface FnrhQr {
+  url: string;
+  qr_svg: string;
+}
+
 export interface ReservaInput {
   idacomodacao: number;
   idcliente: number;

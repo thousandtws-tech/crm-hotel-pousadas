@@ -155,6 +155,15 @@
           >
             <mat-icon>send</mat-icon> Link pré-check-in
           </button>
+          <button
+            class="btn-ghost"
+            type="button"
+            [disabled]="enviando()"
+            title="QR Code da pré-ficha — hóspede aponta a câmera e preenche no próprio celular"
+            (click)="abrirQrFnrh()"
+          >
+            <mat-icon>qr_code_2</mat-icon> QR pré-check-in
+          </button>
           <button class="btn-dark-blue fnrh-btn" type="button" (click)="abrirFnrh()">
             <mat-icon>assignment_ind</mat-icon> Emitir FNRH
           </button>
@@ -992,6 +1001,28 @@
             <mat-icon>assignment_ind</mat-icon> Emitir e imprimir
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ===== modal QR pré-check-in ===== -->
+@if (modal() === 'qr' && qrFnrh(); as qr) {
+  <div class="overlay" (click.self)="fecharModal()">
+    <div class="modal-inn sm" role="dialog" aria-modal="true" aria-label="QR Code da pré-ficha">
+      <div class="modal-head">
+        <h5>Pré-check-in por QR Code</h5>
+        <button class="close" type="button" (click)="fecharModal()" aria-label="Fechar">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="modal-body qr-body">
+        <img class="qr-img" [src]="qrSrc()" alt="QR Code da ficha de pré-check-in" />
+        <small class="muted">
+          O hóspede aponta a câmera do celular e preenche a ficha antes de chegar —
+          sem fila no balcão. Também funciona impresso na recepção.
+        </small>
+        <code class="qr-url">{{ qr.url }}</code>
       </div>
     </div>
   </div>

@@ -103,6 +103,14 @@ pub struct Settings {
     /// Teto de tentativas de login por IP/minuto (default 10 — Argon2 é
     /// CPU-bound; sem teto o endpoint vira amplificador de DoS/brute-force).
     pub login_rate_limit_per_min: u32,
+    /// SERPRO/FNRH — webservice do meio de hospedagem. Sem `SERPRO_FNRH_URL`
+    /// o provider não sobe e as transmissões ficam 'pendente' (painel
+    /// orienta a exportação SNE/CSV manual).
+    pub serpro_fnrh_url: Option<String>,
+    pub serpro_fnrh_usuario: Option<String>,
+    pub serpro_fnrh_senha: Option<String>,
+    /// CNPJ do estabelecimento registrado no sistema FNRH (14 dígitos).
+    pub serpro_fnrh_cnpj: Option<String>,
 }
 
 impl Settings {
@@ -184,6 +192,10 @@ impl Settings {
             login_rate_limit_per_min: env_u32("LOGIN_RATE_LIMIT_PER_MIN")
                 .unwrap_or(10)
                 .clamp(1, 10_000),
+            serpro_fnrh_url: env_string("SERPRO_FNRH_URL"),
+            serpro_fnrh_usuario: env_string("SERPRO_FNRH_USUARIO"),
+            serpro_fnrh_senha: env_string("SERPRO_FNRH_SENHA"),
+            serpro_fnrh_cnpj: env_string("SERPRO_FNRH_CNPJ"),
         })
     }
 }

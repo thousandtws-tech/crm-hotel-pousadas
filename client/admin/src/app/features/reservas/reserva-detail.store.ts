@@ -1,6 +1,6 @@
 // Lógica e estado de reserva-detail — separada da camada de UI (reserva-detail.component.ts).
 // O componente herda os membros; templates e comportamento não mudam.
-import { inject, signal, OnInit, effect, Directive } from '@angular/core';
+import { inject, signal, computed, OnInit, effect, Directive } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, Validators } from '@angular/forms';
 import { EstabelecimentoApi } from '@core/api/estabelecimento.api';
@@ -30,7 +30,7 @@ import { imprimirFnrh } from '@shared/utils/fnrh-print';
 import { switchMap } from 'rxjs';
 
 type Modal =
-  'checkin' | 'checkout' | 'dados-checkin' | 'dados-checkout' | 'cancelar' | 'fnrh' | null;
+  'checkin' | 'checkout' | 'dados-checkin' | 'dados-checkout' | 'cancelar' | 'fnrh' | 'qr' | null;
 
 /** Motivos de viagem do modelo oficial da FNRH. */
 const MOTIVOS_VIAGEM = [
@@ -283,6 +283,30 @@ export abstract class ReservaDetailStore implements OnInit {
 
   /** Expande os dados da pré-ficha enviada pelo hóspede. */
   protected readonly verFicha = signal(false);
+
+  /** QR da pré-ficha — recepção exibe pro hóspede escanear no celular. */
+  protected readonly qrFnrh = signal<{ url: string; qr_svg: string } | null>(null);
+  protected readonly qrSrc = computed(() => {
+    const svg = this.qrFnrh()?.qr_svg;
+    return svg ? `data:image/svg+xml;utf8,${encodeURIComponent(svg)}` : '';
+  });
+
+  abrirQrFnrh(): void {
+    const res = this.r();
+    if (!res || this.enviando()) return;
+    this.enviando.set(true);
+    this.reservasApi.fnrhQr(res.id).subscribe({
+      next: (qr) => {
+        this.enviando.set(false);
+        this.qrFnrh.set(qr);
+        this.modal.set('qr');
+      },
+      error: (e) => {
+        this.enviando.set(false);
+        this.notify.erro(e);
+      },
+    });
+  }
 
   /** Envia (ou reenvia) o link da pré-ficha ao hóspede — e-mail sempre,
    * WhatsApp quando há consentimento transacional. */
