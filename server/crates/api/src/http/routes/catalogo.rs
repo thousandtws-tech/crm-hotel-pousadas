@@ -7,11 +7,11 @@ use clarituz_application::actor::Ator;
 use clarituz_application::dto::{
     AcomodacaoInput, AtivoInput, EnderecoInput, EstabelecimentoInput, FrigobarInput,
     ItemFrigobarInput, Mensagem, NomeInput, QuantidadeInput, QuartoInput, TarifaOcupacaoInput,
-    VagaInput, VinculoAcomodacaoInput,
+    TarifaPeriodoInput, VagaInput, VinculoAcomodacaoInput,
 };
 use clarituz_domain::entities::{
     Acomodacao, EnderecoEstabelecimento, Estabelecimento, FormaPagamento, Frigobar, ItemFrigobar,
-    Quarto, TarifaHistorico, TarifaOcupacao, TipoAcomodacao, VagaEstacionamento,
+    Quarto, TarifaHistorico, TarifaOcupacao, TarifaPeriodo, TipoAcomodacao, VagaEstacionamento,
 };
 use clarituz_domain::queries::ItemFrigobarView;
 use clarituz_domain::DomainError;
@@ -77,6 +77,42 @@ pub async fn salvar_tarifas_ocupacao(
             .salvar_tarifas_ocupacao(&ator, id, body)
             .await?,
     ))
+}
+
+/// Diárias diferenciadas por data (fds, feriados, alta temporada) —
+/// sobrepõem a tarifa por ocupação e a tarifa base nas noites cobertas.
+pub async fn tarifas_periodo(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<Json<Vec<TarifaPeriodo>>, AppError> {
+    Ok(Json(s.services.acomodacoes.tarifas_periodo(id).await?))
+}
+
+pub async fn criar_tarifa_periodo(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+    Json(body): Json<TarifaPeriodoInput>,
+) -> Result<(StatusCode, Json<TarifaPeriodo>), AppError> {
+    let t = s
+        .services
+        .acomodacoes
+        .criar_tarifa_periodo(&ator, id, body)
+        .await?;
+    Ok((StatusCode::CREATED, Json(t)))
+}
+
+pub async fn remover_tarifa_periodo(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path((_, id)): Path<(i64, i64)>,
+) -> Result<StatusCode, AppError> {
+    s.services
+        .acomodacoes
+        .remover_tarifa_periodo(&ator, id)
+        .await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 pub async fn status_tipo(

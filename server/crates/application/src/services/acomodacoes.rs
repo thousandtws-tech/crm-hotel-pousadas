@@ -1,11 +1,13 @@
 use crate::actor::Ator;
-use crate::dto::{AcomodacaoInput, NomeInput, QuartoInput, TarifaOcupacaoInput};
+use crate::dto::{
+    AcomodacaoInput, NomeInput, QuartoInput, TarifaOcupacaoInput, TarifaPeriodoInput,
+};
 use crate::error::AppResult;
 use clarituz_domain::entities::{
-    Acomodacao, Quarto, TarifaHistorico, TarifaOcupacao, TipoAcomodacao,
+    Acomodacao, Quarto, TarifaHistorico, TarifaOcupacao, TarifaPeriodo, TipoAcomodacao,
 };
 use clarituz_domain::ports::{
-    AcomodacaoRepository, AtualizaAcomodacao, NovaAcomodacao, QuartoRepository,
+    AcomodacaoRepository, AtualizaAcomodacao, NovaAcomodacao, NovaTarifaPeriodo, QuartoRepository,
     TipoAcomodacaoRepository,
 };
 use clarituz_domain::DomainError;
@@ -110,6 +112,65 @@ impl AcomodacaoService {
             .salvar_tarifas_ocupacao(idtipo, &faixas)
             .await?;
         Ok(self.acomodacoes.tarifas_ocupacao(idtipo).await?)
+    }
+
+    /// Diárias diferenciadas por data — sobrepõem ocupação e tarifa
+    /// base nas noites cobertas (fds, feriados, alta temporada).
+    pub async fn tarifas_periodo(&self, idacomodacao: i64) -> AppResult<Vec<TarifaPeriodo>> {
+        Ok(self.acomodacoes.tarifas_periodo(idacomodacao).await?)
+    }
+
+    pub async fn criar_tarifa_periodo(
+        &self,
+        ator: &Ator,
+        idacomodacao: i64,
+        input: TarifaPeriodoInput,
+    ) -> AppResult<TarifaPeriodo> {
+        ator.exigir_admin()?;
+        self.buscar(idacomodacao).await?;
+        if input.fim < input.inicio {
+            return Err(
+                DomainError::validacao("O fim do período não pode ser antes do início.").into(),
+            );
+        }
+        if input.valor <= Decimal::ZERO {
+            return Err(DomainError::validacao("A diária do período deve ser positiva.").into());
+        }
+        let nova = NovaTarifaPeriodo {
+            idacomodacao,
+            inicio: input.inicio,
+            fim: input.fim,
+            valor: money::round2(input.valor),
+            rotulo: input
+                .rotulo
+                .map(|r| r.trim().to_string())
+                .filter(|r| !r.is_empty()),
+            prioridade: input.prioridade.unwrap_or(0),
+            idfuncionario: Some(ator.id),
+        };
+        let log = ator.log(
+            "cadastro",
+            format!(
+                "Cadastrou tarifa de período na acomodação Nº{idacomodacao}: {} → {} por R${}",
+                nova.inicio, nova.fim, nova.valor
+            ),
+            "tarifa_periodo",
+            0,
+            None,
+        );
+        Ok(self.acomodacoes.criar_tarifa_periodo(&nova, log).await?)
+    }
+
+    pub async fn remover_tarifa_periodo(&self, ator: &Ator, id: i64) -> AppResult<()> {
+        ator.exigir_admin()?;
+        let log = ator.log(
+            "remoção",
+            format!("Removeu a tarifa de período Nº{id}"),
+            "tarifa_periodo",
+            id,
+            None,
+        );
+        Ok(self.acomodacoes.remover_tarifa_periodo(id, log).await?)
     }
 
     pub async fn status_tipo(

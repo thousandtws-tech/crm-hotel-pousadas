@@ -182,6 +182,16 @@ pub fn build(state: AppState) -> Router {
             "/acomodacoes/{id}/tarifas",
             get(routes::catalogo::tarifas_acomodacao).route_layer(from_fn(middleware::cache_curto)),
         )
+        // diárias diferenciadas por período — sem cache_curto: mudam
+        // o preço exibido na busca pública imediatamente.
+        .route(
+            "/acomodacoes/{id}/tarifas-periodo",
+            get(routes::catalogo::tarifas_periodo).post(routes::catalogo::criar_tarifa_periodo),
+        )
+        .route(
+            "/acomodacoes/{id}/tarifas-periodo/{idt}",
+            delete(routes::catalogo::remover_tarifa_periodo),
+        )
         .route(
             "/acomodacoes/{id}/quartos",
             get(routes::catalogo::listar_quartos)

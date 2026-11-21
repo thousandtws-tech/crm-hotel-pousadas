@@ -38,8 +38,10 @@ export interface SearchAcomodacao {
   nome: string;
   numero: number;
   capacidade: number;
-  /** Diária já reprecificada pela faixa de ocupação. */
+  /** Diária média da estadia (ocupação + tarifas de período). */
   valor: string;
+  /** Total exato da estadia — noite a noite com tarifa de período. */
+  valor_total?: string;
 }
 
 export interface SearchAlternativa {

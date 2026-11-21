@@ -59,3 +59,18 @@ pub struct TarifaOcupacao {
     pub criado_em: DateTime<Utc>,
     pub atualizado_em: DateTime<Utc>,
 }
+
+/// Diária diferenciada para noites de um período — fds, feriados,
+/// alta temporada. Sobrepõe a tarifa por ocupação e a tarifa base.
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct TarifaPeriodo {
+    pub id: i64,
+    pub idacomodacao: i64,
+    pub inicio: NaiveDate,
+    pub fim: NaiveDate,
+    pub valor: Decimal,
+    pub rotulo: Option<String>,
+    pub prioridade: i16,
+    pub idfuncionario: Option<i64>,
+    pub criado_em: DateTime<Utc>,
+}

@@ -212,8 +212,11 @@ export class SearchPageComponent implements OnInit {
     return Number.isFinite(n) && n > 0 ? brl.format(n) : 'Sob consulta';
   }
 
-  /** Total da estadia — diária (já ajustada pela ocupação) × noites. */
+  /** Total exato da estadia — a API soma noite a noite com tarifa de
+   * período; o campo legado cai em diária × noites por compatibilidade. */
   protected total(alt: SearchAlternativa, acc: SearchAcomodacao): string {
+    const exato = Number(acc.valor_total);
+    if (Number.isFinite(exato) && exato > 0) return brl.format(exato);
     const n = Number(acc.valor);
     return Number.isFinite(n) && n > 0 ? brl.format(n * alt.noites) : 'Sob consulta';
   }

@@ -27,7 +27,8 @@ use crate::error::AppResult;
 use clarituz_domain::ports::{CmsRepository, ReservaRepository};
 use clarituz_domain::value_objects::PeriodoEstadia;
 use clarituz_domain::DomainError;
-use clarituz_shared::time;
+use clarituz_shared::{money, time};
+use rust_decimal::Decimal;
 
 /// Horizonte de entrada: 12 meses (cartões) a partir do mês corrente.
 const HORIZONTE_MESES: u32 = 12;
@@ -108,17 +109,30 @@ impl BuscaReservaService {
                 .disponibilidade(periodo, Some(pessoas), idacomodacao, None)
                 .await?;
 
+            // Preço real do período — noite a noite com tarifa de data
+            // aplicada; `valor` vira a diária média para o "/noite".
+            let ids: Vec<i64> = disponiveis.iter().map(|a| a.id).collect();
+            let precos = self.reservas.precos_estadia(periodo, pessoas, &ids).await?;
+            let diarias = Decimal::from((c.fim - c.inicio).num_days().max(1));
+
             let acomodacoes: Vec<BuscaAcomodacaoOut> = disponiveis
                 .into_iter()
                 .filter(|a| a.capacidade >= pessoas)
                 .filter_map(|a| {
-                    publicadas.get(&a.id).map(|p| BuscaAcomodacaoOut {
-                        id: a.id,
-                        slug: p.slug.clone(),
-                        nome: p.nome.clone(),
-                        numero: p.numero,
-                        capacidade: a.capacidade,
-                        valor: a.valor,
+                    publicadas.get(&a.id).map(|p| {
+                        let valor_total = precos
+                            .get(&a.id)
+                            .copied()
+                            .unwrap_or_else(|| a.valor * diarias);
+                        BuscaAcomodacaoOut {
+                            id: a.id,
+                            slug: p.slug.clone(),
+                            nome: p.nome.clone(),
+                            numero: p.numero,
+                            capacidade: a.capacidade,
+                            valor: money::round2(valor_total / diarias),
+                            valor_total: money::round2(valor_total),
+                        }
                     })
                 })
                 .collect();

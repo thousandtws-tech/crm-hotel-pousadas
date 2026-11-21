@@ -65,6 +65,19 @@ export class AcomodacoesApi extends ApiHttp {
     return this.get<M.TarifaHistorico[]>(`/acomodacoes/${id}/tarifas`);
   }
 
+  /** Diárias diferenciadas por data — sobrepõem ocupação/base na estadia. */
+  tarifasPeriodo(idacomodacao: number) {
+    return this.get<M.TarifaPeriodo[]>(`/acomodacoes/${idacomodacao}/tarifas-periodo`);
+  }
+
+  criarTarifaPeriodo(idacomodacao: number, input: M.TarifaPeriodoInput) {
+    return this.post<M.TarifaPeriodo>(`/acomodacoes/${idacomodacao}/tarifas-periodo`, input);
+  }
+
+  removerTarifaPeriodo(idacomodacao: number, idtarifa: number) {
+    return this.del<void>(`/acomodacoes/${idacomodacao}/tarifas-periodo/${idtarifa}`);
+  }
+
   listarQuartos(idacomodacao: number) {
     return this.get<M.Quarto[]>(`/acomodacoes/${idacomodacao}/quartos`);
   }

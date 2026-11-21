@@ -343,6 +343,106 @@
           </button>
         </div>
 
+        <h4><mat-icon>event</mat-icon> Tarifas por período</h4>
+        <p class="det-dica">
+          Diária diferenciada para as noites do período — fds, feriados e alta temporada.
+          Sobrepõe a tarifa por ocupação e a base; períodos sobrepostos resolvem pela
+          <b>prioridade</b> maior.
+        </p>
+        @if (auth.isAdmin()) {
+          <form class="tarifa-form" [formGroup]="tarifaForm" (ngSubmit)="criarTarifaPeriodo()">
+            <label>
+              <span>Início</span>
+              <input type="date" formControlName="inicio" required />
+            </label>
+            <label>
+              <span>Fim</span>
+              <input type="date" formControlName="fim" required />
+            </label>
+            <label>
+              <span>Diária (R$)</span>
+              <input
+                type="number"
+                formControlName="valor"
+                min="0.01"
+                step="0.01"
+                placeholder="450,00"
+                required
+              />
+            </label>
+            <label>
+              <span>Rótulo</span>
+              <input formControlName="rotulo" maxlength="60" placeholder="Réveillon, Carnaval…" />
+            </label>
+            <label class="tarifa-prio">
+              <span>Prior.</span>
+              <input
+                type="number"
+                formControlName="prioridade"
+                min="0"
+                max="99"
+                title="Desempate quando períodos se sobrepõem — maior vence"
+              />
+            </label>
+            <button
+              class="btn-dark-blue"
+              type="submit"
+              [disabled]="tarifaForm.invalid || salvandoTarifa()"
+            >
+              <mat-icon>add</mat-icon> Adicionar
+            </button>
+          </form>
+        }
+        <div class="tarifas-wrap">
+          <table class="acm-tabela acm-tabela-mini">
+            <thead>
+              <tr>
+                <th>Período</th>
+                <th>Diária</th>
+                <th>Rótulo</th>
+                @if (auth.isAdmin()) {
+                  <th class="acm-col-acao">Ações</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of tarifasPeriodo(); track t.id) {
+                <tr>
+                  <td>
+                    {{ t.inicio | date: 'dd/MM/yy' }} → {{ t.fim | date: 'dd/MM/yy' }}
+                    @if (t.prioridade > 0) {
+                      <span class="st-chip estatico" title="Prioridade no desempate"
+                        >prior. {{ t.prioridade }}</span
+                      >
+                    }
+                  </td>
+                  <td><span class="acm-valor">R$ {{ num(t.valor) | number: '1.2-2' }}</span></td>
+                  <td>{{ t.rotulo ?? '—' }}</td>
+                  @if (auth.isAdmin()) {
+                    <td class="acm-col-acao">
+                      <button
+                        type="button"
+                        class="acao-btn perigo"
+                        title="Excluir tarifa de período"
+                        aria-label="Excluir tarifa de período"
+                        (click)="excluirTarifaPeriodo(t)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </td>
+                  }
+                </tr>
+              } @empty {
+                <tr>
+                  <td [attr.colspan]="auth.isAdmin() ? 4 : 3" class="muted tc">
+                    Nenhuma tarifa diferenciada — todas as datas usam a tarifa padrão.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
         <h4><mat-icon>history</mat-icon> Histórico de tarifas</h4>
         <p class="det-dica">
           Todas as diárias que já vigoraram — a tarifa atual aparece com o selo <b>vigente</b>.

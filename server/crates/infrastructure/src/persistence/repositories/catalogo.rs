@@ -6,12 +6,14 @@ use crate::persistence::db::{map_db_err, map_del_err};
 use async_trait::async_trait;
 use clarituz_domain::entities::{
     Acomodacao, EnderecoEstabelecimento, Estabelecimento, FormaPagamento, Frigobar, ItemFrigobar,
-    NovoLog, Quarto, TarifaHistorico, TarifaOcupacao, TipoAcomodacao, VagaEstacionamento,
+    NovoLog, Quarto, TarifaHistorico, TarifaOcupacao, TarifaPeriodo, TipoAcomodacao,
+    VagaEstacionamento,
 };
 use clarituz_domain::ports::{
     AcomodacaoRepository, AtualizaAcomodacao, DadosEndereco, DadosEstabelecimento,
     EstabelecimentoRepository, EstacionamentoRepository, FormaPagamentoRepository,
-    FrigobarRepository, NovaAcomodacao, NovoFrigobar, QuartoRepository, TipoAcomodacaoRepository,
+    FrigobarRepository, NovaAcomodacao, NovaTarifaPeriodo, NovoFrigobar, QuartoRepository,
+    TipoAcomodacaoRepository,
 };
 use clarituz_domain::queries::ItemFrigobarView;
 use clarituz_domain::DomainError;
@@ -453,6 +455,58 @@ impl AcomodacaoRepository for PgAcomodacaoRepository {
         .await
         .map_err(map_db_err)
         .map(std::option::Option::flatten)
+    }
+
+    async fn tarifas_periodo(&self, idacomodacao: i64) -> Result<Vec<TarifaPeriodo>, DomainError> {
+        sqlx::query_as::<_, TarifaPeriodo>(
+            "SELECT id, idacomodacao, inicio, fim, valor, rotulo, prioridade,
+                    idfuncionario, criado_em
+             FROM tarifa_periodo WHERE idacomodacao = $1
+             ORDER BY inicio, fim",
+        )
+        .bind(idacomodacao)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn criar_tarifa_periodo(
+        &self,
+        nova: &NovaTarifaPeriodo,
+        log: NovoLog,
+    ) -> Result<TarifaPeriodo, DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        let t = sqlx::query_as::<_, TarifaPeriodo>(
+            "INSERT INTO tarifa_periodo
+                 (idacomodacao, inicio, fim, valor, rotulo, prioridade, idfuncionario)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             RETURNING id, idacomodacao, inicio, fim, valor, rotulo, prioridade,
+                       idfuncionario, criado_em",
+        )
+        .bind(nova.idacomodacao)
+        .bind(nova.inicio)
+        .bind(nova.fim)
+        .bind(nova.valor)
+        .bind(&nova.rotulo)
+        .bind(nova.prioridade)
+        .bind(nova.idfuncionario)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(map_db_err)?;
+        audit::gravar(&mut *tx, &log).await?;
+        tx.commit().await.map_err(map_db_err)?;
+        Ok(t)
+    }
+
+    async fn remover_tarifa_periodo(&self, id: i64, log: NovoLog) -> Result<(), DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+        sqlx::query("DELETE FROM tarifa_periodo WHERE id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_db_err)?;
+        audit::gravar(&mut *tx, &log).await?;
+        tx.commit().await.map_err(map_db_err)
     }
 
     async fn remover(&self, id: i64, log: NovoLog) -> Result<Vec<String>, DomainError> {

@@ -1,10 +1,12 @@
 use crate::entities::{
     Acomodacao, EnderecoEstabelecimento, Estabelecimento, FormaPagamento, Frigobar, ItemFrigobar,
-    NovoLog, Quarto, TarifaHistorico, TarifaOcupacao, TipoAcomodacao, VagaEstacionamento,
+    NovoLog, Quarto, TarifaHistorico, TarifaOcupacao, TarifaPeriodo, TipoAcomodacao,
+    VagaEstacionamento,
 };
 use crate::error::DomainError;
 use crate::queries::ItemFrigobarView;
 use async_trait::async_trait;
+use chrono::NaiveDate;
 use clarituz_shared::{Page, PageParams};
 use rust_decimal::Decimal;
 
@@ -93,6 +95,29 @@ pub trait AcomodacaoRepository: Send + Sync {
         idtipo: i64,
         hospedes: i32,
     ) -> Result<Option<Decimal>, DomainError>;
+
+    /// Diárias diferenciadas por data — a precificação noite a noite
+    /// resolve tarifa_periodo > tarifa_ocupacao > acomodacao.valor.
+    async fn tarifas_periodo(&self, idacomodacao: i64) -> Result<Vec<TarifaPeriodo>, DomainError>;
+    async fn criar_tarifa_periodo(
+        &self,
+        nova: &NovaTarifaPeriodo,
+        log: NovoLog,
+    ) -> Result<TarifaPeriodo, DomainError>;
+    async fn remover_tarifa_periodo(&self, id: i64, log: NovoLog) -> Result<(), DomainError>;
+}
+
+/// Período com diária própria — `inicio`/`fim` são as NOITES cobertas
+/// (a noite de `fim` está incluída, daterange da estadia segue `[inicio, saida)`).
+#[derive(Debug, Clone)]
+pub struct NovaTarifaPeriodo {
+    pub idacomodacao: i64,
+    pub inicio: NaiveDate,
+    pub fim: NaiveDate,
+    pub valor: Decimal,
+    pub rotulo: Option<String>,
+    pub prioridade: i16,
+    pub idfuncionario: Option<i64>,
 }
 
 #[async_trait]

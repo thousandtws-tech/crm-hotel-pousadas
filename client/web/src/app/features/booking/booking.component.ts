@@ -1,9 +1,10 @@
-import { Component, afterNextRender, ElementRef, inject, DestroyRef, OnInit, signal, computed } from '@angular/core';
+import { Component, afterNextRender, ElementRef, inject, DestroyRef, OnInit, signal, computed, effect } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BookingService } from '../../core/services/booking.service';
 import { PaymentService, TipoPagamento } from '../../core/services/payment.service';
 import { AccommodationService } from '../../core/services/accommodation.service';
+import { AvailabilityService } from '../../core/services/availability.service';
 import { Accommodation } from '../../core/models/accommodation.model';
 import { SeoService } from '../../core/services/seo.service';
 import { IconComponent } from '../../shared/components/icons/icon.component';
@@ -469,6 +470,12 @@ export class BookingComponent implements OnInit {
   private readonly el = inject(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly motion = inject(MotionService);
+  private readonly availability = inject(AvailabilityService);
+
+  /** Total exato da estadia (centavos) — a busca pública soma noite a
+   * noite com tarifa de período; `null` cai na estimativa por diária. */
+  public readonly precoReal = signal<number | null>(null);
+  private precoReq = 0;
 
   public readonly checkIn = signal<string>(this.bookingService.filter().checkIn);
   public readonly checkOut = signal<string>(this.bookingService.filter().checkOut);
@@ -530,6 +537,35 @@ export class BookingComponent implements OnInit {
       link.crossOrigin = 'anonymous';
       document.head.appendChild(link);
       this.initAnimations();
+    });
+
+    // Preço real da estadia: datas+hóspedes válidos disparam a busca
+    // pública (rate-limitada) e o total exato substitui a estimativa —
+    // resposta fora de ordem é descartada pelo contador de requisição.
+    effect(() => {
+      const ci = this.checkIn();
+      const co = this.checkOut();
+      const g = this.guests();
+      const slug = this.selectedSuiteSlug();
+      if (!this.datesValid()) {
+        this.precoReal.set(null);
+        return;
+      }
+      const req = ++this.precoReq;
+      this.availability
+        .buscar({
+          date: { mode: 'dates', checkIn: ci, checkOut: co, toleranceDays: 0 },
+          guests: { adults: Math.max(1, g), children: 0, infants: 0, pets: 0 },
+          acomodacaoSlug: slug,
+        })
+        .then((resp) => {
+          if (req !== this.precoReq) return;
+          const acc = resp.alternativas
+            .find((a) => a.inicio === ci && a.fim === co)
+            ?.acomodacoes.find((x) => x.slug === slug);
+          this.precoReal.set(acc?.valor_total ? Math.round(Number(acc.valor_total) * 100) : null);
+        })
+        .catch(() => this.precoReal.set(null));
     });
   }
 
@@ -661,12 +697,15 @@ export class BookingComponent implements OnInit {
     }
   }
 
-  /** Estimativa exibida ao hóspede — o valor cobrado é recalculado no servidor. */
+  /** Total exibido ao hóspede — exato da busca pública quando a estadia
+   * está precificável; diária do CMS estima quando ainda não. */
   public readonly estimatedTotal = computed(() => {
-    const acc = this.selectedAccommodation();
-    if (!acc?.price) return 0;
     const desc = this.descontoCorporativo();
     const fator = desc !== null ? 1 - desc / 100 : 1;
+    const real = this.precoReal();
+    if (real !== null && real > 0) return Math.round(real * fator);
+    const acc = this.selectedAccommodation();
+    if (!acc?.price) return 0;
     return Math.round(acc.price * this.calculatedNights() * fator * 100);
   });
 

@@ -112,6 +112,17 @@ pub trait ReservaRepository: Send + Sync {
         excluir_reserva: Option<i64>,
     ) -> Result<Vec<AcomodacaoDisponivel>, DomainError>;
 
+    /// Total da estadia por acomodação — soma noite a noite resolvendo
+    /// tarifa_periodo > tarifa_ocupacao > acomodacao.valor. Usado pela
+    /// busca pública e pela criação de reservas (uma consulta por período
+    /// cobre todas as unidades de uma vez).
+    async fn precos_estadia(
+        &self,
+        periodo: PeriodoEstadia,
+        hospedes: i32,
+        idacomodacoes: &[i64],
+    ) -> Result<std::collections::HashMap<i64, Decimal>, DomainError>;
+
     /// Cria reserva + conta de consumo 'pendente' + log — uma transação.
     ///
     /// Overbooking é impossível por construção: a constraint de exclusão do
@@ -131,6 +142,7 @@ pub trait ReservaRepository: Send + Sync {
         valor_total: Decimal,
         log: NovoLog,
     ) -> Result<Reserva, DomainError>;
+
 
     /// Mapa por andar — uma linha por acomodação ativa com ocupação de
     /// hoje, bloqueio vigente e pendências de limpeza/manutenção.

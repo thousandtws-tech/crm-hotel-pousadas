@@ -149,6 +149,18 @@ pub struct TarifaOcupacaoInput {
     pub valor: Decimal,
 }
 
+/// Diária diferenciada por período — `inicio`/`fim` são as noites
+/// cobertas (inclusive). Sobrepõe tarifa por ocupação e tarifa base.
+#[derive(Debug, Deserialize)]
+pub struct TarifaPeriodoInput {
+    pub inicio: NaiveDate,
+    pub fim: NaiveDate,
+    #[serde(deserialize_with = "de_decimal")]
+    pub valor: Decimal,
+    pub rotulo: Option<String>,
+    pub prioridade: Option<i16>,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct GrupoInput {
     pub nome: String,
@@ -242,7 +254,11 @@ pub struct BuscaAcomodacaoOut {
     pub nome: String,
     pub numero: i32,
     pub capacidade: i32,
+    /// Diária média da estadia — exibição "R$ X/noite".
     pub valor: Decimal,
+    /// Total exato da estadia — soma noite a noite com tarifa de
+    /// período aplicada (fds, feriados, alta temporada).
+    pub valor_total: Decimal,
 }
 
 #[derive(Debug, Serialize)]

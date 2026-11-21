@@ -12,6 +12,8 @@ import {
   AcomodacaoInput,
   Quarto,
   TarifaOcupacaoInput,
+  TarifaPeriodo,
+  TarifaPeriodoInput,
   TipoAcomodacao,
 } from '@core/models/catalogo.models';
 import { TarifaHistorico } from '@core/models/comercial.models';
@@ -89,6 +91,17 @@ export abstract class AcomodacoesStore implements OnInit {
   protected readonly tipoNomeCtrl = new FormControl('', [Validators.required]);
   protected readonly quartoNumero = new FormControl('', [Validators.required]);
 
+  /** Diárias diferenciadas por data da acomodação aberta no modal. */
+  protected readonly tarifasPeriodo = signal<TarifaPeriodo[]>([]);
+  protected readonly salvandoTarifa = signal(false);
+  protected readonly tarifaForm = this.fb.nonNullable.group({
+    inicio: ['', Validators.required],
+    fim: ['', Validators.required],
+    valor: [null as number | null, [Validators.required, Validators.min(0.01)]],
+    rotulo: [''],
+    prioridade: [0],
+  });
+
   protected readonly form = this.fb.nonNullable.group({
     nome: ['', Validators.required],
     numero: [0, [Validators.required, Validators.min(0)]],
@@ -155,6 +168,10 @@ export abstract class AcomodacoesStore implements OnInit {
     this.acomodacoesApi.tarifasAcomodacao(a.id).subscribe({
       next: (t) => this.tarifas.set(t),
       error: () => undefined,
+    });
+    this.acomodacoesApi.tarifasPeriodo(a.id).subscribe({
+      next: (t) => this.tarifasPeriodo.set(t),
+      error: () => this.tarifasPeriodo.set([]),
     });
     this.estacionamentoApi.listarVagas().subscribe({
       next: (v) => this.vagasDaAcomodacao.set(v.filter((x) => x.idacomodacao === a.id && x.ativo)),
@@ -447,6 +464,57 @@ export abstract class AcomodacoesStore implements OnInit {
     this.acomodacoesApi.statusQuarto(q.id, ativo).subscribe({
       next: (novo) => {
         this.quartos.update((list) => list.map((x) => (x.id === novo.id ? novo : x)));
+      },
+      error: (e) => this.notify.erro(e),
+    });
+  }
+
+  // -- tarifa por período (fds, feriados, alta temporada) ----------------------
+
+  criarTarifaPeriodo(): void {
+    const a = this.selecionada();
+    if (!a || this.tarifaForm.invalid || this.salvandoTarifa()) return;
+    const v = this.tarifaForm.getRawValue();
+    if (v.fim < v.inicio) {
+      this.notify.aviso('O fim do período não pode ser antes do início.');
+      return;
+    }
+    const input: TarifaPeriodoInput = {
+      inicio: v.inicio,
+      fim: v.fim,
+      valor: v.valor ?? 0,
+      rotulo: v.rotulo.trim() || null,
+      prioridade: v.prioridade,
+    };
+    this.salvandoTarifa.set(true);
+    this.acomodacoesApi.criarTarifaPeriodo(a.id, input).subscribe({
+      next: (t) => {
+        this.salvandoTarifa.set(false);
+        this.tarifaForm.reset({ inicio: '', fim: '', valor: null, rotulo: '', prioridade: 0 });
+        this.tarifasPeriodo.update((l) =>
+          [...l, t].sort((x, y) => x.inicio.localeCompare(y.inicio) || x.fim.localeCompare(y.fim)),
+        );
+        this.notify.ok('Tarifa de período cadastrada.');
+      },
+      error: (e) => {
+        this.salvandoTarifa.set(false);
+        this.notify.erro(e);
+      },
+    });
+  }
+
+  async excluirTarifaPeriodo(t: TarifaPeriodo): Promise<void> {
+    const a = this.selecionada();
+    if (!a) return;
+    const ok = await this.confirm.perguntar(
+      `Excluir a tarifa ${t.rotulo ?? 'de período'} (${t.inicio} → ${t.fim})? Reservas existentes mantêm o valor já fechado.`,
+      { titulo: 'Excluir tarifa de período', confirmar: 'Excluir' },
+    );
+    if (!ok) return;
+    this.acomodacoesApi.removerTarifaPeriodo(a.id, t.id).subscribe({
+      next: () => {
+        this.tarifasPeriodo.update((l) => l.filter((x) => x.id !== t.id));
+        this.notify.ok('Tarifa de período excluída.');
       },
       error: (e) => this.notify.erro(e),
     });

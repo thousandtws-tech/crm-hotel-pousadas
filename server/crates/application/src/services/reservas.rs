@@ -531,6 +531,32 @@ impl ReservaService {
         }
     }
 
+    /// Total da estadia sem taxas — preço noite a noite resolvendo
+    /// tarifa_periodo > tarifa_ocupacao > tarifa base. A soma exata vem
+    /// do banco; a ausência da acomodação no mapa não acontece com um id
+    /// válido, mas cai na base × noites por segurança.
+    async fn preco_estadia(
+        &self,
+        idacomodacao: i64,
+        periodo: &PeriodoEstadia,
+        hospedes: i32,
+        acomodacao: &clarituz_domain::entities::Acomodacao,
+    ) -> AppResult<Decimal> {
+        let mapa = self
+            .reservas
+            .precos_estadia(*periodo, hospedes, &[idacomodacao])
+            .await?;
+        match mapa.get(&idacomodacao) {
+            Some(total) => Ok(money::round2(*total)),
+            None => {
+                let diaria = self.diaria_para(acomodacao, hospedes).await?;
+                Ok(money::round2(
+                    diaria * Decimal::from(time::diarias(periodo.entrada, periodo.saida)),
+                ))
+            }
+        }
+    }
+
     /// Taxas early check-in / late checkout: validam disponibilidade do
     /// dia adjacente (early → véspera livre, late → dia seguinte livre) e
     /// retornam o acréscimo a somar no total da estadia — mesma regra no
@@ -629,21 +655,30 @@ impl ReservaService {
             .into());
         }
 
-        // Diária: a informada, a faixa de ocupação do tipo ou a tarifa base.
-        let valordiaria = match input.valordiaria.filter(|v| *v > Decimal::ZERO) {
-            Some(v) => v,
-            None => {
-                self.diaria_para(&acomodacao, input.quantidade_hospedes)
-                    .await?
-            }
-        };
+        // Diária: a informada (tarifa manual do balcão) ou o preço da
+        // estadia resolvido noite a noite (período > ocupação > base) —
+        // `valordiaria` guarda a média por noite para relatórios.
         let diarias = Decimal::from(time::diarias(periodo.entrada, periodo.saida));
         let early = input.early_checkin.unwrap_or(false);
         let late = input.late_checkout.unwrap_or(false);
         let taxas = self
             .taxas_horario(input.idacomodacao, &periodo, early, late)
             .await?;
-        let valor_total = money::round2(valordiaria * diarias + taxas);
+        let (valordiaria, base) = match input.valordiaria.filter(|v| *v > Decimal::ZERO) {
+            Some(v) => (v, v * diarias),
+            None => {
+                let total = self
+                    .preco_estadia(
+                        input.idacomodacao,
+                        &periodo,
+                        input.quantidade_hospedes,
+                        &acomodacao,
+                    )
+                    .await?;
+                (money::round2(total / diarias), total)
+            }
+        };
+        let valor_total = money::round2(base + taxas);
 
         let nova = NovaReserva {
             idacomodacao: input.idacomodacao,
@@ -883,7 +918,11 @@ impl ReservaService {
         let taxas = self
             .taxas_horario(acomodacao.id, &periodo, early, late)
             .await?;
-        let diaria = self.diaria_para(&acomodacao, hospedes).await?;
+        // Preço da estadia resolvido noite a noite (período > ocupação >
+        // base) — o site exibe o mesmo total que o servidor cobra.
+        let base_estadia = self
+            .preco_estadia(acomodacao.id, &periodo, hospedes, &acomodacao)
+            .await?;
 
         // Contrato corporativo — código público aplica o desconto negociado
         // na diária cobrada. Inválido/expirado não gera erro (não vaza a
@@ -901,13 +940,16 @@ impl ReservaService {
                 .filter(|c| c.vigente(Utc::now().date_naive())),
             None => None,
         };
-        let (diaria, idcontrato) = match &contrato {
+        let (base, idcontrato) = match &contrato {
             Some(c) => (
-                money::round2(diaria * (Decimal::ONE - c.desconto_pct / Decimal::from(100))),
+                money::round2(base_estadia * (Decimal::ONE - c.desconto_pct / Decimal::from(100))),
                 Some(c.id),
             ),
-            None => (diaria, None),
+            None => (base_estadia, None),
         };
+        // `valordiaria` guarda a diária média — relatórios e o detalhe
+        // da reserva exibem o preço efetivo por noite.
+        let diaria = money::round2(base / diarias);
 
         let nova = NovaReserva {
             idacomodacao: acomodacao.id,
@@ -915,8 +957,8 @@ impl ReservaService {
             quantidade_hospedes: hospedes,
             periodo,
             obs: Some(obs),
-            valordiaria: money::round2(diaria),
-            valor_total: money::round2(diaria * diarias + taxas),
+            valordiaria: diaria,
+            valor_total: money::round2(base + taxas),
             early_checkin: early,
             late_checkout: late,
             // Reserva do site segura a acomodação por `hold_minutos`

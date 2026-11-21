@@ -215,6 +215,48 @@ impl ReservaRepository for PgReservaRepository {
         .map_err(map_db_err)
     }
 
+    /// Soma noite a noite — cada dia resolve tarifa_periodo (maior
+    /// prioridade; empate vai pro registro mais recente) e, na ausência
+    /// dela, a faixa de ocupação do tipo; sem nenhuma, a tarifa base.
+    async fn precos_estadia(
+        &self,
+        periodo: PeriodoEstadia,
+        hospedes: i32,
+        idacomodacoes: &[i64],
+    ) -> Result<std::collections::HashMap<i64, Decimal>, DomainError> {
+        if idacomodacoes.is_empty() {
+            return Ok(std::collections::HashMap::new());
+        }
+        sqlx::query_as::<_, (i64, Decimal)>(
+            "WITH noites AS (
+                 SELECT generate_series($2::date, $3::date - 1, '1 day'::interval)::date AS dia
+             )
+             SELECT a.id,
+                    SUM(COALESCE(
+                        (SELECT tp.valor FROM tarifa_periodo tp
+                          WHERE tp.idacomodacao = a.id
+                            AND noites.dia BETWEEN tp.inicio AND tp.fim
+                          ORDER BY tp.prioridade DESC, tp.id DESC LIMIT 1),
+                        (SELECT t.valor FROM tarifa_ocupacao t
+                          WHERE t.idtipo_acomodacao = a.idtipo_acomodacao
+                            AND t.hospedes <= $4
+                          ORDER BY t.hospedes DESC LIMIT 1),
+                        a.valor)) AS total
+             FROM acomodacao a
+             CROSS JOIN noites
+             WHERE a.id = ANY($1)
+             GROUP BY a.id",
+        )
+        .bind(idacomodacoes)
+        .bind(periodo.entrada)
+        .bind(periodo.saida)
+        .bind(hospedes)
+        .fetch_all(&self.pool)
+        .await
+        .map(|rows| rows.into_iter().collect())
+        .map_err(map_db_err)
+    }
+
     async fn mapa_quartos(&self) -> Result<Vec<MapaQuarto>, DomainError> {
         // Uma linha por acomodação física ativa — ocupação por reserva,
         // limpeza/manutenção via quartos vinculados.

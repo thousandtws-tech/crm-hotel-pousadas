@@ -58,6 +58,27 @@ export interface TarifaOcupacaoInput {
   valor: number | string;
 }
 
+/** Diária diferenciada para as noites de um período (fds, feriados,
+ * alta temporada) — sobrepõe a tarifa por ocupação e a base. */
+export interface TarifaPeriodo {
+  id: number;
+  idacomodacao: number;
+  inicio: string;
+  fim: string;
+  valor: string;
+  rotulo: string | null;
+  prioridade: number;
+  criado_em: string;
+}
+
+export interface TarifaPeriodoInput {
+  inicio: string;
+  fim: string;
+  valor: number | string;
+  rotulo?: string | null;
+  prioridade?: number;
+}
+
 /** Grupo/evento — rooming list + bloqueio em massa + reservas vinculadas. */
 export interface Grupo {
   id: number;
