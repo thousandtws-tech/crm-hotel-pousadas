@@ -1,0 +1,130 @@
+<div class="tc-bar">
+  <div class="tc-title">
+    <mat-icon>view_timeline</mat-icon>
+    <h3>Calendário de reservas</h3>
+    <span class="tc-periodo">
+      {{ dias()[0] | date: 'dd MMM' }} — {{ dias()[dias().length - 1] | date: 'dd MMM yyyy' }}
+    </span>
+  </div>
+  <div class="tc-nav">
+    <button type="button" class="tc-btn" (click)="nav(-7)" title="Semana anterior" aria-label="Semana anterior">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <button type="button" class="tc-btn tc-hoje" (click)="irHoje()">Hoje</button>
+    <button type="button" class="tc-btn" (click)="nav(7)" title="Próxima semana" aria-label="Próxima semana">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+</div>
+
+<div class="tape-wrap">
+  <div class="tape">
+    <div class="tape-head">
+      <div class="tape-room tape-room-head">Acomodação</div>
+      @for (d of dias(); track d.getTime()) {
+        <div
+          class="tape-dia"
+          [class.hj]="isoLocal(d) === hojeIso"
+          [class.fds]="d.getDay() === 0 || d.getDay() === 6"
+        >
+          <small>{{ d | date: 'EEE' }}</small>
+          <strong>{{ d | date: 'dd' }}</strong>
+        </div>
+      }
+    </div>
+
+    @if (carregando()) {
+      @for (a of acomodacoes(); track a.id) {
+        <div class="tape-row">
+          <div class="tape-room" [style.border-left-color]="a.cor || '#8fa3ab'">
+            <strong>{{ a.nome }}</strong>
+            <small>Nº {{ a.numero }}</small>
+          </div>
+          <div class="tape-track"><span class="skel skel-bar"></span></div>
+        </div>
+      }
+    } @else {
+      @for (a of acomodacoes(); track a.id) {
+        <div class="tape-row">
+          <div class="tape-room" [style.border-left-color]="a.cor || '#8fa3ab'">
+            <strong>{{ a.nome }}</strong>
+            <small>Nº {{ a.numero }}</small>
+          </div>
+          <div class="tape-track">
+            @for (d of dias(); track d.getTime()) {
+              <button
+                type="button"
+                class="tape-cel"
+                [class.hj]="isoLocal(d) === hojeIso"
+                [class.fds]="d.getDay() === 0 || d.getDay() === 6"
+                [title]="'Nova reserva — ' + a.nome + ' · ' + (d | date: 'dd/MM')"
+                [attr.aria-label]="
+                  'Nova reserva em ' + a.nome + ' a partir de ' + (d | date: 'dd/MM/yyyy')
+                "
+                (click)="novaReservaEm(a, d)"
+              ></button>
+            }
+            @for (r of eventosDe(a.id); track r.id) {
+              @if (barGeo(r); as g) {
+                <button
+                  type="button"
+                  class="tape-bar"
+                  [class.st-p]="r.status === 'p'"
+                  [class.st-i]="r.status === 'i'"
+                  [class.st-f]="r.status === 'f'"
+                  [class.can]="r.status === 'c'"
+                  [class.drag]="arrastando()?.r.id === r.id"
+                  [class.movel]="r.status === 'p'"
+                  [style.left.px]="g.l"
+                  [style.width.px]="g.w"
+                  [style.transform]="
+                    arrastando()?.r.id === r.id
+                      ? 'translate(' + arrastando()!.dx + 'px,' + arrastando()!.dy + 'px)'
+                      : null
+                  "
+                  [title]="
+                    r.cliente_nome +
+                    ' · ' +
+                    stRotulo(r.status) +
+                    ' (' +
+                    (parseDia(r.entradaprevista) | date: 'dd/MM') +
+                    ' → ' +
+                    (parseDia(r.saidaprevista) | date: 'dd/MM') +
+                    ')' +
+                    (r.status === 'p' ? ' — arraste para remanejar' : '')
+                  "
+                  (mousedown)="iniciarArraste(r, $event)"
+                  (click)="cliqueReserva(r)"
+                >
+                  @if (arrastando()?.r.id === r.id && arrastePeriodo(); as p) {
+                    <span class="tape-bar-txt">
+                      {{ p.entrada | date: 'dd/MM' }} → {{ p.saida | date: 'dd/MM' }}
+                    </span>
+                  } @else {
+                    <span class="tape-bar-txt">{{ nomeCompleto(r.cliente_nome) }}</span>
+                  }
+                </button>
+              }
+            }
+          </div>
+        </div>
+      } @empty {
+        <div class="vazio">
+          <mat-icon>hotel</mat-icon>
+          <p>Nenhuma acomodação ativa cadastrada.</p>
+        </div>
+      }
+    }
+  </div>
+
+  <div class="tape-legenda">
+    <span><i class="lg st-p"></i> Pendente</span>
+    <span><i class="lg st-i"></i> Hospedado</span>
+    <span><i class="lg st-f"></i> Finalizada</span>
+    <span><i class="lg st-c"></i> Cancelada</span>
+    <span><i class="lg lg-hj"></i> Hoje</span>
+    <span><i class="lg lg-fds"></i> Fim de semana</span>
+    <span class="tape-hint"><i class="lg lg-drag"></i> Arraste para remanejar</span>
+    <span class="tape-hint"><i class="lg lg-add"></i> Clique num dia vazio para reservar</span>
+  </div>
+</div>

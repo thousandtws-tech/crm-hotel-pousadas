@@ -5,7 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { PageEvent } from '@angular/material/paginator';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AcomodacoesApi } from '@core/api/acomodacoes.api';
 import { ReservasApi } from '@core/api/reservas.api';
 import { num } from '@core/utils/num.utils';
@@ -40,6 +40,7 @@ export abstract class ReservasStore implements OnInit {
   private readonly tour = inject(TourService);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   protected readonly auth = inject(AuthStore);
 
   protected readonly modalNova = signal(false);
@@ -203,6 +204,16 @@ export abstract class ReservasStore implements OnInit {
       next: (p) => this.acomodacoes.set(p.items),
       error: () => undefined,
     });
+    const q = this.route.snapshot.queryParams;
+    if (q['nova'] === '1' && q['acomodacao'] && q['entrada'] && q['saida']) {
+      this.seedNova.set({
+        idacomodacao: Number(q['acomodacao']),
+        entrada: String(q['entrada']),
+        saida: String(q['saida']),
+      });
+      this.modalNova.set(true);
+      void this.router.navigate([], { replaceUrl: true, queryParams: {} });
+    }
   }
 
   /** Recarrega a visão ativa + KPIs (botão de refresh do cabeçalho). */

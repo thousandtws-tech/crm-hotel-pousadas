@@ -199,15 +199,49 @@
 
     <!-- ==================== mapa de quartos ==================== -->
     <section class="fd-card fd-mapa">
-      <header class="sec-head">
-        <h3><mat-icon>map</mat-icon> Mapa de quartos</h3>
+      <header class="sec-head mapa-head">
+        <div>
+          <h3><mat-icon>map</mat-icon> Mapa de quartos</h3>
+          <div class="mapa-filtros" role="tablist" aria-label="Filtrar quartos">
+            <button
+              type="button"
+              class="f-chip"
+              [class.ativo]="filtroMapa() === 'todos'"
+              (click)="filtroMapa.set('todos')"
+            >
+              Todos <b>{{ mapa().length }}</b>
+            </button>
+            <button
+              type="button"
+              class="f-chip f-lv"
+              [class.ativo]="filtroMapa() === 'livre'"
+              (click)="filtroMapa.set('livre')"
+            >
+              Livres <b>{{ livresCount() }}</b>
+            </button>
+            <button
+              type="button"
+              class="f-chip f-oc"
+              [class.ativo]="filtroMapa() === 'ocupado'"
+              (click)="filtroMapa.set('ocupado')"
+            >
+              Ocupados <b>{{ ocupados() }}</b>
+            </button>
+            <button
+              type="button"
+              class="f-chip f-at"
+              [class.ativo]="filtroMapa() === 'atencao'"
+              (click)="filtroMapa.set('atencao')"
+            >
+              Atenção <b>{{ emAtencao() }}</b>
+            </button>
+          </div>
+        </div>
         <div class="leg" role="list" aria-label="Legenda de status">
           <span role="listitem"><i class="dt lv"></i>Livre</span>
           <span role="listitem"><i class="dt oc"></i>Ocupado</span>
           <span role="listitem"><i class="dt pd"></i>Chega hoje</span>
           <span role="listitem"><i class="dt bq"></i>Bloqueado</span>
-          <span role="listitem"><i class="dt lm"></i>Limpeza</span>
-          <span role="listitem"><i class="dt mn"></i>Manutenção</span>
         </div>
       </header>
 
@@ -230,25 +264,57 @@
                   class="qt"
                   [class]="'qt ' + statusQuarto(q)"
                   type="button"
-                  [routerLink]="q.idreserva_hoje ? ['/reservas', q.idreserva_hoje] : []"
+                  (click)="cliqueQuarto(q)"
                   [title]="q.nome + ' Nº' + q.numero + ' — ' + rotuloQuarto(q)"
                   [attr.aria-label]="q.nome + ' Nº' + q.numero + ' — ' + rotuloQuarto(q)"
                 >
-                  <b>{{ q.numero }}</b>
-                  <small>{{ q.nome }}</small>
-                  @if (q.limpeza_pendente > 0 || q.manut_aberta > 0) {
-                    <span class="qt-flags">
-                      @if (q.limpeza_pendente > 0) {
-                        <em class="flg lm" title="Limpeza pendente">
-                          <mat-icon>cleaning_services</mat-icon>{{ q.limpeza_pendente }}
-                        </em>
+                  <div class="qt-top">
+                    <div class="qt-id">
+                      <b>{{ q.numero }}</b>
+                      <span>{{ q.nome }}</span>
+                    </div>
+                    <span class="qt-st">{{ rotuloQuarto(q) }}</span>
+                  </div>
+
+                  <div class="qt-body">
+                    @if (reservaDoQuarto(q); as res) {
+                      <span class="qt-hosp">
+                        <mat-icon>person</mat-icon>
+                        {{ res.cliente_nome }}
+                      </span>
+                      <small class="qt-datas">
+                        {{ res.entradaprevista | date: 'dd/MM' }} →
+                        {{ res.saidaprevista | date: 'dd/MM' }}
+                      </small>
+                    } @else if (q.bloqueado) {
+                      <small class="qt-vazio">Indisponível para venda</small>
+                    } @else if (q.limpeza_pendente > 0) {
+                      <small class="qt-vazio">Aguardando governança</small>
+                    } @else {
+                      <small class="qt-vazio">Pronto para venda · clique p/ reservar</small>
+                    }
+                  </div>
+
+                  @if (q.tipo || q.limpeza_pendente > 0 || q.manut_aberta > 0) {
+                    <div class="qt-foot">
+                      @if (q.tipo) {
+                        <span class="qt-tipo">{{ q.tipo }}</span>
                       }
-                      @if (q.manut_aberta > 0) {
-                        <em class="flg mn" title="Manutenção aberta">
-                          <mat-icon>build</mat-icon>{{ q.manut_aberta }}
-                        </em>
+                      @if (q.limpeza_pendente > 0 || q.manut_aberta > 0) {
+                        <span class="qt-flags">
+                          @if (q.limpeza_pendente > 0) {
+                            <em class="flg lm" title="Limpeza pendente">
+                              <mat-icon>cleaning_services</mat-icon>Limpeza
+                            </em>
+                          }
+                          @if (q.manut_aberta > 0) {
+                            <em class="flg mn" title="Manutenção aberta">
+                              <mat-icon>build</mat-icon>Manut.
+                            </em>
+                          }
+                        </span>
                       }
-                    </span>
+                    </div>
                   }
                 </button>
               }
@@ -257,10 +323,19 @@
         } @empty {
           <p class="vazio">
             <mat-icon>hotel</mat-icon>
-            Nenhuma acomodação cadastrada.
+            @if (filtroMapa() === 'todos') {
+              Nenhuma acomodação cadastrada.
+            } @else {
+              Nenhum quarto neste filtro.
+            }
           </p>
         }
       }
     </section>
   </div>
+
+  <!-- ==================== calendário full width (tape chart) ==================== -->
+  <section class="fd-card fd-tape">
+    <app-tape-chart (novaReserva)="abrirNovaReserva($event)" />
+  </section>
 </div>

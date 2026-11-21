@@ -1,6 +1,7 @@
 // Lógica e estado de recepcao — separada da camada de UI (recepcao.component.ts).
 // O componente herda os membros; templates e comportamento não mudam.
 import { OnInit, computed, effect, inject, signal, Directive } from '@angular/core';
+import { Router } from '@angular/router';
 import { ReservasApi } from '@core/api/reservas.api';
 import { MapaQuarto, ReservaResumo } from '@core/models/reservas.models';
 import { NotifyService } from '@core/services/notify.service';
@@ -13,6 +14,7 @@ const DIA_MS = 86_400_000;
 export abstract class RecepcaoStore implements OnInit {
   private readonly reservasApi = inject(ReservasApi);
   private readonly notify = inject(NotifyService);
+  private readonly router = inject(Router);
   protected readonly rt = inject(RealtimeService);
 
   protected readonly hoje = new Date();
@@ -20,14 +22,33 @@ export abstract class RecepcaoStore implements OnInit {
   protected readonly saidas = signal<ReservaResumo[]>([]);
   protected readonly naCasa = signal<ReservaResumo[]>([]);
   protected readonly mapa = signal<MapaQuarto[]>([]);
+  protected readonly filtroMapa = signal<'todos' | 'livre' | 'ocupado' | 'atencao'>('todos');
   protected readonly aguardando = signal<number | null>(null);
   protected readonly carregando = signal(true);
   protected readonly skel = [1, 2, 3];
   protected readonly skelMapa = Array.from({ length: 18 }, (_, i) => i);
 
+  /** Mapa idreserva → resumo para exibir hóspede e datas direto no card do quarto. */
+  protected readonly reservaPorId = computed(() => {
+    const m = new Map<number, ReservaResumo>();
+    for (const r of this.chegadas()) m.set(r.id, r);
+    for (const r of this.naCasa()) m.set(r.id, r);
+    return m;
+  });
+
+  protected readonly livresCount = computed(
+    () => this.mapa().filter((q) => !q.bloqueado && !q.status_hoje).length,
+  );
+
   protected readonly andares = computed(() => {
+    const f = this.filtroMapa();
     const porAndar = new Map<number, MapaQuarto[]>();
     for (const q of this.mapa()) {
+      if (f === 'livre' && (q.bloqueado || !!q.status_hoje)) continue;
+      if (f === 'ocupado' && q.status_hoje !== 'i' && q.status_hoje !== 'p') continue;
+      if (f === 'atencao' && q.limpeza_pendente === 0 && q.manut_aberta === 0 && !q.bloqueado) {
+        continue;
+      }
       const l = porAndar.get(q.andar) ?? [];
       l.push(q);
       porAndar.set(q.andar, l);
@@ -118,8 +139,43 @@ export abstract class RecepcaoStore implements OnInit {
   rotuloQuarto(q: MapaQuarto): string {
     if (q.bloqueado) return 'Bloqueado';
     if (q.status_hoje === 'i') return 'Ocupado';
-    if (q.status_hoje === 'p') return 'Chegada prevista hoje';
+    if (q.status_hoje === 'p') return 'Chega hoje';
     return 'Livre';
+  }
+
+  reservaDoQuarto(q: MapaQuarto): ReservaResumo | null {
+    return q.idreserva_hoje ? (this.reservaPorId().get(q.idreserva_hoje) ?? null) : null;
+  }
+
+  cliqueQuarto(q: MapaQuarto): void {
+    if (q.idreserva_hoje) {
+      void this.router.navigate(['/reservas', q.idreserva_hoje]);
+      return;
+    }
+    if (q.bloqueado) return;
+    const ini = this.isoLocal(this.hoje);
+    const amanha = new Date(this.hoje);
+    amanha.setDate(amanha.getDate() + 1);
+    this.abrirNovaReserva({
+      idacomodacao: q.id,
+      entrada: ini,
+      saida: this.isoLocal(amanha),
+    });
+  }
+
+  abrirNovaReserva(seed: { idacomodacao: number; entrada: string; saida: string }): void {
+    void this.router.navigate(['/reservas'], {
+      queryParams: {
+        nova: '1',
+        acomodacao: seed.idacomodacao,
+        entrada: seed.entrada,
+        saida: seed.saida,
+      },
+    });
+  }
+
+  private isoLocal(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
   iniciais(nome: string): string {
