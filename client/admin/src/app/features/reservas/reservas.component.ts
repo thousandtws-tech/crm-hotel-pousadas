@@ -10,7 +10,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { num } from '@core/utils/num.utils';
-import { NovaReservaDialogComponent } from './nova-reserva-dialog.component';
+import { NovaReservaDialogComponent } from '@shared/components/nova-reserva-dialog/nova-reserva-dialog.component';
 import { TapeChartComponent } from '../../shared/components/tape-chart/tape-chart.component';
 import { ReservasStore } from './reservas.store';
 

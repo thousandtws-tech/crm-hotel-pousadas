@@ -17,7 +17,9 @@
       >
         <mat-icon>refresh</mat-icon>
       </button>
-      <a class="btn-pri" routerLink="/reservas"> <mat-icon>calendar_month</mat-icon> Reservas </a>
+      <button class="btn-pri" type="button" (click)="novaReserva()">
+        <mat-icon>add</mat-icon> Nova reserva
+      </button>
     </div>
   </header>
 
@@ -375,7 +377,216 @@
   <section class="fd-card fd-tape">
     <app-tape-chart (novaReserva)="abrirNovaReserva($event)" />
   </section>
+
+  <!-- ==================== central de reservas ==================== -->
+  <section class="fd-card fd-res">
+    <header class="sec-head">
+      <h3><mat-icon>event_note</mat-icon> Reservas</h3>
+      <div class="res-tools">
+        <div class="rv-busca" [class.foco]="buscaFoco()">
+          <mat-icon class="rv-busca-icone">search</mat-icon>
+          <input
+            class="rv-busca-input"
+            type="search"
+            [formControl]="fBusca"
+            placeholder="Hóspede, acomodação ou nº da reserva…"
+            aria-label="Buscar reserva"
+            autocomplete="off"
+            (focus)="buscaFoco.set(true)"
+            (blur)="buscaFoco.set(false)"
+          />
+          @if (fBusca.value) {
+            <button
+              type="button"
+              class="rv-limpar"
+              aria-label="Limpar busca"
+              (click)="fBusca.setValue('')"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          }
+        </div>
+      </div>
+    </header>
+
+    <div class="pills" role="group" aria-label="Filtrar por status">
+      @for (s of statusFiltro; track s.id) {
+        <button
+          type="button"
+          class="pf"
+          [class.on]="fStatus() === s.id"
+          [attr.aria-pressed]="fStatus() === s.id"
+          (click)="filtrarStatus(s.id)"
+        >
+          {{ s.rotulo }}
+        </button>
+      }
+    </div>
+
+    <div class="rv-tabela-wrap">
+      <table class="rv-tabela">
+        <thead>
+          <tr>
+            <th>Hóspede</th>
+            <th>Acomodação</th>
+            <th>Período</th>
+            <th>Diária</th>
+            <th class="tc">Status</th>
+            <th class="tc">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (carregandoLista()) {
+            @for (s of skel; track s) {
+              <tr class="skel-row">
+                <td>
+                  <span class="skel skel-av"></span>
+                  <span class="skel skel-nome"></span>
+                </td>
+                <td><span class="skel skel-txt"></span></td>
+                <td><span class="skel skel-txt"></span></td>
+                <td><span class="skel skel-txt"></span></td>
+                <td class="tc"><span class="skel skel-chip"></span></td>
+                <td class="tc"><span class="skel skel-acoes"></span></td>
+              </tr>
+            }
+          } @else {
+            @for (r of items(); track r.id) {
+              <tr class="rs-row">
+                <td>
+                  <div class="rv-cell">
+                    <span class="rv-avatar">{{ iniciais(r.cliente_nome) }}</span>
+                    <span class="rv-cell-txt">
+                      <strong>{{ r.cliente_nome }}</strong>
+                      <small>
+                        Reserva Nº{{ r.id }} ·
+                        {{ r.quantidade_hospedes }}
+                        {{ r.quantidade_hospedes === 1 ? 'hóspede' : 'hóspedes' }}
+                      </small>
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <div class="rv-cell">
+                    <span
+                      class="rv-dot"
+                      [style.background]="r.acomodacao_cor || '#8fa3ab'"
+                    ></span>
+                    <span class="rv-cell-txt">
+                      <strong class="rv-acom-nome">{{ r.acomodacao_nome }}</strong>
+                      <small>Nº {{ r.acomodacao_numero }}</small>
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <div class="rv-periodo">
+                    <strong>
+                      {{ parseDia(r.entradaprevista) | date: 'dd/MM' }}
+                      <mat-icon>arrow_forward</mat-icon>
+                      {{ parseDia(r.saidaprevista) | date: 'dd/MM/yyyy' }}
+                    </strong>
+                    <small>
+                      {{ noites(r) }} {{ noites(r) === 1 ? 'noite' : 'noites' }}
+                      @if (emCurso(r)) {
+                        · <b class="rv-hj">em curso</b>
+                      }
+                      @if (chegaHoje(r)) {
+                        · <b class="rv-hj">chega hoje</b>
+                      }
+                    </small>
+                  </div>
+                </td>
+                <td>
+                  <span class="rv-valor">R$ {{ num(r.valordiaria) | number: '1.2-2' }}</span>
+                  @if (r.valor_estadia !== null) {
+                    <small class="rv-total">
+                      total R$ {{ num(r.valor_estadia) | number: '1.2-2' }}
+                    </small>
+                  }
+                </td>
+                <td class="tc">
+                  <span
+                    class="rv-st"
+                    [style.background]="st(r.status).bg"
+                    [style.color]="st(r.status).fg"
+                    >{{ st(r.status).rotulo }}</span
+                  >
+                </td>
+                <td class="tc rv-acoes">
+                  @if (chegaHoje(r)) {
+                    <button
+                      type="button"
+                      class="btn-ck"
+                      title="Fazer check-in"
+                      aria-label="Fazer check-in de {{ r.cliente_nome }}"
+                      [disabled]="aguardando() === r.id"
+                      (click)="checkin(r)"
+                    >
+                      <mat-icon>key</mat-icon>
+                      {{ aguardando() === r.id ? '…' : 'Check-in' }}
+                    </button>
+                  }
+                  <a
+                    class="badge-acao bg-blue rs-ver"
+                    title="Abrir reserva"
+                    aria-label="Abrir reserva de {{ r.cliente_nome }}"
+                    [routerLink]="['/reservas', r.id]"
+                  >
+                    <mat-icon>visibility</mat-icon>
+                  </a>
+                  @if (auth.isAdmin() && (r.status === 'p' || r.status === 'c')) {
+                    <button
+                      type="button"
+                      class="badge-acao bg-dark-blue"
+                      title="Excluir"
+                      aria-label="Excluir reserva"
+                      (click)="excluir(r)"
+                    >
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="rv-vazio">
+                  <mat-icon>event_busy</mat-icon>
+                  <p>
+                    {{
+                      temFiltro()
+                        ? 'Nenhuma reserva encontrada para esses filtros.'
+                        : 'Nenhuma reserva registrada ainda.'
+                    }}
+                  </p>
+                  @if (!temFiltro()) {
+                    <button class="btn-pri" type="button" (click)="novaReserva()">
+                      <mat-icon>add</mat-icon> Criar a primeira reserva
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <mat-paginator
+      [length]="total()"
+      [pageSize]="10"
+      [pageIndex]="pagina() - 1"
+      (page)="mudouPagina($event)"
+    />
+  </section>
 </div>
+
+@if (modalNova()) {
+  <app-nova-reserva-dialog
+    [preseed]="seedNova()"
+    (fechar)="fecharNova()"
+    (criada)="reservaCriada()"
+  />
+}
 
 @if (bloqueioAlvo(); as alvo) {
   <div class="bloq-ovl" (click)="bloqueioAlvo.set(null)">

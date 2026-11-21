@@ -1,0 +1,297 @@
+/* ==================== central de reservas ==================== */
+.fd-res .sec-head {
+  margin-bottom: 12px;
+}
+.res-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  justify-content: flex-end;
+  min-width: 240px;
+}
+
+/* ---------- busca ---------- */
+.rv-busca {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 220px;
+  max-width: 400px;
+  background: #fff;
+  border: 1px solid #d7e0e6;
+  border-radius: 10px;
+  padding: 0 10px;
+  height: 40px;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.rv-busca.foco {
+  border-color: #1a6f8a;
+  box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.14);
+}
+.rv-busca-icone {
+  color: #7d97a1;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+.rv-busca-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.9rem;
+  color: #33424c;
+  font-family: inherit;
+  height: 100%;
+}
+.rv-busca-input::placeholder {
+  color: #8fa3ab;
+}
+.rv-busca-input::-webkit-search-cancel-button {
+  display: none;
+}
+.rv-limpar {
+  border: none;
+  background: #eef2f5;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  color: #5d6d7e;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.rv-limpar:hover {
+  background: #d7e0e6;
+}
+
+/* ---------- pills de status ---------- */
+.pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.pf {
+  border: 1px solid #d7e0e6;
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px 15px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #5d6d7e;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pf:hover:not(.on) {
+  border-color: #4b95ab;
+  color: #1a6f8a;
+}
+.pf.on {
+  background: #054054;
+  border-color: #054054;
+  color: #fff;
+}
+
+/* ---------- tabela ---------- */
+.rv-tabela-wrap {
+  overflow-x: auto;
+  border-radius: 8px;
+}
+.rv-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+.rv-tabela thead th {
+  background: #f4f8fa;
+  color: #40525d;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 13px 16px;
+  text-align: left;
+  border-bottom: 2px solid #e3eaef;
+  white-space: nowrap;
+}
+.rv-tabela tbody td {
+  padding: 13px 16px;
+  border-bottom: 1px solid #eef2f5;
+  vertical-align: middle;
+  color: #33424c;
+}
+.rv-tabela tbody tr {
+  transition: background 0.12s;
+}
+.rv-tabela tbody tr:hover {
+  background: #f7fafb;
+}
+.rv-tabela .tc {
+  text-align: center;
+}
+.rv-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.rv-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #1a6f8a, #4b95ab);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.rv-cell-txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.rv-cell-txt strong {
+  font-size: 0.93rem;
+  color: #054054;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+.rv-cell-txt small {
+  font-size: 0.75rem;
+  color: #8a99a4;
+  white-space: nowrap;
+}
+.rv-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+.rv-acom-nome {
+  max-width: 180px !important;
+}
+.rv-periodo {
+  display: flex;
+  flex-direction: column;
+}
+.rv-periodo strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.9rem;
+  color: #33424c;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rv-periodo strong mat-icon {
+  color: #8fa3ab;
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+}
+.rv-periodo small {
+  font-size: 0.74rem;
+  color: #8a99a4;
+}
+.rv-hj {
+  color: #b5811f;
+}
+.rv-valor {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #054054;
+  white-space: nowrap;
+}
+.rv-total {
+  display: block;
+  font-size: 0.73rem;
+  color: #8a99a4;
+  white-space: nowrap;
+}
+.rv-st {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.rv-tabela .badge-acao {
+  padding: 0.5em 0.68em;
+}
+.rv-tabela .badge-acao mat-icon {
+  font-size: 17px;
+  width: 17px;
+  height: 17px;
+}
+.rs-ver {
+  text-decoration: none;
+}
+.rv-acoes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.rv-limpar mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+}
+
+/* ---------- vazio / skeleton ---------- */
+.rv-vazio {
+  text-align: center;
+  padding: 44px 16px !important;
+  color: #7d97a1;
+}
+.rv-vazio mat-icon {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  color: #c3d2d9;
+  margin-bottom: 8px;
+}
+.rv-vazio p {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+}
+.skel-av {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+.skel-nome {
+  width: 160px;
+  height: 14px;
+  margin-left: 12px;
+  vertical-align: middle;
+}
+.skel-txt {
+  width: 110px;
+  height: 13px;
+}
+.skel-chip {
+  width: 78px;
+  height: 24px;
+  border-radius: 999px;
+}
+.skel-acoes {
+  width: 70px;
+  height: 26px;
+}

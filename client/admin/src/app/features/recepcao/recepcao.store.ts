@@ -1,12 +1,20 @@
 // Lógica e estado de recepcao — separada da camada de UI (recepcao.component.ts).
 // O componente herda os membros; templates e comportamento não mudam.
-import { OnInit, computed, effect, inject, signal, Directive } from '@angular/core';
+import { OnInit, computed, effect, inject, signal, Directive, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl } from '@angular/forms';
 import { Router } from '@angular/router';
+import { PageEvent } from '@angular/material/paginator';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { OperacaoApi } from '@core/api/operacao.api';
 import { ReservasApi } from '@core/api/reservas.api';
 import { Bloqueio, MapaQuarto, ReservaResumo } from '@core/models/reservas.models';
+import { StatusReserva } from '@core/models/comum.models';
 import { NotifyService } from '@core/services/notify.service';
 import { RealtimeService } from '@core/services/realtime.service';
+import { ConfirmService } from '@core/services/confirm.service';
+import { AuthStore } from '@core/services/auth.store';
+import { num } from '@core/utils/num.utils';
 
 const DIA_MS = 86_400_000;
 
@@ -17,7 +25,10 @@ export abstract class RecepcaoStore implements OnInit {
   private readonly operacaoApi = inject(OperacaoApi);
   private readonly notify = inject(NotifyService);
   private readonly router = inject(Router);
+  private readonly confirm = inject(ConfirmService);
+  protected readonly auth = inject(AuthStore);
   protected readonly rt = inject(RealtimeService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly hoje = new Date();
   protected readonly chegadas = signal<ReservaResumo[]>([]);
@@ -35,6 +46,35 @@ export abstract class RecepcaoStore implements OnInit {
   protected readonly carregando = signal(true);
   protected readonly skel = [1, 2, 3];
   protected readonly skelMapa = Array.from({ length: 18 }, (_, i) => i);
+
+  // ---- central de reservas (unificada na recepção) ------------------------------
+  protected readonly items = signal<ReservaResumo[]>([]);
+  protected readonly total = signal(0);
+  protected readonly pagina = signal(1);
+  protected readonly carregandoLista = signal(true);
+  protected readonly fBusca = new FormControl('', { nonNullable: true });
+  protected readonly buscaFoco = signal(false);
+  protected readonly fStatus = signal<StatusReserva | ''>('');
+  protected readonly statusFiltro: { id: StatusReserva | ''; rotulo: string }[] = [
+    { id: '', rotulo: 'Todas' },
+    { id: 'p', rotulo: 'Pendente' },
+    { id: 'i', rotulo: 'Hospedado' },
+    { id: 'f', rotulo: 'Finalizado' },
+    { id: 'c', rotulo: 'Cancelada' },
+  ];
+  protected readonly modalNova = signal(false);
+  protected readonly seedNova = signal<{
+    idacomodacao: number;
+    entrada: string;
+    saida: string;
+  } | null>(null);
+  protected readonly hojeIso = this.isoLocal(new Date());
+  private readonly STATUS: Record<StatusReserva, { rotulo: string; bg: string; fg: string }> = {
+    p: { rotulo: 'Pendente', bg: '#eef2f5', fg: '#8a6200' },
+    i: { rotulo: 'Hospedado', bg: '#eef2f5', fg: '#1a6f8a' },
+    f: { rotulo: 'Finalizado', bg: '#eef2f5', fg: '#40525d' },
+    c: { rotulo: 'Cancelada', bg: '#eef2f5', fg: '#7d97a1' },
+  };
 
   /** Mapa idreserva → resumo para exibir hóspede e datas direto no card do quarto. */
   protected readonly reservaPorId = computed(() => {
@@ -92,12 +132,17 @@ export abstract class RecepcaoStore implements OnInit {
       if (v !== ultimo) {
         ultimo = v;
         this.carregar();
+        this.carregarLista();
       }
     });
+    this.fBusca.valueChanges
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.recarregar());
   }
 
   ngOnInit(): void {
     this.carregar();
+    this.carregarLista();
   }
 
   carregar(): void {
@@ -123,6 +168,83 @@ export abstract class RecepcaoStore implements OnInit {
         this.carregando.set(false);
         this.notify.erro(e);
       },
+    });
+  }
+
+  // ---- central de reservas ------------------------------------------------------
+
+  carregarLista(): void {
+    this.carregandoLista.set(true);
+    this.reservasApi
+      .listarReservas({
+        busca: this.fBusca.value?.trim() || null,
+        status: this.fStatus() || null,
+        page: this.pagina(),
+        porPagina: 10,
+      })
+      .subscribe({
+        next: (p) => {
+          this.items.set(p.items);
+          this.total.set(p.total);
+          this.carregandoLista.set(false);
+        },
+        error: (e) => {
+          this.carregandoLista.set(false);
+          this.notify.erro(e);
+        },
+      });
+  }
+
+  recarregar(): void {
+    this.pagina.set(1);
+    this.carregarLista();
+  }
+
+  mudouPagina(e: PageEvent): void {
+    this.pagina.set(e.pageIndex + 1);
+    this.carregarLista();
+  }
+
+  filtrarStatus(s: StatusReserva | ''): void {
+    this.fStatus.set(s);
+    this.recarregar();
+  }
+
+  temFiltro(): boolean {
+    return !!this.fBusca.value?.trim() || !!this.fStatus();
+  }
+
+  novaReserva(): void {
+    this.seedNova.set(null);
+    this.modalNova.set(true);
+  }
+
+  reservaCriada(): void {
+    this.modalNova.set(false);
+    this.seedNova.set(null);
+    this.notify.ok('Reserva criada.');
+    this.carregar();
+    this.carregarLista();
+  }
+
+  fecharNova(): void {
+    this.modalNova.set(false);
+    this.seedNova.set(null);
+  }
+
+  async excluir(r: ReservaResumo): Promise<void> {
+    const ok = await this.confirm.perguntar(
+      `Excluir a reserva Nº${r.id} de ${r.cliente_nome}? A conta de consumo vinculada também será removida.`,
+      { titulo: 'Excluir reserva', confirmar: 'Excluir' },
+    );
+    if (!ok) return;
+    this.reservasApi.excluirReserva(r.id).subscribe({
+      next: () => {
+        this.notify.ok('Reserva excluída.');
+        this.carregar();
+        this.carregarLista();
+      },
+      error: (e) => this.notify.erro(e),
     });
   }
 
@@ -199,6 +321,7 @@ export abstract class RecepcaoStore implements OnInit {
         this.aguardando.set(null);
         this.notify.ok(`Check-in de ${r.cliente_nome} realizado.`);
         this.carregar();
+        this.carregarLista();
       },
       error: (e) => {
         this.aguardando.set(null);
@@ -241,20 +364,40 @@ export abstract class RecepcaoStore implements OnInit {
     });
   }
 
+  /** Célula vazia do tape chart ou quarto livre → walk-in, sem sair da tela. */
   abrirNovaReserva(seed: { idacomodacao: number; entrada: string; saida: string }): void {
-    void this.router.navigate(['/reservas'], {
-      queryParams: {
-        nova: '1',
-        acomodacao: seed.idacomodacao,
-        entrada: seed.entrada,
-        saida: seed.saida,
-      },
-    });
+    this.seedNova.set(seed);
+    this.modalNova.set(true);
   }
 
   private isoLocal(d: Date): string {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
+
+  st(s: StatusReserva): { rotulo: string; bg: string; fg: string } {
+    return this.STATUS[s];
+  }
+
+  parseDia(s: string): Date {
+    const [y, m, d] = s.slice(0, 10).split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  noites(r: ReservaResumo): number {
+    return this.diarias(r);
+  }
+
+  emCurso(r: ReservaResumo): boolean {
+    const ini = r.entradaprevista.slice(0, 10);
+    const fim = r.saidaprevista.slice(0, 10);
+    return r.status === 'i' && ini <= this.hojeIso && fim > this.hojeIso;
+  }
+
+  chegaHoje(r: ReservaResumo): boolean {
+    return r.status === 'p' && r.entradaprevista.slice(0, 10) === this.hojeIso;
+  }
+
+  protected readonly num = num;
 
   iniciais(nome: string): string {
     const p = nome.trim().split(/\s+/).filter(Boolean);
