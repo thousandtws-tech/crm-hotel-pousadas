@@ -1531,3 +1531,108 @@ impl FidelidadeService {
         Ok(serde_json::json!({ "kpis": kpis, "fidelidade": fid }))
     }
 }
+
+// ---------------------------------------------------------------------------
+// Respostas rápidas — catálogo '/atalho' dos campos de resposta.
+// Leitura liberada a qualquer funcionário (autocomplete); escrita gerencial.
+// ---------------------------------------------------------------------------
+
+pub struct RespostaRapidaService {
+    repo: Arc<dyn RespostaRapidaRepository>,
+}
+
+impl RespostaRapidaService {
+    pub fn new(repo: Arc<dyn RespostaRapidaRepository>) -> Self {
+        Self { repo }
+    }
+
+    pub async fn listar(&self) -> AppResult<Vec<RespostaRapida>> {
+        Ok(self.repo.listar().await?)
+    }
+
+    /// Upsert por atalho — normaliza ('/WiFi ' → 'wifi') e valida antes
+    /// de persistir; atalho é a chave natural do autocomplete.
+    pub async fn gravar(&self, r: &RespostaRapida, ator: &Ator) -> AppResult<i64> {
+        ator.exigir_gerencial()?;
+        Ok(self.repo.gravar(&validar_resposta_rapida(r)?).await?)
+    }
+
+    pub async fn remover(&self, id: i64, ator: &Ator) -> AppResult<()> {
+        ator.exigir_gerencial()?;
+        Ok(self.repo.remover(id).await?)
+    }
+}
+
+/// Normaliza e valida a resposta — pura pra teste (atalho é a chave
+/// natural do autocomplete: '/WiFi ' → 'wifi').
+fn validar_resposta_rapida(r: &RespostaRapida) -> Result<RespostaRapida, DomainError> {
+    let atalho = r.atalho.trim().trim_start_matches('/').to_lowercase();
+    let atalho_ok = !atalho.is_empty()
+        && atalho.chars().count() <= 30
+        && atalho
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
+    if !atalho_ok {
+        return Err(DomainError::validacao(
+            "Atalho inválido — use letras, números, '-' ou '_' (máx. 30).",
+        ));
+    }
+    if r.titulo.trim().is_empty() || r.titulo.chars().count() > 60 {
+        return Err(DomainError::validacao(
+            "Título obrigatório (máx. 60 caracteres).",
+        ));
+    }
+    if r.texto.trim().is_empty() || r.texto.chars().count() > 2000 {
+        return Err(DomainError::validacao(
+            "Texto obrigatório (máx. 2.000 caracteres).",
+        ));
+    }
+    Ok(RespostaRapida {
+        atalho,
+        titulo: r.titulo.trim().to_string(),
+        ..r.clone()
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn rr(atalho: &str, titulo: &str, texto: &str) -> RespostaRapida {
+        RespostaRapida {
+            id: 0,
+            atalho: atalho.into(),
+            titulo: titulo.into(),
+            texto: texto.into(),
+            ordem: 0,
+            ativo: true,
+        }
+    }
+
+    #[test]
+    fn atalho_normaliza_barra_espaco_e_maiuscula() {
+        let r = validar_resposta_rapida(&rr("  /WiFi ", "Wi-Fi", "rede x, senha y")).unwrap();
+        assert_eq!(r.atalho, "wifi");
+    }
+
+    #[test]
+    fn atalho_rejeita_caracteres_fora_do_padrao() {
+        assert!(validar_resposta_rapida(&rr("wi fi", "t", "x")).is_err());
+        assert!(validar_resposta_rapida(&rr("wi.fi", "t", "x")).is_err());
+        assert!(validar_resposta_rapida(&rr("", "t", "x")).is_err());
+        assert!(validar_resposta_rapida(&rr("/", "t", "x")).is_err());
+        assert!(validar_resposta_rapida(&rr(&"a".repeat(31), "t", "x")).is_err());
+        // hífen e underscore são aceitos
+        assert!(validar_resposta_rapida(&rr("wi-fi_2", "t", "x")).is_ok());
+    }
+
+    #[test]
+    fn titulo_e_texto_obrigatorios_com_teto() {
+        assert!(validar_resposta_rapida(&rr("wifi", " ", "x")).is_err());
+        assert!(validar_resposta_rapida(&rr("wifi", "t", " ")).is_err());
+        assert!(validar_resposta_rapida(&rr("wifi", &"t".repeat(61), "x")).is_err());
+        assert!(validar_resposta_rapida(&rr("wifi", "t", &"x".repeat(2001))).is_err());
+        let ok = validar_resposta_rapida(&rr("wifi", &"t".repeat(60), &"x".repeat(2000)));
+        assert!(ok.is_ok());
+    }
+}

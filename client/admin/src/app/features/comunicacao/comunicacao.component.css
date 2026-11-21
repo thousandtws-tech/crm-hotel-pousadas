@@ -259,3 +259,49 @@ th {
   background: #fff;
   cursor: pointer;
 }
+/* respostas rápidas -------------------------------------------------- */
+.at {
+  color: #054054;
+  font-weight: 700;
+}
+.inativa td {
+  opacity: 0.55;
+}
+.modal input:not([type='checkbox']):not([type='number']),
+.modal input[type='number'] {
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--borda, #ccd);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.9rem;
+}
+.modal input:focus-visible {
+  outline: 2px solid #054054;
+  outline-offset: 0;
+}
+.at-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.at-wrap span {
+  font-weight: 700;
+  color: var(--mut, #667);
+}
+.at-wrap input {
+  flex: 1;
+}
+.linha2 {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+}
+.linha2 label:first-child {
+  width: 7rem;
+}
+.chk-rr {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.4rem !important;
+  padding-bottom: 0.55rem;
+}

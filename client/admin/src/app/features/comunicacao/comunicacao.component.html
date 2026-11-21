@@ -299,6 +299,105 @@
     </div>
   }
 
+  @if (aba() === 'respostas') {
+    <div class="bloco">
+      <h3>
+        Respostas rápidas — digite <code>/</code> num campo de resposta para expandir
+        @if (gerencial()) {
+          <button class="btn-mini" (click)="novaResposta()">+ Nova resposta</button>
+        }
+      </h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Atalho</th>
+            <th>Título</th>
+            <th>Texto</th>
+            <th>Ordem</th>
+            <th>Status</th>
+            @if (gerencial()) {
+              <th></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of respostas(); track r.id) {
+            <tr [class.inativa]="!r.ativo">
+              <td><code class="at">/{{ r.atalho }}</code></td>
+              <td>{{ r.titulo }}</td>
+              <td class="coment">{{ r.texto }}</td>
+              <td>{{ r.ordem }}</td>
+              <td>
+                <span class="st" [class]="r.ativo ? 'st st-resolvido' : 'st'">{{
+                  r.ativo ? 'ativa' : 'inativa'
+                }}</span>
+              </td>
+              @if (gerencial()) {
+                <td>
+                  <button class="btn-mini" (click)="editarResposta(r)">Editar</button>
+                  <button class="btn-mini" (click)="removerResposta(r)">Excluir</button>
+                </td>
+              }
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="vazio">Nenhuma resposta cadastrada.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (modalRr()) {
+    <div class="overlay" (click)="modalRr.set(null)" (keydown.escape)="modalRr.set(null)">
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Resposta rápida"
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()"
+      >
+        <h3>{{ rrForm.id ? 'Editar' : 'Nova' }} resposta rápida</h3>
+        <label
+          >Atalho — o que o atendente digita após '/'
+          <div class="at-wrap">
+            <span>/</span>
+            <input [(ngModel)]="rrForm.atalho" placeholder="wifi" />
+          </div>
+        </label>
+        <label
+          >Título — aparece no menu de sugestões
+          <input [(ngModel)]="rrForm.titulo" placeholder="Senha do Wi-Fi" />
+        </label>
+        <label
+          >Texto — substitui o atalho no campo de resposta
+          <textarea [(ngModel)]="rrForm.texto" rows="4"></textarea>
+        </label>
+        <div class="linha2">
+          <label
+            >Ordem no menu
+            <input type="number" [(ngModel)]="rrForm.ordem" min="0" />
+          </label>
+          <label class="chk chk-rr">
+            <input type="checkbox" [(ngModel)]="rrForm.ativo" /> Ativa
+          </label>
+        </div>
+        <div class="acoes">
+          <button class="btn-sec" (click)="modalRr.set(null)">Cancelar</button>
+          <button
+            class="btn"
+            [disabled]="!rrForm.atalho.trim() || !rrForm.titulo.trim() || !rrForm.texto.trim()"
+            (click)="salvarResposta()"
+          >
+            Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
   @if (modalLgpd(); as sol) {
     <div class="overlay" (click)="modalLgpd.set(null)" (keydown.escape)="modalLgpd.set(null)">
       <div
@@ -313,11 +412,12 @@
         <p>{{ sol.detalhe ?? 'Sem detalhe informado pelo titular.' }}</p>
         <label
           >Resposta ao titular
-          <textarea
-            [(ngModel)]="textoLgpd"
-            rows="4"
-            placeholder="Descreva como a solicitação foi atendida…"
-          ></textarea>
+          <app-rr-textarea
+            [(texto)]="textoLgpd"
+            [respostas]="respostas()"
+            [rows]="4"
+            placeholder="Descreva como a solicitação foi atendida… (/ para respostas rápidas)"
+          />
         </label>
         <div class="acoes">
           <button class="btn-sec" (click)="modalLgpd.set(null)">Cancelar</button>
@@ -343,7 +443,12 @@
         <p>"{{ av.comentario }}"</p>
         <label
           >Resposta pública
-          <textarea [(ngModel)]="textoResposta" rows="4"></textarea>
+          <app-rr-textarea
+            [(texto)]="textoResposta"
+            [respostas]="respostas()"
+            [rows]="4"
+            placeholder="Digite / para expandir uma resposta rápida…"
+          />
         </label>
         <div class="acoes">
           <button class="btn-sec" (click)="sugerirIa()" [disabled]="gerandoIa()">

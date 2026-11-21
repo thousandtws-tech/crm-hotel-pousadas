@@ -40,7 +40,7 @@ pub use compras::PgComprasRepository;
 pub use comunicacao::{
     PgAtendimentoRepository, PgAutomacaoRepository, PgAvaliacaoRepository, PgCampanhaRepository,
     PgComunicacaoEventos, PgFidelidadeRepository, PgFilaEnvio, PgInnaRepository, PgLgpdRepository,
-    PgPreReservaRepository, PgPushRepository,
+    PgPreReservaRepository, PgPushRepository, PgRespostaRapidaRepository,
 };
 pub use contrato::PgContratoRepository;
 pub use distribuicao::PgDistribuicaoRepository;

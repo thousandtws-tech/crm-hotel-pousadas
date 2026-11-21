@@ -280,6 +280,16 @@ pub trait FidelidadeRepository: Send + Sync {
 }
 
 #[async_trait]
+pub trait RespostaRapidaRepository: Send + Sync {
+    /// Catálogo completo ordenado — ativos primeiro no autocomplete,
+    /// inativos aparecem na grade de gerência.
+    async fn listar(&self) -> Result<Vec<RespostaRapida>, DomainError>;
+    /// Upsert por `atalho` — edição e criação no mesmo caminho.
+    async fn gravar(&self, r: &RespostaRapida) -> Result<i64, DomainError>;
+    async fn remover(&self, id: i64) -> Result<(), DomainError>;
+}
+
+#[async_trait]
 pub trait AutomacaoRepository: Send + Sync {
     async fn checkins_sem_fnrh(
         &self,

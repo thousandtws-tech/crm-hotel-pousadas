@@ -172,3 +172,15 @@ pub struct FidelidadeCliente {
     pub idnivel: Option<i64>,
     pub nivel_nome: Option<String>,
 }
+
+/// Resposta rápida — catálogo de textos prontos expandidos por '/atalho'
+/// nos campos de resposta do CRM (avaliações, LGPD, atendimento).
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct RespostaRapida {
+    pub id: i64,
+    pub atalho: String,
+    pub titulo: String,
+    pub texto: String,
+    pub ordem: i16,
+    pub ativo: bool,
+}

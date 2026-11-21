@@ -4,10 +4,11 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Atendimento } from '@core/models/comunicacao.models';
 import { ComunicacaoStore } from './comunicacao.store';
+import { RespostaRapidaTextareaComponent } from './resposta-rapida-input.component';
 
 @Component({
   selector: 'app-comunicacao',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, RespostaRapidaTextareaComponent],
   templateUrl: './comunicacao.component.html',
   styleUrls: ['./comunicacao.component.css'],
 })

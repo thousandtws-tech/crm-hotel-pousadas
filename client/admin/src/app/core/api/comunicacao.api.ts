@@ -77,6 +77,20 @@ export class ComunicacaoApi extends ApiHttp {
     return this.get<M.Atendimento[]>('/atendimentos', { status, setor });
   }
 
+  // -- respostas rápidas ('/atalho') ------------------------------------------
+
+  respostasRapidas() {
+    return this.get<M.RespostaRapida[]>('/comunicacao/respostas-rapidas');
+  }
+
+  gravarRespostaRapida(r: Omit<M.RespostaRapida, 'id'>) {
+    return this.post<{ id: number }>('/comunicacao/respostas-rapidas', r);
+  }
+
+  removerRespostaRapida(id: number) {
+    return this.del<void>(`/comunicacao/respostas-rapidas/${id}`);
+  }
+
   atendAceitar(id: number) {
     return this.post<M.Atendimento>(`/atendimentos/${id}/aceitar`, {});
   }

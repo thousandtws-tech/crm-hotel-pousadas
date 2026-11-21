@@ -4,7 +4,7 @@ use axum::Json;
 use serde::Deserialize;
 
 use clarituz_application::dto::*;
-use clarituz_domain::entities::{NivelFidelidade, PushSubscription, RegraMatriz};
+use clarituz_domain::entities::{NivelFidelidade, PushSubscription, RegraMatriz, RespostaRapida};
 use clarituz_domain::enums::StatusAvaliacao;
 use clarituz_domain::error::DomainError;
 
@@ -791,4 +791,65 @@ pub async fn atendimento_resolver_post(
     Ok(Json(serde_json::json!(
         st.services.atendimento.resolver(id, ator.id).await?
     )))
+}
+
+// ---------------------------------------------------------------------------
+// Respostas rápidas — catálogo '/atalho' (autocomplete dos campos de
+// resposta). Leitura livre p/ atendentes; escrita restrita a gerência.
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Deserialize)]
+pub struct RespostaRapidaInput {
+    pub atalho: String,
+    pub titulo: String,
+    pub texto: String,
+    #[serde(default)]
+    pub ordem: i16,
+    #[serde(default = "default_true")]
+    pub ativo: bool,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+pub async fn respostas_rapidas_get(
+    State(st): State<AppState>,
+    _ator: Ator,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    Ok(Json(serde_json::json!(
+        st.services.respostas_rapidas.listar().await?
+    )))
+}
+
+pub async fn respostas_rapidas_post(
+    State(st): State<AppState>,
+    ator: Ator,
+    Json(input): Json<RespostaRapidaInput>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let id = st
+        .services
+        .respostas_rapidas
+        .gravar(
+            &RespostaRapida {
+                id: 0,
+                atalho: input.atalho,
+                titulo: input.titulo,
+                texto: input.texto,
+                ordem: input.ordem,
+                ativo: input.ativo,
+            },
+            &ator,
+        )
+        .await?;
+    Ok(Json(serde_json::json!({ "id": id })))
+}
+
+pub async fn respostas_rapidas_delete(
+    State(st): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<StatusCode, ApiError> {
+    st.services.respostas_rapidas.remover(id, &ator).await?;
+    Ok(StatusCode::NO_CONTENT)
 }

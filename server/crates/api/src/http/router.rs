@@ -481,6 +481,15 @@ pub fn build(state: AppState) -> Router {
             get(routes::comunicacao::matriz_listar).post(routes::comunicacao::matriz_gravar),
         )
         .route(
+            "/comunicacao/respostas-rapidas",
+            get(routes::comunicacao::respostas_rapidas_get)
+                .post(routes::comunicacao::respostas_rapidas_post),
+        )
+        .route(
+            "/comunicacao/respostas-rapidas/{id}",
+            axum::routing::delete(routes::comunicacao::respostas_rapidas_delete),
+        )
+        .route(
             "/comunicacao/cobranca/{idreserva}",
             post(routes::comunicacao::cobranca_enviar),
         )

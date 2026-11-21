@@ -764,8 +764,61 @@ impl FidelidadeRepository for PgFidelidadeRepository {
 }
 
 // ---------------------------------------------------------------------------
-// automações — consultas de reserva para os crons
+// respostas rápidas — catálogo '/atalho' dos campos de resposta
 // ---------------------------------------------------------------------------
+
+pub struct PgRespostaRapidaRepository {
+    pool: PgPool,
+}
+
+impl PgRespostaRapidaRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl RespostaRapidaRepository for PgRespostaRapidaRepository {
+    async fn listar(&self) -> Result<Vec<RespostaRapida>, DomainError> {
+        sqlx::query_as::<_, RespostaRapida>(
+            "SELECT id, atalho, titulo, texto, ordem, ativo
+             FROM comunicacao_resposta_rapida ORDER BY ordem, atalho",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn gravar(&self, r: &RespostaRapida) -> Result<i64, DomainError> {
+        sqlx::query_scalar(
+            "INSERT INTO comunicacao_resposta_rapida (atalho, titulo, texto, ordem, ativo)
+             VALUES ($1,$2,$3,$4,$5)
+             ON CONFLICT (atalho) DO UPDATE SET
+                 titulo = EXCLUDED.titulo,
+                 texto  = EXCLUDED.texto,
+                 ordem  = EXCLUDED.ordem,
+                 ativo  = EXCLUDED.ativo
+             RETURNING id",
+        )
+        .bind(&r.atalho)
+        .bind(&r.titulo)
+        .bind(&r.texto)
+        .bind(r.ordem)
+        .bind(r.ativo)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn remover(&self, id: i64) -> Result<(), DomainError> {
+        sqlx::query("DELETE FROM comunicacao_resposta_rapida WHERE id=$1")
+            .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+        Ok(())
+    }
+}
 
 pub struct PgAutomacaoRepository {
     pool: PgPool,

@@ -1,9 +1,11 @@
 // Lógica e estado de comunicacao — separada da camada de UI (comunicacao.component.ts).
 // O componente herda os membros; templates e comportamento não mudam.
-import { OnInit, inject, signal, computed, Directive } from '@angular/core';
+import { OnInit, inject, signal, computed, effect, Directive } from '@angular/core';
 import { ComunicacaoApi } from '@core/api/comunicacao.api';
 import { AuthStore } from '@core/services/auth.store';
+import { ConfirmService } from '@core/services/confirm.service';
 import { NotifyService } from '@core/services/notify.service';
+import { RealtimeService } from '@core/services/realtime.service';
 import { environment } from '../../../environments/environment';
 import {
   Atendimento,
@@ -13,9 +15,10 @@ import {
   ItemFila,
   LgpdSolicitacao,
   RegraMatriz,
+  RespostaRapida,
 } from '@core/models/comunicacao.models';
 
-type Aba = 'avaliacoes' | 'fila' | 'matriz' | 'lgpd' | 'atend';
+type Aba = 'avaliacoes' | 'fila' | 'matriz' | 'lgpd' | 'atend' | 'respostas';
 const CANAIS: CanalEnvio[] = ['inbox', 'push', 'email', 'whatsapp'];
 const PAPEIS = [1, 2, 3];
 const PAPEL_ROTULO: Record<number, string> = { 1: 'Admin', 2: 'Gerente', 3: 'Todos' };
@@ -26,6 +29,8 @@ export abstract class ComunicacaoStore implements OnInit {
   private readonly comunicacaoApi = inject(ComunicacaoApi);
   private readonly notify = inject(NotifyService);
   private readonly auth = inject(AuthStore);
+  private readonly confirm = inject(ConfirmService);
+  private readonly rt = inject(RealtimeService);
 
   protected readonly aba = signal<Aba>('avaliacoes');
   protected readonly abas: { id: Aba; rotulo: string }[] = [
@@ -34,6 +39,7 @@ export abstract class ComunicacaoStore implements OnInit {
     { id: 'matriz', rotulo: 'Matriz de alertas' },
     { id: 'lgpd', rotulo: 'Privacidade (LGPD)' },
     { id: 'atend', rotulo: 'Atendimentos' },
+    { id: 'respostas', rotulo: 'Respostas rápidas' },
   ];
 
   protected readonly dash = signal<AvaliacoesDash | null>(null);
@@ -53,13 +59,98 @@ export abstract class ComunicacaoStore implements OnInit {
   protected readonly papeis = PAPEIS;
   protected readonly papelRotulo = PAPEL_ROTULO;
 
+  // -- respostas rápidas ('/atalho') ------------------------------------------
+  protected readonly respostas = signal<RespostaRapida[]>([]);
+  protected readonly modalRr = signal<RespostaRapida | null>(null);
+  /** Form da resposta em edição/criação — `id` 0 = novo. */
+  protected rrForm = { id: 0, atalho: '', titulo: '', texto: '', ordem: 0, ativo: true };
+  /** Gerência edita o catálogo; atendentes só usam no autocomplete. */
+  protected readonly gerencial = computed(() => (this.auth.user()?.nivel ?? 9) <= 2);
+
   protected readonly eventos = computed(() =>
     [...new Set(this.matriz().map((r) => r.evento))].sort(),
   );
 
+  constructor() {
+    // realtime — catálogo editado por outra sessão reflete sem F5
+    effect(() => {
+      this.rt.delta('comunicacao_resposta_rapida');
+      this.carregarRespostas();
+    });
+  }
+
   ngOnInit(): void {
     this.carregar();
+    this.carregarRespostas();
     this.pushAtivo.set(localStorage.getItem('push_subscribed') === '1');
+  }
+
+  carregarRespostas(): void {
+    this.comunicacaoApi.respostasRapidas().subscribe({
+      next: (r) => this.respostas.set(r),
+      error: () => undefined,
+    });
+  }
+
+  novaResposta(): void {
+    this.rrForm = {
+      id: 0,
+      atalho: '',
+      titulo: '',
+      texto: '',
+      ordem: this.respostas().length + 1,
+      ativo: true,
+    };
+    this.modalRr.set({ ...this.rrForm });
+  }
+
+  editarResposta(r: RespostaRapida): void {
+    this.rrForm = {
+      id: r.id,
+      atalho: r.atalho,
+      titulo: r.titulo,
+      texto: r.texto,
+      ordem: r.ordem,
+      ativo: r.ativo,
+    };
+    this.modalRr.set(r);
+  }
+
+  salvarResposta(): void {
+    const f = this.rrForm;
+    if (!f.atalho.trim() || !f.titulo.trim() || !f.texto.trim()) return;
+    this.comunicacaoApi
+      .gravarRespostaRapida({
+        atalho: f.atalho.trim(),
+        titulo: f.titulo.trim(),
+        texto: f.texto,
+        ordem: f.ordem,
+        ativo: f.ativo,
+      })
+      .subscribe({
+        next: () => {
+          this.notify.ok('Resposta rápida salva.');
+          this.modalRr.set(null);
+          this.carregarRespostas();
+        },
+        error: (e) =>
+          this.notify.erroMsg(e?.error?.erro?.mensagem ?? 'Não foi possível salvar.'),
+      });
+  }
+
+  async removerResposta(r: RespostaRapida): Promise<void> {
+    const ok = await this.confirm.perguntar(
+      `Excluir a resposta "/${r.atalho}"? Atendentes perdem o atalho na hora.`,
+      { confirmar: 'Excluir' },
+    );
+    if (!ok) return;
+    this.comunicacaoApi.removerRespostaRapida(r.id).subscribe({
+      next: () => {
+        this.notify.ok('Resposta excluída.');
+        this.carregarRespostas();
+      },
+      error: () => this.notify.erroMsg('Não foi possível excluir.'),
+    });
   }
 
   carregar(): void {

@@ -59,7 +59,9 @@ pub use channex::ChannexService;
 pub use clientes::ClienteService;
 pub use cms::CmsService;
 pub use compras::ComprasService;
-pub use comunicacao::{AvaliacoesService, ComunicacaoService, FidelidadeService};
+pub use comunicacao::{
+    AvaliacoesService, ComunicacaoService, FidelidadeService, RespostaRapidaService,
+};
 pub use concierge::ConciergeService;
 pub use contratos::ContratoService;
 pub use dashboard::DashboardService;
@@ -132,6 +134,8 @@ pub struct Services {
     pub lgpd: Arc<LgpdService>,
     pub avaliacoes: Arc<AvaliacoesService>,
     pub fidelidade: Arc<FidelidadeService>,
+    /// Catálogo '/atalho' dos campos de resposta — autocomplete do CRM.
+    pub respostas_rapidas: Arc<RespostaRapidaService>,
     pub manutencao: Arc<ManutencaoService>,
     pub governanca: Arc<GovernancaService>,
     pub escalas: Arc<EscalasService>,

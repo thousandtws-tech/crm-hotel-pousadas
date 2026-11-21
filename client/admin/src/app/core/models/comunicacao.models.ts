@@ -114,6 +114,16 @@ export interface NivelFidelidade {
   ativo: boolean;
 }
 
+/** Resposta rápida — catálogo expandido por '/atalho' nos campos de resposta. */
+export interface RespostaRapida {
+  id: number;
+  atalho: string;
+  titulo: string;
+  texto: string;
+  ordem: number;
+  ativo: boolean;
+}
+
 /**
  * Painel consolidado da página Comunicação — 6 leituras em 1 request.
  * Campos gerenciais vêm null para níveis sem acesso (antes eram 403).

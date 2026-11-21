@@ -133,6 +133,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
     let fila_envio_repo2 = fila_envio_repo.clone();
     let avaliacao_repo = Arc::new(PgAvaliacaoRepository::new(pool.clone()));
     let fidelidade_repo = Arc::new(PgFidelidadeRepository::new(pool.clone()));
+    let resposta_rapida_repo = Arc::new(PgRespostaRapidaRepository::new(pool.clone()));
     let automacao_repo = Arc::new(PgAutomacaoRepository::new(pool.clone()));
 
     let maria_ia: Option<Arc<dyn clarituz_domain::ports::ConciergeIa>> = settings
@@ -415,6 +416,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         lgpd: lgpd_svc,
         avaliacoes: Arc::new(AvaliacoesService::new(avaliacao_repo)),
         fidelidade: Arc::new(FidelidadeService::new(fidelidade_repo)),
+        respostas_rapidas: Arc::new(RespostaRapidaService::new(resposta_rapida_repo)),
         manutencao: Arc::new(ManutencaoService::new(
             Arc::new(PgManutencaoRepository::new(pool.clone())),
             fila_envio_repo2.clone(),
