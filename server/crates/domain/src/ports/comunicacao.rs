@@ -334,6 +334,14 @@ pub trait AutomacaoRepository: Send + Sync {
     ) -> Result<(), DomainError>;
     /// Chave do documento da pré-ficha — `None` quando não enviado.
     async fn documento_pre_ficha(&self, idreserva: i64) -> Result<Option<String>, DomainError>;
+    /// Sessão do menu determinístico — `None` = primeiro contato.
+    async fn wa_menu_obter(&self, telefone: &str) -> Result<Option<WaMenu>, DomainError>;
+    async fn wa_menu_marcar(
+        &self,
+        telefone: &str,
+        estado: &str,
+        wamid: Option<&str>,
+    ) -> Result<(), DomainError>;
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize)]
@@ -573,6 +581,20 @@ pub trait PreReservaRepository: Send + Sync {
         expira_em: chrono::DateTime<chrono::Utc>,
     ) -> Result<(), DomainError>;
     async fn pre_reserva_remover(&self, telefone: &str) -> Result<(), DomainError>;
+}
+
+// ---------------------------------------------------------------------------
+// Menu determinístico do WhatsApp — "1/2/3" antes da MARIA no primeiro
+// contato. Registro permanente (não expira como pre_reserva).
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct WaMenu {
+    pub telefone: String,
+    /// 'aguardando' (menu enviado, esperando 1/2/3) | 'concluido'.
+    pub estado: String,
+    /// Dedup de reentrega do provedor — última mensagem já processada.
+    pub ultimo_wamid: Option<String>,
 }
 
 // ---------------------------------------------------------------------------

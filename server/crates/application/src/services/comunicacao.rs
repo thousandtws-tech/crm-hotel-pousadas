@@ -424,6 +424,12 @@ impl ComunicacaoService {
     // envio direto ao hóspede (também usável por rotas manuais)
     // ------------------------------------------------------------------
 
+    /// Link público da pré-ficha — menu "2-Check-in" e reenvios manuais.
+    pub fn link_fnrh(&self, r: &ReservaAuto) -> Option<String> {
+        r.token_publico
+            .map(|t| format!("{}/fnrh/{}", self.site_base, t))
+    }
+
     /// Link da pré-ficha — chamado na confirmação da reserva e no cron.
     pub async fn enviar_fnrh(&self, r: &ReservaAuto, template: &str) {
         let Some(token) = r.token_publico else { return };

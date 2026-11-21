@@ -127,8 +127,6 @@ impl AtendimentoService {
         msg: &str,
         motivo: Option<&str>,
     ) -> AppResult<AberturaAtendimento> {
-        let telefone = r.cliente_telefone.as_deref();
-        let (idreserva, idcliente) = (Some(r.idreserva), Some(r.idcliente));
         let assunto = format!(
             "Escalada Maria — {}",
             r.cliente_nome
@@ -136,6 +134,51 @@ impl AtendimentoService {
                 .next()
                 .unwrap_or(&r.cliente_nome)
         );
+        self.registrar(
+            origem,
+            r.cliente_telefone.as_deref(),
+            Some(r.idreserva),
+            Some(r.idcliente),
+            &assunto,
+            msg,
+            motivo,
+        )
+        .await
+    }
+
+    /// Menu "3-Atendente" e outros contatos sem reserva vinculada —
+    /// protocolo cai na recepção com o telefone pra retorno.
+    pub async fn abrir_telefone(
+        &self,
+        origem: &str,
+        telefone: &str,
+        msg: &str,
+        motivo: Option<&str>,
+    ) -> AppResult<AberturaAtendimento> {
+        self.registrar(
+            origem,
+            Some(telefone),
+            None,
+            None,
+            "WhatsApp — pediu atendente",
+            msg,
+            motivo,
+        )
+        .await
+    }
+
+    /// Núcleo compartilhado: classifica urgência/setor, grava o protocolo
+    /// e avisa a equipe. `idreserva`/`idcliente` são None sem reserva.
+    async fn registrar(
+        &self,
+        origem: &str,
+        telefone: Option<&str>,
+        idreserva: Option<i64>,
+        idcliente: Option<i64>,
+        assunto: &str,
+        msg: &str,
+        motivo: Option<&str>,
+    ) -> AppResult<AberturaAtendimento> {
         let (setor, prioridade) = classificar(msg);
         let urgente = prioridade == "urgente";
         let setor = if urgente { "recepcao" } else { setor };
@@ -148,7 +191,7 @@ impl AtendimentoService {
                 telefone: telefone.map(String::from),
                 idreserva,
                 idcliente,
-                assunto: assunto.clone(),
+                assunto: assunto.to_string(),
                 ultima_msg: Some(msg.chars().take(200).collect()),
                 motivo: motivo.map(String::from),
                 prazo_aceite: Utc::now() + Duration::minutes(self.sla_aceite_min),

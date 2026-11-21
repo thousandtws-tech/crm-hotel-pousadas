@@ -108,6 +108,12 @@ impl PreReservaService {
         }
     }
 
+    /// Entrada pelo menu determinístico ("1-Reservas") — inicia o fluxo
+    /// mesmo sem gatilho no texto; reusa `iniciar` com entrada vazia.
+    pub async fn iniciar_fluxo(&self, telefone: &str) -> AppResult<String> {
+        self.iniciar(telefone, "").await
+    }
+
     // ------------------------------------------------------------------
     // etapas
     // ------------------------------------------------------------------

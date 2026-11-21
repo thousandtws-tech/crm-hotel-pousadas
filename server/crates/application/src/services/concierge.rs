@@ -145,6 +145,75 @@ impl ConciergeService {
                 .await?;
             return Ok(());
         }
+        // Menu determinístico — primeiro contato recebe 1/2/3 antes de
+        // qualquer IA (custo zero, nunca alucina). `wa_menu` é permanente:
+        // quem já passou pelo menu cai direto no fluxo normal.
+        let menu = self.automacao.wa_menu_obter(&digitos).await?;
+        if let Some(m) = &menu {
+            // Reentrega do provedor com o mesmo wamid — já processada.
+            if wamid.is_some() && m.ultimo_wamid.as_deref() == wamid {
+                return Ok(());
+            }
+        }
+        match menu.as_ref().map(|m| m.estado.as_str()) {
+            None => {
+                self.automacao
+                    .wa_menu_marcar(&digitos, "aguardando", wamid)
+                    .await?;
+                let est = self.estabelecimentos.obter().await?;
+                let nome = est
+                    .as_ref()
+                    .and_then(|e| e.razao_social.clone())
+                    .unwrap_or_else(|| "nossa pousada".into());
+                self.enviar_texto(
+                    &digitos,
+                    &format!(
+                        "Olá! 👋 Bem-vindo à {nome}.\n\nComo posso ajudar? \
+                         Responda com o número:\n\n*1* — Reservas e tarifas\n\
+                         *2* — Check-in\n*3* — Falar com atendente"
+                    ),
+                )
+                .await?;
+                return Ok(());
+            }
+            Some("aguardando") => {
+                self.automacao
+                    .wa_menu_marcar(&digitos, "concluido", wamid)
+                    .await?;
+                match texto.trim() {
+                    "1" => {
+                        let resp = self.pre_reserva.iniciar_fluxo(&digitos).await?;
+                        self.enviar_texto(&digitos, &resp).await?;
+                        return Ok(());
+                    }
+                    "2" => {
+                        let resp = self.menu_checkin(&digitos).await?;
+                        self.enviar_texto(&digitos, &resp).await?;
+                        return Ok(());
+                    }
+                    "3" => {
+                        let ab = self
+                            .atendimento
+                            .abrir_telefone("whatsapp", &digitos, texto, Some("menu_atendente"))
+                            .await?;
+                        self.enviar_texto(
+                            &digitos,
+                            &format!(
+                                "Já chamei um atendente — protocolo *{}*. \
+                                 Responderemos por aqui mesmo. 😊",
+                                ab.protocolo
+                            ),
+                        )
+                        .await?;
+                        return Ok(());
+                    }
+                    // Qualquer outro texto encerra o menu e segue pro
+                    // fluxo normal (pré-reserva → reserva → Maria).
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
         // Pré-reserva — fluxo determinístico por telefone; funciona sem
         // reserva ativa (é justamente pra criar uma). Se a mensagem não é
         // do fluxo, segue pro caminho normal (reserva → Maria).
@@ -197,6 +266,54 @@ impl ConciergeService {
     // ------------------------------------------------------------------
     // núcleo — registra, chama a IA com contexto restrito, escala
     // ------------------------------------------------------------------
+
+    /// Texto da opção "2-Check-in": hóspede com reserva recebe o link da
+    /// pré-ficha; sem reserva recebe os horários + pede o nome.
+    async fn menu_checkin(&self, digitos: &str) -> AppResult<String> {
+        let est = self.estabelecimentos.obter().await?;
+        let checkin = est
+            .as_ref()
+            .and_then(|e| e.horario_checkin.clone())
+            .unwrap_or_else(|| "14h".into());
+        let checkout = est
+            .as_ref()
+            .and_then(|e| e.horario_checkout.clone())
+            .unwrap_or_else(|| "10h".into());
+        if let Some(r) = self.automacao.reserva_por_telefone(digitos).await? {
+            let mut txt = format!(
+                "Seu check-in é a partir das {checkin}. \
+                 Para agilizar, complete sua ficha de hospedagem:"
+            );
+            if let Some(link) = self.comunicacao.link_fnrh(&r) {
+                txt.push_str(&format!(" {link}"));
+            } else {
+                txt.push_str(" a recepção te envia o link em instantes.");
+            }
+            return Ok(txt);
+        }
+        Ok(format!(
+            "Check-in a partir das {checkin}; check-out até {checkout}. \
+             Já tem reserva? Me passa o nome completo que eu localizo pra você."
+        ))
+    }
+
+    /// Enfileira resposta WhatsApp livre — janela de 24h do provedor
+    /// está aberta pelo inbound que acabou de chegar.
+    async fn enviar_texto(&self, destino: &str, texto: &str) -> AppResult<()> {
+        self.fila
+            .enfileirar(NovoEnvio {
+                canal: clarituz_domain::enums::CanalEnvio::Whatsapp,
+                destino: destino.to_string(),
+                template: "wa_menu".into(),
+                payload: serde_json::json!({"tipo": "texto", "texto": texto}),
+                idreserva: None,
+                idcliente: None,
+                idfuncionario: None,
+                agendado_para: Utc::now(),
+            })
+            .await?;
+        Ok(())
+    }
 
     async fn reserva_token(&self, token: uuid::Uuid) -> AppResult<ReservaAuto> {
         self.automacao

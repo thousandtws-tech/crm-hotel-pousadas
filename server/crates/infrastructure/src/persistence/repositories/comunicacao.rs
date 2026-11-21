@@ -1025,6 +1025,37 @@ impl AutomacaoRepository for PgAutomacaoRepository {
         .await
         .map_err(map_db_err)
     }
+
+    async fn wa_menu_obter(&self, telefone: &str) -> Result<Option<WaMenu>, DomainError> {
+        sqlx::query_as::<_, WaMenu>(
+            "SELECT telefone, estado, ultimo_wamid FROM wa_menu WHERE telefone = $1",
+        )
+        .bind(telefone)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn wa_menu_marcar(
+        &self,
+        telefone: &str,
+        estado: &str,
+        wamid: Option<&str>,
+    ) -> Result<(), DomainError> {
+        sqlx::query(
+            "INSERT INTO wa_menu (telefone, estado, ultimo_wamid)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (telefone) DO UPDATE
+             SET estado = $2, ultimo_wamid = $3, atualizado_em = now()",
+        )
+        .bind(telefone)
+        .bind(estado)
+        .bind(wamid)
+        .execute(&self.pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(())
+    }
 }
 
 // ---------------------------------------------------------------------------
