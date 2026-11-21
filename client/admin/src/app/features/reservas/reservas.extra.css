@@ -469,7 +469,7 @@
 }
 .tape-track {
   position: relative;
-  height: 58px;
+  height: 46px;
   display: flex;
 }
 .tape-cel {
@@ -501,19 +501,19 @@
 }
 .tape-bar {
   position: absolute;
-  top: 5px;
-  min-height: 48px;
+  top: 8px;
+  height: 30px;
   border: 0;
   border-radius: 6px;
   color: #fff;
   text-decoration: none;
   display: flex;
   align-items: center;
-  padding: 4px 6px;
+  padding: 0 8px;
   font: inherit;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  line-height: 1.15;
+  line-height: 1;
   letter-spacing: 0.01em;
   text-align: left;
   box-shadow: 0 1px 3px rgba(5, 64, 84, 0.3);
@@ -522,7 +522,7 @@
     box-shadow 0.12s,
     filter 0.12s;
   overflow: visible;
-  white-space: normal;
+  white-space: nowrap;
   cursor: pointer;
 }
 /* Cor = status — convenção de tape chart (PMS): âmbar precisa ação,
@@ -561,9 +561,27 @@
   text-decoration: line-through;
 }
 .tape-bar-txt {
-  display: block;
-  width: 100%;
-  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+/* Nome completo ao lado da barra quando a diária é curta — padrão PMS:
+   nunca corta, lê-se sobre as células vazias seguintes. */
+.tape-bar-ao {
+  position: absolute;
+  left: calc(100% + 6px);
+  top: 50%;
+  translate: 0 -50%;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #40525d;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.tape-bar.can .tape-bar-ao {
+  text-decoration: line-through;
+  color: #8a99a4;
 }
 .tape-legenda {
   display: flex;

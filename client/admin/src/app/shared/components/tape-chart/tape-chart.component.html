@@ -100,8 +100,10 @@
                     <span class="tape-bar-txt">
                       {{ p.entrada | date: 'dd/MM' }} → {{ p.saida | date: 'dd/MM' }}
                     </span>
-                  } @else {
+                  } @else if (g.w >= 120) {
                     <span class="tape-bar-txt">{{ nomeCompleto(r.cliente_nome) }}</span>
+                  } @else {
+                    <span class="tape-bar-ao">{{ nomeCompleto(r.cliente_nome) }}</span>
                   }
                 </button>
               }

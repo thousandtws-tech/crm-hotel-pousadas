@@ -24,7 +24,7 @@ const COL_W = 92;
 /** Quantidade de dias visíveis no mapa. */
 const JANELA_DIAS = 14;
 /** Altura da linha do mapa — mesma do `.tape-track` no CSS. */
-const LIN_H = 58;
+const LIN_H = 46;
 
 type Visao = 'lista' | 'cal' | 'mapa' | 'grupos';
 
