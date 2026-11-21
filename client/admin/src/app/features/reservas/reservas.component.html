@@ -438,7 +438,7 @@
                             {{ p.entrada | date: 'dd/MM' }} → {{ p.saida | date: 'dd/MM' }}
                           </span>
                         } @else {
-                          <span class="tape-bar-txt">{{ nomeBarra(r.cliente_nome, g.w) }}</span>
+                          <span class="tape-bar-txt">{{ nomeCompleto(r.cliente_nome) }}</span>
                         }
                       </button>
                     }

@@ -376,11 +376,11 @@
   border-radius: 8px;
 }
 .tape {
-  min-width: 1188px;
+  min-width: 1356px;
 }
 .tape-head {
   display: grid;
-  grid-template-columns: 180px repeat(14, 72px);
+  grid-template-columns: 180px repeat(14, 84px);
   border-bottom: 2px solid #e3eaef;
 }
 .tape-dia {
@@ -473,7 +473,7 @@
   display: flex;
 }
 .tape-cel {
-  width: 72px;
+  width: 84px;
   height: 100%;
   border: 0;
   border-left: 1px solid #f0f4f6;
@@ -501,18 +501,19 @@
 }
 .tape-bar {
   position: absolute;
-  top: 9px;
-  height: 30px;
+  top: 6px;
+  height: 36px;
   border: 0;
   border-radius: 6px;
   color: #fff;
   text-decoration: none;
   display: flex;
   align-items: center;
-  padding: 0 7px;
+  padding: 0 6px;
   font: inherit;
-  font-size: 0.74rem;
+  font-size: 0.7rem;
   font-weight: 600;
+  line-height: 1.15;
   letter-spacing: 0.01em;
   text-align: left;
   box-shadow: 0 1px 3px rgba(5, 64, 84, 0.3);
@@ -521,7 +522,7 @@
     box-shadow 0.12s,
     filter 0.12s;
   overflow: hidden;
-  white-space: nowrap;
+  white-space: normal;
   cursor: pointer;
 }
 /* Cor = status — convenção de tape chart (PMS): âmbar precisa ação,
@@ -560,8 +561,11 @@
   text-decoration: line-through;
 }
 .tape-bar-txt {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
 }
 .tape-legenda {
   display: flex;
