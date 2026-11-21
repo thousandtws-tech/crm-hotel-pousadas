@@ -542,10 +542,6 @@ export abstract class ReservasStore implements OnInit {
     return { l, w: Math.max(w, 18) };
   }
 
-  barCor(r: ReservaResumo): string | null {
-    return r.status === 'c' ? null : r.acomodacao_cor || '#1a6f8a';
-  }
-
   // ---- drag do mapa (remanejamento) --------------------------------------------
 
   /** Barra em arraste — dx/dy em px; o template aplica via transform. */

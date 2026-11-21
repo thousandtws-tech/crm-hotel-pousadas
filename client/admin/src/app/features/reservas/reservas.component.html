@@ -406,12 +406,14 @@
                       <button
                         type="button"
                         class="tape-bar"
+                        [class.st-p]="r.status === 'p'"
+                        [class.st-i]="r.status === 'i'"
+                        [class.st-f]="r.status === 'f'"
                         [class.can]="r.status === 'c'"
                         [class.drag]="arrastando()?.r.id === r.id"
                         [class.movel]="r.status === 'p'"
                         [style.left.px]="g.l"
                         [style.width.px]="g.w"
-                        [style.background]="barCor(r)"
                         [style.transform]="
                           arrastando()?.r.id === r.id
                             ? 'translate(' + arrastando()!.dx + 'px,' + arrastando()!.dy + 'px)'
@@ -452,12 +454,14 @@
           }
         </div>
         <div class="tape-legenda">
-          <span><i class="lg lg-cor"></i> Cor da acomodação</span>
+          <span><i class="lg st-p"></i> Pendente</span>
+          <span><i class="lg st-i"></i> Hospedado</span>
+          <span><i class="lg st-f"></i> Finalizada</span>
+          <span><i class="lg st-c"></i> Cancelada</span>
           <span><i class="lg lg-hj"></i> Hoje</span>
           <span><i class="lg lg-fds"></i> Fim de semana</span>
-          <span><i class="lg lg-can"></i> Cancelada</span>
-          <span><i class="lg lg-drag"></i> Arraste a reserva para remanejar</span>
-          <span><i class="lg lg-add"></i> Clique num dia vazio para reservar</span>
+          <span class="tape-hint"><i class="lg lg-drag"></i> Arraste para remanejar</span>
+          <span class="tape-hint"><i class="lg lg-add"></i> Clique num dia vazio para reservar</span>
         </div>
       </div>
     }
