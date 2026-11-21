@@ -6,8 +6,10 @@ import { FormControl } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PageEvent } from '@angular/material/paginator';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { AcomodacoesApi } from '@core/api/acomodacoes.api';
 import { OperacaoApi } from '@core/api/operacao.api';
 import { ReservasApi } from '@core/api/reservas.api';
+import { Acomodacao, Grupo, GrupoUnidadeView } from '@core/models/catalogo.models';
 import { Bloqueio, MapaQuarto, ReservaResumo } from '@core/models/reservas.models';
 import { StatusReserva } from '@core/models/comum.models';
 import { NotifyService } from '@core/services/notify.service';
@@ -23,6 +25,7 @@ const DIA_MS = 86_400_000;
 export abstract class RecepcaoStore implements OnInit {
   private readonly reservasApi = inject(ReservasApi);
   private readonly operacaoApi = inject(OperacaoApi);
+  private readonly acomodacoesApi = inject(AcomodacoesApi);
   private readonly notify = inject(NotifyService);
   private readonly router = inject(Router);
   private readonly confirm = inject(ConfirmService);
@@ -69,6 +72,22 @@ export abstract class RecepcaoStore implements OnInit {
     saida: string;
   } | null>(null);
   protected readonly hojeIso = this.isoLocal(new Date());
+  /** Filtro de período da lista — inputs `date` nativos (mesmo padrão do modal de bloqueio). */
+  protected fInicio = '';
+  protected fFim = '';
+
+  // ---- grupos / eventos ---------------------------------------------------------
+  protected readonly grupos = signal<Grupo[]>([]);
+  protected readonly rooming = signal<GrupoUnidadeView[]>([]);
+  protected readonly roomingAberto = signal<number | null>(null);
+  protected readonly salvandoGrupo = signal(false);
+  protected readonly gSel = signal<Set<number>>(new Set());
+  protected readonly acomodacoes = signal<Acomodacao[]>([]);
+  protected gNome = '';
+  protected gContato = '';
+  protected gInicio = '';
+  protected gFim = '';
+  protected gBloquear = true;
   private readonly STATUS: Record<StatusReserva, { rotulo: string; bg: string; fg: string }> = {
     p: { rotulo: 'Pendente', bg: '#eef2f5', fg: '#8a6200' },
     i: { rotulo: 'Hospedado', bg: '#eef2f5', fg: '#1a6f8a' },
@@ -143,6 +162,7 @@ export abstract class RecepcaoStore implements OnInit {
   ngOnInit(): void {
     this.carregar();
     this.carregarLista();
+    this.carregarGrupos();
   }
 
   carregar(): void {
@@ -179,6 +199,8 @@ export abstract class RecepcaoStore implements OnInit {
       .listarReservas({
         busca: this.fBusca.value?.trim() || null,
         status: this.fStatus() || null,
+        inicio: this.fInicio || null,
+        fim: this.fFim || null,
         page: this.pagina(),
         porPagina: 10,
       })
@@ -210,8 +232,118 @@ export abstract class RecepcaoStore implements OnInit {
     this.recarregar();
   }
 
+  limparRange(): void {
+    this.fInicio = '';
+    this.fFim = '';
+    this.recarregar();
+  }
+
+  rangeAtiva(): boolean {
+    return !!(this.fInicio || this.fFim);
+  }
+
   temFiltro(): boolean {
-    return !!this.fBusca.value?.trim() || !!this.fStatus();
+    return !!this.fBusca.value?.trim() || !!this.fStatus() || this.rangeAtiva();
+  }
+
+  /** Atalhos dos cartões de KPI — aplicam o filtro correspondente na lista. */
+  atalho(k: 'chegadas' | 'saidas' | 'hospedados' | 'pendentes'): void {
+    this.fBusca.setValue('', { emitEvent: false });
+    if (k === 'chegadas' || k === 'saidas') {
+      this.fStatus.set(k === 'chegadas' ? 'p' : 'i');
+      this.fInicio = this.hojeIso;
+      this.fFim = this.hojeIso;
+    } else {
+      this.fStatus.set(k === 'hospedados' ? 'i' : 'p');
+      this.fInicio = '';
+      this.fFim = '';
+    }
+    this.recarregar();
+  }
+
+  // ---- grupos / eventos ---------------------------------------------------------
+
+  carregarGrupos(): void {
+    this.reservasApi
+      .grupos()
+      .subscribe({ next: (g) => this.grupos.set(g), error: () => undefined });
+    if (!this.acomodacoes().length) {
+      this.acomodacoesApi.listarAcomodacoes(1, 200, true).subscribe({
+        next: (p) => this.acomodacoes.set(p.items),
+        error: () => undefined,
+      });
+    }
+  }
+
+  toggleUnidade(id: number): void {
+    this.gSel.update((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  }
+
+  criarGrupo(): void {
+    if (!this.gNome.trim() || !this.gInicio || !this.gFim || this.gSel().size === 0) {
+      this.notify.aviso('Nome, período e ao menos uma unidade são obrigatórios.');
+      return;
+    }
+    this.salvandoGrupo.set(true);
+    this.reservasApi
+      .criarGrupo({
+        nome: this.gNome.trim(),
+        contato: this.gContato.trim() || null,
+        inicio: this.gInicio,
+        fim: this.gFim,
+        unidades: [...this.gSel()],
+        bloquear: this.gBloquear,
+      })
+      .subscribe({
+        next: () => {
+          this.salvandoGrupo.set(false);
+          this.gNome = '';
+          this.gContato = '';
+          this.gInicio = '';
+          this.gFim = '';
+          this.gSel.set(new Set());
+          this.notify.ok('Grupo criado.');
+          this.carregarGrupos();
+          this.carregar();
+        },
+        error: (e) => {
+          this.salvandoGrupo.set(false);
+          this.notify.erro(e);
+        },
+      });
+  }
+
+  toggleRooming(id: number): void {
+    if (this.roomingAberto() === id) {
+      this.roomingAberto.set(null);
+      return;
+    }
+    this.roomingAberto.set(id);
+    this.reservasApi.grupoUnidades(id).subscribe({
+      next: (u) => this.rooming.set(u),
+      error: () => this.rooming.set([]),
+    });
+  }
+
+  async removerGrupo(g: Grupo): Promise<void> {
+    const ok = await this.confirm.perguntar(
+      `Remover o grupo '${g.nome}'? Os bloqueios vinculados são liberados; reservas permanecem.`,
+      { titulo: 'Remover grupo', confirmar: 'Remover' },
+    );
+    if (!ok) return;
+    this.reservasApi.removerGrupo(g.id).subscribe({
+      next: () => {
+        this.notify.ok('Grupo removido.');
+        this.carregarGrupos();
+        this.carregar();
+      },
+      error: (e) => this.notify.erro(e),
+    });
   }
 
   novaReserva(): void {

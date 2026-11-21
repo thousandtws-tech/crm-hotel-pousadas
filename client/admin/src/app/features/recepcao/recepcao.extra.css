@@ -295,3 +295,254 @@
   width: 70px;
   height: 26px;
 }
+/* ==================== inputs & range nativos ==================== */
+.inp {
+  border: 1px solid #d7e0e6;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: #33424c;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.inp:focus {
+  outline: none;
+  border-color: #1a6f8a;
+  box-shadow: 0 0 0 3px rgba(26, 111, 138, 0.12);
+}
+.inp-dt {
+  height: 34px;
+  color-scheme: light;
+}
+.res-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.res-range mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: #8a99a4;
+}
+.res-range .f-chip mat-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+}
+
+/* ==================== KPI clicável ==================== */
+.stat-btn {
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  border: 1px solid transparent;
+}
+.stat-btn:hover {
+  border-color: #b7d4de;
+}
+
+/* ==================== grupos / eventos ==================== */
+.fd-grupos {
+  margin-top: 16px;
+}
+.gr-wrap {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.gr-novo {
+  flex: 0 0 330px;
+  background: #f8fbfc;
+  border: 1px solid #e3eaef;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gr-tit {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #054054;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gr-tit mat-icon {
+  color: #4b95ab;
+}
+.gr-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.gr-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gr-range .inp {
+  flex: 1;
+  min-width: 0;
+}
+.gr-range mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: #8a99a4;
+  flex-shrink: 0;
+}
+.gr-sub {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: #5d6d7e;
+  font-weight: 700;
+}
+.gr-units {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 190px;
+  overflow-y: auto;
+}
+.gr-unit {
+  font-size: 0.8rem;
+  padding: 6px 9px;
+  border: 1px solid #e3eaef;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  background: #fff;
+  transition: border-color 0.14s, background 0.14s;
+}
+.gr-unit:hover {
+  border-color: #4b95ab;
+}
+.gr-unit.sel {
+  background: #e8f4f8;
+  border-color: #1a6f8a;
+}
+.gr-blk {
+  font-size: 0.8rem;
+  color: #5d6d7e;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+.gr-cta {
+  justify-content: center;
+}
+.gr-lista {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gr-card {
+  background: #fff;
+  border: 1px solid #e3eaef;
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.gr-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.gr-av {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  background: #e4eef5;
+  color: #1a6f8a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.gr-head-txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.gr-head-txt strong {
+  color: #054054;
+  font-size: 0.94rem;
+}
+.gr-datas {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.76rem;
+  color: #7d97a1;
+}
+.gr-datas mat-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+}
+.gr-contato {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  color: #8a99a4;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.gr-contato mat-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+}
+.gr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: #1a6f8a;
+  background: #e8f4f8;
+  border: 1px solid #c8e0e8;
+  border-radius: 7px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.gr-btn:hover {
+  background: #d8edf3;
+}
+.gr-btn mat-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+}
+.gr-btn.danger {
+  color: #a33d3d;
+  background: #fae9e9;
+  border-color: #ecc9c9;
+}
+.gr-btn.danger:hover {
+  background: #f5dcdc;
+}
+.gr-tb {
+  margin-top: 10px;
+  font-size: 0.82rem;
+}
+.gr-tb th {
+  font-size: 0.72rem;
+  color: #8a99a4;
+  text-transform: uppercase;
+}
+.gr-vazio {
+  color: #8a99a4;
+  text-align: center;
+}

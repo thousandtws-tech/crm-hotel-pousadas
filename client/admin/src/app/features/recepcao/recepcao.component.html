@@ -38,7 +38,12 @@
       </div>
       <span class="stat-ico"><mat-icon>hotel</mat-icon></span>
     </div>
-    <div class="stat">
+    <button
+      type="button"
+      class="stat stat-btn"
+      (click)="atalho('chegadas')"
+      title="Ver chegadas previstas para hoje"
+    >
       <div class="stat-txt">
         <span class="stat-l">Chegadas hoje</span>
         <p>
@@ -47,8 +52,13 @@
         </p>
       </div>
       <span class="stat-ico ico-in"><mat-icon>luggage</mat-icon></span>
-    </div>
-    <div class="stat">
+    </button>
+    <button
+      type="button"
+      class="stat stat-btn"
+      (click)="atalho('saidas')"
+      title="Ver hospedados com saída hoje"
+    >
       <div class="stat-txt">
         <span class="stat-l">Saídas hoje</span>
         <p>
@@ -57,8 +67,13 @@
         </p>
       </div>
       <span class="stat-ico ico-out"><mat-icon>meeting_room</mat-icon></span>
-    </div>
-    <div class="stat">
+    </button>
+    <button
+      type="button"
+      class="stat stat-btn"
+      (click)="atalho('hospedados')"
+      title="Ver hóspedes na pousada agora"
+    >
       <div class="stat-txt">
         <span class="stat-l">Na casa</span>
         <p>
@@ -67,8 +82,13 @@
         </p>
       </div>
       <span class="stat-ico ico-casa"><mat-icon>king_bed</mat-icon></span>
-    </div>
-    <div class="stat">
+    </button>
+    <button
+      type="button"
+      class="stat stat-btn"
+      (click)="filtroMapa.set('atencao')"
+      title="Ver quartos que precisam de atenção no mapa"
+    >
       <div class="stat-txt">
         <span class="stat-l">Em atenção</span>
         <p>
@@ -77,7 +97,7 @@
         </p>
       </div>
       <span class="stat-ico ico-atn"><mat-icon>room_preferences</mat-icon></span>
-    </div>
+    </button>
   </div>
 
   <div class="fd-grid">
@@ -406,6 +426,33 @@
             </button>
           }
         </div>
+        <div class="res-range" role="group" aria-label="Filtrar por período">
+          <input
+            type="date"
+            class="inp inp-dt"
+            [value]="fInicio"
+            (change)="fInicio = $any($event.target).value; recarregar()"
+            aria-label="Entrada a partir de"
+          />
+          <mat-icon>arrow_forward</mat-icon>
+          <input
+            type="date"
+            class="inp inp-dt"
+            [value]="fFim"
+            (change)="fFim = $any($event.target).value; recarregar()"
+            aria-label="Saída até"
+          />
+          @if (rangeAtiva()) {
+            <button
+              type="button"
+              class="f-chip"
+              (click)="limparRange()"
+              title="Limpar período"
+            >
+              <mat-icon>date_range</mat-icon> Limpar
+            </button>
+          }
+        </div>
       </div>
     </header>
 
@@ -577,6 +624,144 @@
       [pageIndex]="pagina() - 1"
       (page)="mudouPagina($event)"
     />
+  </section>
+
+  <!-- ==================== grupos / eventos ==================== -->
+  <section class="fd-card fd-grupos">
+    <header class="sec-head">
+      <h3><mat-icon>groups</mat-icon> Grupos e eventos</h3>
+    </header>
+    <div class="gr-wrap">
+      <div class="gr-novo">
+        <h4 class="gr-tit"><mat-icon>group</mat-icon> Novo grupo / evento</h4>
+        <div class="gr-form">
+          <input
+            class="inp"
+            placeholder="Nome do grupo *"
+            [value]="gNome"
+            (input)="gNome = $any($event.target).value"
+            aria-label="Nome do grupo"
+          />
+          <input
+            class="inp"
+            placeholder="Contato"
+            [value]="gContato"
+            (input)="gContato = $any($event.target).value"
+            aria-label="Contato"
+          />
+        </div>
+        <div class="gr-range" role="group" aria-label="Período do grupo">
+          <input
+            type="date"
+            class="inp inp-dt"
+            [value]="gInicio"
+            (change)="gInicio = $any($event.target).value"
+            aria-label="Início do período do grupo"
+          />
+          <mat-icon>arrow_forward</mat-icon>
+          <input
+            type="date"
+            class="inp inp-dt"
+            [value]="gFim"
+            (change)="gFim = $any($event.target).value"
+            aria-label="Fim do período do grupo"
+          />
+        </div>
+        <p class="gr-sub">Unidades (rooming list):</p>
+        <div class="gr-units">
+          @for (a of acomodacoes(); track a.id) {
+            <label class="gr-unit" [class.sel]="gSel().has(a.id)">
+              <input
+                type="checkbox"
+                [checked]="gSel().has(a.id)"
+                (change)="toggleUnidade(a.id)"
+              />
+              {{ a.numero }} · {{ a.nome }}
+            </label>
+          }
+        </div>
+        <label class="gr-blk">
+          <input type="checkbox" [checked]="gBloquear" (change)="gBloquear = !gBloquear" />
+          Bloquear as unidades para venda no período
+        </label>
+        <button
+          type="button"
+          class="btn-pri gr-cta"
+          [disabled]="salvandoGrupo()"
+          (click)="criarGrupo()"
+        >
+          <mat-icon>{{ salvandoGrupo() ? 'hourglass_top' : 'add' }}</mat-icon>
+          {{ salvandoGrupo() ? 'Salvando…' : 'Criar grupo' }}
+        </button>
+      </div>
+
+      <div class="gr-lista">
+        @for (g of grupos(); track g.id) {
+          <div class="gr-card">
+            <div class="gr-head">
+              <span class="gr-av"><mat-icon>groups</mat-icon></span>
+              <div class="gr-head-txt">
+                <strong>{{ g.nome }}</strong>
+                <small class="gr-datas">
+                  <mat-icon>event</mat-icon>
+                  {{ g.inicio | date: 'dd/MM' }} → {{ g.fim | date: 'dd/MM' }}
+                </small>
+              </div>
+              <button type="button" class="gr-btn" (click)="toggleRooming(g.id)">
+                {{ roomingAberto() === g.id ? 'Fechar' : 'Rooming' }}
+              </button>
+              <button
+                type="button"
+                class="gr-btn danger"
+                aria-label="Remover grupo"
+                (click)="removerGrupo(g)"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+            @if (g.contato) {
+              <p class="gr-contato"><mat-icon>person</mat-icon> {{ g.contato }}</p>
+            }
+            @if (roomingAberto() === g.id) {
+              <table class="plain bordered gr-tb">
+                <thead>
+                  <tr>
+                    <th>Unidade</th>
+                    <th>Hóspede</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (u of rooming(); track u.id) {
+                    <tr>
+                      <td>{{ u.acomodacao_numero }} · {{ u.acomodacao_nome }}</td>
+                      <td>{{ u.hospede ?? '—' }}</td>
+                      <td>
+                        {{
+                          u.reserva_status === 'i'
+                            ? 'Na casa'
+                            : u.reserva_status === 'p'
+                              ? 'Reservado'
+                              : '—'
+                        }}
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="3" class="gr-vazio">Sem unidades.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          </div>
+        } @empty {
+          <p class="vazio">
+            <mat-icon>groups</mat-icon>Nenhum grupo cadastrado — casamentos, retiros, excursões.
+          </p>
+        }
+      </div>
+    </div>
   </section>
 </div>
 
