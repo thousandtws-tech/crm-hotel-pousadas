@@ -7,6 +7,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { PageEvent } from '@angular/material/paginator';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AcomodacoesApi } from '@core/api/acomodacoes.api';
+import { OperacaoApi } from '@core/api/operacao.api';
 import { ReservasApi } from '@core/api/reservas.api';
 import { num } from '@core/utils/num.utils';
 import { Acomodacao, Grupo, GrupoUnidadeView } from '@core/models/catalogo.models';
@@ -28,6 +29,7 @@ export abstract class ReservasStore implements OnInit {
   protected readonly rt = inject(RealtimeService);
   private readonly acomodacoesApi = inject(AcomodacoesApi);
   private readonly reservasApi = inject(ReservasApi);
+  private readonly operacaoApi = inject(OperacaoApi);
   private readonly notify = inject(NotifyService);
   private readonly confirm = inject(ConfirmService);
   private readonly tour = inject(TourService);
@@ -322,6 +324,20 @@ export abstract class ReservasStore implements OnInit {
   // ---- KPIs / eventos ----------------------------------------------------------
 
   // ---------- mapa por andar + bloqueio ----------
+
+  /** Conclui a tarefa de limpeza de hoje do quarto, direto no mapa. */
+  marcarLimpa(a: MapaQuarto, ev: Event): void {
+    ev.stopPropagation();
+    if (!a.idtarefa_limpeza) return;
+    this.operacaoApi.govStatus(a.idtarefa_limpeza, 'concluida').subscribe({
+      next: () => {
+        this.notify.ok(`Limpeza de ${a.nome} concluída.`);
+        this.carregarMapa();
+      },
+      error: (e) => this.notify.erro(e),
+    });
+  }
+
   carregarMapa(): void {
     this.carregandoMapa.set(true);
     this.reservasApi.mapaQuartos().subscribe({

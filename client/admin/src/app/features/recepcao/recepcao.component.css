@@ -661,6 +661,19 @@
   background: rgba(230, 126, 34, 0.14);
   color: #b45b0b;
 }
+.flg.btn {
+  border: 1px dashed currentcolor;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.flg.btn:hover {
+  background: rgba(122, 95, 181, 0.22);
+}
+.flg.btn:focus-visible {
+  outline: 2px solid #5f4796;
+  outline-offset: 1px;
+}
 
 .fd-tape {
   margin-top: 16px;

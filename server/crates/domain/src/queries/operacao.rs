@@ -17,6 +17,9 @@ pub struct MapaQuarto {
     pub bloqueado: bool,
     /// Tarefas de limpeza de hoje não concluídas nos quartos vinculados.
     pub limpeza_pendente: i64,
+    /// Id da tarefa de limpeza pendente de hoje — permite "marcar limpa"
+    /// direto no mapa (PATCH /governanca/tarefas/{id}/status).
+    pub idtarefa_limpeza: Option<i64>,
     /// OS de manutenção abertas nos quartos vinculados.
     pub manut_aberta: i64,
 }

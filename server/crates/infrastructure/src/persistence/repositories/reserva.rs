@@ -320,6 +320,12 @@ impl ReservaRepository for PgReservaRepository {
                        AND g.data = CURRENT_DATE
                        AND g.status IN ('pendente','em_andamento')
                       WHERE q.idacomodacao = a.id) AS limpeza_pendente,
+                    (SELECT g.id FROM quarto q
+                      JOIN governanca_tarefa g ON g.idquarto = q.id
+                       AND g.data = CURRENT_DATE
+                       AND g.status IN ('pendente','em_andamento')
+                      WHERE q.idacomodacao = a.id
+                      ORDER BY g.id LIMIT 1) AS idtarefa_limpeza,
                     (SELECT count(*) FROM quarto q
                       JOIN manutencao_ordem m ON m.idquarto = q.id
                        AND m.status IN ('aberta','em_execucao','aguardando_peca')

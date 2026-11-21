@@ -81,6 +81,8 @@ export interface MapaQuarto {
   status_hoje: string | null;
   bloqueado: boolean;
   limpeza_pendente: number;
+  /** Tarefa de limpeza pendente de hoje — permite "marcar limpa" no mapa. */
+  idtarefa_limpeza?: number | null;
   manut_aberta: number;
 }
 

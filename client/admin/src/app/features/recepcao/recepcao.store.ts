@@ -2,6 +2,7 @@
 // O componente herda os membros; templates e comportamento não mudam.
 import { OnInit, computed, effect, inject, signal, Directive } from '@angular/core';
 import { Router } from '@angular/router';
+import { OperacaoApi } from '@core/api/operacao.api';
 import { ReservasApi } from '@core/api/reservas.api';
 import { MapaQuarto, ReservaResumo } from '@core/models/reservas.models';
 import { NotifyService } from '@core/services/notify.service';
@@ -13,6 +14,7 @@ const DIA_MS = 86_400_000;
 @Directive()
 export abstract class RecepcaoStore implements OnInit {
   private readonly reservasApi = inject(ReservasApi);
+  private readonly operacaoApi = inject(OperacaoApi);
   private readonly notify = inject(NotifyService);
   private readonly router = inject(Router);
   protected readonly rt = inject(RealtimeService);
@@ -108,9 +110,22 @@ export abstract class RecepcaoStore implements OnInit {
         this.carregando.set(false);
       },
       error: (e) => {
-        this.notify.erro(e);
         this.carregando.set(false);
+        this.notify.erro(e);
       },
+    });
+  }
+
+  /** Conclui a tarefa de limpeza de hoje do quarto, direto no mapa. */
+  marcarLimpa(q: MapaQuarto, ev: Event): void {
+    ev.stopPropagation();
+    if (!q.idtarefa_limpeza) return;
+    this.operacaoApi.govStatus(q.idtarefa_limpeza, 'concluida').subscribe({
+      next: () => {
+        this.notify.ok(`Limpeza de ${q.nome} concluída.`);
+        this.carregar();
+      },
+      error: (e) => this.notify.erro(e),
     });
   }
 

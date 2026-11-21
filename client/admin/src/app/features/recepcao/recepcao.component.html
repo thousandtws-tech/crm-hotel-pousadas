@@ -303,9 +303,20 @@
                       @if (q.limpeza_pendente > 0 || q.manut_aberta > 0) {
                         <span class="qt-flags">
                           @if (q.limpeza_pendente > 0) {
-                            <em class="flg lm" title="Limpeza pendente">
-                              <mat-icon>cleaning_services</mat-icon>Limpeza
-                            </em>
+                            @if (q.idtarefa_limpeza) {
+                              <button
+                                type="button"
+                                class="flg lm btn"
+                                title="Marcar limpeza como concluída"
+                                (click)="marcarLimpa(q, $event)"
+                              >
+                                <mat-icon>cleaning_services</mat-icon>Marcar limpa
+                              </button>
+                            } @else {
+                              <em class="flg lm" title="Limpeza pendente">
+                                <mat-icon>cleaning_services</mat-icon>Limpeza
+                              </em>
+                            }
                           }
                           @if (q.manut_aberta > 0) {
                             <em class="flg mn" title="Manutenção aberta">

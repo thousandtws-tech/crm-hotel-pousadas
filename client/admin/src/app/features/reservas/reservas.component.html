@@ -383,9 +383,20 @@
                       <em class="tg tg-livre">Livre</em>
                     }
                     @if (a.limpeza_pendente > 0) {
-                      <em class="tg tg-limp" title="Tarefas de limpeza pendentes">
-                        <mat-icon>cleaning_services</mat-icon>{{ a.limpeza_pendente }}
-                      </em>
+                      @if (a.idtarefa_limpeza) {
+                        <button
+                          type="button"
+                          class="tg tg-limp tg-btn"
+                          title="Marcar limpeza como concluída"
+                          (click)="marcarLimpa(a, $event)"
+                        >
+                          <mat-icon>cleaning_services</mat-icon>{{ a.limpeza_pendente }}
+                        </button>
+                      } @else {
+                        <em class="tg tg-limp" title="Tarefas de limpeza pendentes">
+                          <mat-icon>cleaning_services</mat-icon>{{ a.limpeza_pendente }}
+                        </em>
+                      }
                     }
                     @if (a.manut_aberta > 0) {
                       <em class="tg tg-man" title="OS de manutenção abertas">
