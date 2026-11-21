@@ -6,5 +6,5 @@
 
 ALTER TYPE pagamento_tipo ADD VALUE IF NOT EXISTS 'extra';
 
-ALTER TABLE pagamento_online
+ALTER TABLE pagamento
     ADD COLUMN IF NOT EXISTS contexto JSONB;
