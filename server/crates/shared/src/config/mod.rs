@@ -103,14 +103,19 @@ pub struct Settings {
     /// Teto de tentativas de login por IP/minuto (default 10 — Argon2 é
     /// CPU-bound; sem teto o endpoint vira amplificador de DoS/brute-force).
     pub login_rate_limit_per_min: u32,
-    /// SERPRO/FNRH — webservice do meio de hospedagem. Sem `SERPRO_FNRH_URL`
-    /// o provider não sobe e as transmissões ficam 'pendente' (painel
-    /// orienta a exportação SNE/CSV manual).
+    /// SERPRO/FNRH API v2 — REST/JSON do meio de hospedagem. Sem
+    /// `SERPRO_FNRH_URL` o provider não sobe e as transmissões ficam
+    /// 'pendente' (painel orienta a exportação SNE/CSV manual).
+    /// URL base: produção `https://fnrh.turismo.serpro.gov.br/FNRH_API/rest/v2`,
+    /// homologação `https://hom-lowcode.serpro.gov.br/FNRH_API/rest/v2`.
     pub serpro_fnrh_url: Option<String>,
+    /// Chaves de API geradas no portal FNRH (login Gov.br do responsável
+    /// no Cadastur → menu "Chaves de API").
     pub serpro_fnrh_usuario: Option<String>,
     pub serpro_fnrh_senha: Option<String>,
-    /// CNPJ do estabelecimento registrado no sistema FNRH (14 dígitos).
-    pub serpro_fnrh_cnpj: Option<String>,
+    /// CPF do responsável que registra a hospedagem — header
+    /// `cpf_solicitante`, obrigatório em toda chamada.
+    pub serpro_fnrh_cpf_solicitante: Option<String>,
 }
 
 impl Settings {
@@ -195,7 +200,7 @@ impl Settings {
             serpro_fnrh_url: env_string("SERPRO_FNRH_URL"),
             serpro_fnrh_usuario: env_string("SERPRO_FNRH_USUARIO"),
             serpro_fnrh_senha: env_string("SERPRO_FNRH_SENHA"),
-            serpro_fnrh_cnpj: env_string("SERPRO_FNRH_CNPJ"),
+            serpro_fnrh_cpf_solicitante: env_string("SERPRO_FNRH_CPF_SOLICITANTE"),
         })
     }
 }

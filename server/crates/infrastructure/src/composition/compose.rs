@@ -205,7 +205,10 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
                 url,
                 settings.serpro_fnrh_usuario.as_deref().unwrap_or(""),
                 settings.serpro_fnrh_senha.as_deref().unwrap_or(""),
-                settings.serpro_fnrh_cnpj.as_deref().unwrap_or(""),
+                settings
+                    .serpro_fnrh_cpf_solicitante
+                    .as_deref()
+                    .unwrap_or(""),
             )) as Arc<dyn clarituz_domain::ports::ProvedorFnrh>
         }),
     }));
