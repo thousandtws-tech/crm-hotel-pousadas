@@ -285,6 +285,7 @@
                 @if (a.status !== 'resolvido') {
                   <button class="btn-mini" (click)="resolverAtend(a)">Resolver</button>
                 }
+                <button class="btn-mini" (click)="abrirAtend(a)">Detalhe</button>
               </td>
             </tr>
           } @empty {
@@ -393,6 +394,123 @@
           >
             Salvar
           </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (atendSel(); as a) {
+    <div class="overlay" (click)="fecharAtend()" (keydown.escape)="fecharAtend()">
+      <div
+        class="modal modal-atend"
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-label]="'Protocolo ' + a.protocolo"
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()"
+      >
+        <h3>
+          {{ a.protocolo }} — {{ a.assunto }}
+          <span
+            class="st"
+            [class]="a.prioridade === 'urgente' ? 'st st-escalado' : 'st st-resolvido'"
+            >{{ a.prioridade }}</span
+          >
+        </h3>
+        <p class="atend-meta">
+          {{ a.origem }} · {{ a.telefone ?? 'sem telefone' }}
+          {{ a.idreserva ? '· reserva #' + a.idreserva : '' }} · aberto
+          {{ a.criado_em | date: 'dd/MM/yy HH:mm' }}
+        </p>
+
+        <div class="atend-sec">
+          <span class="atend-lbl">Setor</span>
+          @for (s of setores; track s) {
+            <button
+              class="tag"
+              [class.tag-on]="a.setor === s"
+              [disabled]="a.setor === s || a.status === 'resolvido' || a.status === 'encerrado'"
+              (click)="transferirAtend(s)"
+            >
+              {{ s }}
+            </button>
+          }
+        </div>
+
+        <div class="atend-sec">
+          <span class="atend-lbl">Etiquetas</span>
+          @for (t of tagsSugeridas; track t) {
+            <button
+              class="tag"
+              [class.tag-on]="a.tags.includes(t)"
+              [attr.aria-pressed]="a.tags.includes(t)"
+              (click)="toggleTag(t)"
+            >
+              {{ t }}
+            </button>
+          }
+        </div>
+
+        <div class="atend-sec">
+          <span class="atend-lbl">Notas internas — visíveis só pra equipe</span>
+          @for (n of notas(); track n.id) {
+            <div class="nota">
+              <p>{{ n.texto }}</p>
+              <small
+                >{{ n.funcionario_nome ?? 'Equipe' }} ·
+                {{ n.criado_em | date: 'dd/MM/yy HH:mm' }}</small
+              >
+            </div>
+          } @empty {
+            <p class="vazio">Nenhuma nota — o turno seguinte agradece contexto aqui.</p>
+          }
+          <label
+            >Nova nota
+            <app-rr-textarea
+              [(texto)]="notaTexto"
+              [respostas]="respostas()"
+              [rows]="2"
+              placeholder="Ex.: hóspede pediu berço — governança levou ao 203 às 15h…"
+            />
+          </label>
+          <button class="btn-sec" [disabled]="!notaTexto.trim()" (click)="anotarAtend()">
+            Salvar nota
+          </button>
+        </div>
+
+        @if (a.telefone && a.status !== 'resolvido' && a.status !== 'encerrado') {
+          <div class="atend-sec">
+            <span class="atend-lbl">Mensagem agendada — WhatsApp do hóspede</span>
+            <label
+              >Texto
+              <app-rr-textarea
+                [(texto)]="agendarTexto"
+                [respostas]="respostas()"
+                [rows]="2"
+                placeholder="Ex.: lembrete checkout amanhã às 10h…"
+              />
+            </label>
+            <label
+              >Enviar em
+              <input
+                type="datetime-local"
+                class="sel"
+                [ngModel]="agendarQuando"
+                (ngModelChange)="agendarQuando = $event"
+              />
+            </label>
+            <button
+              class="btn-sec"
+              [disabled]="!agendarTexto.trim() || !agendarQuando"
+              (click)="agendarMsg()"
+            >
+              Agendar envio
+            </button>
+          </div>
+        }
+
+        <div class="acoes">
+          <button class="btn-sec" (click)="fecharAtend()">Fechar</button>
         </div>
       </div>
     </div>

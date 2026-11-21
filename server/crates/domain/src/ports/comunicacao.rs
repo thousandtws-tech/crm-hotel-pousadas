@@ -607,6 +607,21 @@ pub struct Atendimento {
     pub atribuido_em: Option<chrono::DateTime<chrono::Utc>>,
     pub escalado_em: Option<chrono::DateTime<chrono::Utc>>,
     pub resolvido_em: Option<chrono::DateTime<chrono::Utc>>,
+    /// Etiquetas livres — reclamação, elogio, upsell…
+    #[serde(default)]
+    pub tags: Vec<String>,
+}
+
+/// Nota interna do protocolo — contexto entre turnos, nunca vai ao hóspede.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
+pub struct AtendimentoNota {
+    pub id: i64,
+    pub idatendimento: i64,
+    pub idfuncionario: Option<i64>,
+    pub texto: String,
+    pub criado_em: chrono::DateTime<chrono::Utc>,
+    #[sqlx(default)]
+    pub funcionario_nome: Option<String>,
 }
 
 /// Campos de abertura — protocolo/status/prazos derivados pelo repo/service.
@@ -647,4 +662,23 @@ pub trait AtendimentoRepository: Send + Sync {
     /// Abertos/escalados com prazo de aceite vencido — o worker escala.
     async fn atendimento_vencidos(&self) -> Result<Vec<Atendimento>, DomainError>;
     async fn atendimento_escalar(&self, id: i64) -> Result<Atendimento, DomainError>;
+    async fn atendimento_buscar(&self, id: i64) -> Result<Option<Atendimento>, DomainError>;
+    /// Passa o protocolo pra outro setor — volta à fila aberta com SLA novo.
+    async fn atendimento_transferir(
+        &self,
+        id: i64,
+        setor: &str,
+        prazo_aceite: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Atendimento, DomainError>;
+    async fn atendimento_anotar(
+        &self,
+        idatendimento: i64,
+        idfuncionario: i64,
+        texto: &str,
+    ) -> Result<AtendimentoNota, DomainError>;
+    async fn atendimento_notas(
+        &self,
+        idatendimento: i64,
+    ) -> Result<Vec<AtendimentoNota>, DomainError>;
+    async fn atendimento_tags(&self, id: i64, tags: &[String]) -> Result<Atendimento, DomainError>;
 }

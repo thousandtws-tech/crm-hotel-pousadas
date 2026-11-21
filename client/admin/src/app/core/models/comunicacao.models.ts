@@ -35,6 +35,17 @@ export interface Atendimento {
   atribuido_em: string | null;
   escalado_em: string | null;
   resolvido_em: string | null;
+  tags: string[];
+}
+
+/** Nota interna do protocolo — contexto entre turnos, nunca vai ao hóspede. */
+export interface AtendimentoNota {
+  id: number;
+  idatendimento: number;
+  idfuncionario: number | null;
+  texto: string;
+  criado_em: string;
+  funcionario_nome: string | null;
 }
 
 // -- mapa por andar + bloqueio ---------------------------------------------------

@@ -305,3 +305,70 @@ th {
   gap: 0.4rem !important;
   padding-bottom: 0.55rem;
 }
+
+/* -- detalhe do protocolo: notas, transferência, tags ---------------------- */
+.modal-atend {
+  max-width: 34rem;
+}
+.atend-meta {
+  color: var(--mut, #667);
+  font-size: 0.84rem;
+}
+.atend-sec {
+  margin-top: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+.atend-sec label {
+  flex: 1 1 100%;
+}
+.atend-lbl {
+  flex: 1 1 100%;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--mut, #667);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.tag {
+  border: 1px solid var(--borda, #d8dce4);
+  background: transparent;
+  color: var(--txt, #2b3245);
+  border-radius: 999px;
+  padding: 0.22rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tag:hover:not(:disabled) {
+  border-color: var(--pri, #2563eb);
+}
+.tag:focus-visible {
+  outline: 2px solid var(--pri, #2563eb);
+  outline-offset: 1px;
+}
+.tag:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.tag-on {
+  background: var(--pri, #2563eb);
+  border-color: var(--pri, #2563eb);
+  color: #fff;
+}
+.nota {
+  flex: 1 1 100%;
+  border-left: 3px solid var(--pri, #2563eb);
+  background: var(--bg-alt, #f6f7fb);
+  border-radius: 0 8px 8px 0;
+  padding: 0.45rem 0.7rem;
+}
+.nota p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.nota small {
+  color: var(--mut, #667);
+}

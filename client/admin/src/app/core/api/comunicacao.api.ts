@@ -99,6 +99,28 @@ export class ComunicacaoApi extends ApiHttp {
     return this.post<M.Atendimento>(`/atendimentos/${id}/resolver`, {});
   }
 
+  atendTransferir(id: number, setor: string) {
+    return this.post<M.Atendimento>(`/atendimentos/${id}/transferir`, { setor });
+  }
+
+  atendNotas(id: number) {
+    return this.get<M.AtendimentoNota[]>(`/atendimentos/${id}/notas`);
+  }
+
+  atendAnotar(id: number, texto: string) {
+    return this.post<M.AtendimentoNota>(`/atendimentos/${id}/notas`, { texto });
+  }
+
+  atendTags(id: number, tags: string[]) {
+    return this.put<M.Atendimento>(`/atendimentos/${id}/tags`, { tags });
+  }
+
+  atendAgendarMsg(id: number, texto: string, agendadoPara: string) {
+    return this.post<void>(`/atendimentos/${id}/mensagens`, {
+      texto, agendado_para: agendadoPara,
+    });
+  }
+
   pushVapidKey() {
     return this.get<{ publica: string }>('/push/vapid-key');
   }

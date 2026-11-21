@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use chrono::{Duration, Timelike, Utc};
 use clarituz_domain::ports::*;
+use clarituz_domain::DomainError;
 
 use crate::error::AppResult;
 use crate::services::ComunicacaoService;
@@ -227,6 +228,83 @@ impl AtendimentoService {
 
     pub async fn resolver(&self, id: i64, idfuncionario: i64) -> AppResult<Atendimento> {
         Ok(self.repo.atendimento_resolver(id, idfuncionario).await?)
+    }
+
+    /// Transferência entre setores — volta à fila com SLA de aceite renovado.
+    pub async fn transferir(
+        &self,
+        id: i64,
+        setor: &str,
+        _idfuncionario: i64,
+    ) -> AppResult<Atendimento> {
+        const SETORES: [&str; 4] = ["recepcao", "governanca", "manutencao", "gerencia"];
+        if !SETORES.contains(&setor) {
+            return Err(DomainError::validacao("Setor inválido.").into());
+        }
+        let prazo = Utc::now() + Duration::minutes(self.sla_aceite_min);
+        Ok(self.repo.atendimento_transferir(id, setor, prazo).await?)
+    }
+
+    /// Nota interna — contexto de turno; nunca sai pro hóspede.
+    pub async fn anotar(
+        &self,
+        id: i64,
+        texto: &str,
+        idfuncionario: i64,
+    ) -> AppResult<AtendimentoNota> {
+        let texto = texto.trim();
+        if texto.is_empty() || texto.len() > 2000 {
+            return Err(DomainError::validacao("Nota vazia ou muito longa.").into());
+        }
+        Ok(self
+            .repo
+            .atendimento_anotar(id, idfuncionario, texto)
+            .await?)
+    }
+
+    pub async fn notas(&self, id: i64) -> AppResult<Vec<AtendimentoNota>> {
+        Ok(self.repo.atendimento_notas(id).await?)
+    }
+
+    /// Etiquetas livres — normalizadas (minúsculas, sem vazias, dedup, máx. 8).
+    pub async fn salvar_tags(&self, id: i64, tags: &[String]) -> AppResult<Atendimento> {
+        let mut limpas: Vec<String> = Vec::new();
+        for t in tags {
+            let t = t.trim().to_lowercase();
+            if !t.is_empty() && t.len() <= 24 && !limpas.contains(&t) {
+                limpas.push(t);
+            }
+        }
+        limpas.truncate(8);
+        Ok(self.repo.atendimento_tags(id, &limpas).await?)
+    }
+
+    /// Mensagem de WhatsApp agendada pro telefone do protocolo
+    /// ("lembrete checkout amanhã 10h") — `fila_envio.agendado_para`.
+    pub async fn agendar_mensagem(
+        &self,
+        id: i64,
+        texto: &str,
+        quando: chrono::DateTime<Utc>,
+    ) -> AppResult<()> {
+        let texto = texto.trim();
+        if texto.is_empty() || texto.len() > 1000 {
+            return Err(DomainError::validacao("Mensagem vazia ou muito longa.").into());
+        }
+        if quando <= Utc::now() {
+            return Err(DomainError::validacao("Agende para o futuro.").into());
+        }
+        let a = self
+            .repo
+            .atendimento_buscar(id)
+            .await?
+            .ok_or_else(|| DomainError::nao_encontrado("atendimento não encontrado"))?;
+        let fone = a
+            .telefone
+            .ok_or_else(|| DomainError::validacao("Protocolo sem telefone vinculado."))?;
+        self.comunicacao
+            .enviar_whatsapp_texto(&fone, texto, quando, a.idreserva, a.idcliente)
+            .await
     }
 
     /// Janela de atendimento em horário local da pousada (UTC-3).

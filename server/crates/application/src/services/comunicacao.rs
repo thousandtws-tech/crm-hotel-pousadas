@@ -8,7 +8,7 @@ use std::fmt::Write;
 use std::sync::Arc;
 
 use crate::actor::Ator;
-use chrono::{Duration, Utc};
+use chrono::{DateTime, Duration, Utc};
 use clarituz_domain::entities::*;
 use clarituz_domain::enums::{CanalEnvio, StatusAvaliacao, StatusEnvio, StatusReserva};
 use clarituz_domain::error::DomainError;
@@ -506,6 +506,31 @@ impl ComunicacaoService {
     }
 
     /// Enfileira para e-mail + WhatsApp do hóspede (supressão checada no envio).
+    /// WhatsApp texto livre pra um telefone — usado por mensagens
+    /// agendadas de atendimento e respostas determinísticas (menu).
+    pub async fn enviar_whatsapp_texto(
+        &self,
+        destino: &str,
+        texto: &str,
+        agendado_para: DateTime<Utc>,
+        idreserva: Option<i64>,
+        idcliente: Option<i64>,
+    ) -> AppResult<()> {
+        self.fila
+            .enfileirar(NovoEnvio {
+                canal: CanalEnvio::Whatsapp,
+                destino: destino.to_string(),
+                template: "atendimento_msg".into(),
+                payload: serde_json::json!({"tipo": "texto", "texto": texto}),
+                idreserva,
+                idcliente,
+                idfuncionario: None,
+                agendado_para,
+            })
+            .await?;
+        Ok(())
+    }
+
     async fn enfileirar_hospede(&self, r: &ReservaAuto, template: &str, corpo: serde_json::Value) {
         let agora = Utc::now();
         if let Some(email) = &r.cliente_email {

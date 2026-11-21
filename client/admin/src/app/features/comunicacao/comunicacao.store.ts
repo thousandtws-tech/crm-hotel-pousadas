@@ -9,6 +9,7 @@ import { RealtimeService } from '@core/services/realtime.service';
 import { environment } from '../../../environments/environment';
 import {
   Atendimento,
+  AtendimentoNota,
   Avaliacao,
   AvaliacoesDash,
   CanalEnvio,
@@ -49,6 +50,16 @@ export abstract class ComunicacaoStore implements OnInit {
   protected readonly lgpd = signal<LgpdSolicitacao[]>([]);
   protected readonly atends = signal<Atendimento[]>([]);
   protected readonly atendFiltro = signal<string>('aberto');
+
+  // -- detalhe do protocolo: notas internas, transferência, tags, agendado ------
+  protected readonly atendSel = signal<Atendimento | null>(null);
+  protected readonly notas = signal<AtendimentoNota[]>([]);
+  protected notaTexto = '';
+  protected agendarTexto = '';
+  /** `datetime-local` — convertido pra ISO no envio. */
+  protected agendarQuando = '';
+  protected readonly setores = ['recepcao', 'governanca', 'manutencao', 'gerencia'];
+  protected readonly tagsSugeridas = ['reclamacao', 'elogio', 'upsell', 'urgente', 'vip', 'reembolso'];
   protected readonly modalLgpd = signal<LgpdSolicitacao | null>(null);
   protected textoLgpd = '';
   protected readonly modalAv = signal<Avaliacao | null>(null);
@@ -192,6 +203,83 @@ export abstract class ComunicacaoStore implements OnInit {
         this.carregarAtend();
       },
       error: () => this.notify.erroMsg('Não foi possível resolver o protocolo.'),
+    });
+  }
+
+  abrirAtend(a: Atendimento): void {
+    this.atendSel.set(a);
+    this.notaTexto = '';
+    this.agendarTexto = '';
+    this.agendarQuando = '';
+    this.comunicacaoApi.atendNotas(a.id).subscribe({
+      next: (n) => this.notas.set(n),
+      error: () => this.notas.set([]),
+    });
+  }
+
+  fecharAtend(): void {
+    this.atendSel.set(null);
+    this.notas.set([]);
+  }
+
+  private atualizarAtendSel(a: Atendimento): void {
+    this.atendSel.set(a);
+    this.atends.update((l) => l.map((x) => (x.id === a.id ? a : x)));
+  }
+
+  anotarAtend(): void {
+    const a = this.atendSel();
+    const texto = this.notaTexto.trim();
+    if (!a || !texto) return;
+    this.comunicacaoApi.atendAnotar(a.id, texto).subscribe({
+      next: (n) => {
+        this.notas.update((l) => [...l, n]);
+        this.notaTexto = '';
+      },
+      error: () => this.notify.erroMsg('Não foi possível salvar a nota.'),
+    });
+  }
+
+  transferirAtend(setor: string): void {
+    const a = this.atendSel();
+    if (!a || setor === a.setor) return;
+    this.comunicacaoApi.atendTransferir(a.id, setor).subscribe({
+      next: (novo) => {
+        this.notify.ok(`Protocolo ${a.protocolo} → ${setor}.`);
+        this.atualizarAtendSel(novo);
+      },
+      error: () => this.notify.erroMsg('Não foi possível transferir.'),
+    });
+  }
+
+  toggleTag(tag: string): void {
+    const a = this.atendSel();
+    if (!a) return;
+    const tags = a.tags.includes(tag)
+      ? a.tags.filter((t) => t !== tag)
+      : [...a.tags, tag];
+    this.comunicacaoApi.atendTags(a.id, tags).subscribe({
+      next: (novo) => this.atualizarAtendSel(novo),
+      error: () => this.notify.erroMsg('Não foi possível salvar as etiquetas.'),
+    });
+  }
+
+  agendarMsg(): void {
+    const a = this.atendSel();
+    const texto = this.agendarTexto.trim();
+    if (!a || !texto || !this.agendarQuando) return;
+    const quando = new Date(this.agendarQuando);
+    if (Number.isNaN(quando.getTime()) || quando.getTime() <= Date.now()) {
+      this.notify.erroMsg('Escolha um horário futuro.');
+      return;
+    }
+    this.comunicacaoApi.atendAgendarMsg(a.id, texto, quando.toISOString()).subscribe({
+      next: () => {
+        this.notify.ok('Mensagem agendada — sai na fila de envio no horário.');
+        this.agendarTexto = '';
+        this.agendarQuando = '';
+      },
+      error: () => this.notify.erroMsg('Não foi possível agendar a mensagem.'),
     });
   }
 

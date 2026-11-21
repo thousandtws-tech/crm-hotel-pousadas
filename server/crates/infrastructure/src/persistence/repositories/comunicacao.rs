@@ -1456,7 +1456,7 @@ impl PreReservaRepository for PgPreReservaRepository {
 
 const ATEND_COLS: &str = "id, protocolo, origem, setor, prioridade, status, telefone,
     idreserva, idcliente, assunto, ultima_msg, motivo, idfuncionario,
-    prazo_aceite, criado_em, atribuido_em, escalado_em, resolvido_em";
+    prazo_aceite, criado_em, atribuido_em, escalado_em, resolvido_em, tags";
 
 pub struct PgAtendimentoRepository {
     pool: PgPool,
@@ -1582,6 +1582,89 @@ impl AtendimentoRepository for PgAtendimentoRepository {
              RETURNING {ATEND_COLS}"
         ))
         .bind(id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn atendimento_buscar(&self, id: i64) -> Result<Option<Atendimento>, DomainError> {
+        sqlx::query_as::<_, Atendimento>(&format!(
+            "SELECT {ATEND_COLS} FROM atendimento WHERE id = $1"
+        ))
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    /// Transferência volta à fila do novo setor — responsável zerado,
+    /// status 'aberto' e SLA de aceite renovado.
+    async fn atendimento_transferir(
+        &self,
+        id: i64,
+        setor: &str,
+        prazo_aceite: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Atendimento, DomainError> {
+        sqlx::query_as::<_, Atendimento>(&format!(
+            "UPDATE atendimento SET setor = $2, status = 'aberto',
+             idfuncionario = NULL, atribuido_em = NULL, prazo_aceite = $3
+             WHERE id = $1 AND status <> 'resolvido'
+             RETURNING {ATEND_COLS}"
+        ))
+        .bind(id)
+        .bind(setor)
+        .bind(prazo_aceite)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn atendimento_anotar(
+        &self,
+        idatendimento: i64,
+        idfuncionario: i64,
+        texto: &str,
+    ) -> Result<AtendimentoNota, DomainError> {
+        sqlx::query_as::<_, AtendimentoNota>(
+            "INSERT INTO atendimento_nota (idatendimento, idfuncionario, texto)
+             VALUES ($1, $2, $3)
+             RETURNING id, idatendimento, idfuncionario, texto, criado_em,
+                       (SELECT nome FROM funcionario WHERE id = $2) AS funcionario_nome",
+        )
+        .bind(idatendimento)
+        .bind(idfuncionario)
+        .bind(texto)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn atendimento_notas(
+        &self,
+        idatendimento: i64,
+    ) -> Result<Vec<AtendimentoNota>, DomainError> {
+        sqlx::query_as::<_, AtendimentoNota>(
+            "SELECT n.id, n.idatendimento, n.idfuncionario, n.texto, n.criado_em,
+                    f.nome AS funcionario_nome
+             FROM atendimento_nota n
+             LEFT JOIN funcionario f ON f.id = n.idfuncionario
+             WHERE n.idatendimento = $1
+             ORDER BY n.criado_em",
+        )
+        .bind(idatendimento)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(map_db_err)
+    }
+
+    async fn atendimento_tags(&self, id: i64, tags: &[String]) -> Result<Atendimento, DomainError> {
+        sqlx::query_as::<_, Atendimento>(&format!(
+            "UPDATE atendimento SET tags = $2
+             WHERE id = $1
+             RETURNING {ATEND_COLS}"
+        ))
+        .bind(id)
+        .bind(tags)
         .fetch_one(&self.pool)
         .await
         .map_err(map_db_err)

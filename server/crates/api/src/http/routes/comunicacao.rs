@@ -862,6 +862,94 @@ pub async fn atendimento_resolver_post(
     )))
 }
 
+#[derive(serde::Deserialize)]
+pub struct TransferirInput {
+    pub setor: String,
+}
+
+/// Passa o protocolo pra outro setor — recepção ↔ governança ↔ manutenção.
+pub async fn atendimento_transferir_post(
+    State(st): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+    Json(input): Json<TransferirInput>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    Ok(Json(serde_json::json!(
+        st.services
+            .atendimento
+            .transferir(id, &input.setor, ator.id)
+            .await?
+    )))
+}
+
+pub async fn atendimento_notas_get(
+    State(st): State<AppState>,
+    _ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    Ok(Json(serde_json::json!(
+        st.services.atendimento.notas(id).await?
+    )))
+}
+
+#[derive(serde::Deserialize)]
+pub struct NotaInput {
+    pub texto: String,
+}
+
+pub async fn atendimento_notas_post(
+    State(st): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+    Json(input): Json<NotaInput>,
+) -> Result<(StatusCode, Json<serde_json::Value>), ApiError> {
+    Ok((
+        StatusCode::CREATED,
+        Json(serde_json::json!(
+            st.services
+                .atendimento
+                .anotar(id, &input.texto, ator.id)
+                .await?
+        )),
+    ))
+}
+
+#[derive(serde::Deserialize)]
+pub struct TagsInput {
+    pub tags: Vec<String>,
+}
+
+pub async fn atendimento_tags_put(
+    State(st): State<AppState>,
+    _ator: Ator,
+    Path(id): Path<i64>,
+    Json(input): Json<TagsInput>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    Ok(Json(serde_json::json!(
+        st.services.atendimento.salvar_tags(id, &input.tags).await?
+    )))
+}
+
+#[derive(serde::Deserialize)]
+pub struct AgendarMsgInput {
+    pub texto: String,
+    pub agendado_para: chrono::DateTime<chrono::Utc>,
+}
+
+/// "Lembrete checkout amanhã 10h" — sai pelo WhatsApp do protocolo.
+pub async fn atendimento_agendar_msg_post(
+    State(st): State<AppState>,
+    _ator: Ator,
+    Path(id): Path<i64>,
+    Json(input): Json<AgendarMsgInput>,
+) -> Result<StatusCode, ApiError> {
+    st.services
+        .atendimento
+        .agendar_mensagem(id, &input.texto, input.agendado_para)
+        .await?;
+    Ok(StatusCode::ACCEPTED)
+}
+
 // ---------------------------------------------------------------------------
 // Respostas rápidas — catálogo '/atalho' (autocomplete dos campos de
 // resposta). Leitura livre p/ atendentes; escrita restrita a gerência.

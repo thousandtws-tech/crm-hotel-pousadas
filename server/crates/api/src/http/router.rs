@@ -579,6 +579,23 @@ pub fn build(state: AppState) -> Router {
             post(routes::comunicacao::atendimento_resolver_post),
         )
         .route(
+            "/atendimentos/{id}/transferir",
+            post(routes::comunicacao::atendimento_transferir_post),
+        )
+        .route(
+            "/atendimentos/{id}/notas",
+            get(routes::comunicacao::atendimento_notas_get)
+                .post(routes::comunicacao::atendimento_notas_post),
+        )
+        .route(
+            "/atendimentos/{id}/tags",
+            put(routes::comunicacao::atendimento_tags_put),
+        )
+        .route(
+            "/atendimentos/{id}/mensagens",
+            post(routes::comunicacao::atendimento_agendar_msg_post),
+        )
+        .route(
             "/reservas/{id}/autorizacao-menor",
             post(routes::comunicacao::reserva_autorizacao_menor),
         )
