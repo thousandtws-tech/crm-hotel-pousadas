@@ -4,7 +4,7 @@ import { OnInit, computed, effect, inject, signal, Directive } from '@angular/co
 import { Router } from '@angular/router';
 import { OperacaoApi } from '@core/api/operacao.api';
 import { ReservasApi } from '@core/api/reservas.api';
-import { MapaQuarto, ReservaResumo } from '@core/models/reservas.models';
+import { Bloqueio, MapaQuarto, ReservaResumo } from '@core/models/reservas.models';
 import { NotifyService } from '@core/services/notify.service';
 import { RealtimeService } from '@core/services/realtime.service';
 
@@ -24,6 +24,12 @@ export abstract class RecepcaoStore implements OnInit {
   protected readonly saidas = signal<ReservaResumo[]>([]);
   protected readonly naCasa = signal<ReservaResumo[]>([]);
   protected readonly mapa = signal<MapaQuarto[]>([]);
+  protected readonly bloqueios = signal<Bloqueio[]>([]);
+  protected readonly bloqueioAlvo = signal<MapaQuarto | null>(null);
+  protected readonly salvandoBloq = signal(false);
+  protected bInicio = '';
+  protected bFim = '';
+  protected bMot = '';
   protected readonly filtroMapa = signal<'todos' | 'livre' | 'ocupado' | 'atencao'>('todos');
   protected readonly aguardando = signal<number | null>(null);
   protected readonly carregando = signal(true);
@@ -101,6 +107,10 @@ export abstract class RecepcaoStore implements OnInit {
     const d = this.hoje;
     const hoje = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     // 1 request consolidada — backend resolve as 3 leituras em paralelo.
+    this.reservasApi.bloqueios().subscribe({
+      next: (b) => this.bloqueios.set(b),
+      error: () => undefined,
+    });
     this.reservasApi.painelRecepcao(hoje).subscribe({
       next: (p) => {
         this.chegadas.set(p.chegadas);
@@ -114,6 +124,59 @@ export abstract class RecepcaoStore implements OnInit {
         this.notify.erro(e);
       },
     });
+  }
+
+  /** Bloqueio vigente do quarto (para desbloquear direto do card). */
+  bloqueioDe(q: MapaQuarto): Bloqueio | undefined {
+    return this.bloqueios().find((b) => b.idacomodacao === q.id);
+  }
+
+  /** Abre o modal de bloqueio com a semana corrente pré-preenchida. */
+  abrirBloqueio(q: MapaQuarto, ev: Event): void {
+    ev.stopPropagation();
+    this.bInicio = this.isoLocal(this.hoje);
+    const fim = new Date(this.hoje);
+    fim.setDate(fim.getDate() + 7);
+    this.bFim = this.isoLocal(fim);
+    this.bMot = '';
+    this.bloqueioAlvo.set(q);
+  }
+
+  salvarBloqueio(): void {
+    const alvo = this.bloqueioAlvo();
+    if (!alvo || !this.bInicio || !this.bFim || this.bFim <= this.bInicio) return;
+    this.salvandoBloq.set(true);
+    this.reservasApi.bloquear(alvo.id, this.bInicio, this.bFim, this.bMot.trim()).subscribe({
+      next: () => {
+        this.salvandoBloq.set(false);
+        this.bloqueioAlvo.set(null);
+        this.notify.ok(`${alvo.nome} bloqueado.`);
+        this.carregar();
+      },
+      error: (e) => {
+        this.salvandoBloq.set(false);
+        this.notify.erro(e);
+      },
+    });
+  }
+
+  desbloquearQuarto(q: MapaQuarto, ev: Event): void {
+    ev.stopPropagation();
+    const b = this.bloqueioDe(q);
+    if (!b) return;
+    this.reservasApi.desbloquear(b.id).subscribe({
+      next: () => {
+        this.notify.ok(`${q.nome} desbloqueado.`);
+        this.carregar();
+      },
+      error: (e) => this.notify.erro(e),
+    });
+  }
+
+  /** Chip de manutenção leva ao módulo com a OS filtrada por lá. */
+  irManutencao(ev: Event): void {
+    ev.stopPropagation();
+    void this.router.navigate(['/operacao/manutencao']);
   }
 
   /** Conclui a tarefa de limpeza de hoje do quarto, direto no mapa. */

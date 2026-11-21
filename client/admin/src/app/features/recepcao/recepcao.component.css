@@ -517,6 +517,7 @@
   justify-content: space-between;
   gap: 8px;
   width: 100%;
+  padding-right: 30px;
 }
 .qt-id {
   display: flex;
@@ -667,12 +668,113 @@
   font-family: inherit;
   transition: background 0.15s;
 }
-.flg.btn:hover {
+.flg.lm.btn:hover {
   background: rgba(122, 95, 181, 0.22);
 }
+.flg.mn.btn:hover {
+  background: rgba(230, 126, 34, 0.26);
+}
 .flg.btn:focus-visible {
-  outline: 2px solid #5f4796;
+  outline: 2px solid #40525d;
   outline-offset: 1px;
+}
+.qt-bloq {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: #9ab0ba;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.qt-bloq mat-icon {
+  font-size: 17px;
+  width: 17px;
+  height: 17px;
+}
+.qt-bloq:hover {
+  background: #eef2f5;
+  color: #40525d;
+}
+.qt-bloq.fechado {
+  color: #b3261e;
+}
+.qt-bloq.fechado:hover {
+  background: #fbe7e5;
+}
+.bloq-ovl {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 30, 38, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+}
+.bloq-dlg {
+  background: #fff;
+  border-radius: 12px;
+  padding: 22px;
+  width: min(380px, 92vw);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bloq-dlg h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #054054;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bloq-datas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.bloq-dlg label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #5d6d7e;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bloq-dlg input {
+  border: 1px solid #d7e0e6;
+  border-radius: 8px;
+  padding: 9px 10px;
+  font: inherit;
+  font-size: 0.88rem;
+  color: #22333d;
+}
+.bloq-dlg input:focus {
+  outline: 2px solid #1a6f8a;
+  border-color: transparent;
+}
+.bloq-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.bloq-cancela {
+  border: 1px solid #d7e0e6;
+  background: #fff;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font: inherit;
+  font-weight: 600;
+  color: #5d6d7e;
+  cursor: pointer;
 }
 
 .fd-tape {

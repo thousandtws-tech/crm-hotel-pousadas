@@ -274,6 +274,27 @@
                       <span>{{ q.nome }}</span>
                     </div>
                     <span class="qt-st">{{ rotuloQuarto(q) }}</span>
+                    @if (q.bloqueado) {
+                      <button
+                        type="button"
+                        class="qt-bloq fechado"
+                        title="Desbloquear quarto"
+                        aria-label="Desbloquear quarto"
+                        (click)="desbloquearQuarto(q, $event)"
+                      >
+                        <mat-icon>lock</mat-icon>
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="qt-bloq"
+                        title="Bloquear quarto"
+                        aria-label="Bloquear quarto"
+                        (click)="abrirBloqueio(q, $event)"
+                      >
+                        <mat-icon>lock_open</mat-icon>
+                      </button>
+                    }
                   </div>
 
                   <div class="qt-body">
@@ -319,9 +340,14 @@
                             }
                           }
                           @if (q.manut_aberta > 0) {
-                            <em class="flg mn" title="Manutenção aberta">
+                            <button
+                              type="button"
+                              class="flg mn btn"
+                              title="Ver OS na Manutenção"
+                              (click)="irManutencao($event)"
+                            >
                               <mat-icon>build</mat-icon>Manut.
-                            </em>
+                            </button>
                           }
                         </span>
                       }
@@ -350,3 +376,56 @@
     <app-tape-chart (novaReserva)="abrirNovaReserva($event)" />
   </section>
 </div>
+
+@if (bloqueioAlvo(); as alvo) {
+  <div class="bloq-ovl" (click)="bloqueioAlvo.set(null)">
+    <div
+      class="bloq-dlg"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Bloquear acomodação"
+      (click)="$event.stopPropagation()"
+    >
+      <h3><mat-icon>lock</mat-icon> Bloquear {{ alvo.nome }} — Nº {{ alvo.numero }}</h3>
+      <div class="bloq-datas">
+        <label
+          >Início
+          <input
+            type="date"
+            [value]="bInicio"
+            (input)="bInicio = $any($event.target).value"
+            aria-label="Início do bloqueio"
+        /></label>
+        <label
+          >Fim
+          <input
+            type="date"
+            [value]="bFim"
+            (input)="bFim = $any($event.target).value"
+            aria-label="Fim do bloqueio"
+        /></label>
+      </div>
+      <label
+        >Motivo
+        <input
+          type="text"
+          placeholder="reforma, uso próprio…"
+          [value]="bMot"
+          (input)="bMot = $any($event.target).value"
+      /></label>
+      <div class="bloq-acoes">
+        <button type="button" class="bloq-cancela" (click)="bloqueioAlvo.set(null)">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn-pri"
+          [disabled]="salvandoBloq() || !bInicio || !bFim || bFim <= bInicio"
+          (click)="salvarBloqueio()"
+        >
+          {{ salvandoBloq() ? 'Bloqueando…' : 'Confirmar bloqueio' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
