@@ -4,11 +4,12 @@ import { Meta } from '@angular/platform-browser';
 import { HOTEL_CONFIG } from '../../core/config/hotel-config';
 import { NewsletterService } from '../../core/services/newsletter.service';
 import { SeoService } from '../../core/services/seo.service';
+import { WhatsappFloatComponent } from '../../shared/components/whatsapp-float/whatsapp-float.component';
 
 /** Página "Em breve" — teaser standalone (sem header/footer) com captura de e-mail. */
 @Component({
   selector: 'app-coming-soon',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, WhatsappFloatComponent],
   template: `
     <main class="palco">
       <img
@@ -26,7 +27,7 @@ import { SeoService } from '../../core/services/seo.service';
 
         <p class="sub">
           Estamos preparando algo especial para os nossos hóspedes.
-          Deixe seu e-mail e seja avisado quando estiver no ar.
+          Deixe seu <span class="nb">e-mail</span> e seja avisado quando estiver no ar.
         </p>
 
         @if (!inscrito()) {
@@ -55,6 +56,7 @@ import { SeoService } from '../../core/services/seo.service';
         }
 
       </section>
+      <app-whatsapp-float></app-whatsapp-float>
     </main>
   `,
   styles: `
@@ -115,6 +117,7 @@ import { SeoService } from '../../core/services/seo.service';
       margin: 0 auto 2.4rem;
       text-wrap: balance;
     }
+    .nb { white-space: nowrap; }
     .captura {
       display: flex;
       gap: 0.6rem;

@@ -2,10 +2,11 @@ import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from '../shared/components/header/header.component';
 import { FooterComponent } from '../shared/components/footer/footer.component';
+import { WhatsappFloatComponent } from '../shared/components/whatsapp-float/whatsapp-float.component';
 
 @Component({
   selector: 'app-public-layout',
-  imports: [RouterOutlet, HeaderComponent, FooterComponent],
+  imports: [RouterOutlet, HeaderComponent, FooterComponent, WhatsappFloatComponent],
   template: `
     <a href="#main-content" class="skip-link">Ir para o conteúdo</a>
     <div class="min-h-screen flex flex-col bg-[#F7F5F0] text-[#054054]">
@@ -14,6 +15,7 @@ import { FooterComponent } from '../shared/components/footer/footer.component';
         <router-outlet></router-outlet>
       </main>
       <app-footer></app-footer>
+      <app-whatsapp-float></app-whatsapp-float>
     </div>
   `
 })

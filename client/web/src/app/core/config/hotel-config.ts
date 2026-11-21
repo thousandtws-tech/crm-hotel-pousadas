@@ -15,7 +15,7 @@ export const HOTEL_CONFIG = {
   phone: '(22) 2644-3077',
   phoneFormatted: '+55-22-2644-3077',
   phoneHref: '+552226443077',
-  whatsapp: null as string | null,
+  whatsapp: '5522981874553' as string | null,
   whatsappDefaultMessage:
     'Olá! Gostaria de consultar a disponibilidade de hospedagem na Pousada Espírito do Mar.',
   email: null as string | null,
