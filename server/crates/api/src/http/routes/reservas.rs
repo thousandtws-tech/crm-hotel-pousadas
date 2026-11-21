@@ -129,6 +129,19 @@ pub async fn eventos(
     Ok(Json(s.services.reservas.eventos(periodo).await?))
 }
 
+/// Grade de tarifas por dia (tape chart) — `inicio`/`fim` obrigatórios,
+/// `fim` exclusivo, máx. 45 dias.
+pub async fn precos_grade(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Query(q): Query<EventosQuery>,
+) -> Result<Json<Vec<clarituz_domain::ports::PrecoDia>>, AppError> {
+    let (Some(inicio), Some(fim)) = (q.inicio, q.fim) else {
+        return Err(DomainError::validacao("Informe inicio e fim.").into());
+    };
+    Ok(Json(s.services.reservas.precos_grade(inicio, fim).await?))
+}
+
 /// Check-in — `data`/`hora` opcionais (default: agora, fuso da pousada).
 /// Remaneja reserva pendente (drag no mapa de ocupação): muda acomodação
 /// e/ou período recalculando o total. 409 quando já saiu de pendente ou o

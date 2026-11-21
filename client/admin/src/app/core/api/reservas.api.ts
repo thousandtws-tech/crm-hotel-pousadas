@@ -78,6 +78,11 @@ export class ReservasApi extends ApiHttp {
     return this.get<M.ReservaResumo[]>('/reservas/eventos', { inicio, fim });
   }
 
+  /** Grade de tarifas por dia — alimenta as células do tape chart. */
+  precosGrade(inicio: string, fim: string) {
+    return this.get<M.PrecoDia[]>('/reservas/precos-grade', { inicio, fim });
+  }
+
   disponibilidade(inicio: string, fim: string, idacomodacao?: number | null) {
     return this.get<M.DisponibilidadeResponse>('/reservas/disponibilidade', {
       inicio, fim, idacomodacao,

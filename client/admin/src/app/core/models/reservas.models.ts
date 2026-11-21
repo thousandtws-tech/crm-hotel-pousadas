@@ -141,6 +141,13 @@ export interface ReservaResumo {
 }
 
 /** Drop do drag no mapa de ocupação — nova acomodação e/ou período. */
+/** Tarifa resolvida por dia por acomodação (grade do tape chart). */
+export interface PrecoDia {
+  idacomodacao: number;
+  dia: string;
+  valor: number | string;
+}
+
 export interface RemanejarInput {
   idacomodacao: number;
   entradaprevista: string;

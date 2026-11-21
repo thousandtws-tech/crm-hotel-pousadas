@@ -36,6 +36,8 @@ export abstract class TapeChartStore implements OnInit {
   );
   protected readonly eventos = signal<ReservaResumo[]>([]);
   protected readonly acomodacoes = signal<Acomodacao[]>([]);
+  /** Tarifa do dia por acomodação — `${idacomodacao}|${iso}` → valor. */
+  protected readonly precos = signal<Map<string, number>>(new Map());
   protected readonly carregando = signal(true);
   protected readonly hojeIso = this.isoLocal(new Date());
 
@@ -119,6 +121,37 @@ export abstract class TapeChartStore implements OnInit {
         this.notify.erro(e);
       },
     });
+    this.reservasApi.precosGrade(ini, fim).subscribe({
+      next: (ps) =>
+        this.precos.set(
+          new Map(
+            ps.map((p) => [`${p.idacomodacao}|${p.dia.slice(0, 10)}`, Number(p.valor)] as const),
+          ),
+        ),
+      error: () => this.precos.set(new Map()),
+    });
+  }
+
+  /** Tarifa do dia na célula — vazio quando a grade ainda não carregou. */
+  precoDe(a: Acomodacao, d: Date): string {
+    const v = this.precos().get(`${a.id}|${this.isoLocal(d)}`);
+    if (v == null) return '';
+    return v.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      maximumFractionDigits: 0,
+    });
+  }
+
+  /** Quantas acomodações seguem livres no dia (sem reserva pendente/hospedada). */
+  livresEm(d: Date): number {
+    const iso = this.isoLocal(d);
+    const ocupadas = new Set<number>();
+    for (const e of this.eventos()) {
+      if (e.status === 'c' || e.status === 'f') continue;
+      if (e.entradaprevista <= iso && iso < e.saidaprevista) ocupadas.add(e.idacomodacao);
+    }
+    return Math.max(0, this.acomodacoes().length - ocupadas.size);
   }
 
   eventosDe(idacomodacao: number): ReservaResumo[] {

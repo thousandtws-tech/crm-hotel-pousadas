@@ -9,7 +9,8 @@ use clarituz_domain::entities::{
 use clarituz_domain::enums::StatusConsumo;
 use clarituz_domain::ports::{
     AcompanhanteRepository, ComandoCheckout, FiltroReserva, FnrhRepository, NovaFnrh, NovaReserva,
-    NovoAcompanhante, NovoAdicional, NovoItemConsumido, ReservaRepository, ResultadoCancelamento,
+    NovoAcompanhante, NovoAdicional, NovoItemConsumido, PrecoDia, ReservaRepository,
+    ResultadoCancelamento,
 };
 use clarituz_domain::queries::{
     AcomodacaoDisponivel, ComprovanteResumo, ConsumoResumo, MapaQuarto, PendenciaReserva,
@@ -254,6 +255,46 @@ impl ReservaRepository for PgReservaRepository {
         .fetch_all(&self.pool)
         .await
         .map(|rows| rows.into_iter().collect())
+        .map_err(map_db_err)
+    }
+
+    /// Mesma resolução do `precos_estadia`, mas uma linha por dia —
+    /// alimenta a grade de tarifas visível nas células do tape chart.
+    async fn precos_diarios(
+        &self,
+        periodo: PeriodoEstadia,
+        hospedes: i32,
+        idacomodacoes: &[i64],
+    ) -> Result<Vec<PrecoDia>, DomainError> {
+        if idacomodacoes.is_empty() {
+            return Ok(vec![]);
+        }
+        sqlx::query_as::<_, PrecoDia>(
+            "WITH noites AS (
+                 SELECT generate_series($2::date, $3::date - 1, '1 day'::interval)::date AS dia
+             )
+             SELECT a.id AS idacomodacao, noites.dia,
+                    COALESCE(
+                        (SELECT tp.valor FROM tarifa_periodo tp
+                          WHERE tp.idacomodacao = a.id
+                            AND noites.dia BETWEEN tp.inicio AND tp.fim
+                          ORDER BY tp.prioridade DESC, tp.id DESC LIMIT 1),
+                        (SELECT t.valor FROM tarifa_ocupacao t
+                          WHERE t.idtipo_acomodacao = a.idtipo_acomodacao
+                            AND t.hospedes <= $4
+                          ORDER BY t.hospedes DESC LIMIT 1),
+                        a.valor) AS valor
+             FROM acomodacao a
+             CROSS JOIN noites
+             WHERE a.id = ANY($1)
+             ORDER BY a.id, noites.dia",
+        )
+        .bind(idacomodacoes)
+        .bind(periodo.entrada)
+        .bind(periodo.saida)
+        .bind(hospedes)
+        .fetch_all(&self.pool)
+        .await
         .map_err(map_db_err)
     }
 

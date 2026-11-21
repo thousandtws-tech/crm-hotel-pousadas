@@ -29,6 +29,11 @@
         >
           <small>{{ d | date: 'EEE' }}</small>
           <strong>{{ d | date: 'dd' }}</strong>
+          <i
+            class="tape-livres"
+            [class.zerado]="livresEm(d) === 0"
+            [title]="livresEm(d) + ' acomodações livres'"
+          >{{ livresEm(d) }}</i>
         </div>
       }
     </div>
@@ -62,7 +67,7 @@
                   'Nova reserva em ' + a.nome + ' a partir de ' + (d | date: 'dd/MM/yyyy')
                 "
                 (click)="novaReservaEm(a, d)"
-              ></button>
+              ><span class="tape-preco">{{ precoDe(a, d) }}</span></button>
             }
             @for (r of eventosDe(a.id); track r.id) {
               @if (barGeo(r); as g) {

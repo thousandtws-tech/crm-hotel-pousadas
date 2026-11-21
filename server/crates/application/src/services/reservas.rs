@@ -26,7 +26,7 @@ use clarituz_domain::ports::{
     ContratoRepository, EstabelecimentoRepository, EventoPublisher, FilaEnvioRepository,
     FiltroReserva, FnrhRepository, FormaPagamentoRepository, ImpressoraGateway,
     ImpressoraRepository, LgpdRepository, LinhaRecibo, NovaFnrh, NovaReserva, NovoAcompanhante,
-    NovoAdicional, NovoClienteSite, NovoItemConsumido, ReservaRepository,
+    NovoAdicional, NovoClienteSite, NovoItemConsumido, PrecoDia, ReservaRepository,
 };
 use clarituz_domain::queries::{ComprovanteResumo, MapaQuarto, ReservaDetalhe, ReservaResumo};
 use clarituz_domain::value_objects::{telefone as tel_vo, PeriodoEstadia};
@@ -1996,6 +1996,32 @@ impl ReservaService {
     /// mesma foto: reserva do dia, bloqueio, limpeza e manutenção.
     pub async fn mapa_quartos(&self) -> AppResult<Vec<MapaQuarto>> {
         Ok(self.reservas.mapa_quartos().await?)
+    }
+
+    /// Grade de tarifas por dia para o tape chart — resolve período/ocupação/base
+    /// noite a noite, como o Innotel exibe dentro de cada célula do mapa.
+    /// `fim` é exclusivo. Limitada a 45 dias para proteger o endpoint.
+    pub async fn precos_grade(
+        &self,
+        inicio: NaiveDate,
+        fim: NaiveDate,
+    ) -> AppResult<Vec<PrecoDia>> {
+        if fim <= inicio || (fim - inicio).num_days() > 45 {
+            return Err(DomainError::validacao("Período inválido (máx. 45 dias).").into());
+        }
+        let ativas = self
+            .acomodacoes
+            .listar(
+                true,
+                PageParams {
+                    page: 1,
+                    per_page: 200,
+                },
+            )
+            .await?;
+        let ids: Vec<i64> = ativas.items.iter().map(|a| a.id).collect();
+        let periodo = PeriodoEstadia::new(inicio, fim)?;
+        Ok(self.reservas.precos_diarios(periodo, 2, &ids).await?)
     }
 
     /// Bloqueio formal — tira a unidade de toda disponibilidade (motor,

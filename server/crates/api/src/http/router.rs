@@ -212,6 +212,10 @@ pub fn build(state: AppState) -> Router {
             get(routes::reservas::disponibilidade),
         )
         .route("/reservas/eventos", get(routes::reservas::eventos))
+        .route(
+            "/reservas/precos-grade",
+            get(routes::reservas::precos_grade),
+        )
         .route("/reservas/mapa", get(routes::reservas::mapa_quartos))
         .route(
             "/reservas/painel-recepcao",

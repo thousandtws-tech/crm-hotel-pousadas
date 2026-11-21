@@ -13,6 +13,14 @@ use crate::queries::{
     AcomodacaoDisponivel, ComprovanteResumo, MapaQuarto, ReservaDetalhe, ReservaResumo,
 };
 use crate::value_objects::PeriodoEstadia;
+
+/// Preço de uma noite já resolvido para uma acomodação (grade do mapa).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
+pub struct PrecoDia {
+    pub idacomodacao: i64,
+    pub dia: chrono::NaiveDate,
+    pub valor: Decimal,
+}
 use async_trait::async_trait;
 use chrono::{DateTime, NaiveDate, Utc};
 use clarituz_shared::{Page, PageParams};
@@ -122,6 +130,15 @@ pub trait ReservaRepository: Send + Sync {
         hospedes: i32,
         idacomodacoes: &[i64],
     ) -> Result<std::collections::HashMap<i64, Decimal>, DomainError>;
+
+    /// Preço resolvido por dia e por acomodação (grade do tape chart) —
+    /// mesma precedência do `precos_estadia`, sem somar.
+    async fn precos_diarios(
+        &self,
+        periodo: PeriodoEstadia,
+        hospedes: i32,
+        idacomodacoes: &[i64],
+    ) -> Result<Vec<PrecoDia>, DomainError>;
 
     /// Cria reserva + conta de consumo 'pendente' + log — uma transação.
     ///
