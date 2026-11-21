@@ -37,6 +37,7 @@ export interface DashboardResponse {
 
 export interface ResumoFinanceiro {
   recebido: string;
+  recebido_contas: string;
   recebido_estadias: string;
   recebido_itens: string;
   recebido_adicionais: string;

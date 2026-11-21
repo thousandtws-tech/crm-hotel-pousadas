@@ -194,7 +194,7 @@ export abstract class FinanceiroStore implements OnInit {
   protected readonly ticketMedio = computed(() => {
     const r = this.resumo();
     const q = r?.qtd_contas_fechadas ?? 0;
-    return q > 0 ? num(r?.recebido) / q : 0;
+    return q > 0 ? num(r?.recebido_contas) / q : 0;
   });
   protected readonly totalRecebido = computed(() =>
     this.serieRecebido().reduce((s, p) => s + num(p.valor), 0),
@@ -207,7 +207,13 @@ export abstract class FinanceiroStore implements OnInit {
   );
   protected readonly temComposicao = computed(() => {
     const r = this.resumo();
-    return num(r?.recebido_estadias) + num(r?.recebido_itens) + num(r?.recebido_adicionais) > 0;
+    return (
+      num(r?.recebido_estadias) +
+        num(r?.recebido_itens) +
+        num(r?.recebido_adicionais) +
+        num(r?.recebido_online) >
+      0
+    );
   });
 
   // ---------------- opções ECharts ----------------
@@ -264,7 +270,7 @@ export abstract class FinanceiroStore implements OnInit {
   protected readonly optComposicao = computed<EChartOption>(() => {
     const r = this.resumo();
     return {
-      color: [C.teal, C.gold, C.light],
+      color: [C.teal, C.gold, C.light, C.navy],
       tooltip: { trigger: 'item', valueFormatter: (v: unknown) => BRL.format(Number(v)) },
       legend: {
         bottom: 0,
@@ -292,6 +298,7 @@ export abstract class FinanceiroStore implements OnInit {
             { name: 'Estadias', value: num(r?.recebido_estadias) },
             { name: 'Itens e consumo', value: num(r?.recebido_itens) },
             { name: 'Adicionais', value: num(r?.recebido_adicionais) },
+            { name: 'Pagamentos online', value: num(r?.recebido_online) },
           ],
         },
       ],

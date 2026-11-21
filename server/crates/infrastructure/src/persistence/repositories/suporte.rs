@@ -221,27 +221,55 @@ impl PgFinanceiroRepository {
 
 #[async_trait]
 impl FinanceiroRepository for PgFinanceiroRepository {
-    /// Recebido (fechado) + previsto (em aberto) num período —
-    /// equivalente a `financeiro/include/valores.php`, agregado em SQL.
+    /// Recebido (fechado + online) + previsto (em aberto) num período.
+    /// `valor_final` da conta fechada é a conta cheia — o que já veio online
+    /// (sinal/integral/saldo/extras) é deduzido para não contar duas vezes;
+    /// os pagamentos online entram pelo `paid_em`, na data em que o dinheiro
+    /// chegou.
     async fn resumo(&self, periodo: PeriodoEstadia) -> Result<ResumoFinanceiro, DomainError> {
         sqlx::query_as::<_, ResumoFinanceiroRow>(
-            "SELECT
-                COALESCE(SUM(c.valor_final) FILTER (WHERE c.status = 'concluido'), 0) AS recebido,
-                COALESCE(SUM(c.valor_estadia) FILTER (WHERE c.status = 'concluido'), 0) AS recebido_estadias,
-                COALESCE(SUM(c.valor_itens) FILTER (WHERE c.status = 'concluido'), 0) AS recebido_itens,
-                COALESCE(SUM(c.valor_adicional) FILTER (WHERE c.status = 'concluido'), 0) AS recebido_adicionais,
-                COALESCE(SUM(c.total_desconto) FILTER (WHERE c.status = 'concluido'), 0) AS descontos,
-                COUNT(*) FILTER (WHERE c.status = 'concluido') AS qtd_contas_fechadas,
-                (SELECT COALESCE(SUM(p.valor_centavos), 0) / 100.0
-                   FROM pagamento p
-                   WHERE p.status IN ('pago','reembolso_parcial','reembolsado')
-                     AND p.paid_em::date BETWEEN $1 AND $2) AS recebido_online,
+            "WITH fech AS (
+                SELECT c.valor_final, c.valor_estadia, c.valor_itens,
+                       c.valor_adicional, c.total_desconto,
+                       COALESCE(o.online, 0) AS online_reserva
+                FROM consumo c
+                LEFT JOIN LATERAL (
+                    SELECT SUM(p.valor_centavos) / 100.0 AS online
+                    FROM pagamento p
+                    WHERE p.idreserva = c.idreserva
+                      AND p.status IN ('pago','reembolso_parcial','reembolsado')
+                ) o ON true
+                WHERE c.status = 'concluido' AND c.fechado_em::date BETWEEN $1 AND $2
+            ), agg AS (
+                SELECT
+                    COALESCE(SUM(valor_final), 0) AS bruto,
+                    COALESCE(SUM(LEAST(online_reserva, valor_final)), 0) AS overlap,
+                    COALESCE(SUM(valor_estadia), 0) AS estadias,
+                    COALESCE(SUM(valor_itens), 0) AS itens,
+                    COALESCE(SUM(valor_adicional), 0) AS adicionais,
+                    COALESCE(SUM(total_desconto), 0) AS descontos,
+                    COUNT(*) AS qtd
+                FROM fech
+            ), online AS (
+                SELECT COALESCE(SUM(p.valor_centavos), 0) / 100.0 AS total
+                FROM pagamento p
+                WHERE p.status IN ('pago','reembolso_parcial','reembolsado')
+                  AND p.paid_em::date BETWEEN $1 AND $2
+            )
+            SELECT
+                a.bruto - a.overlap + o.total AS recebido,
+                a.bruto - a.overlap AS recebido_contas,
+                GREATEST(a.estadias - a.overlap, 0) AS recebido_estadias,
+                GREATEST(a.itens - GREATEST(a.overlap - a.estadias - a.adicionais, 0), 0) AS recebido_itens,
+                GREATEST(a.adicionais - GREATEST(a.overlap - a.estadias, 0), 0) AS recebido_adicionais,
+                o.total AS recebido_online,
                 (SELECT COALESCE(SUM(c2.valor_estadia + c2.valor_itens), 0)
                    FROM consumo c2 JOIN reserva r ON r.id = c2.idreserva
                    WHERE r.status NOT IN ('c','f')
-                     AND r.saidaprevista BETWEEN $1 AND $2) AS previsto
-             FROM consumo c
-             WHERE c.fechado_em::date BETWEEN $1 AND $2",
+                     AND r.saidaprevista BETWEEN $1 AND $2) AS previsto,
+                a.descontos,
+                a.qtd AS qtd_contas_fechadas
+            FROM agg a, online o",
         )
         .bind(periodo.entrada)
         .bind(periodo.saida)
@@ -257,11 +285,28 @@ impl FinanceiroRepository for PgFinanceiroRepository {
     ) -> Result<Vec<PontoSerie>, DomainError> {
         sqlx::query_as::<_, PontoSerie>(
             "SELECT to_char(d.dia, 'DD/MM') AS rotulo,
-                    COALESCE(SUM(c.valor_final), 0) AS valor,
-                    COUNT(c.id) AS quantidade
+                    COALESCE(cn.valor, 0) + COALESCE(po.valor, 0) AS valor,
+                    COALESCE(cn.qtd, 0) + COALESCE(po.qtd, 0) AS quantidade
              FROM generate_series($1::date, $2::date, '1 day') d(dia)
-             LEFT JOIN consumo c ON c.fechado_em::date = d.dia AND c.status = 'concluido'
-             GROUP BY d.dia ORDER BY d.dia",
+             LEFT JOIN LATERAL (
+                 SELECT SUM(c.valor_final - LEAST(COALESCE(o.online, 0), c.valor_final)) AS valor,
+                        COUNT(*) AS qtd
+                 FROM consumo c
+                 LEFT JOIN LATERAL (
+                     SELECT SUM(p.valor_centavos) / 100.0 AS online
+                     FROM pagamento p
+                     WHERE p.idreserva = c.idreserva
+                       AND p.status IN ('pago','reembolso_parcial','reembolsado')
+                 ) o ON true
+                 WHERE c.status = 'concluido' AND c.fechado_em::date = d.dia
+             ) cn ON true
+             LEFT JOIN LATERAL (
+                 SELECT SUM(p.valor_centavos) / 100.0 AS valor, COUNT(*) AS qtd
+                 FROM pagamento p
+                 WHERE p.status IN ('pago','reembolso_parcial','reembolsado')
+                   AND p.paid_em::date = d.dia
+             ) po ON true
+             ORDER BY d.dia",
         )
         .bind(periodo.entrada)
         .bind(periodo.saida)
@@ -275,13 +320,34 @@ impl FinanceiroRepository for PgFinanceiroRepository {
         periodo: PeriodoEstadia,
     ) -> Result<Vec<PontoSerie>, DomainError> {
         sqlx::query_as::<_, PontoSerie>(
-            "SELECT COALESCE(fp.nome, 'não informado') AS rotulo,
-                    COALESCE(SUM(c.valor_final), 0) AS valor,
-                    COUNT(c.id) AS quantidade
-             FROM consumo c
-             LEFT JOIN forma_pagamento fp ON fp.id = c.idforma_pagamento
-             WHERE c.status = 'concluido' AND c.fechado_em::date BETWEEN $1 AND $2
-             GROUP BY fp.nome ORDER BY valor DESC",
+            "SELECT rotulo, SUM(valor) AS valor, SUM(qtd)::bigint AS quantidade
+             FROM (
+                 SELECT COALESCE(fp.nome, 'não informado') AS rotulo,
+                        c.valor_final - LEAST(COALESCE(o.online, 0), c.valor_final) AS valor,
+                        1 AS qtd
+                 FROM consumo c
+                 LEFT JOIN forma_pagamento fp ON fp.id = c.idforma_pagamento
+                 LEFT JOIN LATERAL (
+                     SELECT SUM(p.valor_centavos) / 100.0 AS online
+                     FROM pagamento p
+                     WHERE p.idreserva = c.idreserva
+                       AND p.status IN ('pago','reembolso_parcial','reembolsado')
+                 ) o ON true
+                 WHERE c.status = 'concluido' AND c.fechado_em::date BETWEEN $1 AND $2
+                 UNION ALL
+                 SELECT CASE p.provedor
+                            WHEN 'stripe' THEN 'Stripe'
+                            WHEN 'pagbank' THEN 'PagBank'
+                            WHEN 'mercadopago' THEN 'Mercado Pago'
+                            ELSE INITCAP(p.provedor)
+                        END,
+                        p.valor_centavos / 100.0,
+                        1
+                 FROM pagamento p
+                 WHERE p.status IN ('pago','reembolso_parcial','reembolsado')
+                   AND p.paid_em::date BETWEEN $1 AND $2
+             ) t
+             GROUP BY rotulo ORDER BY valor DESC",
         )
         .bind(periodo.entrada)
         .bind(periodo.saida)
@@ -393,6 +459,7 @@ impl FinanceiroRepository for PgFinanceiroRepository {
 #[derive(sqlx::FromRow)]
 struct ResumoFinanceiroRow {
     recebido: Decimal,
+    recebido_contas: Decimal,
     recebido_estadias: Decimal,
     recebido_itens: Decimal,
     recebido_adicionais: Decimal,
@@ -406,6 +473,7 @@ impl From<ResumoFinanceiroRow> for ResumoFinanceiro {
     fn from(r: ResumoFinanceiroRow) -> Self {
         Self {
             recebido: r.recebido,
+            recebido_contas: r.recebido_contas,
             recebido_estadias: r.recebido_estadias,
             recebido_itens: r.recebido_itens,
             recebido_adicionais: r.recebido_adicionais,

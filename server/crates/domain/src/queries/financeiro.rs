@@ -6,14 +6,16 @@ use sqlx::FromRow;
 /// Resumo financeiro de um período (equivalente a `financeiro/include/valores.php`).
 #[derive(Debug, Clone, Serialize)]
 pub struct ResumoFinanceiro {
-    /// Fechado (consumos concluídos) no período.
+    /// Caixa recebido no período: contas fechadas (líquido do que já veio
+    /// online) + pagamentos online por `paid_em`.
     pub recebido: Decimal,
+    /// Parte de `recebido` vinda do fechamento de contas — base do ticket médio.
+    pub recebido_contas: Decimal,
     pub recebido_estadias: Decimal,
     pub recebido_itens: Decimal,
     pub recebido_adicionais: Decimal,
-    /// Cobranças online confirmadas (pagamento pago) no período — dinheiro
-    /// antecipado que ainda não virou fatura de check-out. Não soma em
-    /// `recebido`: a receita é reconhecida quando a estadia é faturada.
+    /// Cobranças online confirmadas (pagamento pago) no período — fatia de
+    /// `recebido` que chegou antecipada, ainda não faturada em check-out.
     pub recebido_online: Decimal,
     /// A receber: reservas não canceladas/finalizadas com saída no período.
     pub previsto: Decimal,

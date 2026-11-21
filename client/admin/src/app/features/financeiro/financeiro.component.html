@@ -74,9 +74,9 @@
       @if (num(resumo()?.recebido_online) > 0) {
         <span
           class="fin-est-online"
-          title="Cobranças online confirmadas (Pix/cartão antecipado) — entram na receita quando a estadia é faturada"
+          title="Cobranças online confirmadas (Pix/cartão antecipado) — já incluídas no total"
         >
-          + {{ fmt(num(resumo()?.recebido_online)) }} online
+          {{ fmt(num(resumo()?.recebido_online)) }} online
         </span>
       }
     </div>
