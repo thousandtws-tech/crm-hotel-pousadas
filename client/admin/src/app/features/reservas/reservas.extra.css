@@ -376,11 +376,11 @@
   border-radius: 8px;
 }
 .tape {
-  min-width: 908px;
+  min-width: 1188px;
 }
 .tape-head {
   display: grid;
-  grid-template-columns: 180px repeat(14, 52px);
+  grid-template-columns: 180px repeat(14, 72px);
   border-bottom: 2px solid #e3eaef;
 }
 .tape-dia {
@@ -473,7 +473,7 @@
   display: flex;
 }
 .tape-cel {
-  width: 52px;
+  width: 72px;
   height: 100%;
   border: 0;
   border-left: 1px solid #f0f4f6;
@@ -509,9 +509,9 @@
   text-decoration: none;
   display: flex;
   align-items: center;
-  padding: 0 10px;
+  padding: 0 7px;
   font: inherit;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 600;
   letter-spacing: 0.01em;
   text-align: left;

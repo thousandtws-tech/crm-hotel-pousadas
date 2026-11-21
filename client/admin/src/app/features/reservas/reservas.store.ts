@@ -20,7 +20,7 @@ import { TourService } from '@core/services/tour.service';
 
 const DIA_MS = 86_400_000;
 /** Largura de cada coluna-dia no mapa de ocupação. */
-const COL_W = 52;
+const COL_W = 72;
 /** Quantidade de dias visíveis no mapa. */
 const JANELA_DIAS = 14;
 /** Altura da linha do mapa — mesma do `.tape-track` no CSS. */
@@ -702,7 +702,21 @@ export abstract class ReservasStore implements OnInit {
   }
 
   primeiroNome(nome: string): string {
-    return nome.trim().split(/\s+/)[0] ?? nome;
+    const p = nome.trim().split(/\s+/)[0] ?? nome;
+    return p ? p[0].toUpperCase() + p.slice(1).toLowerCase() : '';
+  }
+
+  /** Nome na barra do tape: 1 noite mostra primeiro nome em Title Case (cabe
+   *  inteiro nos 72px); ≥2 noites mostra primeiro + último nome. */
+  nomeBarra(nome: string, larguraPx: number): string {
+    const partes = nome
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((p) => p[0].toUpperCase() + p.slice(1).toLowerCase());
+    if (partes.length === 0) return '';
+    if (larguraPx < 130 || partes.length === 1) return partes[0];
+    return `${partes[0]} ${partes[partes.length - 1]}`;
   }
 
   /** Tour guiado da tela (driver.js). */
