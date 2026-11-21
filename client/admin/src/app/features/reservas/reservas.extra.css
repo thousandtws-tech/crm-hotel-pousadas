@@ -376,11 +376,11 @@
   border-radius: 8px;
 }
 .tape {
-  min-width: 1356px;
+  min-width: 1468px;
 }
 .tape-head {
   display: grid;
-  grid-template-columns: 180px repeat(14, 84px);
+  grid-template-columns: 180px repeat(14, 92px);
   border-bottom: 2px solid #e3eaef;
 }
 .tape-dia {
@@ -469,11 +469,11 @@
 }
 .tape-track {
   position: relative;
-  height: 48px;
+  height: 58px;
   display: flex;
 }
 .tape-cel {
-  width: 84px;
+  width: 92px;
   height: 100%;
   border: 0;
   border-left: 1px solid #f0f4f6;
@@ -501,17 +501,17 @@
 }
 .tape-bar {
   position: absolute;
-  top: 6px;
-  height: 36px;
+  top: 5px;
+  min-height: 48px;
   border: 0;
   border-radius: 6px;
   color: #fff;
   text-decoration: none;
   display: flex;
   align-items: center;
-  padding: 0 6px;
+  padding: 4px 6px;
   font: inherit;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 600;
   line-height: 1.15;
   letter-spacing: 0.01em;
@@ -521,7 +521,7 @@
     transform 0.12s,
     box-shadow 0.12s,
     filter 0.12s;
-  overflow: hidden;
+  overflow: visible;
   white-space: normal;
   cursor: pointer;
 }
@@ -561,10 +561,8 @@
   text-decoration: line-through;
 }
 .tape-bar-txt {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  display: block;
+  width: 100%;
   word-break: break-word;
 }
 .tape-legenda {

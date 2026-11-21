@@ -11,8 +11,8 @@ import { RealtimeService } from '@core/services/realtime.service';
 
 const DIA_MS = 86_400_000;
 const JANELA_DIAS = 14;
-const COL_W = 84;
-const ROW_H = 49;
+const COL_W = 92;
+const ROW_H = 59;
 
 /** Tape chart de ocupação (14 dias × acomodações) com drag-to-move e walk-in. */
 @Directive()

@@ -20,11 +20,11 @@ import { TourService } from '@core/services/tour.service';
 
 const DIA_MS = 86_400_000;
 /** Largura de cada coluna-dia no mapa de ocupação. */
-const COL_W = 84;
+const COL_W = 92;
 /** Quantidade de dias visíveis no mapa. */
 const JANELA_DIAS = 14;
 /** Altura da linha do mapa — mesma do `.tape-track` no CSS. */
-const LIN_H = 48;
+const LIN_H = 58;
 
 type Visao = 'lista' | 'cal' | 'mapa' | 'grupos';
 
