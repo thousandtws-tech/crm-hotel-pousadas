@@ -65,7 +65,7 @@ import { MotionService } from '../../core/services/motion.service';
         } @else {
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           @for (acc of accommodationService.accommodations(); track acc.id) {
-            <article class="suite-article group flex flex-col bg-white border border-[#DCE6EA] rounded-xl overflow-hidden shadow-[0_6px_24px_rgba(5,64,84,0.05)] hover:shadow-[0_16px_44px_rgba(5,64,84,0.12)] transition-shadow">
+            <article class="suite-article group flex flex-col bg-white border border-[#DCE6EA] rounded-xl overflow-hidden shadow-raised hover:shadow-[0_16px_44px_rgba(5,64,84,0.12)] transition-shadow">
 
               <!-- Photo + capacity badge -->
               <a [routerLink]="['/acomodacoes', acc.slug]" class="block editorial-image-container aspect-[4/3] relative">
@@ -75,19 +75,19 @@ import { MotionService } from '../../core/services/motion.service';
                   loading="lazy"
                   class="w-full h-full object-cover"
                 />
-                <span class="absolute top-4 right-4 z-10 inline-flex items-center gap-1.5 bg-[#032B38]/85 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full">
-                  <app-icon name="users" [size]="12" class="text-[#DDA554]"></app-icon>
+                <span class="absolute top-4 right-4 z-10 inline-flex items-center gap-1.5 bg-[#032B38]/85 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-lg">
+                  <app-icon name="users" [size]="12" class="text-[#8A5A1E]"></app-icon>
                   Até {{ acc.guests }} hóspedes
                 </span>
               </a>
 
               <!-- Card body -->
               <div class="flex flex-col flex-1 p-5 sm:p-6">
-                <span class="type-eyebrow text-[#DDA554] block mb-1.5">
+                <span class="type-eyebrow text-[#8A5A1E] block mb-1.5">
                   {{ acc.view }} · Até {{ acc.guests }} hóspedes
                 </span>
 
-                <h3 class="font-serif text-2xl text-[#054054] group-hover:text-[#DDA554] transition-colors mb-1.5">
+                <h3 class="font-serif text-2xl text-[#054054] group-hover:text-[#8A5A1E] transition-colors mb-1.5">
                   <a [routerLink]="['/acomodacoes', acc.slug]">
                     {{ acc.name }}
                   </a>
@@ -116,7 +116,7 @@ import { MotionService } from '../../core/services/motion.service';
                 <!-- Price + CTA -->
                 <div class="flex items-center justify-between gap-4 mt-auto">
                   <div class="flex flex-col">
-                    <span class="type-caption text-[#536B73] text-[10px]">Tarifa</span>
+                    <span class="type-caption text-[#536B73] text-xs">Tarifa</span>
                     <span class="font-serif text-xl text-[#054054]">
                       {{ acc.priceLabel }}
                     </span>

@@ -48,12 +48,12 @@ import { MotionService } from '../../core/services/motion.service';
               
               <!-- Step 1: Dates & Guests -->
               <div class="bg-white p-5 sm:p-7 border border-[#DCE6EA] shadow-sm">
-                <span class="type-eyebrow text-[#DDA554] block mb-2">01 · Período</span>
+                <span class="type-eyebrow text-[#8A5A1E] block mb-2">01 · Período</span>
                 <h2 class="font-serif text-2xl text-[#054054] mb-4 sm:mb-5">Datas da viagem</h2>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 items-end">
                   <div>
-                    <label for="booking-checkin" class="type-eyebrow block mb-1 text-[10px] whitespace-nowrap">Check-in · 13h</label>
+                    <label for="booking-checkin" class="type-eyebrow block mb-1 text-xs whitespace-nowrap">Check-in · 13h</label>
                     <input
                       id="booking-checkin"
                       type="date"
@@ -66,7 +66,7 @@ import { MotionService } from '../../core/services/motion.service';
                   </div>
 
                   <div>
-                    <label for="booking-checkout" class="type-eyebrow block mb-1 text-[10px] whitespace-nowrap">Check-out · 11h</label>
+                    <label for="booking-checkout" class="type-eyebrow block mb-1 text-xs whitespace-nowrap">Check-out · 11h</label>
                     <input
                       id="booking-checkout"
                       type="date"
@@ -79,7 +79,7 @@ import { MotionService } from '../../core/services/motion.service';
                   </div>
 
                   <div>
-                    <label for="booking-guests" class="type-eyebrow block mb-1 text-[10px] whitespace-nowrap">Hóspedes</label>
+                    <label for="booking-guests" class="type-eyebrow block mb-1 text-xs whitespace-nowrap">Hóspedes</label>
                     <select
                       id="booking-guests"
                       [ngModel]="guests()"
@@ -115,7 +115,7 @@ import { MotionService } from '../../core/services/motion.service';
 
               <!-- Step 2: Choose Accommodation -->
               <div class="bg-white p-5 sm:p-7 border border-[#DCE6EA] shadow-sm">
-                <span class="type-eyebrow text-[#DDA554] block mb-2">02 · Categoria</span>
+                <span class="type-eyebrow text-[#8A5A1E] block mb-2">02 · Categoria</span>
                 <h2 class="font-serif text-2xl text-[#054054] mb-4 sm:mb-5">Escolha a acomodação</h2>
 
                 @if (accommodationService.loading()) {
@@ -168,13 +168,13 @@ import { MotionService } from '../../core/services/motion.service';
 
               <!-- Step 3: Guest Contact Information -->
               <div class="bg-white p-5 sm:p-7 border border-[#DCE6EA] shadow-sm">
-                <span class="type-eyebrow text-[#DDA554] block mb-2">03 · Seus Dados</span>
+                <span class="type-eyebrow text-[#8A5A1E] block mb-2">03 · Seus Dados</span>
                 <h2 class="font-serif text-2xl text-[#054054] mb-4 sm:mb-5">Dados para retorno</h2>
 
                 <form (submit)="onSubmitBooking()" class="space-y-4">
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label for="book-name" class="type-eyebrow block mb-1 text-[10px]">Nome Completo</label>
+                      <label for="book-name" class="type-eyebrow block mb-1 text-xs">Nome Completo</label>
                       <input
                         id="book-name"
                         type="text"
@@ -187,7 +187,7 @@ import { MotionService } from '../../core/services/motion.service';
                     </div>
 
                     <div>
-                      <label for="book-email" class="type-eyebrow block mb-1 text-[10px]">E-mail</label>
+                      <label for="book-email" class="type-eyebrow block mb-1 text-xs">E-mail</label>
                       <input
                         id="book-email"
                         type="email"
@@ -201,7 +201,7 @@ import { MotionService } from '../../core/services/motion.service';
                   </div>
 
                   <div>
-                    <label for="book-phone" class="type-eyebrow block mb-1 text-[10px]">Telefone (celular/WhatsApp)</label>
+                    <label for="book-phone" class="type-eyebrow block mb-1 text-xs">Telefone (celular/WhatsApp)</label>
                     <div class="flex gap-2">
                       <select
                         id="book-phone-ddi"
@@ -240,7 +240,7 @@ import { MotionService } from '../../core/services/motion.service';
                   </div>
 
                   <div>
-                    <label for="book-corporate" class="type-eyebrow block mb-1 text-[10px]">Código corporativo (opcional)</label>
+                    <label for="book-corporate" class="type-eyebrow block mb-1 text-xs">Código corporativo (opcional)</label>
                     <input
                       id="book-corporate"
                       type="text"
@@ -249,7 +249,7 @@ import { MotionService } from '../../core/services/motion.service';
                       name="codigoCorporativo"
                       placeholder="Ex.: ACME2025"
                       autocomplete="off"
-                      class="w-full bg-[#F7F5F0] border border-[#DCE6EA] p-3 text-sm text-[#054054] uppercase focus:outline-none focus:border-[#054054]"
+                      class="w-full bg-[#F7F5F0] border border-[#DCE6EA] p-3 text-sm text-[#054054] focus:outline-none focus:border-[#054054]"
                     />
                     @if (descontoCorporativo() !== null) {
                       <p class="text-xs mt-1 text-[#1a6f4a]">Desconto de {{ descontoCorporativo() }}% aplicado na diária.</p>
@@ -259,7 +259,7 @@ import { MotionService } from '../../core/services/motion.service';
                   </div>
 
                   <div>
-                    <label for="book-requests" class="type-eyebrow block mb-1 text-[10px]">Observações ou Preferências</label>
+                    <label for="book-requests" class="type-eyebrow block mb-1 text-xs">Observações ou Preferências</label>
                     <textarea
                       id="book-requests"
                       rows="3"
@@ -323,7 +323,7 @@ import { MotionService } from '../../core/services/motion.service';
             <!-- Right: Order Summary (Col 8-12) -->
             <aside class="lg:col-span-5 sticky top-24" aria-label="Resumo da Consulta">
               <div class="bg-white p-5 sm:p-7 border border-[#DCE6EA] shadow-sm">
-                <span class="type-eyebrow text-[#DDA554] block mb-2">Resumo da Consulta</span>
+                <span class="type-eyebrow text-[#8A5A1E] block mb-2">Resumo da Consulta</span>
                 <h3 class="font-serif text-2xl text-[#054054] mb-4 sm:mb-5">Pousada Espírito do Mar</h3>
 
                 @if (selectedAccommodation(); as acc) {
@@ -375,7 +375,7 @@ import { MotionService } from '../../core/services/motion.service';
             <span class="w-12 h-12 rounded-full bg-[#054054] text-[#F7F5F0] flex items-center justify-center mx-auto mb-6">
               <app-icon name="check" [size]="22"></app-icon>
             </span>
-            <span class="type-eyebrow text-[#DDA554] block mb-2">Reserva &amp; Consulta Registrada</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2">Reserva &amp; Consulta Registrada</span>
             <h2 class="font-serif text-3xl text-[#054054] mb-4">Agradecemos o seu contato</h2>
             <p class="type-body text-sm max-w-md mx-auto mb-8">
               {{ serverMessage() || ('Registramos seu interesse na categoria ' + (selectedAccommodation()?.name || 'selecionada') + '.') }}
@@ -384,7 +384,7 @@ import { MotionService } from '../../core/services/motion.service';
             @if (reservaToken()) {
               <!-- Pagamento online — integral ou sinal (30%) -->
               <div class="mb-8 p-5 bg-[#EEF3F5] border border-[#DCE6EA] text-left">
-                <span class="type-eyebrow text-[#DDA554] block mb-2">Garanta sua reserva</span>
+                <span class="type-eyebrow text-[#8A5A1E] block mb-2">Garanta sua reserva</span>
                 <p class="text-xs text-[#536B73] mb-4 leading-relaxed">
                   Sua acomodação fica reservada por <strong>30 minutos</strong>.
                   Confirme agora com cartão ou Pix e tenha a reserva garantida na hora.

@@ -51,7 +51,7 @@ interface SelectOption {
     <!-- Quick Highlights Bar -->
     <section class="relative z-20 -mt-8 sm:-mt-10">
       <div class="container-editorial">
-        <div class="grid grid-cols-1 md:grid-cols-3 bg-white border border-[#DCE6EA] rounded-xl overflow-hidden shadow-[0_14px_36px_rgba(5,64,84,0.08)] divide-y md:divide-y-0 md:divide-x divide-[#DCE6EA]">
+        <div class="grid grid-cols-1 md:grid-cols-3 bg-white border border-[#DCE6EA] rounded-xl overflow-hidden shadow-raised divide-y md:divide-y-0 md:divide-x divide-[#DCE6EA]">
           
           <!-- Highlight 1: Phone -->
           <a
@@ -62,7 +62,7 @@ interface SelectOption {
               <app-icon name="phone" [size]="18"></app-icon>
             </div>
             <div>
-              <span class="type-eyebrow block text-[10px] text-[#DDA554] mb-1">Telefone da Recepção</span>
+              <span class="type-eyebrow block text-xs text-[#8A5A1E] mb-1">Telefone da Recepção</span>
               <span class="block font-serif text-xl text-[#054054] font-medium group-hover:text-[#1A6F8A] transition-colors">
                 {{ hotelConfig.phone }}
               </span>
@@ -78,7 +78,7 @@ interface SelectOption {
               <app-icon name="map-pin" [size]="18"></app-icon>
             </div>
             <div>
-              <span class="type-eyebrow block text-[10px] text-[#DDA554] mb-1">Localização</span>
+              <span class="type-eyebrow block text-xs text-[#8A5A1E] mb-1">Localização</span>
               <span class="block font-serif text-xl text-[#054054] font-medium">
                 Bairro Peró · Cabo Frio, RJ
               </span>
@@ -94,7 +94,7 @@ interface SelectOption {
               <app-icon name="calendar" [size]="18"></app-icon>
             </div>
             <div>
-              <span class="type-eyebrow block text-[10px] text-[#DDA554] mb-1">Horários de Referência</span>
+              <span class="type-eyebrow block text-xs text-[#8A5A1E] mb-1">Horários de Referência</span>
               <span class="block font-serif text-xl text-[#054054] font-medium">
                 Check-in 13h · Check-out 11h
               </span>
@@ -116,7 +116,7 @@ interface SelectOption {
           <!-- Left Column: Institutional Channels & Map (Col 1-5) -->
           <div class="contact-channels-col lg:col-span-5 flex flex-col space-y-6">
             <div>
-              <span class="type-eyebrow text-[#DDA554] block mb-2">Atendimento Personalizado</span>
+              <span class="type-eyebrow text-[#8A5A1E] block mb-2">Atendimento Personalizado</span>
               <h2 class="type-title text-[#054054] mb-3">Canais Oficiais</h2>
               <p class="type-body text-sm text-[#536B73] leading-relaxed">
                 Para garantir informações precisas sobre tarifas, disponibilidade de categorias e regras da hospedagem, utilize sempre nossos canais diretos.
@@ -126,10 +126,10 @@ interface SelectOption {
             <!-- Channel Cards -->
             <div class="space-y-4">
               <!-- Card: Central Telefônica -->
-              <div class="bg-white border border-[#DCE6EA] p-5 sm:p-6 shadow-[0_6px_20px_rgba(5,64,84,0.03)]">
+              <div class="bg-white border border-[#DCE6EA] p-5 sm:p-6 shadow-card">
                 <div class="flex items-start justify-between gap-4 mb-3">
                   <div>
-                    <span class="type-eyebrow block text-[10px] text-[#DDA554] mb-1">Canal Preferencial</span>
+                    <span class="type-eyebrow block text-xs text-[#8A5A1E] mb-1">Canal Preferencial</span>
                     <h3 class="font-serif text-2xl text-[#054054] font-normal">Atendimento Telefônico</h3>
                   </div>
                   <span class="w-9 h-9 rounded-lg bg-[#EEF4F6] text-[#054054] flex items-center justify-center shrink-0">
@@ -149,10 +149,10 @@ interface SelectOption {
               </div>
 
               <!-- Card: Endereço & Acesso -->
-              <div class="bg-white border border-[#DCE6EA] p-5 sm:p-6 shadow-[0_6px_20px_rgba(5,64,84,0.03)]">
+              <div class="bg-white border border-[#DCE6EA] p-5 sm:p-6 shadow-card">
                 <div class="flex items-start justify-between gap-4 mb-2">
                   <div>
-                    <span class="type-eyebrow block text-[10px] text-[#DDA554] mb-1">Endereço no Peró</span>
+                    <span class="type-eyebrow block text-xs text-[#8A5A1E] mb-1">Endereço no Peró</span>
                     <h3 class="font-serif text-2xl text-[#054054] font-normal">Como Chegar</h3>
                   </div>
                   <span class="w-9 h-9 rounded-lg bg-[#EEF4F6] text-[#054054] flex items-center justify-center shrink-0">
@@ -182,10 +182,10 @@ interface SelectOption {
           </div>
 
           <!-- Right Column: Professional Contact Form (Col 6-12) -->
-          <div class="contact-form-col contact-material-form lg:col-span-7 bg-white border border-[#DCE6EA] shadow-[0_12px_36px_rgba(5,64,84,0.05)] p-6 sm:p-10 lg:p-12">
+          <div class="contact-form-col contact-material-form lg:col-span-7 bg-white border border-[#DCE6EA] shadow-raised p-6 sm:p-10 lg:p-12">
             <div class="pb-6 mb-6 sm:mb-8 border-b border-[#DCE6EA] flex flex-col sm:flex-row sm:items-end justify-between gap-4">
               <div>
-                <span class="type-eyebrow text-[#DDA554] block mb-2">Formulário de Atendimento</span>
+                <span class="type-eyebrow text-[#8A5A1E] block mb-2">Formulário de Atendimento</span>
                 <h2 class="font-serif text-3xl sm:text-4xl text-[#054054] font-normal">
                   Envie uma mensagem à recepção
                 </h2>
@@ -200,7 +200,7 @@ interface SelectOption {
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
                   <div>
-                    <label for="contact-name" class="type-eyebrow block mb-2 text-[10px] !text-[#054054]">
+                    <label for="contact-name" class="type-eyebrow block mb-2 text-xs !text-[#054054]">
                       Nome Completo *
                     </label>
                     <input
@@ -216,7 +216,7 @@ interface SelectOption {
                   </div>
 
                   <div>
-                    <label for="contact-email" class="type-eyebrow block mb-2 text-[10px] !text-[#054054]">
+                    <label for="contact-email" class="type-eyebrow block mb-2 text-xs !text-[#054054]">
                       E-mail para Retorno *
                     </label>
                     <input
@@ -234,7 +234,7 @@ interface SelectOption {
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
                   <div>
-                    <label for="contact-phone" class="type-eyebrow block mb-2 text-[10px] !text-[#054054]">
+                    <label for="contact-phone" class="type-eyebrow block mb-2 text-xs !text-[#054054]">
                       Telefone / Celular (com DDD)
                     </label>
                     <input
@@ -251,7 +251,7 @@ interface SelectOption {
                   </div>
 
                   <div>
-                    <span id="contact-subject-label" class="type-eyebrow block mb-2 text-[10px] !text-[#054054]">
+                    <span id="contact-subject-label" class="type-eyebrow block mb-2 text-xs !text-[#054054]">
                       Assunto da Consulta
                     </span>
                     <div class="h-[50px] rounded-lg bg-[#FCFBF9] border border-[#DCE6EA] px-4 flex items-center focus-within:border-[#054054] focus-within:bg-white transition-colors">
@@ -272,7 +272,7 @@ interface SelectOption {
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
                   <div>
-                    <label for="contact-checkin" class="type-eyebrow block mb-2 text-[10px] !text-[#054054]">
+                    <label for="contact-checkin" class="type-eyebrow block mb-2 text-xs !text-[#054054]">
                       Previsão de Chegada (Opcional)
                     </label>
                     <div
@@ -306,7 +306,7 @@ interface SelectOption {
                   </div>
 
                   <div>
-                    <span id="contact-guests-label" class="type-eyebrow block mb-2 text-[10px] !text-[#054054]">
+                    <span id="contact-guests-label" class="type-eyebrow block mb-2 text-xs !text-[#054054]">
                       Quantidade de Hóspedes
                     </span>
                     <div class="h-[50px] rounded-lg bg-[#FCFBF9] border border-[#DCE6EA] px-4 flex items-center focus-within:border-[#054054] focus-within:bg-white transition-colors">
@@ -326,7 +326,7 @@ interface SelectOption {
                 </div>
 
                 <div>
-                  <label for="contact-message" class="type-eyebrow block mb-2 text-[10px] !text-[#054054]">
+                  <label for="contact-message" class="type-eyebrow block mb-2 text-xs !text-[#054054]">
                     Sua Mensagem *
                   </label>
                   <textarea
@@ -366,7 +366,7 @@ interface SelectOption {
                 <span class="w-12 h-12 rounded-full bg-[#EEF4F6] text-[#1A6F8A] flex items-center justify-center mb-4">
                   <app-icon name="check" [size]="22"></app-icon>
                 </span>
-                <span class="type-eyebrow text-[#DDA554] block mb-1">Consulta preparada</span>
+                <span class="type-eyebrow text-[#8A5A1E] block mb-1">Consulta preparada</span>
                 <h3 class="font-serif text-2xl sm:text-3xl text-[#054054] mb-3 font-normal">
                   Ligue para a recepção com estes dados
                 </h3>
@@ -415,7 +415,7 @@ interface SelectOption {
         <div class="max-w-4xl mx-auto">
 
           <div class="text-center mb-10 sm:mb-12">
-            <span class="type-eyebrow text-[#DDA554] block mb-2">Dúvidas Frequentes (FAQ)</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2">Dúvidas Frequentes (FAQ)</span>
             <h2 id="faq-heading" class="type-title text-[#054054] mb-3">
               Informações importantes antes da sua reserva
             </h2>
@@ -432,7 +432,7 @@ interface SelectOption {
                 role="tab"
                 [attr.aria-selected]="selectedCategory() === cat"
                 (click)="selectedCategory.set(cat)"
-                class="px-4 py-2 rounded-lg text-xs uppercase tracking-[0.16em] font-medium border transition-colors cursor-pointer"
+                class="px-4 py-2 rounded-lg text-xs font-medium border transition-colors cursor-pointer"
                 [class.bg-[#054054]]="selectedCategory() === cat"
                 [class.text-white]="selectedCategory() === cat"
                 [class.border-[#054054]]="selectedCategory() === cat"
@@ -457,7 +457,7 @@ interface SelectOption {
                     class="w-full p-5 sm:p-6 text-left flex items-center justify-between gap-4 cursor-pointer"
                   >
                     <div>
-                      <span class="type-eyebrow text-[#DDA554] block mb-1 text-[10px]">
+                      <span class="type-eyebrow text-[#8A5A1E] block mb-1 text-xs">
                         {{ faq.category }}
                       </span>
                       <span class="font-serif text-xl sm:text-2xl text-[#054054] font-normal block">

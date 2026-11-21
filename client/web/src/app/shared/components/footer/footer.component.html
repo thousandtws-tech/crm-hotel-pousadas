@@ -9,7 +9,7 @@
       <div class="lg:col-span-2 flex flex-col items-start">
         <a routerLink="/" class="flex flex-col items-start mb-6 group focus:outline-none" aria-label="Voltar ao início">
           <img src="/logo.svg" alt="Pousada Espírito do Mar" class="h-16 sm:h-20 w-auto object-contain logo-white mb-3" />
-          <span class="text-[10px] tracking-[0.25em] uppercase text-[#DDA554]">Pousada no Peró · Cabo Frio, RJ</span>
+          <span class="text-xs text-[#DDA554]">Pousada no Peró · Cabo Frio, RJ</span>
         </a>
         <p class="text-sm text-[#CBD7DC] font-light leading-relaxed mb-6 max-w-sm">
           Hospedagem acolhedora no bairro Peró, em Cabo Frio, com piscina externa e fácil acesso à Praia do Peró.
@@ -63,15 +63,15 @@
         <span class="type-eyebrow text-[#DDA554] block mb-5">Atendimento</span>
         <div class="flex flex-col gap-4 text-sm text-white">
           <div>
-            <span class="block text-xs uppercase tracking-wider text-white mb-1">Telefone</span>
+            <span class="block text-xs text-white mb-1">Telefone</span>
             <a [href]="'tel:' + hotelConfig.phoneHref" class="text-white hover:text-[#DDA554] transition-colors font-light">{{ hotelConfig.phone }}</a>
           </div>
           <div>
-            <span class="block text-xs uppercase tracking-wider text-white mb-1">Localização</span>
+            <span class="block text-xs text-white mb-1">Localização</span>
             <p class="text-xs text-white leading-relaxed font-light">{{ hotelConfig.address.fullFormatted }}</p>
           </div>
           <div>
-            <span class="block text-xs uppercase tracking-wider text-white mb-1">Check-in / Check-out</span>
+            <span class="block text-xs text-white mb-1">Check-in / Check-out</span>
             <p class="text-xs text-white/80 leading-relaxed font-light">Entrada: 13h · Saída: 11h (confirme na reserva)</p>
           </div>
         </div>
@@ -87,13 +87,13 @@
         <div class="flex flex-col gap-2.5">
           <a
             routerLink="/reservar"
-            class="w-full py-2.5 px-3 bg-[#DDA554] text-[#054054] text-center text-xs uppercase tracking-luxury font-medium hover:bg-white transition-colors cursor-pointer"
+            class="w-full py-2.5 px-3 bg-[#DDA554] text-[#054054] text-center text-xs font-medium hover:bg-white transition-colors cursor-pointer"
           >
             Consultar disponibilidade
           </a>
           <a
             routerLink="/contato"
-            class="w-full py-2.5 px-3 border border-white/25 text-white text-center text-xs uppercase tracking-luxury font-medium hover:border-[#DDA554] hover:text-[#DDA554] transition-colors cursor-pointer"
+            class="w-full py-2.5 px-3 border border-white/25 text-white text-center text-xs font-medium hover:border-[#DDA554] hover:text-[#DDA554] transition-colors cursor-pointer"
           >
             Perguntas Frequentes
           </a>
@@ -148,7 +148,7 @@
         <button
           type="submit"
           [disabled]="newsletterEstado() === 'enviando'"
-          class="shrink-0 px-6 py-3 bg-[#DDA554] text-[#032B38] text-xs uppercase tracking-luxury font-semibold hover:bg-white transition-colors disabled:opacity-60 disabled:cursor-wait cursor-pointer"
+          class="shrink-0 px-6 py-3 bg-[#DDA554] text-[#032B38] text-xs font-semibold hover:bg-white transition-colors disabled:opacity-60 disabled:cursor-wait cursor-pointer"
         >
           {{ newsletterEstado() === 'enviando' ? 'Enviando…' : 'Inscrever' }}
         </button>
@@ -173,7 +173,7 @@
         <a routerLink="/privacidade" class="hover:text-white transition-colors">Privacidade</a>
       </div>
 
-      <div class="font-serif italic text-white tracking-wide text-sm">
+      <div class="font-serif text-white text-sm">
         Desenvolvido por <a href="https://www.clarituz.com.br" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">Clarituz</a>
       </div>
     </div>

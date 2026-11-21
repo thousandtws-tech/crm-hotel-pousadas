@@ -32,7 +32,7 @@ const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
           <p class="text-sm font-medium text-[#9A3B3B]">{{ msg }}</p>
           <button
             type="button"
-            class="mt-3 px-5 py-2 rounded-full bg-[#054054] text-white text-xs font-semibold hover:bg-[#0a5a73]"
+            class="mt-3 px-5 py-2 rounded-lg bg-[#054054] text-white text-xs font-semibold hover:bg-[#0a5a73]"
             (click)="refazer()"
           >Tentar novamente</button>
         </div>
@@ -54,7 +54,7 @@ const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
         </div>
 
         @if (r.aviso) {
-          <p class="mt-2 text-xs text-[#536B73] italic">{{ r.aviso }}</p>
+          <p class="mt-2 text-xs text-[#536B73]">{{ r.aviso }}</p>
         }
 
         @if (r.com_disponibilidade === 0) {
@@ -74,13 +74,13 @@ const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
                       {{ alt.inicio | date: "d 'de' MMM" : '' : 'pt-BR' }} →
                       {{ alt.fim | date: "d 'de' MMM 'de' y" : '' : 'pt-BR' }}
                     </p>
-                    <p class="text-[11px] text-[#536B73]">
+                    <p class="text-xs text-[#536B73]">
                       {{ alt.noites }} {{ alt.noites === 1 ? 'noite' : 'noites' }}
                     </p>
                   </div>
                   @if (alt.deslocamento !== undefined) {
                     <span
-                      class="text-[11px] font-medium px-2.5 py-1 rounded-full"
+                      class="text-xs font-medium px-2.5 py-1 rounded-lg"
                       [class]="alt.deslocamento === 0
                         ? 'bg-[#DCE6EA] text-[#054054]'
                         : 'bg-[#F4F8F9] text-[#536B73] border border-[#DCE6EA]'"
@@ -99,7 +99,7 @@ const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
                       >
                         <span>
                           <span class="block text-sm font-medium text-[#054054]">{{ acc.nome }}</span>
-                          <span class="block text-[11px] text-[#536B73]">
+                          <span class="block text-xs text-[#536B73]">
                             Unidade {{ acc.numero }} · até {{ acc.capacidade }}
                             {{ acc.capacidade === 1 ? 'pessoa' : 'pessoas' }}
                           </span>
@@ -108,11 +108,11 @@ const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
                           <span class="block text-sm font-semibold text-[#054054]">
                             {{ total(alt, acc) }}
                           </span>
-                          <span class="block text-[11px] text-[#536B73]">
+                          <span class="block text-xs text-[#536B73]">
                             {{ alt.noites }} {{ alt.noites === 1 ? 'noite' : 'noites' }} ·
                             {{ preco(acc.valor) }}/noite
                           </span>
-                          <span class="block text-[11px] font-medium text-[#054054] mt-0.5">reservar →</span>
+                          <span class="block text-xs font-medium text-[#054054] mt-0.5">reservar →</span>
                         </span>
                       </button>
                     </li>

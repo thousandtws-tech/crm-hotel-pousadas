@@ -21,7 +21,7 @@ import { MotionService } from '../../core/services/motion.service';
       </div>
 
       <div class="relative z-10 container-editorial text-center flex flex-col items-center">
-        <span class="type-eyebrow text-[#DDA554] block mb-2 sm:mb-3">
+        <span class="type-eyebrow text-[#8A5A1E] block mb-2 sm:mb-3">
           Informações ao Hóspede
         </span>
         <h1 class="font-serif text-4xl sm:text-6xl text-white font-normal mb-3 sm:mb-4 leading-tight">
@@ -58,7 +58,7 @@ import { MotionService } from '../../core/services/motion.service';
 
           <!-- Chapter 1: Consulta e Confirmação de Reserva -->
           <article class="terms-chapter bg-white p-6 sm:p-8 border border-[#DCE6EA] shadow-sm">
-            <span class="type-eyebrow text-[#DDA554] block mb-2">01 · Solicitação de Reserva</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2">01 · Solicitação de Reserva</span>
             <h2 class="font-serif text-2xl sm:text-3xl text-[#054054] mb-4">Cotação, Disponibilidade e Confirmação</h2>
             
             <div class="space-y-4 type-body text-sm sm:text-base text-[#536B73]">
@@ -81,18 +81,18 @@ import { MotionService } from '../../core/services/motion.service';
 
           <!-- Chapter 2: Check-in e Check-out -->
           <article class="terms-chapter bg-white p-6 sm:p-8 border border-[#DCE6EA] shadow-sm">
-            <span class="type-eyebrow text-[#DDA554] block mb-2">02 · Horários de Referência</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2">02 · Horários de Referência</span>
             <h2 class="font-serif text-2xl sm:text-3xl text-[#054054] mb-4">Check-in e Check-out</h2>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div class="p-4 bg-[#FAF8F5] border-l-2 border-[#054054] border-t border-r border-b border-[#DCE6EA]">
-                <span class="type-caption block text-[#DDA554] font-medium mb-1">Entrada divulgada</span>
+                <span class="type-caption block text-[#8A5A1E] font-medium mb-1">Entrada divulgada</span>
                 <span class="font-serif text-2xl text-[#054054] block mb-1">Check-in: a partir das 13h</span>
                 <p class="text-xs text-[#536B73]">Necessária apresentação de documento oficial de identificação com foto de todos os hóspedes.</p>
               </div>
 
               <div class="p-4 bg-[#FAF8F5] border-l-2 border-[#DDA554] border-t border-r border-b border-[#DCE6EA]">
-                <span class="type-caption block text-[#DDA554] font-medium mb-1">Saída divulgada</span>
+                <span class="type-caption block text-[#8A5A1E] font-medium mb-1">Saída divulgada</span>
                 <span class="font-serif text-2xl text-[#054054] block mb-1">Check-out: até as 11h</span>
                 <p class="text-xs text-[#536B73]">Confirme com a recepção eventuais variações de horário aplicáveis à sua reserva.</p>
               </div>
@@ -101,7 +101,7 @@ import { MotionService } from '../../core/services/motion.service';
 
           <!-- Chapter 3: Comodidades e Serviços -->
           <article class="terms-chapter bg-white p-6 sm:p-8 border border-[#DCE6EA] shadow-sm">
-            <span class="type-eyebrow text-[#DDA554] block mb-2">03 · Estrutura e Acomodações</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2">03 · Estrutura e Acomodações</span>
             <h2 class="font-serif text-2xl sm:text-3xl text-[#054054] mb-4">Uso da Estrutura, Estacionamento e Categorias</h2>
 
             <div class="space-y-3 type-body text-sm sm:text-base text-[#536B73]">
@@ -118,7 +118,7 @@ import { MotionService } from '../../core/services/motion.service';
 
           <!-- Chapter 4: Crianças e Animais de Estimação -->
           <article class="terms-chapter bg-white p-6 sm:p-8 border border-[#DCE6EA] shadow-sm">
-            <span class="type-eyebrow text-[#DDA554] block mb-2">04 · Orientações Específicas</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2">04 · Orientações Específicas</span>
             <h2 class="font-serif text-2xl sm:text-3xl text-[#054054] mb-4">Menores de Idade e Animais de Estimação</h2>
 
             <div class="space-y-4 type-body text-sm sm:text-base text-[#536B73]">
@@ -133,7 +133,7 @@ import { MotionService } from '../../core/services/motion.service';
 
           <!-- Direct Contact Card -->
           <article class="terms-chapter p-6 sm:p-8 bg-[#054054] text-white">
-            <span class="type-eyebrow text-[#DDA554] block mb-2">Atendimento Direto</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2">Atendimento Direto</span>
             <h2 class="font-serif text-2xl sm:text-3xl text-white mb-4">Dúvidas sobre sua estadia?</h2>
             <p class="text-sm text-[#EEF3F5]/90 leading-relaxed mb-6">
               Entre em contato com a recepção pelo telefone ou envie uma mensagem pela página de contato para confirmar todas as condições da sua hospedagem no Peró.
@@ -141,7 +141,7 @@ import { MotionService } from '../../core/services/motion.service';
 
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-white/10 border border-white/20">
               <div>
-                <span class="text-[10px] uppercase tracking-wider text-[#DDA554] block mb-1">Telefone de Atendimento</span>
+                <span class="text-xs text-[#8A5A1E] block mb-1">Telefone de Atendimento</span>
                 <span class="font-medium text-base text-white">{{ hotelConfig.phone }}</span>
               </div>
               <a

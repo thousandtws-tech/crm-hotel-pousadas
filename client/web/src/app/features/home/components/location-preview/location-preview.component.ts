@@ -15,7 +15,7 @@ import { MotionService } from '../../../../core/services/motion.service';
           
           <!-- Content Left (Col 1-5) -->
           <div class="loc-content-left lg:col-span-5 flex flex-col items-start">
-            <span class="type-eyebrow text-[#DDA554] block mb-2 sm:mb-3">
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2 sm:mb-3">
               Localização em Cabo Frio
             </span>
 
@@ -71,7 +71,7 @@ import { MotionService } from '../../../../core/services/motion.service';
 
               <!-- Architectural Corner Location Card -->
               <div class="loc-badge absolute bottom-6 left-6 p-5 bg-[#FAF8F5] border border-[#DCE6EA] max-w-xs shadow-md">
-                <span class="type-caption block text-[#DDA554] font-semibold mb-1">Endereço de Referência</span>
+                <span class="type-caption block text-[#8A5A1E] font-semibold mb-1">Endereço de Referência</span>
                 <p class="text-xs text-[#054054] font-medium mb-1">{{ hotelConfig.address.fullFormatted }}</p>
                 <span class="type-caption block text-[#536B73]">Bairro Peró · Cabo Frio, RJ</span>
               </div>

@@ -36,24 +36,24 @@ import { IconComponent } from '../../shared/components/icons/icon.component';
       <div class="container-editorial">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           @for (post of blog.posts(); track post.slug) {
-            <article class="group flex flex-col bg-white border border-[#DCE6EA] rounded-xl overflow-hidden shadow-[0_6px_24px_rgba(5,64,84,0.05)] hover:shadow-[0_16px_44px_rgba(5,64,84,0.12)] transition-shadow">
+            <article class="group flex flex-col bg-white border border-[#DCE6EA] rounded-xl overflow-hidden shadow-raised hover:shadow-[0_16px_44px_rgba(5,64,84,0.12)] transition-shadow">
               <a [routerLink]="['/guia', post.slug]" class="block aspect-[16/10] relative overflow-hidden">
                 <img
                   [src]="post.imagem"
                   [alt]="post.imagemAlt"
                   loading="lazy"
-                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  class="w-full h-full object-cover transition-transform duration-500"
                 />
-                <span class="absolute top-4 left-4 z-10 inline-flex items-center bg-[#DDA554] text-[#032B38] text-[10px] font-semibold uppercase tracking-[0.12em] px-3 py-1.5 rounded-full">
+                <span class="absolute top-4 left-4 z-10 inline-flex items-center bg-[#DDA554] text-[#032B38] text-xs font-semibold px-3 py-1.5 rounded-lg">
                   {{ post.categoria }}
                 </span>
               </a>
 
               <div class="flex flex-col flex-1 p-5 sm:p-6">
-                <span class="text-[10px] uppercase tracking-[0.14em] text-[#536B73] mb-2">
+                <span class="text-xs text-[#536B73] mb-2">
                   {{ post.data | date: 'dd/MM/yyyy' }} · {{ post.tempoLeitura }} de leitura
                 </span>
-                <h2 class="font-serif text-2xl text-[#054054] group-hover:text-[#DDA554] transition-colors mb-2 leading-snug">
+                <h2 class="font-serif text-2xl text-[#054054] group-hover:text-[#8A5A1E] transition-colors mb-2 leading-snug">
                   <a [routerLink]="['/guia', post.slug]">
                     {{ post.titulo }}
                   </a>

@@ -23,13 +23,13 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
         </div>
 
         <div class="relative z-10 container-editorial max-w-3xl mx-auto text-center flex flex-col items-center">
-          <span class="inline-flex items-center bg-[#DDA554] text-[#032B38] text-[10px] font-semibold uppercase tracking-[0.12em] px-3 py-1.5 rounded-full mb-4">
+          <span class="inline-flex items-center bg-[#DDA554] text-[#032B38] text-xs font-semibold px-3 py-1.5 rounded-lg mb-4">
             {{ p.categoria }}
           </span>
           <h1 class="font-serif text-3xl sm:text-5xl text-white font-normal leading-tight mb-4">
             {{ p.titulo }}
           </h1>
-          <p class="text-xs uppercase tracking-[0.14em] text-white/70">
+          <p class="text-xs text-white/70">
             {{ p.data | date: 'dd/MM/yyyy' }} · {{ p.tempoLeitura }} de leitura
           </p>
         </div>
@@ -40,7 +40,7 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
         <div class="container-editorial">
           <div class="max-w-3xl mx-auto">
 
-            <p class="font-serif text-xl sm:text-2xl text-[#054054] italic leading-relaxed mb-10 sm:mb-12">
+            <p class="font-serif text-xl sm:text-2xl text-[#054054] leading-relaxed mb-10 sm:mb-12">
               {{ p.resumo }}
             </p>
 
@@ -66,7 +66,7 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
                   <span>Consultar disponibilidade</span>
                   <app-icon name="arrow-right" [size]="13" class="text-white"></app-icon>
                 </a>
-                <a routerLink="/acomodacoes" class="text-xs uppercase tracking-[0.16em] text-white/85 hover:text-[#DDA554] transition-colors underline underline-offset-8 decoration-white/30">
+                <a routerLink="/acomodacoes" class="text-xs text-white/85 hover:text-[#8A5A1E] transition-colors underline underline-offset-8 decoration-white/30">
                   Ver acomodações
                 </a>
               </div>
@@ -83,8 +83,8 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
                         <img [src]="rel.imagem" [alt]="rel.imagemAlt" loading="lazy" class="w-full h-full object-cover" />
                       </div>
                       <div class="min-w-0">
-                        <span class="text-[10px] uppercase tracking-[0.12em] text-[#DDA554] block mb-1">{{ rel.categoria }}</span>
-                        <span class="font-serif text-base text-[#054054] group-hover:text-[#DDA554] transition-colors leading-snug line-clamp-2">{{ rel.titulo }}</span>
+                        <span class="text-xs text-[#8A5A1E] block mb-1">{{ rel.categoria }}</span>
+                        <span class="font-serif text-base text-[#054054] group-hover:text-[#8A5A1E] transition-colors leading-snug line-clamp-2">{{ rel.titulo }}</span>
                       </div>
                     </a>
                   }

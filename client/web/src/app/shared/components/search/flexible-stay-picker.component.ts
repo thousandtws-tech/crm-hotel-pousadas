@@ -33,7 +33,7 @@ const CARTOES_POR_JANELA = 6;
           role="radio"
           [attr.aria-checked]="stayPreset() === p.valor"
           [attr.aria-label]="p.titulo + ' — ' + p.ariaDescricao"
-          class="px-5 py-2.5 rounded-full border text-sm transition-colors"
+          class="px-5 py-2.5 rounded-lg border text-sm transition-colors"
           [class]="stayPreset() === p.valor
             ? 'border-2 border-[#054054] bg-[#EEF4F6] text-[#054054] font-semibold shadow-sm'
             : 'border-[#DCE6EA] text-[#054054] hover:border-[#4B95AB]'"
@@ -51,7 +51,7 @@ const CARTOES_POR_JANELA = 6;
         aria-label="Meses anteriores"
         (click)="janela.set(janela() - 1)"
       >‹</button>
-      <span class="text-[11px] text-[#536B73]">
+      <span class="text-xs text-[#536B73]">
         {{ mesesSelecionados() === 0
           ? 'Selecione um ou mais meses de entrada'
           : mesesSelecionados() + (mesesSelecionados() === 1 ? ' mês selecionado' : ' meses selecionados') }}
@@ -80,12 +80,12 @@ const CARTOES_POR_JANELA = 6;
           </span>
           <span class="text-left">
             <span class="font-serif block text-lg leading-tight">{{ c.rotulo }}</span>
-            <span class="block text-[11px] text-[#536B73]">{{ c.ano }}</span>
+            <span class="block text-xs text-[#536B73]">{{ c.ano }}</span>
           </span>
         </button>
       }
     </div>
-    <p class="mt-3 text-[11px] text-center text-[#536B73]">
+    <p class="mt-3 text-xs text-center text-[#536B73]">
       {{ descricaoPreset() }}
     </p>
   `,

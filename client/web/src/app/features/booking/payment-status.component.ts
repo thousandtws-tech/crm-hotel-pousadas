@@ -27,7 +27,7 @@ type Estado = 'carregando' | 'confirmado' | 'processando' | 'nao_concluido' | 'e
             <span class="w-12 h-12 rounded-full bg-[#054054] text-[#F7F5F0] flex items-center justify-center mx-auto mb-6">
               <app-icon name="check" [size]="22"></app-icon>
             </span>
-            <span class="type-eyebrow text-[#DDA554] block mb-2">Pagamento confirmado</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2">Pagamento confirmado</span>
             <h1 class="font-serif text-3xl text-[#054054] mb-4">Reserva garantida!</h1>
             <p class="type-body text-sm max-w-md mx-auto mb-4">
               Seu pagamento foi recebido e a reserva está confirmada. A recepção já foi notificada em tempo real.
@@ -44,7 +44,7 @@ type Estado = 'carregando' | 'confirmado' | 'processando' | 'nao_concluido' | 'e
             <span class="w-12 h-12 rounded-full bg-[#DDA554] text-white flex items-center justify-center mx-auto mb-6">
               <app-icon name="check" [size]="22"></app-icon>
             </span>
-            <span class="type-eyebrow text-[#DDA554] block mb-2">Pagamento em processamento</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2">Pagamento em processamento</span>
             <h1 class="font-serif text-3xl text-[#054054] mb-4">Quase lá…</h1>
             <p class="type-body text-sm max-w-md mx-auto mb-8">
               Seu pagamento está sendo processado pelo provedor (Pix pode levar alguns minutos para compensar).
@@ -53,7 +53,7 @@ type Estado = 'carregando' | 'confirmado' | 'processando' | 'nao_concluido' | 'e
           }
 
           @case ('nao_concluido') {
-            <span class="type-eyebrow text-[#DDA554] block mb-2">Pagamento não concluído</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2">Pagamento não concluído</span>
             <h1 class="font-serif text-3xl text-[#054054] mb-4">Reserva aguardando pagamento</h1>
             <p class="type-body text-sm max-w-md mx-auto mb-8">
               O pagamento não foi finalizado. Sua reserva provisória expira em breve —

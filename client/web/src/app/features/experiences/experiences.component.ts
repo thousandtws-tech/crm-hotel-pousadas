@@ -38,7 +38,7 @@ import { MotionService } from '../../core/services/motion.service';
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           @for (exp of experienceService.experiences(); track exp.id) {
-            <article class="exp-article group flex flex-col bg-white border border-[#DCE6EA] rounded-xl overflow-hidden shadow-[0_6px_24px_rgba(5,64,84,0.05)] hover:shadow-[0_16px_44px_rgba(5,64,84,0.12)] transition-shadow">
+            <article class="exp-article group flex flex-col bg-white border border-[#DCE6EA] rounded-xl overflow-hidden shadow-raised hover:shadow-[0_16px_44px_rgba(5,64,84,0.12)] transition-shadow">
 
               <!-- Photo -->
               <div class="editorial-image-container aspect-[16/10] relative">
@@ -48,7 +48,7 @@ import { MotionService } from '../../core/services/motion.service';
                   loading="lazy"
                   class="w-full h-full object-cover"
                 />
-                <span class="absolute top-4 left-4 z-10 inline-flex items-center bg-[#DDA554] text-[#032B38] text-[10px] font-semibold uppercase tracking-[0.12em] px-3 py-1.5 rounded-full">
+                <span class="absolute top-4 left-4 z-10 inline-flex items-center bg-[#DDA554] text-[#032B38] text-xs font-semibold px-3 py-1.5 rounded-lg">
                   {{ exp.category }}
                 </span>
               </div>
@@ -59,7 +59,7 @@ import { MotionService } from '../../core/services/motion.service';
                   {{ exp.title }}
                 </h3>
 
-                <p class="font-serif italic text-sm text-[#536B73] mb-3">
+                <p class="font-serif text-sm text-[#536B73] mb-3">
                   "{{ exp.tagline }}"
                 </p>
 

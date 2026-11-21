@@ -16,11 +16,11 @@ interface Stat {
         <div class="stats-grid grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
           @for (s of stats(); track s.rotulo) {
             <div class="stat-item flex flex-col items-center text-center">
-              <span class="font-serif text-4xl sm:text-5xl lg:text-6xl text-[#DDA554] leading-none mb-2">
+              <span class="font-serif text-4xl sm:text-5xl lg:text-6xl text-[#8A5A1E] leading-none mb-2">
                 {{ s.valor }}
               </span>
               <span class="w-8 h-px bg-[#DDA554]/50 mb-3"></span>
-              <span class="type-eyebrow !text-white/70 text-[10px] sm:text-xs normal-case tracking-[0.14em]">
+              <span class="type-eyebrow !text-white/70 text-xs sm:text-xs normal-case">
                 {{ s.rotulo }}
               </span>
             </div>

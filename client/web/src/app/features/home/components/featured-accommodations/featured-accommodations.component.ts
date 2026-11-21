@@ -65,16 +65,16 @@ import { MotionService } from '../../../../core/services/motion.service';
                   loading="lazy"
                   class="master-img parallax-image w-full h-full object-cover"
                 />
-                <span class="absolute top-4 right-4 z-10 inline-flex items-center gap-1.5 bg-[#032B38]/85 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full">
-                  <app-icon name="users" [size]="12" class="text-[#DDA554]"></app-icon>
+                <span class="absolute top-4 right-4 z-10 inline-flex items-center gap-1.5 bg-[#032B38]/85 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-lg">
+                  <app-icon name="users" [size]="12" class="text-[#8A5A1E]"></app-icon>
                   Até {{ master.guests }} hóspedes
                 </span>
               </a>
 
               <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-baseline">
                 <div class="lg:col-span-5">
-                  <span class="type-caption block mb-1 text-[#DDA554]">{{ master.floor }}</span>
-                  <h3 class="font-serif text-3xl sm:text-4xl text-[#054054] group-hover:text-[#DDA554] transition-colors">
+                  <span class="type-caption block mb-1 text-[#8A5A1E]">{{ master.floor }}</span>
+                  <h3 class="font-serif text-3xl sm:text-4xl text-[#054054] group-hover:text-[#8A5A1E] transition-colors">
                     <a [routerLink]="['/acomodacoes', master.slug]">
                       {{ master.name }}
                     </a>
@@ -112,7 +112,7 @@ import { MotionService } from '../../../../core/services/motion.service';
           <!-- Secondary Rooms in Clean Asymmetric 2-Column -->
           <div class="secondary-suites-grid grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-10">
             @for (acc of secondarySuites(); track acc.id) {
-              <article class="suite-card group bg-white border border-[#DCE6EA] rounded-xl overflow-hidden shadow-[0_6px_24px_rgba(5,64,84,0.05)] hover:shadow-[0_14px_40px_rgba(5,64,84,0.10)] transition-shadow">
+              <article class="suite-card group bg-white border border-[#DCE6EA] rounded-xl overflow-hidden shadow-raised hover:shadow-[0_14px_40px_rgba(5,64,84,0.10)] transition-shadow">
                 <a [routerLink]="['/acomodacoes', acc.slug]" class="block editorial-image-container aspect-[4/3] relative">
                   <img
                     [src]="acc.coverImage"
@@ -120,15 +120,15 @@ import { MotionService } from '../../../../core/services/motion.service';
                     loading="lazy"
                     class="w-full h-full object-cover"
                   />
-                  <span class="absolute top-4 right-4 z-10 inline-flex items-center gap-1.5 bg-[#032B38]/85 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full">
-                    <app-icon name="users" [size]="12" class="text-[#DDA554]"></app-icon>
+                  <span class="absolute top-4 right-4 z-10 inline-flex items-center gap-1.5 bg-[#032B38]/85 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-lg">
+                    <app-icon name="users" [size]="12" class="text-[#8A5A1E]"></app-icon>
                     Até {{ acc.guests }} hóspedes
                   </span>
                 </a>
 
                 <div class="flex flex-col p-5 sm:p-6">
-                  <span class="type-caption block mb-1.5 text-[#DDA554]">{{ acc.view }} · Até {{ acc.guests }} hóspedes</span>
-                  <h3 class="font-serif text-2xl text-[#054054] group-hover:text-[#DDA554] transition-colors mb-2">
+                  <span class="type-caption block mb-1.5 text-[#8A5A1E]">{{ acc.view }} · Até {{ acc.guests }} hóspedes</span>
+                  <h3 class="font-serif text-2xl text-[#054054] group-hover:text-[#8A5A1E] transition-colors mb-2">
                     <a [routerLink]="['/acomodacoes', acc.slug]">
                       {{ acc.name }}
                     </a>
@@ -155,7 +155,7 @@ import { MotionService } from '../../../../core/services/motion.service';
 
                   <div class="flex items-center justify-between gap-4 mt-auto">
                     <div class="flex flex-col">
-                      <span class="type-caption text-[#536B73] text-[10px]">Tarifa</span>
+                      <span class="type-caption text-[#536B73] text-xs">Tarifa</span>
                       <span class="font-serif text-xl text-[#054054]">
                         {{ acc.priceLabel }}
                       </span>

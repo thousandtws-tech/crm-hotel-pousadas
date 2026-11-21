@@ -13,7 +13,7 @@ import { MotionService } from '../../../../core/services/motion.service';
         
         <!-- Header -->
         <div class="exp-header max-w-2xl mb-8 sm:mb-10 lg:mb-12">
-          <span class="type-eyebrow text-[#DDA554] block mb-2 sm:mb-3">
+          <span class="type-eyebrow text-[#8A5A1E] block mb-2 sm:mb-3">
             Estrutura & Comodidades
           </span>
           <h2 id="experiences-heading" class="type-title text-[#054054]">

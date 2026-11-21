@@ -22,7 +22,7 @@ import { MotionService } from '../../core/services/motion.service';
           <img
             [src]="activeHeroImage()"
             [alt]="acc.name + ' (imagem ilustrativa)'"
-            class="detail-hero-img w-full h-full object-cover object-center filter brightness-[0.6] transition-all duration-700"
+            class="detail-hero-img w-full h-full object-cover object-center filter brightness-[0.6] transition duration-700"
           />
           <div class="absolute inset-0 bg-gradient-to-t from-[#032B38] via-[#032B38]/45 to-transparent"></div>
         </div>
@@ -30,7 +30,7 @@ import { MotionService } from '../../core/services/motion.service';
         <div class="detail-hero-content relative z-10 container-editorial flex flex-col items-start">
           <a
             routerLink="/acomodacoes"
-            class="inline-flex items-center gap-2 text-xs uppercase tracking-luxury text-[#F7F5F0]/70 hover:text-white mb-4 transition-colors"
+            class="inline-flex items-center gap-2 text-xs text-[#F7F5F0]/70 hover:text-white mb-4 transition-colors"
           >
             <app-icon name="chevron-left" [size]="14"></app-icon>
             <span>Todas as acomodações</span>
@@ -40,7 +40,7 @@ import { MotionService } from '../../core/services/motion.service';
             {{ acc.name }}
           </h1>
 
-          <p class="font-serif italic text-lg sm:text-xl text-[#F7F5F0]/85 max-w-2xl">
+          <p class="font-serif text-lg sm:text-xl text-[#F7F5F0]/85 max-w-2xl">
             "{{ acc.subtitle }}"
           </p>
         </div>
@@ -72,7 +72,7 @@ import { MotionService } from '../../core/services/motion.service';
 
               <!-- Interactive Photo Gallery -->
               <div class="mb-8 sm:mb-10">
-                <span class="type-eyebrow text-[#DDA554] block mb-3">Imagens de Referência</span>
+                <span class="type-eyebrow text-[#8A5A1E] block mb-3">Imagens de Referência</span>
                 
                 <!-- Main Featured Photo -->
                 <div class="editorial-image-container aspect-[16/10] mb-3 shadow-sm">
@@ -86,7 +86,7 @@ import { MotionService } from '../../core/services/motion.service';
                     <img
                       [src]="activeHeroImage()"
                       [alt]="acc.name + ' (imagem ilustrativa)'"
-                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                      class="w-full h-full object-cover transition-transform duration-500"
                     />
                   </button>
                 </div>
@@ -97,7 +97,7 @@ import { MotionService } from '../../core/services/motion.service';
                     <button
                       type="button"
                       (click)="activeHeroImage.set(img)"
-                      class="relative aspect-[16/10] overflow-hidden border transition-all duration-200 focus:outline-none cursor-pointer"
+                      class="relative aspect-[16/10] overflow-hidden border transition duration-200 focus:outline-none cursor-pointer"
                       [class]="activeHeroImage() === img ? 'border-[#054054] opacity-100 ring-1 ring-[#054054]' : 'border-[#DCE6EA] opacity-60 hover:opacity-100'"
                       [attr.aria-label]="'Ver foto ' + (idx + 1)"
                     >
@@ -131,7 +131,7 @@ import { MotionService } from '../../core/services/motion.service';
                 </div>
 
                 @if (acc.editorialQuote) {
-                  <blockquote class="pl-6 border-l-2 border-[#DDA554] font-serif italic text-lg text-[#054054] my-6">
+                  <blockquote class="pl-6 border-l-2 border-[#DDA554] font-serif text-lg text-[#054054] my-6">
                     “{{ acc.editorialQuote }}”
                   </blockquote>
                 }
@@ -154,7 +154,7 @@ import { MotionService } from '../../core/services/motion.service';
 
             <!-- Right Column: Sticky Booking Widget (Col 9-12) -->
             <aside class="lg:col-span-4 sticky top-24 z-20" aria-label="Consulta de Disponibilidade da Acomodação">
-              <div class="bg-white p-5 sm:p-7 border border-[#DCE6EA] shadow-[0_12px_32px_rgba(5,64,84,0.06)]">
+              <div class="bg-white p-5 sm:p-7 border border-[#DCE6EA] shadow-raised">
                 
                 <div class="flex items-baseline justify-between mb-5 pb-5 border-b border-[#DCE6EA]">
                   <div>
@@ -169,7 +169,7 @@ import { MotionService } from '../../core/services/motion.service';
                 <form (submit)="onBookSuite()" class="space-y-3.5 mb-5">
                   
                   <div>
-                    <label for="detail-checkin" class="type-eyebrow block mb-1 text-[10px]">Check-in (a partir das 13h)</label>
+                    <label for="detail-checkin" class="type-eyebrow block mb-1 text-xs">Check-in (a partir das 13h)</label>
                     <input
                       id="detail-checkin"
                       type="date"
@@ -183,7 +183,7 @@ import { MotionService } from '../../core/services/motion.service';
                   </div>
 
                   <div>
-                    <label for="detail-checkout" class="type-eyebrow block mb-1 text-[10px]">Check-out (até as 11h)</label>
+                    <label for="detail-checkout" class="type-eyebrow block mb-1 text-xs">Check-out (até as 11h)</label>
                     <input
                       id="detail-checkout"
                       type="date"
@@ -197,7 +197,7 @@ import { MotionService } from '../../core/services/motion.service';
                   </div>
 
                   <div>
-                    <label for="detail-guests" class="type-eyebrow block mb-1 text-[10px]">Hóspedes</label>
+                    <label for="detail-guests" class="type-eyebrow block mb-1 text-xs">Hóspedes</label>
                     <select
                       id="detail-guests"
                       [ngModel]="guests()"

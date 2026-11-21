@@ -45,16 +45,14 @@ export function rotuloMes(m: number): string {
     <div class="relative">
       <button
         type="button"
-        class="absolute -top-1 left-0 w-10 h-10 rounded-full text-[#054054] text-xl leading-none
-               disabled:opacity-25 disabled:cursor-not-allowed hover:bg-[#EEF4F6] transition-colors"
+        class="absolute -top-1 left-0 w-10 h-10 rounded-full text-[#054054] text-xl leading-none disabled:opacity-25 disabled:cursor-not-allowed hover:bg-[#EEF4F6] transition-colors"
         [disabled]="!podeVoltar()"
         aria-label="Mês anterior"
         (click)="navegar(-1)"
       >‹</button>
       <button
         type="button"
-        class="absolute -top-1 right-0 w-10 h-10 rounded-full text-[#054054] text-xl leading-none
-               disabled:opacity-25 disabled:cursor-not-allowed hover:bg-[#EEF4F6] transition-colors"
+        class="absolute -top-1 right-0 w-10 h-10 rounded-full text-[#054054] text-xl leading-none disabled:opacity-25 disabled:cursor-not-allowed hover:bg-[#EEF4F6] transition-colors"
         [disabled]="!podeAvancar()"
         aria-label="Próximo mês"
         (click)="navegar(1)"
@@ -68,7 +66,7 @@ export function rotuloMes(m: number): string {
             </h4>
             <div class="grid grid-cols-7" role="grid" [attr.aria-label]="rotuloMes(mes.m) + ' de ' + mes.y">
               @for (d of DIAS; track $index) {
-                <span class="text-center text-[10px] font-semibold tracking-wider text-[#8BA0A8] py-1.5" role="columnheader">{{ d }}</span>
+                <span class="text-center text-xs font-semibold text-[#8BA0A8] py-1.5" role="columnheader">{{ d }}</span>
               }
               @for (cel of grade(mes); track cel.chave + $index) {
                 @if (cel.foraDoMes) {
@@ -77,7 +75,7 @@ export function rotuloMes(m: number): string {
                   <button
                     type="button"
                     role="gridcell"
-                    class="relative aspect-square min-h-10 text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-[#1A6F8A] focus-visible:rounded-full"
+                    class="relative aspect-square min-h-10 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-[#1A6F8A] focus-visible:rounded-full"
                     [class]="classeCelula(cel.data)"
                     [disabled]="cel.desabilitada"
                     [attr.data-dia]="formatDate(cel.data)"

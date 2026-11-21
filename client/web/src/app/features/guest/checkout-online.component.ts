@@ -15,7 +15,7 @@ type Estado = 'carregando' | 'ok' | 'erro';
   template: `
     <header class="pt-32 pb-12 bg-[#032B38] text-white">
       <div class="max-w-2xl mx-auto px-6">
-        <p class="text-sm uppercase tracking-[0.2em] text-[#8FBECB] mb-2">Check-out</p>
+        <p class="text-sm text-[#8FBECB] mb-2">Check-out</p>
         <h1 class="text-3xl sm:text-4xl font-semibold">Sua saída</h1>
       </div>
     </header>

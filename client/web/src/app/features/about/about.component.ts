@@ -37,7 +37,7 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
 
           <!-- Image collage -->
           <div class="lg:col-span-6 relative pb-12 sm:pb-14 lg:pb-16">
-            <div class="editorial-image-container aspect-[4/5] shadow-[0_16px_44px_rgba(5,64,84,0.10)]">
+            <div class="editorial-image-container aspect-[4/5] shadow-overlay">
               <img
                 src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=85"
                 alt="Área externa e piscina da Pousada Espírito do Mar (imagem ilustrativa)"
@@ -47,7 +47,7 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
             </div>
 
             <!-- Overlapping secondary image -->
-            <div class="absolute -bottom-2 right-4 sm:right-8 w-40 sm:w-52 lg:w-60 aspect-[4/3] rounded-xl overflow-hidden border-4 border-[#F7F5F0] shadow-[0_14px_36px_rgba(5,64,84,0.16)]">
+            <div class="absolute -bottom-2 right-4 sm:right-8 w-40 sm:w-52 lg:w-60 aspect-[4/3] rounded-xl overflow-hidden border-4 border-[#F7F5F0] shadow-raised">
               <img
                 src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=800&q=85"
                 alt="Recepção e áreas comuns da pousada (imagem ilustrativa)"
@@ -57,15 +57,15 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
             </div>
 
             <!-- Floating location chip -->
-            <div class="absolute top-6 -left-1 sm:left-6 bg-[#032B38] text-white rounded-xl px-4 py-3 shadow-[0_10px_28px_rgba(3,43,56,0.35)]">
-              <span class="font-serif text-2xl sm:text-3xl text-[#DDA554] leading-none block">Peró</span>
-              <span class="text-[10px] uppercase tracking-[0.12em] text-white/75">Bairro · Cabo Frio, RJ</span>
+            <div class="absolute top-6 -left-1 sm:left-6 bg-[#032B38] text-white rounded-xl px-4 py-3 shadow-raised">
+              <span class="font-serif text-2xl sm:text-3xl text-[#8A5A1E] leading-none block">Peró</span>
+              <span class="text-xs text-white/75">Bairro · Cabo Frio, RJ</span>
             </div>
           </div>
 
           <!-- Editorial column -->
           <div class="lg:col-span-6">
-            <span class="type-eyebrow text-[#DDA554] block mb-3">Nossa história</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-3">Nossa história</span>
             <h2 class="type-title text-[#054054] mb-6">
               Sua estadia pertinho da Praia do Peró.
             </h2>
@@ -86,15 +86,15 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
             <div class="grid grid-cols-3 gap-4 sm:gap-6 py-5 border-y border-[#DCE6EA] mb-8">
               <div>
                 <span class="font-serif text-3xl sm:text-4xl text-[#054054] leading-none block">13h</span>
-                <span class="text-[10px] uppercase tracking-[0.12em] text-[#536B73] mt-1 block">Check-in de referência</span>
+                <span class="text-xs text-[#536B73] mt-1 block">Check-in de referência</span>
               </div>
               <div>
                 <span class="font-serif text-3xl sm:text-4xl text-[#054054] leading-none block">11h</span>
-                <span class="text-[10px] uppercase tracking-[0.12em] text-[#536B73] mt-1 block">Check-out de referência</span>
+                <span class="text-xs text-[#536B73] mt-1 block">Check-out de referência</span>
               </div>
               <div>
                 <span class="font-serif text-3xl sm:text-4xl text-[#054054] leading-none block">2–4</span>
-                <span class="text-[10px] uppercase tracking-[0.12em] text-[#536B73] mt-1 block">Hóspedes por quarto</span>
+                <span class="text-xs text-[#536B73] mt-1 block">Hóspedes por quarto</span>
               </div>
             </div>
 
@@ -114,7 +114,7 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
           
           <div class="about-pillar flex flex-col items-start">
-            <span class="font-serif text-2xl text-[#DDA554] mb-2 sm:mb-3">01</span>
+            <span class="font-serif text-2xl text-[#8A5A1E] mb-2 sm:mb-3">01</span>
             <h3 class="font-serif text-2xl text-[#054054] mb-2 sm:mb-3">Proximidade da Praia</h3>
             <p class="type-body text-sm">
               Localizada na Rua Anequim, no bairro Peró, a pousada permite fácil acesso à Praia do Peró e a serviços, quiosques e restaurantes da região.
@@ -122,7 +122,7 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
           </div>
 
           <div class="about-pillar flex flex-col items-start">
-            <span class="font-serif text-2xl text-[#DDA554] mb-2 sm:mb-3">02</span>
+            <span class="font-serif text-2xl text-[#8A5A1E] mb-2 sm:mb-3">02</span>
             <h3 class="font-serif text-2xl text-[#054054] mb-2 sm:mb-3">Estrutura de Apoio</h3>
             <p class="type-body text-sm">
               Piscina externa ao ar livre, café da manhã, Wi-Fi e estacionamento na propriedade (confirme horários e condições aplicáveis na sua reserva).
@@ -130,7 +130,7 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
           </div>
 
           <div class="about-pillar flex flex-col items-start">
-            <span class="font-serif text-2xl text-[#DDA554] mb-2 sm:mb-3">03</span>
+            <span class="font-serif text-2xl text-[#8A5A1E] mb-2 sm:mb-3">03</span>
             <h3 class="font-serif text-2xl text-[#054054] mb-2 sm:mb-3">Quartos Climatizados</h3>
             <p class="type-body text-sm">
               Unidades para 2, 3 ou até 4 hóspedes, todas com ar-condicionado, TV e banheiro privativo, além de categorias específicas com varanda.

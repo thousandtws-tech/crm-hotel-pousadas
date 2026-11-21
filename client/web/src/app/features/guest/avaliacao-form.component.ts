@@ -28,7 +28,7 @@ const NPS_FAIXA = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   template: `
     <header class="pt-32 pb-12 bg-[#032B38] text-white">
       <div class="max-w-2xl mx-auto px-6">
-        <p class="text-sm uppercase tracking-[0.2em] text-[#8FBECB] mb-2">Sua opinião importa</p>
+        <p class="text-sm text-[#8FBECB] mb-2">Sua opinião importa</p>
         <h1 class="text-3xl sm:text-4xl font-semibold">Como foi sua estadia?</h1>
       </div>
     </header>
@@ -89,7 +89,7 @@ const NPS_FAIXA = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
                 @for (n of estrelas; track n) {
                   <button type="button" (click)="notaGeral.set(n)" role="radio"
                     [attr.aria-checked]="notaGeral() === n" [attr.aria-label]="n + ' estrelas'"
-                    class="text-4xl transition-transform hover:scale-110"
+                    class="text-4xl transition-transform"
                     [class.text-amber-400]="n <= notaGeral()" [class.text-gray-300]="n > notaGeral()">
                     ★
                   </button>

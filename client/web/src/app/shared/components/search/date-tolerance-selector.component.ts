@@ -18,7 +18,7 @@ interface Opcao {
             type="button"
             role="radio"
             [attr.aria-checked]="tolerance() === op.valor"
-            class="px-4 py-1.5 rounded-full text-sm transition-colors"
+            class="px-4 py-1.5 rounded-lg text-sm transition-colors"
             [class]="tolerance() === op.valor
               ? 'border-2 border-[#054054] bg-white text-[#054054] font-semibold'
               : 'border border-[#DCE6EA] text-[#054054] hover:border-[#054054]'"
@@ -27,7 +27,7 @@ interface Opcao {
         }
       </div>
       @if (ajuda()) {
-        <p class="mt-2 text-[11px] text-[#536B73]" aria-live="polite">{{ ajuda() }}</p>
+        <p class="mt-2 text-xs text-[#536B73]" aria-live="polite">{{ ajuda() }}</p>
       }
     </fieldset>
   `,

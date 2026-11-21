@@ -58,21 +58,21 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
 
       <!-- Pílula principal -->
       <div
-        class="search-pill grid grid-cols-[1fr_1fr_auto] items-center rounded-full border shadow-[0_12px_34px_rgba(5,64,84,0.14)] transition-colors"
+        class="search-pill grid grid-cols-[1fr_1fr_auto] items-center rounded-full border shadow-raised transition-colors"
         [class]="painel() !== null ? 'bg-[#EEF3F5] border-[#DCE6EA]' : 'bg-white border-[#DCE6EA]'"
       >
         <!-- Quando -->
         <button
           id="search-gatilho-quando"
           type="button"
-          class="min-w-0 text-left pl-5 sm:pl-8 pr-3 sm:pr-4 py-3.5 sm:py-4 rounded-full transition-colors"
+          class="min-w-0 text-left pl-5 sm:pl-8 pr-3 sm:pr-4 py-3.5 sm:py-4 rounded-lg transition-colors"
           [class]="painel() === 'quando' ? 'bg-white shadow-md' : 'hover:bg-[#F0F5F6]'"
           [attr.aria-expanded]="painel() === 'quando'"
           aria-haspopup="dialog"
           (click)="alternarPainel('quando')"
         >
-          <span class="block text-[11px] font-semibold uppercase tracking-wide text-[#054054]">Quando</span>
-          <span class="block text-[15px] truncate" [class]="temQuando() ? 'text-[#054054] font-medium' : 'text-[#536B73]'">
+          <span class="block text-xs font-semibold text-[#054054]">Quando</span>
+          <span class="block text-base truncate" [class]="temQuando() ? 'text-[#054054] font-medium' : 'text-[#536B73]'">
             {{ resumoQuando() }}
           </span>
         </button>
@@ -81,14 +81,14 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
         <button
           id="search-gatilho-quem"
           type="button"
-          class="min-w-0 text-left pl-5 sm:pl-8 pr-3 sm:pr-4 py-3.5 sm:py-4 rounded-full transition-colors border-l border-[#DCE6EA]"
+          class="min-w-0 text-left pl-5 sm:pl-8 pr-3 sm:pr-4 py-3.5 sm:py-4 rounded-lg transition-colors border-l border-[#DCE6EA]"
           [class]="painel() === 'quem' ? 'bg-white shadow-md' : 'hover:bg-[#F0F5F6]'"
           [attr.aria-expanded]="painel() === 'quem'"
           aria-haspopup="dialog"
           (click)="alternarPainel('quem')"
         >
-          <span class="block text-[11px] font-semibold uppercase tracking-wide text-[#054054]">Quem</span>
-          <span class="block text-[15px] truncate" [class]="temQuem() ? 'text-[#054054] font-medium' : 'text-[#536B73]'">
+          <span class="block text-xs font-semibold text-[#054054]">Quem</span>
+          <span class="block text-base truncate" [class]="temQuem() ? 'text-[#054054] font-medium' : 'text-[#536B73]'">
             {{ resumoQuem() }}
           </span>
         </button>
@@ -97,8 +97,7 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
         <div class="p-2 sm:p-2.5">
           <button
             type="button"
-            class="flex items-center justify-center gap-2 rounded-full bg-[#054054] text-white font-semibold
-                   hover:bg-[#032B38] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            class="flex items-center justify-center gap-2 rounded-full bg-[#054054] text-white font-semibold hover:bg-[#032B38] transition disabled:opacity-40 disabled:cursor-not-allowed"
             [class]="painel() !== null
               ? 'w-12 h-12 sm:w-auto sm:h-auto sm:px-7 sm:py-3.5 sm:text-[15px]'
               : 'w-12 h-12 sm:w-[52px] sm:h-[52px]'"
@@ -106,7 +105,7 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
             [attr.aria-label]="state.loading() ? 'Buscando…' : 'Buscar'"
             (click)="buscar.emit()"
           >
-            <span class="text-[#DDA554]"><app-icon name="search" [size]="20" aria-hidden="true" /></span>
+            <span class="text-[#8A5A1E]"><app-icon name="search" [size]="20" aria-hidden="true" /></span>
             @if (painel() !== null) {
               <span class="hidden sm:inline">{{ state.loading() ? 'Buscando…' : 'Buscar' }}</span>
             }
@@ -118,7 +117,7 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
       @if (state.validacaoVisivel(); as msg) {
         <p class="px-6 pt-2 text-xs text-[#9A3B3B]" role="status">{{ msg }}</p>
       } @else if (state.previaVisivel(); as n) {
-        <p class="px-6 pt-2 text-[11px] text-[#536B73]">
+        <p class="px-6 pt-2 text-xs text-[#536B73]">
           A busca vai consultar {{ n }} {{ n === 1 ? 'período' : 'períodos' }}.
         </p>
       }
@@ -126,11 +125,7 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
       <!-- Painel Quando: ancorado no desktop, bottom-sheet no mobile -->
       @if (painel() === 'quando') {
         <div
-          class="search-sheet sm:search-drop fixed sm:absolute z-50 inset-x-0 bottom-0 sm:inset-x-auto sm:bottom-auto
-                 sm:left-1/2 sm:-translate-x-1/2 sm:w-[min(92vw,700px)] sm:top-full sm:mt-3
-                 bg-white rounded-t-3xl sm:rounded-3xl border-t sm:border border-[#DCE6EA]
-                 shadow-[0_-12px_40px_rgba(5,64,84,0.18)] sm:shadow-2xl
-                 px-5 pt-3 pb-5 sm:p-6 max-h-[88vh] sm:max-h-[78vh] overflow-y-auto"
+          class="search-sheet sm:search-drop fixed sm:absolute z-50 inset-x-0 bottom-0 sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-[min(92vw,700px)] sm:top-full sm:mt-3 bg-white rounded-t-3xl sm:rounded-3xl border-t sm:border border-[#DCE6EA] shadow-overlay sm:shadow-2xl px-5 pt-3 pb-5 sm:p-6 max-h-[88vh] sm:max-h-[78vh] overflow-y-auto"
           role="dialog"
           aria-label="Escolher datas"
           (keydown.escape)="fecharPainel(true)"
@@ -142,13 +137,13 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
 
           <!-- Toggle Datas/Flexível (dentro do painel) -->
           <div class="flex justify-center mb-5">
-            <div class="inline-flex bg-[#EEF3F5] rounded-full p-1" role="tablist" aria-label="Modo de busca">
+            <div class="inline-flex bg-[#EEF3F5] rounded-lg p-1" role="tablist" aria-label="Modo de busca">
               @for (aba of abas; track aba.valor) {
                 <button
                   type="button"
                   role="tab"
                   [attr.aria-selected]="state.mode() === aba.valor"
-                  class="px-6 py-2 rounded-full text-sm font-medium transition-colors"
+                  class="px-6 py-2 rounded-lg text-sm font-medium transition-colors"
                   [class]="state.mode() === aba.valor ? 'bg-white text-[#054054] shadow-sm' : 'text-[#536B73] hover:text-[#054054]'"
                   (click)="state.mode.set(aba.valor)"
                 >{{ aba.rotulo }}</button>
@@ -183,7 +178,7 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
             >Limpar</button>
             <button
               type="button"
-              class="px-5 py-2 rounded-full bg-[#054054] text-white text-xs font-semibold hover:bg-[#032B38]"
+              class="px-5 py-2 rounded-lg bg-[#054054] text-white text-xs font-semibold hover:bg-[#032B38]"
               (click)="fecharPainel(true)"
             >Concluir</button>
           </div>
@@ -193,11 +188,7 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
       <!-- Painel Quem: dropdown à direita no desktop, bottom-sheet no mobile -->
       @if (painel() === 'quem') {
         <div
-          class="search-sheet sm:search-drop-quem fixed sm:absolute z-50 inset-x-0 bottom-0 sm:inset-x-auto sm:bottom-auto
-                 sm:right-6 sm:w-[380px] sm:top-full sm:mt-3
-                 bg-white rounded-t-3xl sm:rounded-3xl border-t sm:border border-[#DCE6EA]
-                 shadow-[0_-12px_40px_rgba(5,64,84,0.18)] sm:shadow-2xl
-                 px-5 pt-3 pb-4"
+          class="search-sheet sm:search-drop-quem fixed sm:absolute z-50 inset-x-0 bottom-0 sm:inset-x-auto sm:bottom-auto sm:right-6 sm:w-[380px] sm:top-full sm:mt-3 bg-white rounded-t-3xl sm:rounded-3xl border-t sm:border border-[#DCE6EA] shadow-overlay sm:shadow-2xl px-5 pt-3 pb-4"
           role="dialog"
           aria-label="Escolher hóspedes"
           (keydown.escape)="fecharPainel(true)"
@@ -214,7 +205,7 @@ const PRESETS: Record<StayPreset, { quando: string; curto: string }> = {
             >Limpar</button>
             <button
               type="button"
-              class="px-5 py-2 rounded-full bg-[#054054] text-white text-xs font-semibold hover:bg-[#032B38]"
+              class="px-5 py-2 rounded-lg bg-[#054054] text-white text-xs font-semibold hover:bg-[#032B38]"
               (click)="fecharPainel(true)"
             >Concluir</button>
           </div>

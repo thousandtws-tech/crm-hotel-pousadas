@@ -21,7 +21,7 @@ import { MotionService } from '../../core/services/motion.service';
       </div>
 
       <div class="relative z-10 container-editorial text-center flex flex-col items-center">
-        <span class="type-eyebrow text-[#DDA554] block mb-2 sm:mb-3">
+        <span class="type-eyebrow text-[#8A5A1E] block mb-2 sm:mb-3">
           Transparência & Conformidade
         </span>
         <h1 class="font-serif text-4xl sm:text-6xl text-white font-normal mb-3 sm:mb-4 leading-tight">
@@ -58,7 +58,7 @@ import { MotionService } from '../../core/services/motion.service';
 
           <!-- Chapter 1: Controlador dos Dados -->
           <article class="privacy-chapter bg-white p-6 sm:p-8 border border-[#DCE6EA] shadow-sm">
-            <span class="type-eyebrow text-[#DDA554] block mb-2">01 · Identificação</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2">01 · Identificação</span>
             <h2 class="font-serif text-2xl sm:text-3xl text-[#054054] mb-4">Controlador dos Dados Pessoais</h2>
             
             <div class="space-y-4 type-body text-sm sm:text-base text-[#536B73]">
@@ -68,14 +68,14 @@ import { MotionService } from '../../core/services/motion.service';
               <div class="p-4 bg-[#F7F5F0] border border-[#DCE6EA] text-sm text-[#054054] space-y-1.5">
                 <p><strong>Estabelecimento:</strong> {{ hotelConfig.businessName }}</p>
                 <p><strong>Localização:</strong> {{ hotelConfig.address.fullFormatted }}</p>
-                <p><strong>Telefone de Atendimento:</strong> <a [href]="'tel:' + hotelConfig.phoneHref" class="text-[#054054] underline hover:text-[#DDA554]">{{ hotelConfig.phone }}</a></p>
+                <p><strong>Telefone de Atendimento:</strong> <a [href]="'tel:' + hotelConfig.phoneHref" class="text-[#054054] underline hover:text-[#8A5A1E]">{{ hotelConfig.phone }}</a></p>
               </div>
             </div>
           </article>
 
           <!-- Chapter 2: Dados Coletados -->
           <article class="privacy-chapter bg-white p-6 sm:p-8 border border-[#DCE6EA] shadow-sm">
-            <span class="type-eyebrow text-[#DDA554] block mb-2">02 · Coleta e Finalidades</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2">02 · Coleta e Finalidades</span>
             <h2 class="font-serif text-2xl sm:text-3xl text-[#054054] mb-4">Dados Coletados e Finalidades do Tratamento</h2>
 
             <div class="space-y-5 type-body text-sm sm:text-base text-[#536B73]">
@@ -115,7 +115,7 @@ import { MotionService } from '../../core/services/motion.service';
 
           <!-- Chapter 3: Bases Legais -->
           <article class="privacy-chapter bg-white p-6 sm:p-8 border border-[#DCE6EA] shadow-sm">
-            <span class="type-eyebrow text-[#DDA554] block mb-2">03 · Fundamentação Jurídica</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2">03 · Fundamentação Jurídica</span>
             <h2 class="font-serif text-2xl sm:text-3xl text-[#054054] mb-4">Bases Legais para o Tratamento (Art. 7º da LGPD)</h2>
 
             <div class="space-y-4 type-body text-sm sm:text-base text-[#536B73]">
@@ -144,7 +144,7 @@ import { MotionService } from '../../core/services/motion.service';
 
           <!-- Chapter 4: Direitos do Titular -->
           <article class="privacy-chapter bg-white p-6 sm:p-8 border border-[#DCE6EA] shadow-sm">
-            <span class="type-eyebrow text-[#DDA554] block mb-2">04 · Autonomia</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2">04 · Autonomia</span>
             <h2 class="font-serif text-2xl sm:text-3xl text-[#054054] mb-4">Seus Direitos como Titular de Dados (Art. 18 da LGPD)</h2>
 
             <div class="space-y-4 type-body text-sm sm:text-base text-[#536B73]">
@@ -173,7 +173,7 @@ import { MotionService } from '../../core/services/motion.service';
 
           <!-- Chapter 5: Segurança e Retenção -->
           <article class="privacy-chapter bg-white p-6 sm:p-8 border border-[#DCE6EA] shadow-sm">
-            <span class="type-eyebrow text-[#DDA554] block mb-2">05 · Proteção Técnica</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2">05 · Proteção Técnica</span>
             <h2 class="font-serif text-2xl sm:text-3xl text-[#054054] mb-4">Segurança da Informação e Prazos de Retenção</h2>
 
             <div class="space-y-4 type-body text-sm sm:text-base text-[#536B73]">
@@ -188,7 +188,7 @@ import { MotionService } from '../../core/services/motion.service';
 
           <!-- Chapter 6: Canal de Atendimento e Contato -->
           <article class="privacy-chapter p-6 sm:p-8 bg-[#054054] text-white">
-            <span class="type-eyebrow text-[#DDA554] block mb-2">06 · Atendimento sobre Privacidade</span>
+            <span class="type-eyebrow text-[#8A5A1E] block mb-2">06 · Atendimento sobre Privacidade</span>
             <h2 class="font-serif text-2xl sm:text-3xl text-white mb-4">Dúvidas ou Solicitações sobre Dados Pessoais</h2>
             <p class="text-sm text-[#EEF3F5]/90 leading-relaxed mb-6">
               Para exercer qualquer dos seus direitos previstos na LGPD ou esclarecer dúvidas sobre esta Política de Privacidade, entre em contato com nosso atendimento:
@@ -196,7 +196,7 @@ import { MotionService } from '../../core/services/motion.service';
 
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-white/10 border border-white/20">
               <div>
-                <span class="text-[10px] uppercase tracking-wider text-[#DDA554] block mb-1">Telefone de Atendimento</span>
+                <span class="text-xs text-[#8A5A1E] block mb-1">Telefone de Atendimento</span>
                 <span class="font-medium text-base text-white">{{ hotelConfig.phone }}</span>
               </div>
               <a

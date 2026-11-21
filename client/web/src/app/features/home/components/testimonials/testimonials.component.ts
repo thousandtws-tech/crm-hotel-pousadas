@@ -15,7 +15,7 @@ import { MotionService } from '../../../../core/services/motion.service';
       <div class="container-editorial">
         <div class="testimonials-block max-w-5xl mx-auto">
           <div class="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
-            <span class="type-eyebrow text-[#DDA554] block mb-3 sm:mb-4">
+            <span class="type-eyebrow text-[#8A5A1E] block mb-3 sm:mb-4">
               Avaliações Públicas · Google Maps
             </span>
 
@@ -28,7 +28,7 @@ import { MotionService } from '../../../../core/services/motion.service';
             </p>
           </div>
 
-          <div class="bg-white border border-[#DCE6EA] shadow-[0_12px_32px_rgba(5,64,84,0.06)] p-3 sm:p-5 mb-8">
+          <div class="bg-white border border-[#DCE6EA] shadow-raised p-3 sm:p-5 mb-8">
             <div class="relative w-full h-[340px] sm:h-[400px] overflow-hidden bg-[#F7F5F0]">
               <iframe
                 [src]="safeMapEmbedUrl"

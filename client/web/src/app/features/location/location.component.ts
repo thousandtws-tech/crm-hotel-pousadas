@@ -55,14 +55,14 @@ import { MotionService } from '../../core/services/motion.service';
             <!-- Orientation Notes -->
             <div class="space-y-3.5 mb-6 w-full">
               <div class="p-4 bg-[#EEF3F5] border-l-2 border-[#054054]">
-                <h3 class="text-xs uppercase tracking-wider font-semibold text-[#054054] mb-1">Referência de Endereço</h3>
+                <h3 class="text-xs font-semibold text-[#054054] mb-1">Referência de Endereço</h3>
                 <p class="text-xs text-[#536B73] leading-relaxed">
                   {{ hotelConfig.address.fullFormatted }}. {{ hotelConfig.address.divergenceNote }}
                 </p>
               </div>
 
               <div class="p-4 bg-[#EEF3F5] border-l-2 border-[#DDA554]">
-                <h3 class="text-xs uppercase tracking-wider font-semibold text-[#054054] mb-1">Atendimento para Chegada</h3>
+                <h3 class="text-xs font-semibold text-[#054054] mb-1">Atendimento para Chegada</h3>
                 <p class="text-xs text-[#536B73] leading-relaxed">
                   Em caso de dúvida sobre o trajeto ou estacionamento, entre em contato pelo telefone {{ hotelConfig.phone }}.
                 </p>
@@ -92,7 +92,7 @@ import { MotionService } from '../../core/services/motion.service';
             </div>
             <div class="pt-4 text-xs text-[#536B73]">
               <span class="text-[#054054] font-medium">{{ hotelConfig.address.fullFormatted }}</span>
-              <span class="block text-[11px] mt-0.5">Bairro Peró · Cabo Frio — Rio de Janeiro</span>
+              <span class="block text-xs mt-0.5">Bairro Peró · Cabo Frio — Rio de Janeiro</span>
             </div>
           </div>
 

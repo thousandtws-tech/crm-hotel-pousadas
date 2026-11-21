@@ -44,7 +44,7 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
               role="tab"
               [attr.aria-selected]="galleryService.selectedCategory() === cat.id"
               (click)="galleryService.setCategory(cat.id)"
-              class="px-4 py-2 text-xs uppercase tracking-[0.16em] transition-all duration-200 border-b-2 focus:outline-none cursor-pointer"
+              class="px-4 py-2 text-xs transition duration-200 border-b-2 focus:outline-none cursor-pointer"
               [class]="galleryService.selectedCategory() === cat.id
                 ? 'border-[#054054] text-[#054054] font-medium'
                 : 'border-transparent text-[#536B73] hover:text-[#054054]'"
@@ -66,11 +66,11 @@ import { HOTEL_CONFIG } from '../../core/config/hotel-config';
                 [src]="item.imageUrl"
                 [alt]="item.title"
                 loading="lazy"
-                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                class="w-full h-full object-cover transition-transform duration-500"
               />
               <div class="absolute inset-0 bg-gradient-to-t from-[#032B38]/80 via-[#032B38]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4 sm:p-5">
                 <div class="translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                  <span class="text-[10px] uppercase tracking-[0.14em] text-[#DDA554] block mb-0.5">{{ item.categoryLabel }}</span>
+                  <span class="text-xs text-[#8A5A1E] block mb-0.5">{{ item.categoryLabel }}</span>
                   <span class="font-serif text-base sm:text-lg text-white leading-tight block">{{ item.title }}</span>
                 </div>
               </div>

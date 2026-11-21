@@ -12,7 +12,7 @@ import { HOTEL_CONFIG } from '../../../../core/config/hotel-config';
           <app-icon name="phone" [size]="20"></app-icon>
         </span>
         <div class="flex-1 min-w-0">
-          <span class="type-eyebrow text-[#DDA554] block mb-1">Prefere reservar por telefone?</span>
+          <span class="type-eyebrow text-[#8A5A1E] block mb-1">Prefere reservar por telefone?</span>
           <p class="font-serif text-2xl sm:text-3xl text-[#054054] leading-tight">
             Nossa recepção atende todos os dias
           </p>

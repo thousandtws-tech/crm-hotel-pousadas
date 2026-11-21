@@ -24,8 +24,7 @@ const MAX_PETS = MAX_PESSOAS; // teto coerente com a política de pessoas
           <div class="flex items-center gap-3">
             <button
               type="button"
-              class="w-10 h-10 rounded-full border border-[#CBD7DC] text-[#054054] text-xl leading-none
-                     disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#4B95AB] hover:bg-[#EEF4F6] transition-colors"
+              class="w-10 h-10 rounded-full border border-[#CBD7DC] text-[#054054] text-xl leading-none disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#4B95AB] hover:bg-[#EEF4F6] transition-colors"
               [disabled]="valor(row.key) <= 0"
               [attr.aria-label]="'Remover ' + row.titulo.toLowerCase()"
               (click)="alterar(row, -1)"
@@ -35,8 +34,7 @@ const MAX_PETS = MAX_PESSOAS; // teto coerente com a política de pessoas
             </span>
             <button
               type="button"
-              class="w-10 h-10 rounded-full border border-[#CBD7DC] text-[#054054] text-xl leading-none
-                     disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#4B95AB] hover:bg-[#EEF4F6] transition-colors"
+              class="w-10 h-10 rounded-full border border-[#CBD7DC] text-[#054054] text-xl leading-none disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#4B95AB] hover:bg-[#EEF4F6] transition-colors"
               [disabled]="!podeAdicionar(row)"
               [attr.aria-label]="'Adicionar ' + row.titulo.toLowerCase()"
               (click)="alterar(row, 1)"
@@ -44,7 +42,7 @@ const MAX_PETS = MAX_PESSOAS; // teto coerente com a política de pessoas
           </div>
         </div>
       }
-      <p class="pt-2 text-[11px] text-[#536B73]">
+      <p class="pt-2 text-xs text-[#536B73]">
         Bebês contam na capacidade da acomodação. Animais não contam como pessoas —
         a política pet é confirmada com a recepção.
       </p>

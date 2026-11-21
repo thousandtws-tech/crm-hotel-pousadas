@@ -18,7 +18,7 @@ type EstadoEnvio = 'ocioso' | 'enviando' | 'enviado' | 'erro';
   template: `
     <header class="pt-32 pb-10 bg-[#032B38] text-white">
       <div class="max-w-2xl mx-auto px-6">
-        <p class="text-xs font-medium uppercase tracking-[0.2em] text-[#8FBECB]">Portal do hóspede</p>
+        <p class="text-xs font-medium text-[#8FBECB]">Portal do hóspede</p>
         <h1 class="mt-2 text-3xl sm:text-4xl font-semibold">Sua hospedagem</h1>
         @if (info(); as i) {
           <p class="mt-3 text-white/80">
@@ -39,8 +39,7 @@ type EstadoEnvio = 'ocioso' | 'enviando' | 'enviado' | 'erro';
             <h2 class="text-xl font-semibold text-red-800">Link inválido</h2>
             <p class="mt-2 text-sm text-red-700">Não encontramos esta reserva. Fale com a recepção.</p>
             <a routerLink="/"
-               class="mt-6 inline-block rounded-full bg-[#032B38] px-6 py-2.5 text-sm font-medium text-white
-                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
+               class="mt-6 inline-block rounded-lg bg-[#032B38] px-6 py-2.5 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
               Voltar ao site
             </a>
           </div>
@@ -49,7 +48,7 @@ type EstadoEnvio = 'ocioso' | 'enviando' | 'enviado' | 'erro';
           <section aria-labelledby="chat-titulo" class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             <div class="flex items-center gap-3 border-b border-gray-100 bg-[#032B38] px-5 py-4">
               <span aria-hidden="true"
-                    class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#8FBECB] text-lg font-bold text-[#032B38]">
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#8FBECB] text-lg font-semibold text-[#032B38]">
                 M
               </span>
               <div>
@@ -80,7 +79,7 @@ type EstadoEnvio = 'ocioso' | 'enviando' | 'enviado' | 'erro';
                 </div>
               }
               @if (enviando()) {
-                <p class="text-sm italic text-gray-600" role="status">Maria está digitando…</p>
+                <p class="text-sm text-gray-600" role="status">Maria está digitando…</p>
               }
             </div>
 
@@ -88,12 +87,9 @@ type EstadoEnvio = 'ocioso' | 'enviando' | 'enviado' | 'erro';
               <label for="msg" class="sr-only">Sua mensagem para a Maria</label>
               <input id="msg" name="msg" [(ngModel)]="rascunho" maxlength="1000" required
                      placeholder="Escreva sua pergunta…" autocomplete="off"
-                     class="flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm
-                            focus:border-[#032B38] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8FBECB]" />
+                     class="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-[#032B38] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8FBECB]" />
               <button type="submit" [disabled]="enviando() || !rascunho.trim()"
-                      class="rounded-full bg-[#032B38] px-5 py-2 text-sm font-medium text-white
-                             disabled:opacity-40
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
+                      class="rounded-lg bg-[#032B38] px-5 py-2 text-sm font-medium text-white disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
                 Enviar
               </button>
             </form>
@@ -101,7 +97,7 @@ type EstadoEnvio = 'ocioso' | 'enviando' | 'enviado' | 'erro';
 
           @if (ofertas().length || ofertasErro()) {
             <section aria-labelledby="upsell-titulo" class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <p class="text-xs font-medium uppercase tracking-[0.15em] text-[#032B38]/60">Extras</p>
+              <p class="text-xs font-medium text-[#032B38]/60">Extras</p>
               <h2 id="upsell-titulo" class="mt-1 text-lg font-semibold text-[#032B38]">Melhore sua estadia</h2>
               <p class="mt-1 text-sm text-gray-600">
                 Garanta agora pelo cartão ou Pix — a confirmação cai na sua reserva em instantes.
@@ -120,13 +116,11 @@ type EstadoEnvio = 'ocioso' | 'enviando' | 'enviado' | 'erro';
                       <p class="mt-0.5 text-xs text-gray-600">{{ o.descricao }}</p>
                     </div>
                     <div class="shrink-0 text-right">
-                      <p class="text-sm font-bold text-[#032B38]">{{ moeda(o.valor_centavos) }}</p>
+                      <p class="text-sm font-semibold text-[#032B38]">{{ moeda(o.valor_centavos) }}</p>
                       <button type="button" (click)="comprarExtra(o)"
                               [disabled]="pagando() !== ''"
                               [attr.aria-busy]="pagando() === chaveOferta(o)"
-                              class="mt-1.5 rounded-full bg-[#032B38] px-4 py-1.5 text-xs font-medium text-white
-                                     disabled:opacity-40
-                                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
+                              class="mt-1.5 rounded-lg bg-[#032B38] px-4 py-1.5 text-xs font-medium text-white disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
                         {{ pagando() === chaveOferta(o) ? 'Abrindo…' : 'Comprar' }}
                       </button>
                     </div>
@@ -137,7 +131,7 @@ type EstadoEnvio = 'ocioso' | 'enviando' | 'enviado' | 'erro';
           }
 
           <section aria-labelledby="dados-titulo" class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <p class="text-xs font-medium uppercase tracking-[0.15em] text-[#032B38]/60">Privacidade</p>
+            <p class="text-xs font-medium text-[#032B38]/60">Privacidade</p>
             <h2 id="dados-titulo" class="mt-1 text-lg font-semibold text-[#032B38]">Seus dados</h2>
             <p class="mt-1 text-sm text-gray-600">
               Baixe o documento com seus dados ou receba no seu e-mail e WhatsApp.
@@ -145,8 +139,7 @@ type EstadoEnvio = 'ocioso' | 'enviando' | 'enviado' | 'erro';
 
             <div class="mt-4 flex flex-wrap items-center gap-2">
               <a [href]="urlDadosPdf" download
-                 class="inline-flex items-center gap-2 rounded-full bg-[#032B38] px-5 py-2 text-sm font-medium text-white
-                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
+                 class="inline-flex items-center gap-2 rounded-lg bg-[#032B38] px-5 py-2 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
                 <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M10 2a1 1 0 0 1 1 1v8.6l2.3-2.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L9 11.6V3a1 1 0 0 1 1-1Z"/>
                   <path d="M3 15a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z"/>
@@ -155,16 +148,12 @@ type EstadoEnvio = 'ocioso' | 'enviando' | 'enviado' | 'erro';
               </a>
               <button type="button" (click)="enviarDados('email')" [disabled]="envioDados() === 'enviando'"
                       [attr.aria-busy]="envioDados() === 'enviando'"
-                      class="rounded-full border border-[#032B38] px-4 py-2 text-sm font-medium text-[#032B38]
-                             disabled:opacity-40
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
+                      class="rounded-lg border border-[#032B38] px-4 py-2 text-sm font-medium text-[#032B38] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
                 Receber por e-mail
               </button>
               <button type="button" (click)="enviarDados('whatsapp')" [disabled]="envioDados() === 'enviando'"
                       [attr.aria-busy]="envioDados() === 'enviando'"
-                      class="rounded-full border border-[#032B38] px-4 py-2 text-sm font-medium text-[#032B38]
-                             disabled:opacity-40
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
+                      class="rounded-lg border border-[#032B38] px-4 py-2 text-sm font-medium text-[#032B38] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
                 Receber no WhatsApp
               </button>
             </div>
@@ -200,8 +189,7 @@ type EstadoEnvio = 'ocioso' | 'enviando' | 'enviado' | 'erro';
                 <div class="flex flex-wrap gap-2">
                   <label for="tipo-lgpd" class="sr-only">Tipo de solicitação</label>
                   <select id="tipo-lgpd" name="tipo-lgpd" [(ngModel)]="tipoLgpd"
-                          class="rounded-full border border-gray-300 px-3 py-2 text-sm
-                                 focus:border-[#032B38] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8FBECB]">
+                          class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#032B38] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8FBECB]">
                     <option value="acesso">Confirmar/acessar meus dados</option>
                     <option value="retificacao">Corrigir meus dados</option>
                     <option value="eliminacao">Eliminar meus dados pessoais</option>
@@ -209,17 +197,14 @@ type EstadoEnvio = 'ocioso' | 'enviando' | 'enviado' | 'erro';
                     <option value="revogacao">Revogar consentimentos</option>
                   </select>
                   <button type="submit" [disabled]="solicitando()"
-                          class="rounded-full bg-[#032B38] px-4 py-2 text-sm font-medium text-white
-                                 disabled:opacity-40
-                                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
+                          class="rounded-lg bg-[#032B38] px-4 py-2 text-sm font-medium text-white disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#032B38] focus-visible:ring-offset-2">
                     {{ solicitando() ? 'Enviando…' : 'Solicitar' }}
                   </button>
                 </div>
                 <label for="detalhe-lgpd" class="sr-only">Detalhe do pedido (opcional)</label>
                 <input id="detalhe-lgpd" name="detalhe-lgpd" [(ngModel)]="detalheLgpd" maxlength="500"
                        placeholder="Detalhe do pedido (opcional)"
-                       class="rounded-full border border-gray-300 px-4 py-2 text-sm
-                              focus:border-[#032B38] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8FBECB]" />
+                       class="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-[#032B38] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8FBECB]" />
               </form>
             }
           </section>

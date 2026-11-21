@@ -15,7 +15,7 @@ type Estado = 'carregando' | 'form' | 'enviando' | 'enviado' | 'erro';
   template: `
     <header class="pt-32 pb-12 bg-[#032B38] text-white">
       <div class="max-w-3xl mx-auto px-6">
-        <p class="text-sm uppercase tracking-[0.2em] text-[#8FBECB] mb-2">Check-in online</p>
+        <p class="text-sm text-[#8FBECB] mb-2">Check-in online</p>
         <h1 class="text-3xl sm:text-4xl font-semibold">Ficha Nacional de Registro de Hóspedes</h1>
         @if (info(); as i) {
           <p class="mt-3 text-white/80">
@@ -180,7 +180,7 @@ type Estado = 'carregando' | 'form' | 'enviando' | 'enviado' | 'erro';
                 </label>
                 <label class="block">
                   <span class="text-sm font-medium">UF *</span>
-                  <input formControlName="uf" required maxlength="2" class="mt-1 w-full uppercase" />
+                  <input formControlName="uf" required maxlength="2" class="mt-1 w-full" />
                 </label>
               </div>
             </fieldset>

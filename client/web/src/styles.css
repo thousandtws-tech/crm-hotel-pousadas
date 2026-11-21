@@ -39,6 +39,11 @@
   --space-4xl: 4rem;    /* 64px */
   --space-5xl: 5rem;    /* 80px */
   --space-6xl: 6rem;    /* 96px */
+
+  /* Elevação — três níveis neutros (oceano), sem glow */
+  --shadow-card: 0 1px 2px rgb(5 64 84 / 0.05), 0 8px 24px rgb(5 64 84 / 0.07);
+  --shadow-raised: 0 2px 6px rgb(5 64 84 / 0.08), 0 16px 40px rgb(5 64 84 / 0.10);
+  --shadow-overlay: 0 8px 24px rgb(5 64 84 / 0.14), 0 24px 64px rgb(5 64 84 / 0.18);
 }
 
 @layer base {
@@ -53,7 +58,7 @@
     background-color: var(--color-sand-100);
     color: var(--color-stone-text);
     font-family: var(--font-sans);
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
   }
 
   h1, h2, h3, h4, .font-serif {
@@ -92,11 +97,10 @@
 
 /* Typographic Scale with Brand Colors */
 .type-eyebrow {
-  font-size: 0.875rem; 
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
   font-weight: 600;
-  color: #DDA554; 
+  color: #8A5A1E;
 }
 
 .type-hero {
@@ -139,9 +143,9 @@
 }
 
 .type-caption {
-  font-size: 0.75rem; /* 12px */
+  font-size: 0.8125rem;
   line-height: 1.5;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   color: #536B73;
 }
 
@@ -167,13 +171,13 @@
   }
 }
 
-/* Editorial tracking helpers (letter-spacing tokens) */
+/* Editorial tracking helpers — sutis, nunca versalete */
 .tracking-luxury {
-  letter-spacing: 0.18em;
+  letter-spacing: 0.04em;
 }
 
 .tracking-ultra-wide {
-  letter-spacing: 0.25em;
+  letter-spacing: 0.06em;
 }
 
 /* Focus visibility — WCAG 2.4.7 */
@@ -191,9 +195,8 @@
   padding: 0.75rem 1.25rem;
   background-color: #054054;
   color: #FFFFFF;
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
   font-weight: 600;
   border-radius: 0.5rem;
   transform: translateY(-200%);
@@ -219,91 +222,80 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.625rem;
+  gap: 0.5rem;
   padding: 0.875rem 1.75rem;
-  background-color: #054054; /* Deep Ocean Navy Teal from Logo */
+  background-color: #054054;
   color: #FFFFFF;
-  font-size: 0.6875rem; /* 11px */
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  font-weight: 500;
-  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 0.625rem;
   border: 1px solid #054054;
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .btn-primary:hover {
-  background-color: #DDA554; /* Golden Amber Hover from Logo */
-  border-color: #DDA554;
-  color: #054054;
-  transform: translateY(-1px);
+  background-color: #1A6F8A;
+  border-color: #1A6F8A;
+  color: #FFFFFF;
 }
 
 .btn-secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.625rem;
+  gap: 0.5rem;
   padding: 0.875rem 1.75rem;
   background-color: transparent;
   color: #054054;
-  font-size: 0.6875rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  font-weight: 500;
-  border-radius: 0.5rem;
-  border: 1px solid rgba(5, 64, 84, 0.25);
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 0.625rem;
+  border: 1px solid rgba(5, 64, 84, 0.3);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .btn-secondary:hover {
   border-color: #054054;
   background-color: #054054;
   color: #FFFFFF;
-  transform: translateY(-1px);
 }
 
 .btn-secondary-light {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.625rem;
+  gap: 0.5rem;
   padding: 0.875rem 1.75rem;
   background-color: transparent;
   color: #FFFFFF;
-  font-size: 0.6875rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  font-weight: 500;
-  border-radius: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 0.625rem;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .btn-secondary-light:hover {
   border-color: #DDA554;
   background-color: #DDA554;
   color: #054054;
-  transform: translateY(-1px);
 }
 
 .btn-text {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.6875rem; /* 11px */
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  font-weight: 500;
+  font-size: 0.8125rem;
+  font-weight: 600;
   color: #054054;
   padding-bottom: 0.25rem;
-  border-bottom: 1px solid rgba(5, 64, 84, 0.25);
-  transition: all 0.3s ease;
+  border-bottom: 1px solid rgba(5, 64, 84, 0.3);
+  transition: color 0.2s ease, border-color 0.2s ease;
 }
 
 .btn-text:hover {
-  color: #DDA554;
-  border-bottom-color: #DDA554;
+  color: #8A5A1E;
+  border-bottom-color: #8A5A1E;
 }
 
 .btn-text svg {
