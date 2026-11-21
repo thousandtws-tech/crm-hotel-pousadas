@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { SearchStateService } from '../../core/services/search-state.service';
 import { SearchBarComponent } from '../../shared/components/search/search-bar.component';
-import { SearchAlternativa, SearchMode, StayPreset, ToleranceDays } from '../../core/models/search.models';
+import { SearchAlternativa, SearchAcomodacao, SearchMode, StayPreset, ToleranceDays } from '../../core/models/search.models';
 import { TOLERANCIAS, parseDate } from '../../core/services/search-periods';
 import { SeoService } from '../../core/services/seo.service';
 import { HOTEL_CONFIG } from '../../core/config/hotel-config';
@@ -106,9 +106,13 @@ const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
                         </span>
                         <span class="text-right shrink-0">
                           <span class="block text-sm font-semibold text-[#054054]">
-                            {{ preco(acc.valor) }}
+                            {{ total(alt, acc) }}
                           </span>
-                          <span class="block text-[11px] text-[#536B73]">por noite · reservar →</span>
+                          <span class="block text-[11px] text-[#536B73]">
+                            {{ alt.noites }} {{ alt.noites === 1 ? 'noite' : 'noites' }} ·
+                            {{ preco(acc.valor) }}/noite
+                          </span>
+                          <span class="block text-[11px] font-medium text-[#054054] mt-0.5">reservar →</span>
                         </span>
                       </button>
                     </li>
@@ -206,5 +210,11 @@ export class SearchPageComponent implements OnInit {
   protected preco(valor: string): string {
     const n = Number(valor);
     return Number.isFinite(n) && n > 0 ? brl.format(n) : 'Sob consulta';
+  }
+
+  /** Total da estadia — diária (já ajustada pela ocupação) × noites. */
+  protected total(alt: SearchAlternativa, acc: SearchAcomodacao): string {
+    const n = Number(acc.valor);
+    return Number.isFinite(n) && n > 0 ? brl.format(n * alt.noites) : 'Sob consulta';
   }
 }
