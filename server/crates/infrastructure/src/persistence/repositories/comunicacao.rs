@@ -1700,6 +1700,69 @@ impl AtendimentoRepository for PgAtendimentoRepository {
         .await
         .map_err(map_db_err)
     }
+
+    async fn atendimento_relatorio(
+        &self,
+        inicio: chrono::DateTime<chrono::Utc>,
+        fim: chrono::DateTime<chrono::Utc>,
+    ) -> Result<AtendimentoRelatorio, DomainError> {
+        let (total, atribuidos, dentro_sla, escalados, t_aceite, t_resolucao) =
+            sqlx::query_as::<_, (i64, i64, i64, i64, Option<f64>, Option<f64>)>(
+                "SELECT count(*),
+                    count(*) FILTER (WHERE atribuido_em IS NOT NULL),
+                    count(*) FILTER (WHERE atribuido_em IS NOT NULL
+                                     AND atribuido_em <= prazo_aceite),
+                    count(*) FILTER (WHERE status = 'escalado'),
+                    avg(extract(epoch FROM atribuido_em - criado_em) / 60)::float8,
+                    avg(extract(epoch FROM resolvido_em - criado_em) / 60)::float8
+             FROM atendimento
+             WHERE criado_em >= $1 AND criado_em < $2",
+            )
+            .bind(inicio)
+            .bind(fim)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+
+        let por_setor = Self::volume(&self.pool, "setor", inicio, fim).await?;
+        let por_origem = Self::volume(&self.pool, "origem", inicio, fim).await?;
+        Ok(AtendimentoRelatorio {
+            total,
+            atribuidos,
+            dentro_sla,
+            escalados,
+            tempo_aceite_min: t_aceite,
+            tempo_resolucao_min: t_resolucao,
+            por_setor,
+            por_origem,
+        })
+    }
+}
+
+impl PgAtendimentoRepository {
+    /// `GROUP BY` genérico do relatório — coluna é do próprio schema,
+    /// nunca input do usuário.
+    async fn volume(
+        pool: &PgPool,
+        coluna: &str,
+        inicio: chrono::DateTime<chrono::Utc>,
+        fim: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Vec<VolumeRotulo>, DomainError> {
+        let rows = sqlx::query_as::<_, (String, i64)>(&format!(
+            "SELECT {coluna}, count(*) FROM atendimento
+             WHERE criado_em >= $1 AND criado_em < $2
+             GROUP BY {coluna} ORDER BY count(*) DESC"
+        ))
+        .bind(inicio)
+        .bind(fim)
+        .fetch_all(pool)
+        .await
+        .map_err(map_db_err)?;
+        Ok(rows
+            .into_iter()
+            .map(|(rotulo, total)| VolumeRotulo { rotulo, total })
+            .collect())
+    }
 }
 
 // ---------------------------------------------------------------------------

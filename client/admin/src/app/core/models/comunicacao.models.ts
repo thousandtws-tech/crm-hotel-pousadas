@@ -38,6 +38,18 @@ export interface Atendimento {
   tags: string[];
 }
 
+/** Relatório gerencial do atendimento num período. */
+export interface AtendimentoRelatorio {
+  total: number;
+  atribuidos: number;
+  dentro_sla: number;
+  escalados: number;
+  tempo_aceite_min: number | null;
+  tempo_resolucao_min: number | null;
+  por_setor: { rotulo: string; total: number }[];
+  por_origem: { rotulo: string; total: number }[];
+}
+
 /** Nota interna do protocolo — contexto entre turnos, nunca vai ao hóspede. */
 export interface AtendimentoNota {
   id: number;

@@ -579,6 +579,10 @@ pub fn build(state: AppState) -> Router {
             post(routes::comunicacao::atendimento_resolver_post),
         )
         .route(
+            "/atendimentos/relatorio",
+            get(routes::comunicacao::atendimento_relatorio_get),
+        )
+        .route(
             "/atendimentos/{id}/transferir",
             post(routes::comunicacao::atendimento_transferir_post),
         )

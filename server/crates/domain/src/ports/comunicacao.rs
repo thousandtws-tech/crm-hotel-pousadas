@@ -703,4 +703,33 @@ pub trait AtendimentoRepository: Send + Sync {
         idatendimento: i64,
     ) -> Result<Vec<AtendimentoNota>, DomainError>;
     async fn atendimento_tags(&self, id: i64, tags: &[String]) -> Result<Atendimento, DomainError>;
+    /// Agregados do período — tempo de aceite/resolução, SLA e volumes.
+    async fn atendimento_relatorio(
+        &self,
+        inicio: chrono::DateTime<chrono::Utc>,
+        fim: chrono::DateTime<chrono::Utc>,
+    ) -> Result<AtendimentoRelatorio, DomainError>;
+}
+
+/// Relatório gerencial do atendimento num período (criado_em ∈ [inicio,fim)).
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct AtendimentoRelatorio {
+    pub total: i64,
+    /// Protocolos que alguém assumiu (`atribuido_em` preenchido).
+    pub atribuidos: i64,
+    /// Assumidos dentro do SLA de aceite.
+    pub dentro_sla: i64,
+    pub escalados: i64,
+    /// Minutos médios criação → aceite (tempo de resposta humano).
+    pub tempo_aceite_min: Option<f64>,
+    /// Minutos médios criação → resolução.
+    pub tempo_resolucao_min: Option<f64>,
+    pub por_setor: Vec<VolumeRotulo>,
+    pub por_origem: Vec<VolumeRotulo>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct VolumeRotulo {
+    pub rotulo: String,
+    pub total: i64,
 }

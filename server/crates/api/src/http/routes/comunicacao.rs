@@ -863,6 +863,23 @@ pub async fn atendimento_resolver_post(
 }
 
 #[derive(serde::Deserialize)]
+pub struct RelatorioQuery {
+    pub inicio: Option<chrono::DateTime<chrono::Utc>>,
+    pub fim: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+/// Gestão: tempo médio de resposta, SLA e volume por setor/origem.
+pub async fn atendimento_relatorio_get(
+    State(st): State<AppState>,
+    _ator: Ator,
+    Query(q): Query<RelatorioQuery>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    Ok(Json(serde_json::json!(
+        st.services.atendimento.relatorio(q.inicio, q.fim).await?
+    )))
+}
+
+#[derive(serde::Deserialize)]
 pub struct TransferirInput {
     pub setor: String,
 }

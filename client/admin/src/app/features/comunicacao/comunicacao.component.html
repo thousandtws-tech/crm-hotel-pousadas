@@ -230,6 +230,59 @@
   }
 
   @if (aba() === 'atend') {
+    @if (relatorio(); as rel) {
+      <div class="bloco">
+        <h3>
+          Relatório de atendimento
+          <input
+            type="date"
+            class="sel"
+            aria-label="Início do período"
+            [ngModel]="relInicio"
+            (ngModelChange)="relInicio = $event; carregarRelatorio()"
+          />
+          <input
+            type="date"
+            class="sel"
+            aria-label="Fim do período"
+            [ngModel]="relFim"
+            (ngModelChange)="relFim = $event; carregarRelatorio()"
+          />
+        </h3>
+        <div class="cards">
+          <div class="card">
+            <span>Protocolos</span><strong>{{ rel.total }}</strong>
+            <small>{{ rel.escalados }} escalados</small>
+          </div>
+          <div class="card">
+            <span>Tempo de resposta</span><strong>{{ minFmt(rel.tempo_aceite_min) }}</strong>
+            <small>até alguém assumir</small>
+          </div>
+          <div class="card">
+            <span>Tempo de resolução</span><strong>{{ minFmt(rel.tempo_resolucao_min) }}</strong>
+            <small>criação → resolvido</small>
+          </div>
+          <div class="card">
+            <span>SLA de aceite</span><strong>{{ pctSla() }}</strong>
+            <small>{{ rel.dentro_sla }}/{{ rel.atribuidos }} no prazo</small>
+          </div>
+        </div>
+        <div class="rel-vols">
+          <div>
+            <span class="atend-lbl">Por setor</span>
+            @for (v of rel.por_setor; track v.rotulo) {
+              <span class="tag">{{ v.rotulo }} · {{ v.total }}</span>
+            }
+          </div>
+          <div>
+            <span class="atend-lbl">Por origem</span>
+            @for (v of rel.por_origem; track v.rotulo) {
+              <span class="tag">{{ v.rotulo }} · {{ v.total }}</span>
+            }
+          </div>
+        </div>
+      </div>
+    }
     <div class="bloco">
       <h3>
         Fila de atendimento — protocolos por setor

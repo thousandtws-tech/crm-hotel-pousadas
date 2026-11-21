@@ -121,6 +121,10 @@ export class ComunicacaoApi extends ApiHttp {
     });
   }
 
+  atendRelatorio(inicio?: string, fim?: string) {
+    return this.get<M.AtendimentoRelatorio>('/atendimentos/relatorio', { inicio, fim });
+  }
+
   pushVapidKey() {
     return this.get<{ publica: string }>('/push/vapid-key');
   }

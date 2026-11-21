@@ -350,6 +350,21 @@ impl AtendimentoService {
             .await
     }
 
+    /// Relatório do período — tempo de resposta, SLA e volumes por
+    /// setor/origem. `None` = últimos 30 dias; teto de 1 ano.
+    pub async fn relatorio(
+        &self,
+        inicio: Option<chrono::DateTime<Utc>>,
+        fim: Option<chrono::DateTime<Utc>>,
+    ) -> AppResult<AtendimentoRelatorio> {
+        let fim = fim.unwrap_or_else(Utc::now);
+        let inicio = inicio.unwrap_or_else(|| fim - Duration::days(30));
+        if inicio >= fim || fim - inicio > Duration::days(366) {
+            return Err(DomainError::validacao("Período inválido (máx. 1 ano).").into());
+        }
+        Ok(self.repo.atendimento_relatorio(inicio, fim).await?)
+    }
+
     /// Janela de atendimento em horário local da pousada (UTC-3).
     fn dentro_horario(&self) -> bool {
         let agora = Utc::now() - Duration::hours(3);

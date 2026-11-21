@@ -372,3 +372,16 @@ th {
 .nota small {
   color: var(--mut, #667);
 }
+
+.rel-vols {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-top: 0.8rem;
+}
+.rel-vols > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}

@@ -10,6 +10,7 @@ import { environment } from '../../../environments/environment';
 import {
   Atendimento,
   AtendimentoNota,
+  AtendimentoRelatorio,
   Avaliacao,
   AvaliacoesDash,
   CanalEnvio,
@@ -60,6 +61,11 @@ export abstract class ComunicacaoStore implements OnInit {
   protected agendarQuando = '';
   protected readonly setores = ['recepcao', 'governanca', 'manutencao', 'gerencia'];
   protected readonly tagsSugeridas = ['reclamacao', 'elogio', 'upsell', 'urgente', 'vip', 'reembolso'];
+
+  // -- relatório do atendimento (últimos 30 dias por padrão) ---------------------
+  protected readonly relatorio = signal<AtendimentoRelatorio | null>(null);
+  protected relInicio = '';
+  protected relFim = '';
   protected readonly modalLgpd = signal<LgpdSolicitacao | null>(null);
   protected textoLgpd = '';
   protected readonly modalAv = signal<Avaliacao | null>(null);
@@ -183,6 +189,7 @@ export abstract class ComunicacaoStore implements OnInit {
   }
 
   carregarAtend(): void {
+    this.carregarRelatorio();
     this.comunicacaoApi.atendimentos(this.atendFiltro()).subscribe({
       next: (a) => this.atends.set(a),
       error: () => undefined,
@@ -281,6 +288,26 @@ export abstract class ComunicacaoStore implements OnInit {
       },
       error: () => this.notify.erroMsg('Não foi possível agendar a mensagem.'),
     });
+  }
+
+  carregarRelatorio(): void {
+    const p = (d: string) => (d ? new Date(`${d}T00:00:00`).toISOString() : undefined);
+    const pf = (d: string) => (d ? new Date(`${d}T23:59:59`).toISOString() : undefined);
+    this.comunicacaoApi
+      .atendRelatorio(p(this.relInicio), pf(this.relFim))
+      .subscribe({ next: (r) => this.relatorio.set(r), error: () => undefined });
+  }
+
+  pctSla(): string {
+    const r = this.relatorio();
+    if (!r || !r.atribuidos) return '—';
+    return `${Math.round((r.dentro_sla / r.atribuidos) * 100)}%`;
+  }
+
+  minFmt(v: number | null): string {
+    if (v == null) return '—';
+    if (v < 60) return `${Math.round(v)}min`;
+    return `${(v / 60).toFixed(1).replace('.', ',')}h`;
   }
 
   carregarLgpd(): void {
