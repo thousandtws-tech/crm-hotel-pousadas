@@ -14,13 +14,20 @@ import {
 import { NotifyService } from '@core/services/notify.service';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { of } from 'rxjs';
-import type { OutputEmitterRef } from '@angular/core';
+import type { InputSignal, OutputEmitterRef } from '@angular/core';
 
 /** Drawer lateral de nova reserva — fluxo: hóspede → período → disponibilidade → detalhes. */
 @Directive()
 export abstract class NovaReservaDialogStore implements OnInit {
   declare protected readonly fechar: OutputEmitterRef<void>;
   declare protected readonly criada: OutputEmitterRef<void>;
+  /** Pré-seleção do mapa de ocupação (walk-in): acomodação + datas já vêm
+   * preenchidas e a disponibilidade é verificada na abertura. */
+  declare protected readonly preseed: InputSignal<{
+    idacomodacao: number;
+    entrada: string;
+    saida: string;
+  } | null>;
 
   private readonly clientesApi = inject(ClientesApi);
   private readonly reservasApi = inject(ReservasApi);
@@ -61,7 +68,20 @@ export abstract class NovaReservaDialogStore implements OnInit {
     // Só as datas invalidam a disponibilidade já verificada.
     this.form.controls.entrada.valueChanges.subscribe(() => this.limparDisp());
     this.form.controls.saida.valueChanges.subscribe(() => this.limparDisp());
+
+    const seed = this.preseed();
+    if (seed) {
+      this.form.patchValue(
+        { entrada: seed.entrada, saida: seed.saida },
+        { emitEvent: false },
+      );
+      this.seedPendente = seed.idacomodacao;
+      this.verificar();
+    }
   }
+
+  /** Acomodação do mapa a pré-selecionar assim que a disponibilidade chegar. */
+  private seedPendente = 0;
 
   private limparDisp(): void {
     this.disp.set(null);
@@ -95,6 +115,11 @@ export abstract class NovaReservaDialogStore implements OnInit {
           this.idAcom.set(d.acomodacoes[0].id);
         } else {
           this.idAcom.set(0);
+        }
+        if (this.seedPendente) {
+          const id = this.seedPendente;
+          this.seedPendente = 0;
+          if (d.acomodacoes.some((a) => a.id === id)) this.idAcom.set(id);
         }
       },
       error: (e) => {

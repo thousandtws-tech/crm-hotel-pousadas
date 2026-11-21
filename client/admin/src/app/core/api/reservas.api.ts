@@ -80,6 +80,10 @@ export class ReservasApi extends ApiHttp {
     return this.post<M.Reserva>('/reservas', input);
   }
 
+  remanejar(id: number, input: M.RemanejarInput) {
+    return this.post<M.Reserva>(`/reservas/${id}/remanejar`, input);
+  }
+
   checkin(id: number, data?: string | null, hora?: string | null) {
     return this.post<M.Reserva>(`/reservas/${id}/check-in`, { data, hora });
   }

@@ -1,5 +1,5 @@
 // UI de nova-reserva-dialog — template, estilos e bindings. A lógica vive em nova-reserva-dialog.store.ts.
-import { Component, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,4 +17,9 @@ import { NovaReservaDialogStore } from './nova-reserva-dialog.store';
 export class NovaReservaDialogComponent extends NovaReservaDialogStore {
   override readonly fechar = output<void>();
   override readonly criada = output<void>();
+  override readonly preseed = input<{
+    idacomodacao: number;
+    entrada: string;
+    saida: string;
+  } | null>(null);
 }

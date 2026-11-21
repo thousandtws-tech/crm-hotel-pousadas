@@ -12,8 +12,8 @@ use clarituz_application::actor::Ator;
 use clarituz_application::dto::{
     AcompanhanteInput, AdicionalInput, CancelamentoResponse, CancelarReservaRequest,
     CheckinRequest, CheckoutRequest, DisponibilidadeQuery, DisponibilidadeResponse,
-    FnrhEmitRequest, GrupoInput, ItemConsumidoRequest, NoShowRequest, ReservaFiltroQuery,
-    ReservaInput,
+    FnrhEmitRequest, GrupoInput, ItemConsumidoRequest, NoShowRequest, RemanejarInput,
+    ReservaFiltroQuery, ReservaInput,
 };
 use clarituz_domain::entities::{
     Acompanhante, AdicionalConsumo, Fnrh, ItemConsumido, ItemFila, Reserva,
@@ -130,6 +130,18 @@ pub async fn eventos(
 }
 
 /// Check-in — `data`/`hora` opcionais (default: agora, fuso da pousada).
+/// Remaneja reserva pendente (drag no mapa de ocupação): muda acomodação
+/// e/ou período recalculando o total. 409 quando já saiu de pendente ou o
+/// período destino está ocupado.
+pub async fn remanejar_reserva(
+    State(s): State<AppState>,
+    ator: Ator,
+    Path(id): Path<i64>,
+    Json(input): Json<RemanejarInput>,
+) -> Result<Json<Reserva>, AppError> {
+    Ok(Json(s.services.reservas.remanejar(&ator, id, input).await?))
+}
+
 pub async fn checkin(
     State(s): State<AppState>,
     ator: Ator,

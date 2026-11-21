@@ -138,6 +138,13 @@ export interface ReservaResumo {
   valor_estadia: string | null;
 }
 
+/** Drop do drag no mapa de ocupação — nova acomodação e/ou período. */
+export interface RemanejarInput {
+  idacomodacao: number;
+  entradaprevista: string;
+  saidaprevista: string;
+}
+
 export interface ConsumoResumo {
   id: number;
   status: StatusConsumo;

@@ -39,6 +39,16 @@ pub struct ReservaInput {
     pub idcontrato: Option<i64>,
 }
 
+/// Remanejamento pelo mapa de ocupação — arrastar a reserva muda a
+/// acomodação e/ou o período; a exclusion constraint protege o drop.
+#[derive(Debug, Deserialize)]
+pub struct RemanejarInput {
+    /// Nova acomodação; `None` mantém a atual (drag só horizontal).
+    pub idacomodacao: Option<i64>,
+    pub entradaprevista: NaiveDate,
+    pub saidaprevista: NaiveDate,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct ReservaPublicaInput {
     pub slug: Option<String>,

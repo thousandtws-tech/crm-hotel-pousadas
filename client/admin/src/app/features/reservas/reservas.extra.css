@@ -469,11 +469,25 @@
 .tape-cel {
   width: 52px;
   height: 100%;
+  border: 0;
   border-left: 1px solid #f0f4f6;
   flex-shrink: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.tape-cel:hover {
+  background: rgba(26, 111, 138, 0.09);
+}
+.tape-cel:focus-visible {
+  outline: 2px solid #1a6f8a;
+  outline-offset: -2px;
 }
 .tape-cel.fds {
   background: #f7fafb;
+}
+.tape-cel.fds:hover {
+  background: rgba(26, 111, 138, 0.12);
 }
 .tape-cel.hj {
   background: rgba(221, 165, 84, 0.1);
@@ -482,14 +496,17 @@
   position: absolute;
   top: 10px;
   height: 28px;
+  border: 0;
   border-radius: 7px;
   color: #fff;
   text-decoration: none;
   display: flex;
   align-items: center;
   padding: 0 10px;
+  font: inherit;
   font-size: 0.78rem;
   font-weight: 600;
+  text-align: left;
   box-shadow: 0 2px 6px rgba(5, 64, 84, 0.22);
   transition:
     transform 0.12s,
@@ -498,6 +515,17 @@
   overflow: hidden;
   white-space: nowrap;
   cursor: pointer;
+}
+.tape-bar.movel {
+  cursor: grab;
+}
+.tape-bar.drag {
+  cursor: grabbing;
+  transition: none;
+  z-index: 4;
+  filter: brightness(1.06);
+  box-shadow: 0 8px 18px rgba(5, 64, 84, 0.4);
+  opacity: 0.92;
 }
 .tape-bar:hover {
   transform: translateY(-1px);
@@ -527,6 +555,27 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+.lg-drag {
+  background: transparent;
+  border: 2px dashed #1a6f8a;
+}
+.lg-add {
+  background: transparent;
+  border: 1px solid #7d97a1;
+  position: relative;
+}
+.lg-add::after {
+  content: '+';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #7d97a1;
+  line-height: 1;
 }
 .lg {
   width: 12px;

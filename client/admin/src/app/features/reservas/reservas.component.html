@@ -389,21 +389,34 @@
                 </div>
                 <div class="tape-track">
                   @for (d of dias(); track d.getTime()) {
-                    <span
+                    <button
+                      type="button"
                       class="tape-cel"
                       [class.hj]="isoLocal(d) === hojeIso"
                       [class.fds]="d.getDay() === 0 || d.getDay() === 6"
-                    ></span>
+                      [title]="'Nova reserva — ' + a.nome + ' · ' + (d | date: 'dd/MM')"
+                      [attr.aria-label]="
+                        'Nova reserva em ' + a.nome + ' a partir de ' + (d | date: 'dd/MM/yyyy')
+                      "
+                      (click)="novaReservaEm(a, d)"
+                    ></button>
                   }
                   @for (r of eventosDe(a.id); track r.id) {
                     @if (barGeo(r); as g) {
-                      <a
+                      <button
+                        type="button"
                         class="tape-bar"
                         [class.can]="r.status === 'c'"
+                        [class.drag]="arrastando()?.r.id === r.id"
+                        [class.movel]="r.status === 'p'"
                         [style.left.px]="g.l"
                         [style.width.px]="g.w"
                         [style.background]="barCor(r)"
-                        [routerLink]="['/reservas', r.id]"
+                        [style.transform]="
+                          arrastando()?.r.id === r.id
+                            ? 'translate(' + arrastando()!.dx + 'px,' + arrastando()!.dy + 'px)'
+                            : null
+                        "
                         [title]="
                           r.cliente_nome +
                           ' · ' +
@@ -412,11 +425,20 @@
                           (parseDia(r.entradaprevista) | date: 'dd/MM') +
                           ' → ' +
                           (parseDia(r.saidaprevista) | date: 'dd/MM') +
-                          ')'
+                          ')' +
+                          (r.status === 'p' ? ' — arraste para remanejar' : '')
                         "
+                        (mousedown)="iniciarArraste(r, $event)"
+                        (click)="cliqueReserva(r)"
                       >
-                        <span class="tape-bar-txt">{{ primeiroNome(r.cliente_nome) }}</span>
-                      </a>
+                        @if (arrastando()?.r.id === r.id && arrastePeriodo(); as p) {
+                          <span class="tape-bar-txt">
+                            {{ p.entrada | date: 'dd/MM' }} → {{ p.saida | date: 'dd/MM' }}
+                          </span>
+                        } @else {
+                          <span class="tape-bar-txt">{{ primeiroNome(r.cliente_nome) }}</span>
+                        }
+                      </button>
                     }
                   }
                 </div>
@@ -434,6 +456,8 @@
           <span><i class="lg lg-hj"></i> Hoje</span>
           <span><i class="lg lg-fds"></i> Fim de semana</span>
           <span><i class="lg lg-can"></i> Cancelada</span>
+          <span><i class="lg lg-drag"></i> Arraste a reserva para remanejar</span>
+          <span><i class="lg lg-add"></i> Clique num dia vazio para reservar</span>
         </div>
       </div>
     }
@@ -692,5 +716,9 @@
 }
 
 @if (modalNova()) {
-  <app-nova-reserva-dialog (fechar)="modalNova.set(false)" (criada)="reservaCriada()" />
+  <app-nova-reserva-dialog
+    [preseed]="seedNova()"
+    (fechar)="fecharNova()"
+    (criada)="reservaCriada()"
+  />
 }

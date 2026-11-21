@@ -118,6 +118,19 @@ pub trait ReservaRepository: Send + Sync {
     /// Postgres (`daterange` + GiST) rejeita períodos sobrepostos com
     /// SQLSTATE 23P01, que a implementação traduz para `Conflito`.
     async fn criar(&self, nova: &NovaReserva, log: NovoLog) -> Result<Reserva, DomainError>;
+    /// Move a reserva para outra acomodação/período (drag no mapa de
+    /// ocupação). `WHERE status = 'p'` — nada retornado significa check-in
+    /// ou cancelamento concorrente → `Conflito`; o constraint
+    /// `reserva_excl_overlap` continua valendo no UPDATE (23P01 →
+    /// `Conflito`). Atualiza `consumo.valor_estadia` na mesma transação.
+    async fn remanejar(
+        &self,
+        id: i64,
+        idacomodacao: i64,
+        periodo: &PeriodoEstadia,
+        valor_total: Decimal,
+        log: NovoLog,
+    ) -> Result<Reserva, DomainError>;
 
     /// Mapa por andar — uma linha por acomodação ativa com ocupação de
     /// hoje, bloqueio vigente e pendências de limpeza/manutenção.

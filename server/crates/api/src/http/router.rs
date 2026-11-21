@@ -276,6 +276,10 @@ pub fn build(state: AppState) -> Router {
             "/reservas/{id}",
             get(routes::reservas::buscar_reserva).delete(routes::reservas::remover_reserva),
         )
+        .route(
+            "/reservas/{id}/remanejar",
+            post(routes::reservas::remanejar_reserva),
+        )
         .route("/reservas/{id}/check-in", post(routes::reservas::checkin))
         .route("/reservas/{id}/check-out", post(routes::reservas::checkout))
         .route("/reservas/{id}/cancelar", post(routes::reservas::cancelar))

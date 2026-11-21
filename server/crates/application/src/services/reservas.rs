@@ -9,7 +9,7 @@ use crate::actor::Ator;
 use crate::dto::{
     AcompanhanteInput, AdicionalInput, CancelamentoResponse, CancelarReservaRequest,
     CheckoutRequest, DisponibilidadeResponse, FnrhEmitRequest, GrupoInput, ItemConsumidoRequest,
-    ReservaInput, ReservaPublicaInput, ReservaPublicaOutput,
+    RemanejarInput, ReservaInput, ReservaPublicaInput, ReservaPublicaOutput,
 };
 use crate::error::AppResult;
 use crate::services::AuthService;
@@ -699,6 +699,89 @@ impl ReservaService {
             .de_ator(ator.id, &ator.nome)
             .dados(serde_json::json!({"idreserva": reserva.id})),
         );
+        Ok(reserva)
+    }
+
+    /// Remaneja reserva pendente para outra acomodação/período — o drag do
+    /// mapa de ocupação. Mantém `valordiaria`, `early/late`, hóspedes e
+    /// cliente: só quarto e datas mudam; `valor_total` é recalculado com as
+    /// novas diárias + taxas no período destino. Overlap ou reserva fora de
+    /// 'p' → `Conflito` (exclusion constraint + `WHERE status` no UPDATE).
+    pub async fn remanejar(
+        &self,
+        ator: &Ator,
+        id: i64,
+        input: RemanejarInput,
+    ) -> AppResult<Reserva> {
+        let periodo = PeriodoEstadia::new(input.entradaprevista, input.saidaprevista)?;
+
+        let atual = self
+            .reservas
+            .buscar(id)
+            .await?
+            .ok_or_else(|| DomainError::nao_encontrado("Reserva não encontrada."))?;
+        if atual.status != StatusReserva::Pendente {
+            return Err(DomainError::regra(
+                "Só reservas pendentes podem ser remanejadas no calendário.",
+            )
+            .into());
+        }
+
+        let idacomodacao = input.idacomodacao.unwrap_or(atual.idacomodacao);
+        let acomodacao = self
+            .acomodacoes
+            .buscar(idacomodacao)
+            .await?
+            .filter(|a| a.ativo)
+            .ok_or_else(|| DomainError::nao_encontrado("Acomodação não encontrada."))?;
+        if atual.quantidade_hospedes > acomodacao.capacidade {
+            return Err(DomainError::regra(format!(
+                "A acomodação Nº{} comporta {} hóspede(s); a reserva tem {}.",
+                idacomodacao, acomodacao.capacidade, atual.quantidade_hospedes
+            ))
+            .into());
+        }
+
+        let diarias = Decimal::from(time::diarias(periodo.entrada, periodo.saida));
+        let taxas = self
+            .taxas_horario(
+                idacomodacao,
+                &periodo,
+                atual.early_checkin,
+                atual.late_checkout,
+            )
+            .await?;
+        let valor_total = money::round2(atual.valordiaria * diarias + taxas);
+
+        let log = ator.log(
+            "remanejamento",
+            format!(
+                "Remanejou a reserva #{id} para a acomodação Nº{} de {} até {}",
+                idacomodacao, periodo.entrada, periodo.saida
+            ),
+            "reserva",
+            id,
+            Some(serde_json::json!({
+                "idacomodacao_anterior": atual.idacomodacao,
+                "idacomodacao": idacomodacao,
+                "entrada_anterior": atual.entradaprevista,
+                "saida_anterior": atual.saidaprevista,
+                "entrada": periodo.entrada,
+                "saida": periodo.saida,
+            })),
+        );
+
+        let reserva = self
+            .reservas
+            .remanejar(id, idacomodacao, &periodo, valor_total, log)
+            .await?;
+        self.notificar_distribuicao(
+            idacomodacao,
+            periodo.entrada,
+            periodo.saida,
+            "reserva_remanejada",
+        )
+        .await;
         Ok(reserva)
     }
 

@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { PageEvent } from '@angular/material/paginator';
+import { Router } from '@angular/router';
 import { AcomodacoesApi } from '@core/api/acomodacoes.api';
 import { ReservasApi } from '@core/api/reservas.api';
 import { num } from '@core/utils/num.utils';
@@ -22,6 +23,8 @@ const DIA_MS = 86_400_000;
 const COL_W = 52;
 /** Quantidade de dias visíveis no mapa. */
 const JANELA_DIAS = 14;
+/** Altura da linha do mapa — mesma do `.tape-track` no CSS. */
+const LIN_H = 48;
 
 type Visao = 'lista' | 'cal' | 'mapa' | 'grupos';
 
@@ -36,6 +39,7 @@ export abstract class ReservasStore implements OnInit {
   private readonly confirm = inject(ConfirmService);
   private readonly tour = inject(TourService);
   private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
   protected readonly auth = inject(AuthStore);
 
   protected readonly modalNova = signal(false);
@@ -285,14 +289,17 @@ export abstract class ReservasStore implements OnInit {
   }
 
   novaReserva(): void {
+    this.seedNova.set(null);
     this.modalNova.set(true);
   }
 
   reservaCriada(): void {
     this.modalNova.set(false);
+    this.seedNova.set(null);
     this.notify.ok('Reserva criada.');
     this.carregar();
     this.carregarKpis();
+    if (this.visao() === 'cal') this.carregarEventos();
   }
 
   /** Check-in direto da lista — reservas que chegam hoje. */
@@ -537,6 +544,115 @@ export abstract class ReservasStore implements OnInit {
 
   barCor(r: ReservaResumo): string | null {
     return r.status === 'c' ? null : r.acomodacao_cor || '#1a6f8a';
+  }
+
+  // ---- drag do mapa (remanejamento) --------------------------------------------
+
+  /** Barra em arraste — dx/dy em px; o template aplica via transform. */
+  protected readonly arrastando = signal<{ r: ReservaResumo; dx: number; dy: number } | null>(
+    null,
+  );
+  /** Pré-seleção do modal de nova reserva (clique em célula vazia = walk-in). */
+  protected readonly seedNova = signal<{
+    idacomodacao: number;
+    entrada: string;
+    saida: string;
+  } | null>(null);
+
+  /** Período destino do arraste — exibido dentro da barra enquanto arrasta. */
+  protected readonly arrastePeriodo = computed(() => {
+    const a = this.arrastando();
+    if (!a) return null;
+    const d = Math.round(a.dx / COL_W);
+    return {
+      entrada: this.addDias(this.parseDia(a.r.entradaprevista), d),
+      saida: this.addDias(this.parseDia(a.r.saidaprevista), d),
+    };
+  });
+
+  private drag: { r: ReservaResumo; x0: number; y0: number } | null = null;
+  private suprimirClique = false;
+
+  /** Inicia o arraste — só reservas pendentes movem (regra do backend). */
+  iniciarArraste(r: ReservaResumo, ev: MouseEvent): void {
+    if (r.status !== 'p' || ev.button !== 0) return;
+    ev.preventDefault();
+    this.drag = { r, x0: ev.clientX, y0: ev.clientY };
+    const mover = (e: MouseEvent) =>
+      this.arrastando.set({
+        r,
+        dx: e.clientX - this.drag!.x0,
+        dy: e.clientY - this.drag!.y0,
+      });
+    const soltar = (e: MouseEvent) => {
+      window.removeEventListener('mousemove', mover);
+      window.removeEventListener('mouseup', soltar);
+      const dx = e.clientX - this.drag!.x0;
+      const dy = e.clientY - this.drag!.y0;
+      this.drag = null;
+      this.arrastando.set(null);
+      const dDias = Math.round(dx / COL_W);
+      const dAcom = Math.round(dy / LIN_H);
+      if (dDias !== 0 || dAcom !== 0) {
+        // O click dispara logo após o mouseup — suprime a navegação para o
+        // detalhe; o timeout limpa a flag quando o soltar acontece fora do
+        // elemento (click que nunca vem).
+        this.suprimirClique = true;
+        setTimeout(() => (this.suprimirClique = false));
+        this.aplicarRemanejo(r, dDias, dAcom);
+      }
+    };
+    window.addEventListener('mousemove', mover);
+    window.addEventListener('mouseup', soltar);
+  }
+
+  /** Clique na barra sem deslocamento abre o detalhe; após o drag, ignora. */
+  cliqueReserva(r: ReservaResumo): void {
+    if (this.suprimirClique) {
+      this.suprimirClique = false;
+      return;
+    }
+    this.router.navigate(['/reservas', r.id]);
+  }
+
+  private aplicarRemanejo(r: ReservaResumo, dDias: number, dAcom: number): void {
+    const lista = this.acomodacoes();
+    const idx = lista.findIndex((a) => a.id === r.idacomodacao);
+    const alvo = lista[idx + dAcom];
+    if (dAcom !== 0 && !alvo) return; // soltou fora das linhas — barra volta sozinha
+    const entrada = this.isoLocal(this.addDias(this.parseDia(r.entradaprevista), dDias));
+    const saida = this.isoLocal(this.addDias(this.parseDia(r.saidaprevista), dDias));
+    this.reservasApi
+      .remanejar(r.id, {
+        idacomodacao: alvo?.id ?? r.idacomodacao,
+        entradaprevista: entrada,
+        saidaprevista: saida,
+      })
+      .subscribe({
+        next: () => {
+          this.notify.ok('Reserva remanejada.');
+          this.carregarEventos();
+        },
+        error: (e) => {
+          this.notify.erro(e);
+          this.carregarEventos();
+        },
+      });
+  }
+
+  /** Clique em célula vazia do mapa → nova reserva pré-preenchida (walk-in). */
+  novaReservaEm(a: Acomodacao, d: Date): void {
+    this.seedNova.set({
+      idacomodacao: a.id,
+      entrada: this.isoLocal(d),
+      saida: this.isoLocal(this.addDias(d, 1)),
+    });
+    this.modalNova.set(true);
+  }
+
+  fecharNova(): void {
+    this.modalNova.set(false);
+    this.seedNova.set(null);
   }
 
   // ---- helpers ----------------------------------------------------------------

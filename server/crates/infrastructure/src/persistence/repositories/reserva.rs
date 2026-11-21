@@ -482,6 +482,51 @@ impl ReservaRepository for PgReservaRepository {
         Ok(reserva)
     }
 
+    async fn remanejar(
+        &self,
+        id: i64,
+        idacomodacao: i64,
+        periodo: &PeriodoEstadia,
+        valor_total: Decimal,
+        log: NovoLog,
+    ) -> Result<Reserva, DomainError> {
+        let mut tx = self.pool.begin().await.map_err(map_db_err)?;
+
+        // `AND status = 'p'`: check-in ou cancelamento concorrente anula o
+        // remanejo — a linha some do RETURNING e vira Conflito legível.
+        // 23P01 do constraint de overlap → Conflito (map_db_err).
+        let reserva = sqlx::query_as::<_, Reserva>(&format!(
+            "UPDATE reserva SET idacomodacao = $2, entradaprevista = $3,
+                saidaprevista = $4
+             WHERE id = $1 AND status = 'p'
+             RETURNING {RESERVA_COLS}"
+        ))
+        .bind(id)
+        .bind(idacomodacao)
+        .bind(periodo.entrada)
+        .bind(periodo.saida)
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(map_db_err)?
+        .ok_or_else(|| {
+            DomainError::conflito("A reserva não está mais pendente — atualize o calendário.")
+        })?;
+
+        sqlx::query(
+            "UPDATE consumo SET valor_estadia = $2
+             WHERE idreserva = $1 AND status = 'pendente'",
+        )
+        .bind(id)
+        .bind(valor_total)
+        .execute(&mut *tx)
+        .await
+        .map_err(map_db_err)?;
+
+        audit::gravar(&mut *tx, &log).await?;
+        tx.commit().await.map_err(map_db_err)?;
+        Ok(reserva)
+    }
+
     async fn checkin(
         &self,
         id: i64,
