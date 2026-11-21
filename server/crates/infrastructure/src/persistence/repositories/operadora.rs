@@ -11,7 +11,7 @@ use sqlx::PgPool;
 use super::audit;
 use crate::persistence::db::map_db_err;
 
-const COLS: &str = "id, nome, contato, email, telefone, comissao_pct,
+const COLS: &str = "id, nome, cnpj, contato, email, telefone, comissao_pct,
     token_extranet, ativa, notas, criado_em, atualizado_em";
 
 pub struct PgOperadoraRepository {
@@ -59,12 +59,13 @@ impl OperadoraRepository for PgOperadoraRepository {
     ) -> Result<Operadora, DomainError> {
         let mut tx = self.pool.begin().await.map_err(map_db_err)?;
         let op = sqlx::query_as::<_, Operadora>(&format!(
-            "INSERT INTO operadora (nome, contato, email, telefone, comissao_pct,
+            "INSERT INTO operadora (nome, cnpj, contato, email, telefone, comissao_pct,
                                    token_extranet, notas)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              RETURNING {COLS}"
         ))
         .bind(nova.nome.trim())
+        .bind(&nova.cnpj)
         .bind(&nova.contato)
         .bind(&nova.email)
         .bind(&nova.telefone)
@@ -89,13 +90,14 @@ impl OperadoraRepository for PgOperadoraRepository {
     ) -> Result<Option<Operadora>, DomainError> {
         let mut tx = self.pool.begin().await.map_err(map_db_err)?;
         let op = sqlx::query_as::<_, Operadora>(&format!(
-            "UPDATE operadora SET nome = $2, contato = $3, email = $4, telefone = $5,
-                    comissao_pct = $6, notas = $7, atualizado_em = now()
+            "UPDATE operadora SET nome = $2, cnpj = $3, contato = $4, email = $5,
+                    telefone = $6, comissao_pct = $7, notas = $8, atualizado_em = now()
              WHERE id = $1
              RETURNING {COLS}"
         ))
         .bind(id)
         .bind(dados.nome.trim())
+        .bind(&dados.cnpj)
         .bind(&dados.contato)
         .bind(&dados.email)
         .bind(&dados.telefone)

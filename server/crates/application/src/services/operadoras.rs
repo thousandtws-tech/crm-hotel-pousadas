@@ -30,6 +30,7 @@ use crate::services::ReservaService;
 #[derive(Debug, Deserialize)]
 pub struct OperadoraInput {
     pub nome: String,
+    pub cnpj: Option<String>,
     pub contato: Option<String>,
     pub email: Option<String>,
     pub telefone: Option<String>,
@@ -109,6 +110,7 @@ impl OperadoraService {
         }
         Ok(NovaOperadora {
             nome,
+            cnpj: input.cnpj.clone(),
             contato: input.contato.clone(),
             email: input.email.clone(),
             telefone: input.telefone.clone(),

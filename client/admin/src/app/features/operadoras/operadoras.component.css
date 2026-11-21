@@ -270,6 +270,14 @@
   color: #5d6d7e;
   margin-bottom: 8px;
 }
+.hint {
+  font-size: 0.75rem;
+  color: #8fa3ab;
+  font-weight: 400;
+}
+.hint.erro {
+  color: #b3261e;
+}
 .input-inn {
   border: 1px solid #d7e0e6;
   border-radius: 8px;

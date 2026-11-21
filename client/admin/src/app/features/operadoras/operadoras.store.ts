@@ -3,6 +3,7 @@
 import { OnInit, computed, inject, signal, Directive } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { OperadorasApi } from '@core/api/operadoras.api';
+import { GeoApi } from '@core/api/geo.api';
 import { NotifyService } from '@core/services/notify.service';
 import * as M from '@core/models';
 
@@ -14,6 +15,7 @@ import * as M from '@core/models';
 @Directive()
 export abstract class OperadorasStore implements OnInit {
   private readonly operadorasApi = inject(OperadorasApi);
+  private readonly geo = inject(GeoApi);
   private readonly notify = inject(NotifyService);
   private readonly fb = inject(FormBuilder);
 
@@ -36,8 +38,14 @@ export abstract class OperadorasStore implements OnInit {
     return `${(soma / ativas.length).toFixed(1).replace('.', ',')}%`;
   });
 
+  protected readonly cnpjBuscando = signal(false);
+  protected readonly cnpjMsg = signal<string | null>(null);
+  private ultimoCnpj = '';
+  private cnpjReq = 0;
+
   protected readonly form = this.fb.nonNullable.group({
     nome: ['', [Validators.required, Validators.minLength(3)]],
+    cnpj: [''],
     comissao_pct: [15],
     contato: [''],
     email: [''],
@@ -91,8 +99,11 @@ export abstract class OperadorasStore implements OnInit {
 
   protected abrirForm(o: M.Operadora | null): void {
     this.editando.set(o);
+    this.cnpjMsg.set(null);
+    this.ultimoCnpj = '';
     this.form.reset({
       nome: o?.nome ?? '',
+      cnpj: o?.cnpj ?? '',
       comissao_pct: Number(o?.comissao_pct ?? 15),
       contato: o?.contato ?? '',
       email: o?.email ?? '',
@@ -110,6 +121,7 @@ export abstract class OperadorasStore implements OnInit {
     const v = this.form.getRawValue();
     const input: M.OperadoraInput = {
       nome: v.nome.trim(),
+      cnpj: v.cnpj.trim() || null,
       comissao_pct: v.comissao_pct,
       contato: v.contato.trim() || null,
       email: v.email.trim() || null,
@@ -129,6 +141,62 @@ export abstract class OperadorasStore implements OnInit {
         error: (e) => this.falhaSalvamento(e),
       });
     }
+  }
+
+  /** Máscara 00.000.000/0000-00; CNPJ completo consulta a BrasilAPI. */
+  protected mascaraCnpj(e: Event): void {
+    const el = e.target as HTMLInputElement;
+    const d = el.value.replace(/\D/g, '').slice(0, 14);
+    const v = d
+      .replace(/(\d{2})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1/$2')
+      .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+    this.form.controls.cnpj.setValue(v, { emitEvent: false });
+    if (d.length === 14) this.buscarCnpj(d);
+    else this.ultimoCnpj = '';
+  }
+
+  /** CNPJ completo -> BrasilAPI preenche campos vazios; falhas ficam manuais. */
+  private buscarCnpj(digitos: string): void {
+    if (digitos === this.ultimoCnpj) return;
+    this.ultimoCnpj = digitos;
+    const req = ++this.cnpjReq;
+    this.cnpjBuscando.set(true);
+    this.cnpjMsg.set(null);
+    this.geo.buscarCnpj(digitos).subscribe({
+      next: (r) => {
+        if (req !== this.cnpjReq) return;
+        this.cnpjBuscando.set(false);
+        if (!r?.cnpj) {
+          this.cnpjMsg.set('CNPJ não encontrado — preencha manualmente.');
+          return;
+        }
+        const f = this.form.controls;
+        if (!f.nome.value) f.nome.setValue(r.nome_fantasia || r.razao_social || '');
+        const fone = r.ddd_telefone_1 || r.ddd_telefone_2;
+        if (!f.telefone.value && fone) {
+          const d = fone.replace(/\D/g, '');
+          f.telefone.setValue(
+            d.length === 11
+              ? `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
+              : d.length === 10
+                ? `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
+                : d,
+          );
+        }
+        const socio = r.qsa?.[0]?.nome_socio?.trim();
+        if (!f.contato.value && socio) {
+          f.contato.setValue(socio.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()));
+        }
+      },
+      error: (e) => {
+        if (req === this.cnpjReq) {
+          this.cnpjBuscando.set(false);
+          this.cnpjMsg.set(M.msgErroCnpj(e));
+        }
+      },
+    });
   }
 
   // Aplica a entidade retornada direto na lista — evita o refetch de 1 RTT.

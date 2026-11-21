@@ -7,6 +7,7 @@ use sqlx::FromRow;
 pub struct Operadora {
     pub id: i64,
     pub nome: String,
+    pub cnpj: Option<String>,
     pub contato: Option<String>,
     pub email: Option<String>,
     pub telefone: Option<String>,

@@ -11,6 +11,7 @@ use sqlx::FromRow;
 #[derive(Debug, Clone, Default)]
 pub struct NovaOperadora {
     pub nome: String,
+    pub cnpj: Option<String>,
     pub contato: Option<String>,
     pub email: Option<String>,
     pub telefone: Option<String>,

@@ -72,6 +72,9 @@
               <tr [class.inativa]="!o.ativa">
                 <td>
                   <strong>{{ o.nome }}</strong>
+                  @if (o.cnpj) {
+                    <span class="mini">{{ o.cnpj }}<br /></span>
+                  }
                   @if (o.notas) {
                     <span class="mini notas">{{ o.notas }}</span>
                   }
@@ -178,6 +181,20 @@
         </label>
         <div class="grid2">
           <label class="dl">
+            <span>CNPJ</span>
+            <input
+              class="input-inn"
+              formControlName="cnpj"
+              placeholder="00.000.000/0000-00"
+              (input)="mascaraCnpj($event)"
+            />
+            @if (cnpjBuscando()) {
+              <small class="hint">Consultando CNPJ…</small>
+            } @else if (cnpjMsg(); as msg) {
+              <small class="hint erro">{{ msg }}</small>
+            }
+          </label>
+          <label class="dl">
             <span>Comissão % (net)</span>
             <input
               class="input-inn"
@@ -188,21 +205,21 @@
               step="0.5"
             />
           </label>
-          <label class="dl">
-            <span>Contato</span>
-            <input class="input-inn" formControlName="contato" placeholder="Nome do responsável" />
-          </label>
         </div>
         <div class="grid2">
           <label class="dl">
-            <span>E-mail</span>
-            <input class="input-inn" type="email" formControlName="email" />
+            <span>Contato</span>
+            <input class="input-inn" formControlName="contato" placeholder="Nome do responsável" />
           </label>
           <label class="dl">
             <span>Telefone</span>
             <input class="input-inn" formControlName="telefone" />
           </label>
         </div>
+        <label class="dl">
+          <span>E-mail</span>
+          <input class="input-inn" type="email" formControlName="email" />
+        </label>
         <label class="dl">
           <span>Notas internas</span>
           <textarea class="input-inn" formControlName="notas" rows="2"></textarea>

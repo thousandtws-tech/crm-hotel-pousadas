@@ -3,6 +3,7 @@
 export interface Operadora {
   id: number;
   nome: string;
+  cnpj: string | null;
   contato: string | null;
   email: string | null;
   telefone: string | null;
@@ -14,6 +15,7 @@ export interface Operadora {
 
 export interface OperadoraInput {
   nome: string;
+  cnpj?: string | null;
   contato?: string | null;
   email?: string | null;
   telefone?: string | null;
