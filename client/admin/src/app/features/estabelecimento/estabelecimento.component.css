@@ -249,6 +249,10 @@
   align-self: end;
   padding-bottom: 8px;
 }
+.hint.erro {
+  color: #b3261e;
+  padding-bottom: 0;
+}
 .porta-inn {
   margin-top: 20px;
 }

@@ -306,8 +306,18 @@
           </label>
           <div class="fld-row">
             <label class="fld">
-              <span class="lbl">CNPJ</span>
-              <input class="inp" formControlName="cnpj" placeholder="00.000.000/0000-00" />
+              <span class="lbl">
+                CNPJ
+                @if (cnpjFornBuscando()) {
+                  <small class="lbl-hint">consultando…</small>
+                }
+              </span>
+              <input
+                class="inp"
+                formControlName="cnpj"
+                placeholder="00.000.000/0000-00"
+                (input)="mascaraCnpjForn($event)"
+              />
             </label>
             <label class="fld">
               <span class="lbl">Lead time (dias)</span>
@@ -496,7 +506,7 @@
                   class="inp"
                   placeholder="CNPJ (opcional)"
                   [value]="rapidoCnpj()"
-                  (input)="rapidoCnpj.set(inp($event))"
+                  (input)="mascaraCnpjRapido($event)"
                   aria-label="CNPJ do novo fornecedor"
                 />
                 <input

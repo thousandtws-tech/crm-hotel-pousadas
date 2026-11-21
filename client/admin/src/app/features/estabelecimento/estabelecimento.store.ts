@@ -4,6 +4,7 @@ import { computed, inject, signal, OnInit, effect, DestroyRef, Directive } from 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder } from '@angular/forms';
 import { EstabelecimentoApi } from '@core/api/estabelecimento.api';
+import { GeoApi } from '@core/api/geo.api';
 import { ImpressorasApi } from '@core/api/impressoras.api';
 import { ConfirmService } from '@core/services/confirm.service';
 import { NotifyService } from '@core/services/notify.service';
@@ -13,11 +14,20 @@ import * as M from '@core/models';
 
 const SETORES = ['caixa', 'cozinha', 'bar', 'balcao', 'churrasqueira', 'recepcao'];
 
+/** "1123851939" -> "(11) 2385-1939" */
+function formatarFoneCnpj(t: string): string {
+  const d = t.replace(/\D/g, '');
+  if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return d;
+}
+
 // Configurações do estabelecimento: dados fiscais, endereço, logo e
 // impressoras térmicas por setor (roteamento de comprovantes e pedidos).
 @Directive()
 export abstract class EstabelecimentoStore implements OnInit {
   private readonly estabelecimentoApi = inject(EstabelecimentoApi);
+  private readonly geo = inject(GeoApi);
   private readonly impressorasApi = inject(ImpressorasApi);
   private readonly notify = inject(NotifyService);
   private readonly confirm = inject(ConfirmService);
@@ -96,6 +106,10 @@ export abstract class EstabelecimentoStore implements OnInit {
 
   protected readonly dadosOk = signal(false);
   protected readonly endOk = signal(false);
+  protected readonly cnpjBuscando = signal(false);
+  protected readonly cnpjErro = signal(false);
+  private ultimoCnpj = '';
+  private cnpjReq = 0;
   protected readonly impOk = computed(() => this.impressoras().some((p) => p.padrao && p.ativa));
   protected readonly setoresOpcoes = computed(() => {
     const atual = this.impForm.value.setor?.trim();
@@ -122,6 +136,57 @@ export abstract class EstabelecimentoStore implements OnInit {
         this.carregarImpressoras();
         this.carregarDescobertas();
       }
+    });
+  }
+
+  /** Máscara 00.000.000/0000-00; CNPJ completo consulta a BrasilAPI. */
+  mascaraCnpj(e: Event): void {
+    const el = e.target as HTMLInputElement;
+    const d = el.value.replace(/\D/g, '').slice(0, 14);
+    const v = d
+      .replace(/(\d{2})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1/$2')
+      .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+    this.dados.controls.cnpj.setValue(v, { emitEvent: false });
+    if (d.length === 14) this.buscarCnpj(d);
+    else this.ultimoCnpj = '';
+  }
+
+  /** CNPJ completo -> BrasilAPI preenche campos vazios; falhas ficam manuais. */
+  private buscarCnpj(digitos: string): void {
+    if (digitos === this.ultimoCnpj) return;
+    this.ultimoCnpj = digitos;
+    const req = ++this.cnpjReq;
+    this.cnpjBuscando.set(true);
+    this.cnpjErro.set(false);
+    this.geo.buscarCnpj(digitos).subscribe({
+      next: (r) => {
+        if (req !== this.cnpjReq) return;
+        this.cnpjBuscando.set(false);
+        if (!r?.cnpj) {
+          this.cnpjErro.set(true);
+          return;
+        }
+        const d = this.dados.controls;
+        if (!d.razao_social.value) d.razao_social.setValue(r.razao_social ?? '');
+        if (!d.telefone.value && r.ddd_telefone_1)
+          d.telefone.setValue(formatarFoneCnpj(r.ddd_telefone_1));
+        if (!d.email.value && r.email) d.email.setValue(r.email);
+        const en = this.endereco.controls;
+        if (!en.logradouro.value && r.logradouro) en.logradouro.setValue(r.logradouro);
+        if (!en.numero.value && r.numero) en.numero.setValue(r.numero);
+        if (!en.complemento.value && r.complemento) en.complemento.setValue(r.complemento);
+        if (!en.bairro.value && r.bairro) en.bairro.setValue(r.bairro);
+        if (!en.cidade.value && r.municipio) en.cidade.setValue(r.municipio);
+        if (!en.cep.value && r.cep) en.cep.setValue(r.cep);
+      },
+      error: () => {
+        if (req === this.cnpjReq) {
+          this.cnpjBuscando.set(false);
+          this.cnpjErro.set(true);
+        }
+      },
     });
   }
 

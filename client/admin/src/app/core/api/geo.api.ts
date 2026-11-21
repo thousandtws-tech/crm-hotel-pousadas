@@ -1,14 +1,16 @@
-// Cliente HTTP dos serviços públicos de geografia (ViaCEP + REST Countries).
-// São APIs externas: não passam pelo ApiHttp (que é da clarituz-api) e o
-// interceptor de auth não injeta Bearer nelas — ver auth.interceptor.ts.
+// Cliente HTTP dos serviços públicos de geografia e dados cadastrais
+// (ViaCEP + REST Countries + BrasilAPI). São APIs externas: não passam pelo
+// ApiHttp (que é da clarituz-api) e o interceptor de auth não injeta Bearer
+// nelas — ver auth.interceptor.ts.
 
 import { HttpClient } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
 import { Observable, map, shareReplay } from 'rxjs';
-import { PaisGeo, RestCountry, ViaCepResponse } from '@core/models/geo.models';
+import { BrasilApiCnpj, PaisGeo, RestCountry, ViaCepResponse } from '@core/models/geo.models';
 
 const VIACEP = 'https://viacep.com.br/ws';
 const RESTCOUNTRIES = 'https://restcountries.com/v3.1';
+const BRASILAPI = 'https://brasilapi.com.br/api';
 
 @Service()
 export class GeoApi {
@@ -18,6 +20,11 @@ export class GeoApi {
   /** CEP com 8 dígitos -> endereço (logradouro/bairro/cidade/UF). */
   buscarCep(cep: string): Observable<ViaCepResponse> {
     return this.http.get<ViaCepResponse>(`${VIACEP}/${cep}/json/`);
+  }
+
+  /** CNPJ com 14 dígitos -> dados cadastrais da Receita (via BrasilAPI). */
+  buscarCnpj(cnpj: string): Observable<BrasilApiCnpj> {
+    return this.http.get<BrasilApiCnpj>(`${BRASILAPI}/cnpj/v1/${cnpj}`);
   }
 
   /** Todos os países em português — uma única chamada, cacheada na sessão. */

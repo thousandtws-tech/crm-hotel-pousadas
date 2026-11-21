@@ -77,7 +77,13 @@
               type="text"
               formControlName="cnpj"
               placeholder="00.000.000/0000-00"
+              (input)="mascaraCnpj($event)"
             />
+            @if (cnpjBuscando()) {
+              <small class="hint">Consultando CNPJ…</small>
+            } @else if (cnpjErro()) {
+              <small class="hint erro">CNPJ não encontrado — preencha manualmente.</small>
+            }
           </label>
           <label class="lbl">
             Telefone

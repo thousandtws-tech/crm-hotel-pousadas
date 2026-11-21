@@ -14,6 +14,26 @@ export interface ViaCepResponse {
   erro?: boolean;
 }
 
+/** Resposta de https://brasilapi.com.br/api/cnpj/v1/{cnpj} */
+export interface BrasilApiCnpj {
+  cnpj?: string;
+  razao_social?: string;
+  nome_fantasia?: string;
+  ddd_telefone_1?: string;
+  email?: string | null;
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  municipio?: string;
+  uf?: string;
+  descricao_situacao_cadastral?: string;
+  /** BrasilAPI devolve erro HTTP com { message, type, name } no corpo. */
+  message?: string;
+  type?: string;
+}
+
 /** País normalizado para o seletor com bandeira. */
 export interface PaisGeo {
   /** ISO 3166-1 alpha-2 — chave das imagens no flagcdn. */

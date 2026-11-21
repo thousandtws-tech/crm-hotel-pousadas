@@ -13,6 +13,7 @@ import {
 import { ItemEstoque } from '@core/models/estoque.models';
 import { ComprasApi } from '@core/api/compras.api';
 import { EstoqueApi } from '@core/api/estoque.api';
+import { GeoApi } from '@core/api/geo.api';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { NotifyService } from '../../core/services/notify.service';
 import { RealtimeService } from '../../core/services/realtime.service';
@@ -38,10 +39,19 @@ interface LinhaPedido {
   valor_unit: number | null;
 }
 
+/** "1123851939" -> "(11) 2385-1939" */
+function formatarFoneCnpj(t: string): string {
+  const d = t.replace(/\D/g, '');
+  if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return d;
+}
+
 @Directive()
 export abstract class ComprasStore {
   private readonly comprasApi = inject(ComprasApi);
   private readonly estoqueApi = inject(EstoqueApi);
+  private readonly geo = inject(GeoApi);
   private readonly nt = inject(NotifyService);
   private readonly rt = inject(RealtimeService);
   private readonly confirm = inject(ConfirmService);
@@ -94,6 +104,11 @@ export abstract class ComprasStore {
     telefone: new FormControl('', { nonNullable: true }),
     lead_time_dias: new FormControl(0, { nonNullable: true }),
   });
+
+  protected readonly cnpjFornBuscando = signal(false);
+  private ultimoCnpjForn = '';
+  private ultimoCnpjRapido = '';
+  private cnpjFornReq = 0;
 
   readonly pedForm = new FormGroup({
     idfornecedor: new FormControl<number | null>(null, { validators: [Validators.required] }),
@@ -385,6 +400,69 @@ export abstract class ComprasStore {
     } finally {
       this.salvandoForn.set(false);
     }
+  }
+
+  /** Mesma máscara/consulta do form completo — para o campo rápido (signal). */
+  mascaraCnpjRapido(e: Event): void {
+    const el = e.target as HTMLInputElement;
+    const d = el.value.replace(/\D/g, '').slice(0, 14);
+    const v = d
+      .replace(/(\d{2})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1/$2')
+      .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+    this.rapidoCnpj.set(v);
+    if (d.length === 14) this.buscarCnpjRapido(d);
+    else this.ultimoCnpjRapido = '';
+  }
+
+  private buscarCnpjRapido(digitos: string): void {
+    if (digitos === this.ultimoCnpjRapido) return;
+    this.ultimoCnpjRapido = digitos;
+    const req = ++this.cnpjFornReq;
+    this.geo.buscarCnpj(digitos).subscribe({
+      next: (r) => {
+        if (req !== this.cnpjFornReq || !r?.cnpj) return;
+        if (!this.rapidoNome().trim()) this.rapidoNome.set(r.nome_fantasia || r.razao_social || '');
+      },
+      error: () => {},
+    });
+  }
+
+  /** Máscara 00.000.000/0000-00; CNPJ completo consulta a BrasilAPI. */
+  mascaraCnpjForn(e: Event): void {
+    const el = e.target as HTMLInputElement;
+    const d = el.value.replace(/\D/g, '').slice(0, 14);
+    const v = d
+      .replace(/(\d{2})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1/$2')
+      .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+    this.fornForm.controls.cnpj.setValue(v, { emitEvent: false });
+    if (d.length === 14) this.buscarCnpjForn(d);
+    else this.ultimoCnpjForn = '';
+  }
+
+  /** CNPJ completo -> BrasilAPI preenche nome/telefone vazios; falhas ficam manuais. */
+  private buscarCnpjForn(digitos: string): void {
+    if (digitos === this.ultimoCnpjForn) return;
+    this.ultimoCnpjForn = digitos;
+    const req = ++this.cnpjFornReq;
+    this.cnpjFornBuscando.set(true);
+    this.geo.buscarCnpj(digitos).subscribe({
+      next: (r) => {
+        if (req !== this.cnpjFornReq) return;
+        this.cnpjFornBuscando.set(false);
+        if (!r?.cnpj) return;
+        const f = this.fornForm.controls;
+        if (!f.nome.value) f.nome.setValue(r.nome_fantasia || r.razao_social || '');
+        if (!f.telefone.value && r.ddd_telefone_1)
+          f.telefone.setValue(formatarFoneCnpj(r.ddd_telefone_1));
+      },
+      error: () => {
+        if (req === this.cnpjFornReq) this.cnpjFornBuscando.set(false);
+      },
+    });
   }
 
   editarForn(f: Fornecedor): void {

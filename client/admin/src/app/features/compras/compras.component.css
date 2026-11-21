@@ -272,6 +272,10 @@ h1 {
   font-weight: 600;
   color: #054054;
 }
+.lbl-hint {
+  font-weight: 400;
+  color: #8fa3ab;
+}
 .inp {
   padding: 8px 12px;
   border: 1px solid #d7e0e6;
