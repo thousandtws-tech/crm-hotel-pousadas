@@ -650,6 +650,48 @@
             aria-label="Contato"
           />
         </div>
+        <div class="gr-emp">
+          <select
+            class="inp"
+            aria-label="Empresa de turismo (opcional)"
+            (change)="selecionarOperadora($any($event.target).value)"
+          >
+            <option value="" [selected]="gOperadoraId() === null">
+              Empresa de turismo (opcional)
+            </option>
+            @for (o of operadoras(); track o.id) {
+              <option [value]="o.id" [selected]="gOperadoraId() === o.id">{{ o.nome }}</option>
+            }
+          </select>
+          <button
+            type="button"
+            class="gr-emp-nova-btn"
+            [class.on]="novaEmpresa()"
+            (click)="novaEmpresa.set(!novaEmpresa())"
+          >
+            <mat-icon>domain_add</mat-icon> Nova empresa
+          </button>
+        </div>
+        @if (novaEmpresa()) {
+          <div class="gr-emp-form" role="group" aria-label="Cadastro rápido de empresa">
+            <input
+              class="inp"
+              placeholder="Nome da empresa de turismo"
+              [value]="novaEmpresaNome"
+              (input)="novaEmpresaNome = $any($event.target).value"
+              (keydown.enter)="criarEmpresaRapida()"
+              aria-label="Nome da nova empresa"
+            />
+            <button
+              type="button"
+              class="btn-pri"
+              [disabled]="salvandoEmpresa()"
+              (click)="criarEmpresaRapida()"
+            >
+              {{ salvandoEmpresa() ? 'Salvando…' : 'Cadastrar' }}
+            </button>
+          </div>
+        }
         <div class="gr-range" role="group" aria-label="Período do grupo">
           <input
             type="date"
@@ -719,6 +761,9 @@
                 <mat-icon>delete</mat-icon>
               </button>
             </div>
+            @if (g.operadora_nome) {
+              <p class="gr-contato"><mat-icon>business</mat-icon> {{ g.operadora_nome }}</p>
+            }
             @if (g.contato) {
               <p class="gr-contato"><mat-icon>person</mat-icon> {{ g.contato }}</p>
             }

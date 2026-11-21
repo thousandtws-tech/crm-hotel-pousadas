@@ -395,6 +395,52 @@
   color: #8a99a4;
   flex-shrink: 0;
 }
+.gr-emp {
+  display: flex;
+  gap: 8px;
+}
+.gr-emp .inp {
+  flex: 1;
+  min-width: 0;
+}
+.gr-emp-nova-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  border: 1px dashed #c9d4da;
+  border-radius: 8px;
+  background: transparent;
+  color: #4a6070;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.gr-emp-nova-btn:hover,
+.gr-emp-nova-btn.on {
+  border-color: #0f4c5c;
+  color: #0f4c5c;
+}
+.gr-emp-nova-btn mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+.gr-emp-form {
+  display: flex;
+  gap: 8px;
+}
+.gr-emp-form .inp {
+  flex: 1;
+  min-width: 0;
+}
+.gr-emp-form .btn-pri {
+  white-space: nowrap;
+}
 .gr-sub {
   margin: 4px 0 0;
   font-size: 0.75rem;

@@ -429,6 +429,7 @@ impl ReservaRepository for PgReservaRepository {
         &self,
         nome: &str,
         contato: Option<&str>,
+        idoperadora: Option<i64>,
         obs: Option<&str>,
         inicio: NaiveDate,
         fim: NaiveDate,
@@ -438,12 +439,14 @@ impl ReservaRepository for PgReservaRepository {
     ) -> Result<Grupo, DomainError> {
         let mut tx = self.pool.begin().await.map_err(map_db_err)?;
         let grupo = sqlx::query_as::<_, Grupo>(
-            "INSERT INTO grupo (nome, contato, obs, inicio, fim, criado_por)
-             VALUES ($1, $2, $3, $4, $5, $6)
-             RETURNING id, nome, contato, obs, inicio, fim, criado_por, criado_em",
+            "INSERT INTO grupo (nome, contato, idoperadora, obs, inicio, fim, criado_por)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             RETURNING id, nome, contato, idoperadora, NULL::text AS operadora_nome,
+                       obs, inicio, fim, criado_por, criado_em",
         )
         .bind(nome)
         .bind(contato)
+        .bind(idoperadora)
         .bind(obs)
         .bind(inicio)
         .bind(fim)
@@ -480,8 +483,11 @@ impl ReservaRepository for PgReservaRepository {
 
     async fn grupo_listar(&self) -> Result<Vec<Grupo>, DomainError> {
         sqlx::query_as::<_, Grupo>(
-            "SELECT id, nome, contato, obs, inicio, fim, criado_por, criado_em
-             FROM grupo ORDER BY inicio DESC",
+            "SELECT g.id, g.nome, g.contato, g.idoperadora, o.nome AS operadora_nome,
+                    g.obs, g.inicio, g.fim, g.criado_por, g.criado_em
+             FROM grupo g
+             LEFT JOIN operadora o ON o.id = g.idoperadora
+             ORDER BY g.inicio DESC",
         )
         .fetch_all(&self.pool)
         .await

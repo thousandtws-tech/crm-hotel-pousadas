@@ -165,6 +165,7 @@ pub struct TarifaPeriodoInput {
 pub struct GrupoInput {
     pub nome: String,
     pub contato: Option<String>,
+    pub idoperadora: Option<i64>,
     pub obs: Option<String>,
     pub inicio: NaiveDate,
     pub fim: NaiveDate,

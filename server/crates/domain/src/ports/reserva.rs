@@ -205,6 +205,7 @@ pub trait ReservaRepository: Send + Sync {
         &self,
         nome: &str,
         contato: Option<&str>,
+        idoperadora: Option<i64>,
         obs: Option<&str>,
         inicio: NaiveDate,
         fim: NaiveDate,

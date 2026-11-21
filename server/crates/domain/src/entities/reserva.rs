@@ -185,6 +185,10 @@ pub struct Grupo {
     pub id: i64,
     pub nome: String,
     pub contato: Option<String>,
+    /// Operadora B2B de origem (excursão de agência) — None em grupo próprio.
+    pub idoperadora: Option<i64>,
+    /// Nome da operadora — via LEFT JOIN na listagem; None nas demais consultas.
+    pub operadora_nome: Option<String>,
     pub obs: Option<String>,
     pub inicio: NaiveDate,
     pub fim: NaiveDate,

@@ -84,6 +84,8 @@ export interface Grupo {
   id: number;
   nome: string;
   contato: string | null;
+  idoperadora: number | null;
+  operadora_nome: string | null;
   obs: string | null;
   inicio: string;
   fim: string;
@@ -94,6 +96,7 @@ export interface Grupo {
 export interface GrupoInput {
   nome: string;
   contato?: string | null;
+  idoperadora?: number | null;
   obs?: string | null;
   inicio: string;
   fim: string;

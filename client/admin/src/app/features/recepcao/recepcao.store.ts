@@ -8,8 +8,10 @@ import { PageEvent } from '@angular/material/paginator';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { AcomodacoesApi } from '@core/api/acomodacoes.api';
 import { OperacaoApi } from '@core/api/operacao.api';
+import { OperadorasApi } from '@core/api/operadoras.api';
 import { ReservasApi } from '@core/api/reservas.api';
 import { Acomodacao, Grupo, GrupoUnidadeView } from '@core/models/catalogo.models';
+import { Operadora } from '@core/models/comercial.models';
 import { Bloqueio, MapaQuarto, ReservaResumo } from '@core/models/reservas.models';
 import { StatusReserva } from '@core/models/comum.models';
 import { NotifyService } from '@core/services/notify.service';
@@ -26,6 +28,7 @@ export abstract class RecepcaoStore implements OnInit {
   private readonly reservasApi = inject(ReservasApi);
   private readonly operacaoApi = inject(OperacaoApi);
   private readonly acomodacoesApi = inject(AcomodacoesApi);
+  private readonly operadorasApi = inject(OperadorasApi);
   private readonly notify = inject(NotifyService);
   private readonly router = inject(Router);
   private readonly confirm = inject(ConfirmService);
@@ -88,6 +91,11 @@ export abstract class RecepcaoStore implements OnInit {
   protected gInicio = '';
   protected gFim = '';
   protected gBloquear = true;
+  protected readonly operadoras = signal<Operadora[]>([]);
+  protected readonly gOperadoraId = signal<number | null>(null);
+  protected readonly novaEmpresa = signal(false);
+  protected readonly salvandoEmpresa = signal(false);
+  protected novaEmpresaNome = '';
   private readonly STATUS: Record<StatusReserva, { rotulo: string; bg: string; fg: string }> = {
     p: { rotulo: 'Pendente', bg: '#eef2f5', fg: '#8a6200' },
     i: { rotulo: 'Hospedado', bg: '#eef2f5', fg: '#1a6f8a' },
@@ -267,6 +275,13 @@ export abstract class RecepcaoStore implements OnInit {
     this.reservasApi
       .grupos()
       .subscribe({ next: (g) => this.grupos.set(g), error: () => undefined });
+    this.operadorasApi.listarOperadoras().subscribe({
+      next: (l) =>
+        this.operadoras.set(
+          l.filter((o) => o.ativa).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
+        ),
+      error: () => undefined,
+    });
     if (!this.acomodacoes().length) {
       this.acomodacoesApi.listarAcomodacoes(1, 200, true).subscribe({
         next: (p) => this.acomodacoes.set(p.items),
@@ -284,6 +299,36 @@ export abstract class RecepcaoStore implements OnInit {
     });
   }
 
+  selecionarOperadora(v: string): void {
+    this.gOperadoraId.set(v === '' ? null : +v);
+  }
+
+  /** Cadastro rápido de agência/empresa de turismo sem sair da recepção — sem extranet. */
+  criarEmpresaRapida(): void {
+    const nome = this.novaEmpresaNome.trim();
+    if (nome.length < 2) {
+      this.notify.aviso('Informe o nome da empresa.');
+      return;
+    }
+    this.salvandoEmpresa.set(true);
+    this.operadorasApi.criarOperadora({ nome }).subscribe({
+      next: (r) => {
+        this.salvandoEmpresa.set(false);
+        this.operadoras.update((l) =>
+          [...l, r.operadora].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
+        );
+        this.gOperadoraId.set(r.operadora.id);
+        this.novaEmpresaNome = '';
+        this.novaEmpresa.set(false);
+        this.notify.ok(`Empresa "${r.operadora.nome}" cadastrada e selecionada.`);
+      },
+      error: (e) => {
+        this.salvandoEmpresa.set(false);
+        this.notify.erro(e);
+      },
+    });
+  }
+
   criarGrupo(): void {
     if (!this.gNome.trim() || !this.gInicio || !this.gFim || this.gSel().size === 0) {
       this.notify.aviso('Nome, período e ao menos uma unidade são obrigatórios.');
@@ -294,6 +339,7 @@ export abstract class RecepcaoStore implements OnInit {
       .criarGrupo({
         nome: this.gNome.trim(),
         contato: this.gContato.trim() || null,
+        idoperadora: this.gOperadoraId(),
         inicio: this.gInicio,
         fim: this.gFim,
         unidades: [...this.gSel()],
@@ -304,6 +350,7 @@ export abstract class RecepcaoStore implements OnInit {
           this.salvandoGrupo.set(false);
           this.gNome = '';
           this.gContato = '';
+          this.gOperadoraId.set(null);
           this.gInicio = '';
           this.gFim = '';
           this.gSel.set(new Set());

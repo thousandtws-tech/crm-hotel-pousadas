@@ -2177,6 +2177,7 @@ impl ReservaService {
             .grupo_criar(
                 nome,
                 opt_str(input.contato).as_deref(),
+                input.idoperadora,
                 opt_str(input.obs).as_deref(),
                 input.inicio,
                 input.fim,
