@@ -1332,12 +1332,18 @@ impl ComunicacaoService {
         let id = self.campanhas.criar(nome, texto, ator.id).await?;
         let agora = Utc::now();
         let mut enfileirados = 0i64;
-        for d in &elegiveis {
+        // Anti-ban: cada destinatário num slot de 10s + jitter determinístico
+        // de 0–2s dentro do slot — ~5 msg/min, ordem garantida, nunca rajada.
+        // Essencial pro Z-API não-oficial; agendado_para = worker não bloqueia.
+        for (i, d) in elegiveis.iter().enumerate() {
             let corpo = serde_json::json!({
                 "tipo": "texto",
                 "texto": texto.replace("{nome}", primeiro_nome(&d.nome)),
             });
             let dedup = format!("campanha:{id}:cliente:{}", d.idcliente);
+            let jitter_ms = (d.idcliente.wrapping_mul(2_654_435_761) % 2_000).unsigned_abs();
+            let quando =
+                agora + Duration::seconds(10 * i as i64) + Duration::milliseconds(jitter_ms as i64);
             if self
                 .fila
                 .enfileirar_dedup(
@@ -1349,7 +1355,7 @@ impl ComunicacaoService {
                         idreserva: None,
                         idcliente: Some(d.idcliente),
                         idfuncionario: Some(ator.id),
-                        agendado_para: agora,
+                        agendado_para: quando,
                     },
                     &dedup,
                     1,
