@@ -28,7 +28,11 @@ export interface BrasilApiCnpj {
   bairro?: string;
   municipio?: string;
   uf?: string;
+  ddd_telefone_2?: string;
+  descricao_tipo_de_logradouro?: string;
   descricao_situacao_cadastral?: string;
+  /** Quadro de sócios — primeiro nome pode sugerir a pessoa de contato. */
+  qsa?: { nome_socio?: string; qualificacao_socio?: string }[];
   /** BrasilAPI devolve erro HTTP com { message, type, name } no corpo. */
   message?: string;
   type?: string;

@@ -83,6 +83,8 @@
               <small class="hint">Consultando CNPJ…</small>
             } @else if (cnpjErro()) {
               <small class="hint erro">CNPJ não encontrado — preencha manualmente.</small>
+            } @else if (cnpjSituacao(); as sit) {
+              <small class="hint erro">CNPJ consta como {{ sit }} na Receita.</small>
             }
           </label>
           <label class="lbl">

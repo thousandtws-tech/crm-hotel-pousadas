@@ -108,6 +108,7 @@ export abstract class EstabelecimentoStore implements OnInit {
   protected readonly endOk = signal(false);
   protected readonly cnpjBuscando = signal(false);
   protected readonly cnpjErro = signal(false);
+  protected readonly cnpjSituacao = signal<string | null>(null);
   private ultimoCnpj = '';
   private cnpjReq = 0;
   protected readonly impOk = computed(() => this.impressoras().some((p) => p.padrao && p.ativa));
@@ -168,13 +169,21 @@ export abstract class EstabelecimentoStore implements OnInit {
           this.cnpjErro.set(true);
           return;
         }
+        this.cnpjSituacao.set(
+          r.descricao_situacao_cadastral && r.descricao_situacao_cadastral !== 'ATIVA'
+            ? r.descricao_situacao_cadastral
+            : null,
+        );
         const d = this.dados.controls;
         if (!d.razao_social.value) d.razao_social.setValue(r.razao_social ?? '');
-        if (!d.telefone.value && r.ddd_telefone_1)
-          d.telefone.setValue(formatarFoneCnpj(r.ddd_telefone_1));
+        const fone = r.ddd_telefone_1 || r.ddd_telefone_2;
+        if (!d.telefone.value && fone) d.telefone.setValue(formatarFoneCnpj(fone));
         if (!d.email.value && r.email) d.email.setValue(r.email);
         const en = this.endereco.controls;
-        if (!en.logradouro.value && r.logradouro) en.logradouro.setValue(r.logradouro);
+        if (!en.logradouro.value && r.logradouro)
+          en.logradouro.setValue(
+            [r.descricao_tipo_de_logradouro, r.logradouro].filter(Boolean).join(' '),
+          );
         if (!en.numero.value && r.numero) en.numero.setValue(r.numero);
         if (!en.complemento.value && r.complemento) en.complemento.setValue(r.complemento);
         if (!en.bairro.value && r.bairro) en.bairro.setValue(r.bairro);

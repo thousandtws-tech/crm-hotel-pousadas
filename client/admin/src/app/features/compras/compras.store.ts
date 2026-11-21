@@ -456,8 +456,11 @@ export abstract class ComprasStore {
         if (!r?.cnpj) return;
         const f = this.fornForm.controls;
         if (!f.nome.value) f.nome.setValue(r.nome_fantasia || r.razao_social || '');
-        if (!f.telefone.value && r.ddd_telefone_1)
-          f.telefone.setValue(formatarFoneCnpj(r.ddd_telefone_1));
+        const fone = r.ddd_telefone_1 || r.ddd_telefone_2;
+        if (!f.telefone.value && fone) f.telefone.setValue(formatarFoneCnpj(fone));
+        const socio = r.qsa?.[0]?.nome_socio?.trim();
+        if (!f.contato.value && socio)
+          f.contato.setValue(socio.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()));
       },
       error: () => {
         if (req === this.cnpjFornReq) this.cnpjFornBuscando.set(false);
