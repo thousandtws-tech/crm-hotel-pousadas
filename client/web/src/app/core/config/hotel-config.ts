@@ -17,7 +17,7 @@ export const HOTEL_CONFIG = {
   phoneHref: '+552226443077',
   whatsapp: '5522981874553' as string | null,
   whatsappDefaultMessage:
-    'Olá! Gostaria de consultar a disponibilidade de hospedagem na Pousada Espírito do Mar.',
+    'Olá! Vim pelo site e gostaria de consultar a disponibilidade de hospedagem na Pousada Espírito do Mar.',
   email: null as string | null,
   checkIn: 'A partir das 13h (confirme o horário no ato da reserva)',
   checkOut: 'Até as 11h (confirme o horário no ato da reserva)',
