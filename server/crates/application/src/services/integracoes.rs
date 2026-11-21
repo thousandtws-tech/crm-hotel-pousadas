@@ -31,6 +31,10 @@ fn campos_permitidos(provedor: ProvedorIntegracao) -> &'static [&'static str] {
         // Infobip: `api_key` (App auth) + `webhook_secret` gerado pelo
         // sistema na 1ª gravação — autentica o DLR no path do callback.
         ProvedorIntegracao::Infobip => &["api_key", "webhook_secret"],
+        // SERPRO/FNRH: usuário + senha das "Chaves de API" do portal
+        // FNRH (Basic Auth) e o CPF do responsável no Cadastur, que vai
+        // no header `cpf_solicitante` — CPF é PII, fica no cofre.
+        ProvedorIntegracao::Serpro => &["usuario", "senha", "cpf_solicitante"],
     }
 }
 
@@ -93,6 +97,9 @@ fn config_permitida(provedor: ProvedorIntegracao) -> &'static [&'static str] {
             "destinatarios_teste",
             "webhook_registrado",
         ],
+        // SERPRO: override de endpoint quando o governo mudar o host —
+        // sem override o resolver usa a URL oficial do ambiente.
+        ProvedorIntegracao::Serpro => &["base_url"],
         _ => &[],
     }
 }
@@ -130,6 +137,7 @@ fn escopo_padrao(provedor: ProvedorIntegracao) -> &'static str {
         ProvedorIntegracao::Spedy => "fiscal",
         ProvedorIntegracao::Didit => "verificacao",
         ProvedorIntegracao::Channex => "distribuicao",
+        ProvedorIntegracao::Serpro => "fnrh",
         _ => ESCOPO_PAGAMENTOS_SITE,
     }
 }
@@ -177,6 +185,10 @@ fn capabilities_padrao(provedor: ProvedorIntegracao) -> serde_json::Value {
             "dlr": ["delivered", "rejected", "undeliverable", "expired", "pending"],
             "estados": ["aceito", "enviado", "entregue", "falhou"],
         }),
+        ProvedorIntegracao::Serpro => serde_json::json!({
+            "api": "FNRH v2", "registro_hospedagem": true,
+            "homologacao": true, "protocolo": true, "reenvio": true,
+        }),
     }
 }
 
@@ -193,6 +205,8 @@ pub struct IntegracoesService {
     verificacao: Option<Arc<crate::services::verificacao::VerificacaoService>>,
     /// Distribuição (Channex) — teste de conexão delega à leitura remota.
     distribuicao: Option<Arc<crate::services::channex::ChannexService>>,
+    /// FNRH/SERPRO — resolve o adapter do cofre para o teste de conexão.
+    fnrh: Option<Arc<dyn clarituz_domain::ports::FnrhResolver>>,
     pagamentos: Arc<dyn clarituz_domain::ports::PagamentoRepository>,
     stripe_env_ativo: bool,
 }
@@ -215,6 +229,7 @@ impl IntegracoesService {
         fiscal: Option<Arc<crate::services::fiscal::FiscalService>>,
         verificacao: Option<Arc<crate::services::verificacao::VerificacaoService>>,
         distribuicao: Option<Arc<crate::services::channex::ChannexService>>,
+        fnrh: Option<Arc<dyn clarituz_domain::ports::FnrhResolver>>,
         pagamentos: Arc<dyn clarituz_domain::ports::PagamentoRepository>,
         stripe_env_ativo: bool,
     ) -> Self {
@@ -227,6 +242,7 @@ impl IntegracoesService {
             fiscal,
             verificacao,
             distribuicao,
+            fnrh,
             pagamentos,
             stripe_env_ativo,
         }
@@ -245,6 +261,7 @@ impl IntegracoesService {
             ProvedorIntegracao::Didit,
             ProvedorIntegracao::Channex,
             ProvedorIntegracao::Infobip,
+            ProvedorIntegracao::Serpro,
         ] {
             let padrao = self.repo.padrao(escopo_padrao(provedor)).await?;
             for ambiente in provedor.ambientes() {
@@ -786,6 +803,49 @@ impl IntegracoesService {
                     StatusVerificacao::Ok => {
                         "Conexão verificada — conta Infobip autenticada.".into()
                     }
+                    _ => erro
+                        .clone()
+                        .unwrap_or_else(|| "Falha na verificação.".into()),
+                },
+            });
+        }
+
+        // SERPRO/FNRH: teste = probe autenticado no path de registro —
+        // credencial recusada falha; o resto prova acesso sem registrar.
+        if provedor == ProvedorIntegracao::Serpro {
+            let resultado = match self.fnrh.as_ref() {
+                Some(f) => match f.testar(ambiente).await {
+                    Ok(Some(rotulo)) => (StatusVerificacao::Ok, None, Some(rotulo)),
+                    Ok(None) => (
+                        StatusVerificacao::Falha,
+                        Some("Sem credenciais configuradas para teste.".into()),
+                        None,
+                    ),
+                    Err(e) => (StatusVerificacao::Falha, Some(e.to_string()), None),
+                },
+                None => (
+                    StatusVerificacao::Falha,
+                    Some("Resolver FNRH indisponível.".into()),
+                    None,
+                ),
+            };
+            let (status, erro, conta) = resultado;
+            let caps = capabilities_padrao(provedor);
+            self.repo
+                .registrar_verificacao(
+                    i.id,
+                    i.versao,
+                    status,
+                    erro.as_deref(),
+                    conta.as_deref(),
+                    &caps,
+                )
+                .await?;
+            return Ok(TesteConexaoOutput {
+                verificacao_status: status.as_str().into(),
+                nome_conta: conta,
+                mensagem: match status {
+                    StatusVerificacao::Ok => "Conexão verificada — API FNRH autenticada.".into(),
                     _ => erro
                         .clone()
                         .unwrap_or_else(|| "Falha na verificação.".into()),

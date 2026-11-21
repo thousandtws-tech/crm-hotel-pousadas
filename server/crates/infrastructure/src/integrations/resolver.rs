@@ -21,6 +21,7 @@ fn campo_chave(provedor: ProvedorIntegracao) -> &'static str {
         | ProvedorIntegracao::Didit
         | ProvedorIntegracao::Channex
         | ProvedorIntegracao::Infobip => "api_key",
+        ProvedorIntegracao::Serpro => "senha",
     }
 }
 
@@ -69,7 +70,10 @@ impl PgGatewayResolver {
     ) -> Result<Arc<dyn PaymentGateway>, DomainError> {
         if matches!(
             provedor,
-            ProvedorIntegracao::Zapi | ProvedorIntegracao::Spedy | ProvedorIntegracao::Channex
+            ProvedorIntegracao::Zapi
+                | ProvedorIntegracao::Spedy
+                | ProvedorIntegracao::Channex
+                | ProvedorIntegracao::Serpro
         ) {
             return Err(DomainError::regra(
                 "provedor sem gateway de pagamento — use o resolver da categoria",
@@ -112,7 +116,8 @@ impl PgGatewayResolver {
             | ProvedorIntegracao::Spedy
             | ProvedorIntegracao::Didit
             | ProvedorIntegracao::Channex
-            | ProvedorIntegracao::Infobip => unreachable!(),
+            | ProvedorIntegracao::Infobip
+            | ProvedorIntegracao::Serpro => unreachable!(),
         };
         Ok(gw)
     }

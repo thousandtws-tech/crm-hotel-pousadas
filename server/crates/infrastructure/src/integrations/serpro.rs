@@ -289,4 +289,22 @@ impl ProvedorFnrh for SerproFnrh {
             mensagem: v["mensagem"].as_str().map(String::from),
         })
     }
+
+    /// GET no path de registro (POST-only) — credencial recusada volta
+    /// 401/403; 405/404/2xx provam autenticação sem registrar nada.
+    async fn testar(&self) -> Result<String, DomainError> {
+        let r = http()
+            .get(format!("{}/hospedagem/registrar", self.url))
+            .basic_auth(&self.usuario, Some(&self.senha))
+            .header("cpf_solicitante", &self.cpf_solicitante)
+            .send()
+            .await
+            .map_err(erro_http)?;
+        if r.status().as_u16() == 401 || r.status().as_u16() == 403 {
+            return Err(DomainError::regra(
+                "serpro: credenciais recusadas (usuário/senha ou cpf_solicitante)",
+            ));
+        }
+        Ok("API FNRH v2 alcançada".to_string())
+    }
 }

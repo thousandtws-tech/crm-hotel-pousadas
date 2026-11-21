@@ -19,6 +19,7 @@ export const ORDEM_PROVEDOR: ProvedorIntegracao[] = [
   'spedy',
   'didit',
   'channex',
+  'serpro',
 ];
 export const ORDEM_AMBIENTE: AmbienteIntegracao[] = ['producao', 'teste'];
 
@@ -31,6 +32,7 @@ export const ROTULO_PROVEDOR: Record<ProvedorIntegracao, string> = {
   spedy: 'Spedy',
   didit: 'Didit',
   channex: 'Channex',
+  serpro: 'SERPRO · FNRH',
 };
 
 export const ROTULO_AMBIENTE: Record<AmbienteIntegracao, string> = {
@@ -45,6 +47,7 @@ export const ORDEM_CATEGORIA: CategoriaIntegracao[] = [
   'fiscal',
   'seguranca',
   'distribuicao',
+  'governo',
 ];
 
 export const ROTULO_CATEGORIA: Record<CategoriaIntegracao, string> = {
@@ -53,6 +56,7 @@ export const ROTULO_CATEGORIA: Record<CategoriaIntegracao, string> = {
   fiscal: 'Fiscal',
   seguranca: 'Segurança',
   distribuicao: 'Distribuição',
+  governo: 'Governo',
 };
 
 /** Categoria estática por provedor — igual à regra do backend. */
@@ -65,6 +69,7 @@ export const CATEGORIA_PROVEDOR: Record<ProvedorIntegracao, CategoriaIntegracao>
   spedy: 'fiscal',
   didit: 'seguranca',
   channex: 'distribuicao',
+  serpro: 'governo',
 };
 
 /** estado → rótulo + variante de pill (semântica, sem cor arbitrária). */
@@ -251,6 +256,33 @@ export const CAMPOS_POR_PROVEDOR: Record<ProvedorIntegracao, CampoCredencial[]> 
       rotulo: 'Webhook signing secret',
       segredo: true,
       dica: 'Segredo da signing key — capturado ao registrar o webhook',
+    },
+  ],
+  // SERPRO/FNRH: usuário + senha das "Chaves de API" do portal FNRH
+  // (login Gov.br do responsável no Cadastur). `cpf_solicitante` é o CPF
+  // desse responsável — vai no header da API e é PII: fica no cofre.
+  serpro: [
+    {
+      nome: 'usuario',
+      rotulo: 'Usuário da API',
+      segredo: true,
+      obrigatorio: true,
+      dica: 'Gerado no portal FNRH — card "Chave das API\'s" (login Gov.br)',
+    },
+    {
+      nome: 'senha',
+      rotulo: 'Senha / token da API',
+      segredo: true,
+      obrigatorio: true,
+      dica: 'Mesmo par gerado junto do usuário no portal FNRH',
+    },
+    {
+      nome: 'cpf_solicitante',
+      rotulo: 'CPF do solicitante',
+      segredo: true,
+      obrigatorio: true,
+      placeholder: '000.000.000-00',
+      dica: 'CPF do responsável pela FNRH cadastrado no Cadastur',
     },
   ],
 };

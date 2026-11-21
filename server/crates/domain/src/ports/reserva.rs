@@ -26,6 +26,7 @@ use chrono::{DateTime, NaiveDate, Utc};
 use clarituz_shared::{Page, PageParams};
 use rust_decimal::Decimal;
 use serde_json::Value as JsonValue;
+use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct NovaReserva {
@@ -416,4 +417,24 @@ pub trait ProvedorFnrh: Send + Sync {
         ficha: &Fnrh,
         estabelecimento: &JsonValue,
     ) -> Result<FnrhSerproRetorno, DomainError>;
+
+    /// Prova de credencial sem efeito colateral — usada pelo botão
+    /// "Testar conexão" do módulo de Integrações.
+    async fn testar(&self) -> Result<String, DomainError>;
+}
+
+/// Resolve o provedor FNRH por ambiente — credenciais do cofre de
+/// integrações (módulo Integrações), com fallback às envs legadas.
+#[async_trait]
+pub trait FnrhResolver: Send + Sync {
+    /// Adapter para transmissões reais — só quando a integração de
+    /// produção está habilitada; senão tenta o fallback de ambiente.
+    async fn provedor(&self) -> Result<Option<Arc<dyn ProvedorFnrh>>, DomainError>;
+    /// Prova de credenciais para o botão "Testar conexão" — ignora
+    /// `habilitado` (o teste é o portão da habilitação). `None` = sem
+    /// credenciais configuradas no ambiente.
+    async fn testar(
+        &self,
+        ambiente: crate::entities::AmbienteIntegracao,
+    ) -> Result<Option<String>, DomainError>;
 }

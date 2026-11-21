@@ -180,6 +180,33 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         ))
     });
 
+    // FNRH — adapter das envs legadas + resolver que prefere a
+    // integração 'serpro' habilitada no cofre (módulo Integrações).
+    let fnrh_env: Option<Arc<dyn clarituz_domain::ports::ProvedorFnrh>> =
+        settings.serpro_fnrh_url.as_deref().map(|url| {
+            Arc::new(crate::integrations::serpro::SerproFnrh::new(
+                url,
+                settings.serpro_fnrh_usuario.as_deref().unwrap_or(""),
+                settings.serpro_fnrh_senha.as_deref().unwrap_or(""),
+                settings
+                    .serpro_fnrh_cpf_solicitante
+                    .as_deref()
+                    .unwrap_or(""),
+            )) as Arc<dyn clarituz_domain::ports::ProvedorFnrh>
+        });
+    let fnrh_resolver: Option<Arc<dyn clarituz_domain::ports::FnrhResolver>> = match &vault {
+        Some(v) => Some(
+            Arc::new(crate::integrations::resolver_fnrh::PgFnrhResolver::new(
+                integracoes_repo.clone() as Arc<dyn clarituz_domain::ports::IntegracaoRepository>,
+                v.clone(),
+                fnrh_env.clone(),
+            )) as Arc<dyn clarituz_domain::ports::FnrhResolver>,
+        ),
+        None => fnrh_env.clone().map(|e| {
+            Arc::new(crate::integrations::resolver_fnrh::EnvFnrhResolver(e))
+                as Arc<dyn clarituz_domain::ports::FnrhResolver>
+        }),
+    };
     let reservas_svc = Arc::new(ReservaService::new(ReservaDeps {
         reservas: reserva_repo.clone(),
         acomodacoes: acom_repo.clone(),
@@ -198,19 +225,9 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
         hold_minutos: settings.hold_minutos,
         dist: distribuicao_svc.clone(),
         comunicacao: Some(comunicacao_svc.clone()),
-        // SERPRO/FNRH — só sobe com endpoint configurado; sem ele as
-        // transmissões ficam 'pendente' e o painel orienta o CSV.
-        fnrh_serpro: settings.serpro_fnrh_url.as_deref().map(|url| {
-            Arc::new(crate::integrations::serpro::SerproFnrh::new(
-                url,
-                settings.serpro_fnrh_usuario.as_deref().unwrap_or(""),
-                settings.serpro_fnrh_senha.as_deref().unwrap_or(""),
-                settings
-                    .serpro_fnrh_cpf_solicitante
-                    .as_deref()
-                    .unwrap_or(""),
-            )) as Arc<dyn clarituz_domain::ports::ProvedorFnrh>
-        }),
+        // SERPRO/FNRH — o cofre de integrações manda; envs `SERPRO_*`
+        // viram fallback até a integração ser configurada/habilitada.
+        fnrh_resolver: fnrh_resolver.clone(),
     }));
     let pagamentos_online_svc = Arc::new(PagamentosOnlineService::new(
         pag_online_repo.clone(),
@@ -274,6 +291,7 @@ pub fn build_services(settings: &Settings, pool: &PgPool, eventos: &EventBus) ->
             fiscal_svc.clone(),
             verificacao_svc.clone(),
             distribuicao_svc.clone(),
+            fnrh_resolver.clone(),
             pag_online_repo as Arc<dyn clarituz_domain::ports::PagamentoRepository>,
             settings.stripe_secret_key.is_some(),
         ))

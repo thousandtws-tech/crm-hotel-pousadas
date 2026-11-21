@@ -67,9 +67,9 @@ pub struct ReservaDeps {
     /// Comunicação transacional pós-reserva — enfileira avisos
     /// (registrada/confirmada/cancelada) após o commit da transição.
     pub comunicacao: Option<Arc<crate::services::comunicacao::ComunicacaoService>>,
-    /// SERPRO/FNRH — `None` quando `SERPRO_FNRH_URL` não está configurada;
-    /// transmissões ficam 'pendente' e o painel orienta o envio manual.
-    pub fnrh_serpro: Option<Arc<dyn clarituz_domain::ports::ProvedorFnrh>>,
+    /// SERPRO/FNRH — resolve o adapter do cofre de integrações (ou envs
+    /// legadas); `None` sem cofre nem envs → transmissões 'pendente'.
+    pub fnrh_resolver: Option<Arc<dyn clarituz_domain::ports::FnrhResolver>>,
 }
 
 pub struct ReservaService {
@@ -90,7 +90,7 @@ pub struct ReservaService {
     hold_minutos: i64,
     dist: Option<Arc<crate::services::channex::ChannexService>>,
     comunicacao: Option<Arc<crate::services::comunicacao::ComunicacaoService>>,
-    fnrh_serpro: Option<Arc<dyn clarituz_domain::ports::ProvedorFnrh>>,
+    fnrh_resolver: Option<Arc<dyn clarituz_domain::ports::FnrhResolver>>,
 }
 
 impl ReservaService {
@@ -113,7 +113,7 @@ impl ReservaService {
             hold_minutos: d.hold_minutos,
             dist: d.dist,
             comunicacao: d.comunicacao,
-            fnrh_serpro: d.fnrh_serpro,
+            fnrh_resolver: d.fnrh_resolver,
         }
     }
 
@@ -1804,7 +1804,21 @@ impl ReservaService {
     /// transmissão fica 'pendente' orientando a exportação manual.
     async fn transmitir_serpro(&self, idfnrh: i64, idreserva: i64) -> AppResult<()> {
         let tx = self.fnrh.transmissao_registrar(idfnrh, idreserva).await?;
-        let (status, protocolo, erro) = match &self.fnrh_serpro {
+        // Resolve o adapter: integração 'serpro' habilitada no cofre,
+        // senão envs legadas. Falha do resolver vira 'erro' no histórico.
+        let provedor = match &self.fnrh_resolver {
+            None => None,
+            Some(r) => match r.provedor().await {
+                Ok(p) => p,
+                Err(e) => {
+                    self.fnrh
+                        .transmissao_marcar(tx.id, "erro", None, Some(&e.to_string()))
+                        .await?;
+                    return Ok(());
+                }
+            },
+        };
+        let (status, protocolo, erro) = match provedor {
             None => (
                 "pendente".to_string(),
                 None,

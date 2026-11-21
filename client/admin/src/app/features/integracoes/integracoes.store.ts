@@ -38,6 +38,7 @@ const DESCRITOR_PROVEDOR: Record<M.ProvedorIntegracao, string> = {
   didit: 'Verificação de identidade (KYC)',
   channex: 'Channel manager (OTAs)',
   infobip: 'SMS transacional',
+  serpro: 'FNRH — registro de hóspedes',
 };
 
 /**

@@ -13,6 +13,7 @@ pub enum ProvedorIntegracao {
     Didit,
     Channex,
     Infobip,
+    Serpro,
 }
 
 impl ProvedorIntegracao {
@@ -26,6 +27,7 @@ impl ProvedorIntegracao {
             Self::Didit => "didit",
             Self::Channex => "channex",
             Self::Infobip => "infobip",
+            Self::Serpro => "serpro",
         }
     }
 
@@ -39,6 +41,7 @@ impl ProvedorIntegracao {
             "didit" => Some(Self::Didit),
             "channex" => Some(Self::Channex),
             "infobip" => Some(Self::Infobip),
+            "serpro" => Some(Self::Serpro),
             _ => None,
         }
     }
@@ -49,6 +52,7 @@ impl ProvedorIntegracao {
             Self::Spedy => "fiscal",
             Self::Didit => "seguranca",
             Self::Channex => "distribuicao",
+            Self::Serpro => "governo",
             _ => "pagamento",
         }
     }

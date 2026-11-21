@@ -12,7 +12,8 @@ export type ProvedorIntegracao =
   | 'spedy'
   | 'didit'
   | 'channex'
-  | 'infobip';
+  | 'infobip'
+  | 'serpro';
 
 /** @deprecated Alias legado — prefira `ProvedorIntegracao`. */
 export type ProvedorPagamento = ProvedorIntegracao;
@@ -25,7 +26,8 @@ export type CategoriaIntegracao =
   | 'comunicacao'
   | 'fiscal'
   | 'seguranca'
-  | 'distribuicao';
+  | 'distribuicao'
+  | 'governo';
 
 export type EstadoIntegracao =
   'ativa' | 'pendente' | 'falha' | 'desativada' | 'gerenciado_pelo_ambiente' | 'nao_configurada';
