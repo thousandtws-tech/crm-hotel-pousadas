@@ -522,6 +522,13 @@ export class BookingComponent implements OnInit {
 
   constructor() {
     afterNextRender(() => {
+      // Aquece DNS+TLS do checkout hospedado — ao clicar "Pagar agora" o
+      // browser já tem a conexão pronta e a página do Stripe abre antes.
+      const link = document.createElement('link');
+      link.rel = 'preconnect';
+      link.href = 'https://checkout.stripe.com';
+      link.crossOrigin = 'anonymous';
+      document.head.appendChild(link);
       this.initAnimations();
     });
   }
