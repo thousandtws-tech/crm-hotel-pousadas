@@ -911,6 +911,14 @@ impl ComunicacaoService {
         if let Some(link) = self.link_portal(r) {
             let _ = write!(s, "\n\nDetalhes da estadia: {link}");
         }
+        if let Some(token) = r.token_publico {
+            let _ = write!(
+                s,
+                "\n\nAdiante seu check-in preenchendo a ficha de hospedagem \
+                 (dados + foto do documento): {}/fnrh/{}",
+                self.site_base, token
+            );
+        }
         s += "\nQualquer dúvida, responda esta mensagem.";
         s
     }
@@ -1043,6 +1051,58 @@ impl ComunicacaoService {
             Some(r.idreserva),
         )
         .await?;
+        Ok(())
+    }
+
+    /// Resolve o token e retorna o idreserva — o handler público monta a
+    /// chave do objeto antes de fazer upload do documento.
+    pub async fn pre_ficha_idreserva(&self, token: uuid::Uuid) -> AppResult<i64> {
+        self.automacao
+            .reserva_publica_por_token(token)
+            .await?
+            .map(|r| r.idreserva)
+            .ok_or_else(|| DomainError::nao_encontrado("ficha não encontrada").into())
+    }
+
+    /// Devolve a chave anterior (para o handler apagar o objeto velho)
+    /// e grava a nova.
+    pub async fn gravar_documento_pre_ficha(
+        &self,
+        token: uuid::Uuid,
+        caminho: &str,
+    ) -> AppResult<Option<String>> {
+        let r = self
+            .automacao
+            .reserva_publica_por_token(token)
+            .await?
+            .ok_or_else(|| DomainError::nao_encontrado("ficha não encontrada"))?;
+        self.automacao
+            .gravar_documento_pre_ficha(r.idreserva, caminho)
+            .await?;
+        self.avisar_equipe(
+            "reserva.fnrh_documento",
+            "Documento recebido",
+            &format!(
+                "{} enviou a foto do documento da reserva #{}.",
+                r.cliente_nome, r.idreserva
+            ),
+            Some(r.idreserva),
+        )
+        .await?;
+        Ok(r.fnrh_documento_key)
+    }
+
+    /// Chave do documento da pré-ficha — consumo do staff (viewer auth).
+    pub async fn documento_pre_ficha(&self, idreserva: i64) -> AppResult<Option<String>> {
+        Ok(self.automacao.documento_pre_ficha(idreserva).await?)
+    }
+
+    /// Envio manual pela recepção — mesma mensagem do lembrete, na hora.
+    pub async fn enviar_fnrh_manual(&self, idreserva: i64) -> AppResult<()> {
+        let Some(r) = self.reserva_auto(idreserva).await? else {
+            return Err(DomainError::nao_encontrado("Reserva não encontrada.").into());
+        };
+        self.enviar_fnrh(&r, "fnrh_link").await;
         Ok(())
     }
 

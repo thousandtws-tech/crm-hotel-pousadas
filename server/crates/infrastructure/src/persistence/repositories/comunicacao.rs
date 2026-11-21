@@ -833,7 +833,7 @@ impl PgAutomacaoRepository {
 const AUTO_COLS: &str = "r.id AS idreserva, r.idcliente, c.nome AS cliente_nome,
      c.email AS cliente_email, c.telefone AS cliente_telefone,
      r.entradaprevista, r.saidaprevista,
-     a.nome AS acomodacao_nome, r.token_publico,
+     a.nome AS acomodacao_nome, r.token_publico, r.fnrh_documento_key,
      coalesce((SELECT fnrh_assinatura FROM estabelecimento ORDER BY id LIMIT 1), false) AS fnrh_assinatura,
      coalesce(c.whatsapp_optin, false) AS whatsapp_optin";
 
@@ -956,6 +956,29 @@ impl AutomacaoRepository for PgAutomacaoRepository {
         .fetch_optional(&self.pool)
         .await
         .map_err(map_db_err)
+    }
+
+    async fn gravar_documento_pre_ficha(
+        &self,
+        idreserva: i64,
+        caminho: &str,
+    ) -> Result<(), DomainError> {
+        sqlx::query("UPDATE reserva SET fnrh_documento_key=$2 WHERE id=$1")
+            .bind(idreserva)
+            .bind(caminho)
+            .execute(&self.pool)
+            .await
+            .map_err(map_db_err)?;
+        Ok(())
+    }
+
+    async fn documento_pre_ficha(&self, idreserva: i64) -> Result<Option<String>, DomainError> {
+        sqlx::query_scalar("SELECT fnrh_documento_key FROM reserva WHERE id=$1")
+            .bind(idreserva)
+            .fetch_optional(&self.pool)
+            .await
+            .map(|opt| opt.flatten())
+            .map_err(map_db_err)
     }
 
     async fn gravar_pre_ficha(

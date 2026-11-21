@@ -45,7 +45,8 @@ const RESUMO_SEL: &str = "
     r.id, r.idacomodacao, a.nome AS acomodacao_nome, a.numero AS acomodacao_numero,
     a.cor AS acomodacao_cor, r.idcliente, c.nome AS cliente_nome,
     r.quantidade_hospedes, r.entradaprevista, r.saidaprevista, r.status,
-    r.valordiaria, r.idquarto, q.numero AS quarto_numero, con.valor_estadia";
+    r.valordiaria, r.idquarto, q.numero AS quarto_numero, con.valor_estadia,
+    r.fnrh_preenchida_em";
 
 const RESUMO_FROM: &str = "
     FROM reserva r
@@ -72,7 +73,8 @@ impl ReservaRepository for PgReservaRepository {
                     a.nome AS acomodacao_nome, a.numero AS acomodacao_numero, a.valor AS acomodacao_valor,
                     c.nome AS cliente_nome, c.cpf AS cliente_cpf,
                     c.email AS cliente_email, c.telefone AS cliente_telefone,
-                    r.expira_em, r.fnrh_hospede
+                    r.expira_em, r.fnrh_hospede, r.fnrh_preenchida_em,
+                    r.fnrh_documento_key
              FROM reserva r
              JOIN acomodacao a ON a.id = r.idacomodacao
              JOIN cliente c ON c.id = r.idcliente

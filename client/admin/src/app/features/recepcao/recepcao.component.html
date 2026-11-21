@@ -96,7 +96,16 @@
             <div class="row">
               <span class="av">{{ iniciais(r.cliente_nome) }}</span>
               <span class="row-txt">
-                <strong>{{ r.cliente_nome }}</strong>
+                <strong>
+                  {{ r.cliente_nome }}
+                  @if (r.fnrh_preenchida_em) {
+                    <span
+                      class="ck-badge"
+                      title="Pré-check-in preenchido — confira os dados no check-in"
+                      >pré-check-in ✓</span
+                    >
+                  }
+                </strong>
                 <small>
                   {{ r.acomodacao_nome }} Nº{{ r.acomodacao_numero }} ·
                   {{ r.quantidade_hospedes }}

@@ -544,3 +544,76 @@ table.plain td {
   outline: 2px solid var(--inn-darkblue);
   outline-offset: 1px;
 }
+
+/* ---------- pré-check-in (ficha do hóspede via link) ---------- */
+.fnrh-acoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.preck {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  margin: 0 14px;
+  border-radius: 8px;
+  background: #f4f8fa;
+  font-size: 0.82rem;
+}
+.preck-st {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #5b7180;
+  font-weight: 600;
+}
+.preck-st mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+.preck-ok {
+  color: #1e7d4f;
+}
+.preck-warn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #8a6d1d;
+  font-size: 0.78rem;
+}
+.preck-warn mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+.btn-ghost.sm {
+  padding: 4px 10px;
+  font-size: 0.78rem;
+}
+.preck-dados {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px 18px;
+  margin: 10px 14px;
+  padding: 12px 14px;
+  border: 1px dashed #c9d6dc;
+  border-radius: 8px;
+}
+.preck-linha {
+  display: flex;
+  gap: 8px;
+  font-size: 0.8rem;
+}
+.preck-linha dt {
+  color: #7d97a1;
+  flex-shrink: 0;
+}
+.preck-linha dd {
+  margin: 0;
+  color: #223b47;
+  font-weight: 600;
+  word-break: break-word;
+}

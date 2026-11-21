@@ -9,6 +9,8 @@ export interface PreFichaInfo {
   entrada: string;
   saida: string;
   fnrh_assinatura: boolean;
+  /** Já há foto do documento na ficha (retomada do link). */
+  tem_documento?: boolean;
 }
 
 export interface AvaliacaoInfo {
@@ -60,6 +62,13 @@ export class GuestService {
 
   gravarPreFicha(token: string, dados: Record<string, unknown>): Observable<void> {
     return this.http.post<void>(`${this.base}/fnrh/${token}`, dados);
+  }
+
+  /** Foto do documento da pré-ficha — imagem crua no corpo (≤4MB). */
+  enviarDocumentoFnrh(token: string, arquivo: File): Observable<unknown> {
+    return this.http.post(`${this.base}/fnrh/${token}/documento`, arquivo, {
+      headers: { 'Content-Type': arquivo.type },
+    });
   }
 
   avaliacao(token: string): Observable<AvaliacaoInfo> {

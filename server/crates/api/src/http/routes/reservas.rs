@@ -4,7 +4,7 @@
 use crate::http::error::ApiError as AppError;
 use crate::http::state::AppState;
 use axum::extract::{Path, Query, State};
-use axum::http::StatusCode;
+use axum::http::{header, HeaderName, StatusCode};
 use axum::response::IntoResponse;
 use axum::Json;
 use chrono::NaiveDate;
@@ -348,6 +348,47 @@ pub async fn fnrh_reserva(
     Path(id): Path<i64>,
 ) -> Result<Json<Vec<Fnrh>>, AppError> {
     Ok(Json(s.services.reservas.listar_fnrh(id).await?))
+}
+
+/// POST /reservas/{id}/fnrh-link — a recepção dispara o link da
+/// pré-ficha na hora (e-mail sempre; WhatsApp quando há opt-in).
+pub async fn enviar_pre_checkin(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<StatusCode, AppError> {
+    s.services.comunicacao.enviar_fnrh_manual(id).await?;
+    Ok(StatusCode::ACCEPTED)
+}
+
+/// GET /reservas/{id}/fnrh-documento — serve a foto do documento
+/// enviada pelo hóspede na pré-ficha (staff autenticado).
+pub async fn fnrh_documento(
+    State(s): State<AppState>,
+    _ator: Ator,
+    Path(id): Path<i64>,
+) -> Result<([(HeaderName, String); 2], Vec<u8>), AppError> {
+    let Some(caminho) = s.services.comunicacao.documento_pre_ficha(id).await? else {
+        return Err(DomainError::nao_encontrado("Reserva sem documento de pré-check-in.").into());
+    };
+    let bytes = s
+        .store
+        .get(&caminho)
+        .await?
+        .ok_or_else(|| DomainError::nao_encontrado("Arquivo não encontrado no storage."))?;
+    let mime = match caminho.rsplit('.').next() {
+        Some("png") => "image/png",
+        Some("jpg" | "jpeg") => "image/jpeg",
+        Some("webp") => "image/webp",
+        _ => "application/octet-stream",
+    };
+    Ok((
+        [
+            (header::CONTENT_TYPE, mime.to_string()),
+            (header::CACHE_CONTROL, "private, max-age=60".into()),
+        ],
+        bytes,
+    ))
 }
 
 /// Emite a FNRH — snapshot imutável de cliente + reserva + acompanhantes.

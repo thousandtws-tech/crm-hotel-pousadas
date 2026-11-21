@@ -111,6 +111,47 @@ type Estado = 'carregando' | 'form' | 'enviando' | 'enviado' | 'erro';
             </fieldset>
 
             <fieldset class="rounded-xl border border-gray-200 p-6">
+              <legend class="px-2 text-lg font-semibold text-[#032B38]">Foto do documento</legend>
+              <p class="text-sm text-gray-600 mt-1">
+                Fotografe ou anexe o documento informado acima — agiliza sua chegada.
+              </p>
+              <div class="mt-3 flex items-start gap-4">
+                <label
+                  class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-[#032B38]/40 px-4 py-3 text-sm font-medium text-[#032B38] hover:bg-[#032B38]/5"
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    class="sr-only"
+                    (change)="escolherDocumento($event)"
+                  />
+                  {{ docPreview() ? 'Trocar foto' : 'Escolher foto' }}
+                </label>
+                @if (docEstado() === 'enviando') {
+                  <span class="text-sm text-gray-500">Enviando…</span>
+                }
+                @if (docEstado() === 'erro') {
+                  <span class="text-sm text-red-700" role="alert">{{ docErro() }}</span>
+                }
+                @if (docEstado() === 'enviado') {
+                  <span class="text-sm font-medium text-emerald-700">Foto enviada ✓</span>
+                }
+              </div>
+              @if (docPreview(); as p) {
+                <img
+                  [src]="p"
+                  alt="Foto do documento enviada"
+                  class="mt-3 max-h-48 rounded-lg border border-gray-200 object-contain"
+                />
+              } @else if (info()?.tem_documento) {
+                <p class="mt-3 text-sm font-medium text-emerald-700">
+                  Já recebemos a foto do seu documento — envie outra só se quiser trocar.
+                </p>
+              }
+            </fieldset>
+
+            <fieldset class="rounded-xl border border-gray-200 p-6">
               <legend class="px-2 text-lg font-semibold text-[#032B38]">Endereço</legend>
               <div class="grid sm:grid-cols-3 gap-4 mt-2">
                 <label class="block sm:col-span-2">
@@ -252,6 +293,34 @@ export class FnrhFormComponent implements OnInit {
         this.estado.set('form');
       },
       error: () => this.estado.set('erro'),
+    });
+  }
+
+  /** Foto do documento — envia no ato da escolha (substitui a anterior). */
+  readonly docPreview = signal<string | null>(null);
+  readonly docEstado = signal<'ocioso' | 'enviando' | 'enviado' | 'erro'>('ocioso');
+  readonly docErro = signal<string | null>(null);
+
+  escolherDocumento(e: Event): void {
+    const arquivo = (e.target as HTMLInputElement).files?.[0];
+    if (!arquivo) return;
+    if (!arquivo.type.startsWith('image/') || arquivo.size > 4 * 1024 * 1024) {
+      this.docErro.set('Envie uma imagem de até 4 MB (foto do documento).');
+      this.docEstado.set('erro');
+      return;
+    }
+    this.docEstado.set('enviando');
+    this.docErro.set(null);
+    const token = this.route.snapshot.paramMap.get('token') ?? '';
+    this.guest.enviarDocumentoFnrh(token, arquivo).subscribe({
+      next: () => {
+        this.docPreview.set(URL.createObjectURL(arquivo));
+        this.docEstado.set('enviado');
+      },
+      error: () => {
+        this.docEstado.set('erro');
+        this.docErro.set('Não foi possível enviar a foto. Tente novamente.');
+      },
     });
   }
 

@@ -19,6 +19,18 @@ export class ReservasApi extends ApiHttp {
     return this.del<void>(`/acompanhantes/${id}`);
   }
 
+  /** Dispara o link da pré-ficha (pré-check-in) para o hóspede. */
+  enviarPreCheckin(idreserva: number) {
+    return this.post<void>(`/reservas/${idreserva}/fnrh-link`, {});
+  }
+
+  /** Foto do documento da pré-ficha (blob autenticado — createObjectURL). */
+  fnrhDocumento(idreserva: number) {
+    return this.http.get(`${this.base}/reservas/${idreserva}/fnrh-documento`, {
+      responseType: 'blob',
+    });
+  }
+
   fnrhReserva(idreserva: number) {
     return this.get<M.Fnrh[]>(`/reservas/${idreserva}/fnrh`);
   }

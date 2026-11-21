@@ -136,6 +136,8 @@ export interface ReservaResumo {
   idquarto: number | null;
   quarto_numero: string | null;
   valor_estadia: string | null;
+  /** Pré-check-in do hóspede — quando a pré-ficha foi preenchida. */
+  fnrh_preenchida_em: string | null;
 }
 
 /** Drop do drag no mapa de ocupação — nova acomodação e/ou período. */
@@ -167,6 +169,12 @@ export interface ReservaDetalhe extends Omit<Reserva, 'atualizado_em'> {
   cliente_nome: string;
   cliente_cpf: string;
   consumo: ConsumoResumo | null;
+  /** Dados da pré-ficha enviados pelo hóspede (JSONB da reserva). */
+  fnrh_hospede: Record<string, string> | null;
+  /** Quando a pré-ficha foi preenchida — null = pré-check-in pendente. */
+  fnrh_preenchida_em: string | null;
+  /** Presença da foto do documento — a imagem vem de /fnrh-documento. */
+  fnrh_documento_key: string | null;
 }
 
 export interface ReservaInput {

@@ -23,6 +23,9 @@ pub struct ReservaResumo {
     pub idquarto: Option<i64>,
     pub quarto_numero: Option<String>,
     pub valor_estadia: Option<Decimal>,
+    /// Pré-check-in do hóspede — preenchida quando a ficha veio pelo link.
+    #[sqlx(default)]
+    pub fnrh_preenchida_em: Option<DateTime<Utc>>,
 }
 
 /// Detalhe completo da reserva (equivalente a `cDadosReserva.php`).
@@ -58,6 +61,12 @@ pub struct ReservaDetalhe {
     /// Payload da pré-ficha pública (aceite + assinatura desenhada).
     #[sqlx(default)]
     pub fnrh_hospede: Option<serde_json::Value>,
+    /// Quando a pré-ficha foi preenchida — `None` = pré-check-in pendente.
+    #[sqlx(default)]
+    pub fnrh_preenchida_em: Option<DateTime<Utc>>,
+    /// Presença da foto do documento — o binário vem de /fnrh-documento.
+    #[sqlx(default)]
+    pub fnrh_documento_key: Option<String>,
 }
 
 /// Pendências do fechamento do dia — reservas a decidir e contas abertas.

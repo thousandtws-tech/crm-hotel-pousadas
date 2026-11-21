@@ -326,6 +326,14 @@ pub trait AutomacaoRepository: Send + Sync {
         idreserva: i64,
         dados: &serde_json::Value,
     ) -> Result<(), DomainError>;
+    /// Grava a chave do documento enviado na pré-ficha (object store).
+    async fn gravar_documento_pre_ficha(
+        &self,
+        idreserva: i64,
+        caminho: &str,
+    ) -> Result<(), DomainError>;
+    /// Chave do documento da pré-ficha — `None` quando não enviado.
+    async fn documento_pre_ficha(&self, idreserva: i64) -> Result<Option<String>, DomainError>;
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize)]
@@ -345,6 +353,9 @@ pub struct ReservaAuto {
     /// (FNRH, checkout, pesquisa) só vão ao WhatsApp com opt-in.
     #[sqlx(default)]
     pub whatsapp_optin: bool,
+    /// Documento enviado na pré-ficha — Some quando o hóspede já fez upload.
+    #[sqlx(default)]
+    pub fnrh_documento_key: Option<String>,
 }
 
 /// Snapshot da reserva para os templates pós-reserva — dados do hóspede,

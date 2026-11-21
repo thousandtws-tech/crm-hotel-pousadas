@@ -281,6 +281,67 @@ export abstract class ReservaDetailStore implements OnInit {
     });
   }
 
+  /** Expande os dados da pré-ficha enviada pelo hóspede. */
+  protected readonly verFicha = signal(false);
+
+  /** Envia (ou reenvia) o link da pré-ficha ao hóspede — e-mail sempre,
+   * WhatsApp quando há consentimento transacional. */
+  enviarPreCheckin(): void {
+    const res = this.r();
+    if (!res || this.enviando()) return;
+    this.enviando.set(true);
+    this.reservasApi.enviarPreCheckin(res.id).subscribe({
+      next: () => {
+        this.enviando.set(false);
+        this.notify.ok('Link de pré-check-in enviado ao hóspede.');
+      },
+      error: (e) => {
+        this.enviando.set(false);
+        this.notify.erro(e);
+      },
+    });
+  }
+
+  /** Abre a foto do documento em nova aba (blob autenticado). */
+  verDocumento(): void {
+    const res = this.r();
+    if (!res) return;
+    this.reservasApi.fnrhDocumento(res.id).subscribe({
+      next: (b) => window.open(URL.createObjectURL(b), '_blank'),
+      error: (e) => this.notify.erro(e),
+    });
+  }
+
+  /** Campos da pré-ficha exibidos no card (ordem + rótulo). */
+  protected readonly fichaCampos: [string, string][] = [
+    ['nome', 'Nome completo'],
+    ['nascimento', 'Nascimento'],
+    ['nacionalidade', 'Nacionalidade'],
+    ['profissao', 'Profissão'],
+    ['doc_tipo', 'Documento'],
+    ['doc_numero', 'Nº documento'],
+    ['doc_orgao', 'Órgão emissor'],
+    ['cpf', 'CPF'],
+    ['telefone', 'Telefone'],
+    ['email', 'E-mail'],
+    ['logradouro', 'Logradouro'],
+    ['numero', 'Número'],
+    ['complemento', 'Complemento'],
+    ['bairro', 'Bairro'],
+    ['cep', 'CEP'],
+    ['cidade', 'Cidade'],
+    ['uf', 'UF'],
+    ['motivo', 'Motivo da viagem'],
+    ['transporte', 'Transporte'],
+    ['acompanhantes', 'Acompanhantes'],
+    ['observacoes', 'Observações'],
+  ];
+
+  /** Linhas da pré-ficha só com os campos preenchidos. */
+  fichaLinhas(ficha: Record<string, string>): [string, string][] {
+    return this.fichaCampos.filter(([k]) => (ficha[k] ?? '').trim() !== '');
+  }
+
   protected reenviarComunicacao(iditem: number): void {
     const id = this.id();
     if (id <= 0) return;

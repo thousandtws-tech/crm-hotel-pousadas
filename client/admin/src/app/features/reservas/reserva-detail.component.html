@@ -145,10 +145,59 @@
     <div class="inner-card">
       <div class="inner-card-header spread">
         <h4>Registro de hóspedes</h4>
-        <button class="btn-dark-blue fnrh-btn" type="button" (click)="abrirFnrh()">
-          <mat-icon>assignment_ind</mat-icon> Emitir FNRH
-        </button>
+        <div class="fnrh-acoes">
+          <button
+            class="btn-ghost"
+            type="button"
+            [disabled]="enviando()"
+            title="Enviar o link da pré-ficha ao hóspede (e-mail e WhatsApp com opt-in)"
+            (click)="enviarPreCheckin()"
+          >
+            <mat-icon>send</mat-icon> Link pré-check-in
+          </button>
+          <button class="btn-dark-blue fnrh-btn" type="button" (click)="abrirFnrh()">
+            <mat-icon>assignment_ind</mat-icon> Emitir FNRH
+          </button>
+        </div>
       </div>
+      <div class="preck">
+        @if (res.fnrh_preenchida_em) {
+          <span class="preck-st preck-ok">
+            <mat-icon>fact_check</mat-icon>
+            Pré-check-in preenchido em {{ res.fnrh_preenchida_em | date: 'dd/MM HH:mm' }}
+          </span>
+          <button
+            class="btn-ghost sm"
+            type="button"
+            (click)="verFicha.set(!verFicha())"
+          >
+            {{ verFicha() ? 'Ocultar dados' : 'Ver dados' }}
+          </button>
+          @if (res.fnrh_documento_key) {
+            <button class="btn-ghost sm" type="button" (click)="verDocumento()">
+              <mat-icon>photo_library</mat-icon> Ver documento
+            </button>
+          } @else {
+            <span class="preck-warn" title="O hóspede não anexou a foto do documento">
+              <mat-icon>no_photography</mat-icon> sem foto do documento
+            </span>
+          }
+        } @else {
+          <span class="preck-st">
+            <mat-icon>hourglass_empty</mat-icon> Pré-check-in pendente — envie o link ao hóspede
+          </span>
+        }
+      </div>
+      @if (res.fnrh_preenchida_em && verFicha() && res.fnrh_hospede; as ficha) {
+        <dl class="preck-dados">
+          @for (c of fichaLinhas(ficha); track c[0]) {
+            <div class="preck-linha">
+              <dt>{{ c[1] }}</dt>
+              <dd>{{ ficha[c[0]] }}</dd>
+            </div>
+          }
+        </dl>
+      }
       <div class="inner-card-body">
         <span class="sec2"><mat-icon>groups</mat-icon> Acompanhantes</span>
         @if (res.status !== 'c' && !res.checkout_em) {

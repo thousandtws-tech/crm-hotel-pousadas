@@ -308,6 +308,14 @@ pub fn build(state: AppState) -> Router {
             get(routes::reservas::fnrh_reserva).post(routes::reservas::emitir_fnrh),
         )
         .route(
+            "/reservas/{id}/fnrh-link",
+            post(routes::reservas::enviar_pre_checkin),
+        )
+        .route(
+            "/reservas/{id}/fnrh-documento",
+            get(routes::reservas::fnrh_documento),
+        )
+        .route(
             "/reservas/{id}/comunicacoes",
             get(routes::reservas::comunicacoes_reserva),
         )
@@ -1271,6 +1279,14 @@ pub fn build(state: AppState) -> Router {
                     IpRateLimit::novo(20, Duration::from_secs(60)),
                     IpRateLimit::middleware,
                 )),
+        )
+        // foto do documento na pré-ficha — mesmo rate-limit do formulário
+        .route(
+            "/api/v1/publico/fnrh/{token}/documento",
+            post(routes::comunicacao::pre_ficha_documento_post).route_layer(from_fn_with_state(
+                IpRateLimit::novo(20, Duration::from_secs(60)),
+                IpRateLimit::middleware,
+            )),
         )
         .route(
             "/api/v1/publico/avaliacoes/{token}",

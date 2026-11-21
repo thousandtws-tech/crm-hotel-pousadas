@@ -559,3 +559,18 @@
     grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
   }
 }
+
+/* ---------- badge pré-check-in nas chegadas ---------- */
+.ck-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(30, 125, 79, 0.12);
+  color: #1e7d4f;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+}

@@ -1,5 +1,6 @@
+use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
-use axum::http::StatusCode;
+use axum::http::{header, HeaderMap, StatusCode};
 use axum::Json;
 use serde::Deserialize;
 
@@ -26,7 +27,43 @@ pub async fn pre_ficha_get(
         "acomodacao": r.acomodacao_nome,
         "entrada": r.entradaprevista,
         "saida": r.saidaprevista,
+        "tem_documento": r.fnrh_documento_key.is_some(),
     })))
+}
+
+/// Upload da foto do documento na pré-ficha — imagem ≤4MB gravada no
+/// object store sob `fnrh/{idreserva}.{ext}`; a chave vai para a reserva.
+pub async fn pre_ficha_documento_post(
+    State(st): State<AppState>,
+    Path(token): Path<uuid::Uuid>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Result<StatusCode, ApiError> {
+    let content_type = headers
+        .get(header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    if !content_type.starts_with("image/") {
+        return Err(DomainError::validacao("Envie uma imagem (png, jpg ou webp).").into());
+    }
+    if body.is_empty() || body.len() > 4 * 1024 * 1024 {
+        return Err(DomainError::validacao("Imagem vazia ou maior que 4 MB.").into());
+    }
+    let idreserva = st.services.comunicacao.pre_ficha_idreserva(token).await?;
+    let ext = content_type
+        .strip_prefix("image/")
+        .map_or_else(|| "bin".into(), |e| e.replace("jpeg", "jpg"));
+    let key = format!("fnrh/{idreserva}.{ext}");
+    st.store.put(&key, &body, content_type).await?;
+    let anterior = st
+        .services
+        .comunicacao
+        .gravar_documento_pre_ficha(token, &key)
+        .await?;
+    if let Some(antigo) = anterior.filter(|a| a != &key) {
+        st.store.delete(&antigo).await.ok();
+    }
+    Ok(StatusCode::CREATED)
 }
 
 pub async fn pre_ficha_post(
